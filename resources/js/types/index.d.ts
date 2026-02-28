@@ -1,0 +1,128 @@
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    avatar_url?: string;
+    auth_provider: 'local' | 'saml2' | 'okta';
+    is_admin: boolean;
+    theme_preference: 'light' | 'dark' | 'system';
+    email_verified_at?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Organization {
+    id: string;
+    name: string;
+    slug: string;
+    settings: Record<string, unknown>;
+}
+
+export interface Team {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    settings: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+    members?: TeamMember[];
+    boards?: Board[];
+}
+
+export interface TeamMember {
+    id: string;
+    team_id: string;
+    user_id: string;
+    role: 'owner' | 'admin' | 'member';
+    created_at: string;
+    user?: User;
+}
+
+export interface Board {
+    id: string;
+    team_id: string;
+    name: string;
+    description?: string;
+    is_archived: boolean;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+    columns?: Column[];
+    team?: Team;
+}
+
+export interface Column {
+    id: string;
+    board_id: string;
+    name: string;
+    color: string;
+    wip_limit?: number;
+    sort_order: number;
+    is_done_column: boolean;
+    created_at: string;
+    updated_at: string;
+    tasks?: Task[];
+}
+
+export interface Task {
+    id: string;
+    board_id: string;
+    column_id: string;
+    parent_task_id?: string;
+    title: string;
+    description?: string;
+    priority: 'urgent' | 'high' | 'medium' | 'low' | 'none';
+    sort_order: number;
+    due_date?: string;
+    effort_estimate?: number;
+    custom_fields: Record<string, unknown>;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    assignees?: User[];
+    labels?: Label[];
+    subtasks?: Task[];
+    comments_count?: number;
+    attachments_count?: number;
+    subtasks_count?: number;
+    completed_subtasks_count?: number;
+}
+
+export interface Label {
+    id: string;
+    team_id: string;
+    name: string;
+    color: string;
+    created_at: string;
+}
+
+export interface Comment {
+    id: string;
+    task_id: string;
+    user_id: string;
+    body: string;
+    created_at: string;
+    updated_at: string;
+    user?: User;
+}
+
+export interface Activity {
+    id: string;
+    task_id: string;
+    user_id?: string;
+    action: string;
+    changes: Record<string, unknown>;
+    created_at: string;
+    user?: User;
+}
+
+export type PageProps<
+    T extends Record<string, unknown> = Record<string, unknown>,
+> = T & {
+    auth: {
+        user: User;
+    };
+    currentTeam?: Team;
+    teams?: Team[];
+};
