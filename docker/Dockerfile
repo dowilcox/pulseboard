@@ -74,6 +74,6 @@ RUN rm -f /etc/nginx/sites-enabled/default \
     && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default \
     && mkdir -p /run/nginx
 
-EXPOSE 80
+EXPOSE 80 8080
 
 ENTRYPOINT ["entrypoint.sh"]

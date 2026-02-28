@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import DeleteUserForm from './Partials/DeleteUserForm';
+import NotificationPreferencesForm from './Partials/NotificationPreferencesForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm';
 
@@ -32,6 +33,10 @@ export default function Edit({
 
                 <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
                     <UpdatePasswordForm />
+                </Paper>
+
+                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                    <NotificationPreferencesForm />
                 </Paper>
 
                 <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>

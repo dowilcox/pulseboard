@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     ports:
       - "8000:80"
+      - "8080:8080"
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
@@ -25,6 +26,14 @@ services:
       - DB_PASSWORD=secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - QUEUE_CONNECTION=redis
+      - BROADCAST_CONNECTION=reverb
+      - REVERB_APP_ID=pulseboard
+      - REVERB_APP_KEY=pulseboard-key
+      - REVERB_APP_SECRET=pulseboard-secret
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
     networks:
       - pulseboard
 

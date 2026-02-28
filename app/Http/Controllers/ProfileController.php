@@ -41,6 +41,36 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's notification preferences.
+     */
+    public function updateNotifications(Request $request): RedirectResponse
+    {
+        $validTypes = ['task_assigned', 'task_commented', 'task_mentioned', 'task_due_soon', 'task_overdue'];
+        $validChannels = ['in_app', 'email'];
+
+        $prefs = $request->validate([
+            'prefs' => ['required', 'array'],
+            'prefs.*' => ['array'],
+            'prefs.*.in_app' => ['boolean'],
+            'prefs.*.email' => ['boolean'],
+        ]);
+
+        // Filter to only valid types and channels
+        $filtered = [];
+        foreach ($prefs['prefs'] as $type => $channels) {
+            if (in_array($type, $validTypes)) {
+                $filtered[$type] = array_intersect_key($channels, array_flip($validChannels));
+            }
+        }
+
+        $request->user()->update([
+            'email_notification_prefs' => $filtered,
+        ]);
+
+        return Redirect::route('profile.edit');
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

@@ -1,10 +1,13 @@
 import FilterBar from '@/Components/Tasks/FilterBar';
+import PresenceAvatars from '@/Components/Layout/PresenceAvatars';
 import QuickCreateTask from '@/Components/Tasks/QuickCreateTask';
 import SortableTaskCard from '@/Components/Tasks/SortableTaskCard';
 import TaskCard from '@/Components/Tasks/TaskCard';
 import TaskDetailPanel from '@/Components/Tasks/TaskDetailPanel';
+import { useBoardChannel, type BoardEvent } from '@/hooks/useBoardChannel';
+import { usePresence } from '@/hooks/usePresence';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Board, Column, Label, Task, Team, User } from '@/types';
+import type { Board, Column, Label, PageProps, Task, Team, User } from '@/types';
 import { computeSortOrder } from '@/utils/sortOrder';
 import {
     closestCorners,
@@ -21,7 +24,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Link as InertiaLink } from '@inertiajs/react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Box from '@mui/material/Box';
@@ -32,7 +35,7 @@ import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
     board: Board;
@@ -61,6 +64,7 @@ function findColumnForTask(columnTasks: Record<string, Task[]>, taskId: string):
 }
 
 export default function BoardsShow({ board, team, teams, boards, members }: Props) {
+    const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [panelOpen, setPanelOpen] = useState(false);
@@ -70,11 +74,64 @@ export default function BoardsShow({ board, team, teams, boards, members }: Prop
         buildColumnTasksMap(columns)
     );
     const [taskFilter, setTaskFilter] = useState<(task: Task) => boolean>(() => () => true);
+    const [lastBoardEvent, setLastBoardEvent] = useState<BoardEvent | null>(null);
 
     // Sync columnTasks when server data changes (after Inertia reload)
     useEffect(() => {
         setColumnTasks(buildColumnTasksMap(columns));
     }, [board]);
+
+    // Real-time: presence
+    const presenceUsers = usePresence(board.id);
+
+    // Real-time: board channel listener
+    const selectedTaskRef = useRef(selectedTask);
+    selectedTaskRef.current = selectedTask;
+    const panelOpenRef = useRef(panelOpen);
+    panelOpenRef.current = panelOpen;
+
+    const handleBoardEvent = useCallback((event: BoardEvent) => {
+        setLastBoardEvent(event);
+
+        switch (event.action) {
+            case 'created':
+            case 'task.deleted':
+                // Full reload for structural changes
+                router.reload();
+                break;
+
+            case 'moved':
+            case 'task.reordered':
+                // Reload to get fresh column/task state
+                router.reload();
+                break;
+
+            case 'field_changed':
+            case 'assigned':
+            case 'unassigned':
+            case 'labels_changed':
+                // Update the task in local state if possible, otherwise reload
+                if (event.data.task_id) {
+                    router.reload();
+                }
+                break;
+
+            case 'commented':
+            case 'comment.updated':
+            case 'comment.deleted':
+            case 'attachment_added':
+            case 'attachment_removed':
+                // These don't affect the board view, only the detail panel
+                // lastBoardEvent will trigger a re-fetch in TaskDetailPanel
+                break;
+
+            default:
+                router.reload();
+                break;
+        }
+    }, []);
+
+    useBoardChannel(board.id, handleBoardEvent);
 
     useEffect(() => {
         fetch(route('labels.index', team.id), {
@@ -249,15 +306,18 @@ export default function BoardsShow({ board, team, teams, boards, members }: Prop
                             {board.name}
                         </Typography>
                     </Box>
-                    <Tooltip title="Board Settings">
-                        <IconButton
-                            onClick={() =>
-                                router.get(route('teams.boards.settings', [team.id, board.id]))
-                            }
-                        >
-                            <SettingsIcon />
-                        </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PresenceAvatars users={presenceUsers} currentUserId={auth.user.id} />
+                        <Tooltip title="Board Settings">
+                            <IconButton
+                                onClick={() =>
+                                    router.get(route('teams.boards.settings', [team.id, board.id]))
+                                }
+                            >
+                                <SettingsIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Box>
             }
         >
@@ -435,6 +495,7 @@ export default function BoardsShow({ board, team, teams, boards, members }: Prop
                 boardId={board.id}
                 members={members}
                 labels={teamLabels}
+                lastBoardEvent={lastBoardEvent}
             />
         </AuthenticatedLayout>
     );

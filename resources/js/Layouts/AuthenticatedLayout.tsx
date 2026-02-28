@@ -17,6 +17,8 @@ import Typography from '@mui/material/Typography';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
+import ConnectionStatus from '@/Components/Layout/ConnectionStatus';
+import NotificationBell from '@/Components/Layout/NotificationBell';
 
 const DRAWER_WIDTH = 260;
 
@@ -161,7 +163,7 @@ export default function AuthenticatedLayout({
 
                         {!header && <Box sx={{ flexGrow: 1 }} />}
 
-                        {/* User menu */}
+                        {/* Connection status + User menu */}
                         <Box
                             sx={{
                                 display: 'flex',
@@ -169,6 +171,8 @@ export default function AuthenticatedLayout({
                                 gap: 1,
                             }}
                         >
+                            <ConnectionStatus />
+                            <NotificationBell />
                             <Typography
                                 variant="body2"
                                 sx={{

@@ -34,12 +34,18 @@ class AssignTask
 
         if (! empty($added)) {
             $addedNames = User::whereIn('id', $added)->pluck('name')->toArray();
-            ActivityLogger::log($task, 'assigned', ['users' => $addedNames], $assigner);
+            ActivityLogger::log($task, 'assigned', [
+                'users' => $addedNames,
+                'user_ids' => array_values($added),
+            ], $assigner);
         }
 
         if (! empty($removed)) {
             $removedNames = User::whereIn('id', $removed)->pluck('name')->toArray();
-            ActivityLogger::log($task, 'unassigned', ['users' => $removedNames], $assigner);
+            ActivityLogger::log($task, 'unassigned', [
+                'users' => $removedNames,
+                'user_ids' => array_values($removed),
+            ], $assigner);
         }
 
         return $task->load('assignees');

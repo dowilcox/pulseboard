@@ -4,6 +4,7 @@ import AttachmentList from '@/Components/Tasks/AttachmentList';
 import LabelSelector from '@/Components/Tasks/LabelSelector';
 import PrioritySelector from '@/Components/Tasks/PrioritySelector';
 import SubtaskList from '@/Components/Tasks/SubtaskList';
+import type { BoardEvent } from '@/hooks/useBoardChannel';
 import type { Activity, Attachment, Comment, Label, Task, User } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -27,6 +28,7 @@ interface Props {
     boardId: string;
     members: User[];
     labels: Label[];
+    lastBoardEvent?: BoardEvent | null;
 }
 
 interface TaskDetail extends Task {
@@ -44,6 +46,7 @@ export default function TaskDetailPanel({
     boardId,
     members,
     labels,
+    lastBoardEvent,
 }: Props) {
     const { auth } = usePage().props as { auth: { user: User } };
     const [detail, setDetail] = useState<TaskDetail | null>(null);
@@ -79,6 +82,32 @@ export default function TaskDetailPanel({
                 setDetail(task as TaskDetail);
             });
     }, [task?.id, open]);
+
+    // Re-fetch task detail when a relevant real-time event arrives
+    useEffect(() => {
+        if (!lastBoardEvent || !task || !open) return;
+        const eventTaskId = lastBoardEvent.data.task_id;
+        if (eventTaskId && eventTaskId !== task.id) return;
+
+        const relevantActions = [
+            'field_changed', 'assigned', 'unassigned', 'labels_changed',
+            'commented', 'comment.updated', 'comment.deleted',
+            'attachment_added', 'attachment_removed',
+        ];
+        if (!relevantActions.includes(lastBoardEvent.action)) return;
+
+        fetch(route('tasks.show', [teamId, boardId, task.id]), {
+            headers: { Accept: 'application/json' },
+        })
+            .then((res) => res.json())
+            .then((data: TaskDetail) => {
+                setDetail(data);
+                setTitle(data.title);
+                setDescription(data.description ?? '');
+                setDueDate(data.due_date ?? '');
+            })
+            .catch(() => {});
+    }, [lastBoardEvent]);
 
     const saveTitle = useCallback(
         (newTitle: string) => {

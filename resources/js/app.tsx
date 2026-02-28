@@ -5,6 +5,7 @@ import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ThemeContextProvider } from '@/Contexts/ThemeContext';
+import { WebSocketProvider } from '@/Contexts/WebSocketContext';
 import CssBaseline from '@mui/material/CssBaseline';
 
 const appName = import.meta.env.VITE_APP_NAME || 'PulseBoard';
@@ -22,7 +23,9 @@ createInertiaApp({
         root.render(
             <ThemeContextProvider>
                 <CssBaseline />
-                <App {...props} />
+                <WebSocketProvider>
+                    <App {...props} />
+                </WebSocketProvider>
             </ThemeContextProvider>
         );
     },

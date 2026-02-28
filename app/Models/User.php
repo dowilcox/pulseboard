@@ -96,4 +96,18 @@ class User extends Authenticatable
             ->withPivot('assigned_at', 'assigned_by')
             ->using(TaskAssignee::class);
     }
+
+    /**
+     * Check if the user wants a specific notification type on a given channel.
+     */
+    public function wantsNotification(string $type, string $channel): bool
+    {
+        $prefs = $this->email_notification_prefs;
+
+        if (empty($prefs) || ! isset($prefs[$type])) {
+            return true; // Default: all notifications enabled
+        }
+
+        return (bool) ($prefs[$type][$channel] ?? true);
+    }
 }

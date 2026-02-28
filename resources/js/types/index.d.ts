@@ -1,3 +1,16 @@
+export interface NotificationPreferenceChannels {
+    in_app: boolean;
+    email: boolean;
+}
+
+export interface NotificationPreferences {
+    task_assigned?: NotificationPreferenceChannels;
+    task_commented?: NotificationPreferenceChannels;
+    task_mentioned?: NotificationPreferenceChannels;
+    task_due_soon?: NotificationPreferenceChannels;
+    task_overdue?: NotificationPreferenceChannels;
+}
+
 export interface User {
     id: string;
     name: string;
@@ -6,6 +19,7 @@ export interface User {
     auth_provider: 'local' | 'saml2' | 'okta';
     is_admin: boolean;
     theme_preference: 'light' | 'dark' | 'system';
+    email_notification_prefs?: NotificationPreferences;
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
@@ -130,6 +144,22 @@ export interface Attachment {
     user?: User;
 }
 
+export interface AppNotification {
+    id: string;
+    type: string;
+    data: {
+        type: string;
+        task_id: string;
+        task_title: string;
+        board_id: string;
+        team_id: string;
+        message: string;
+        [key: string]: unknown;
+    };
+    read_at: string | null;
+    created_at: string;
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
@@ -138,4 +168,5 @@ export type PageProps<
     };
     currentTeam?: Team;
     teams?: Team[];
+    unreadNotificationsCount?: number;
 };
