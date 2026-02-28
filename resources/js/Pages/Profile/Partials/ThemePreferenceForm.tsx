@@ -13,8 +13,6 @@ export default function ThemePreferenceForm() {
     const user = auth.user;
 
     const { data, setData, patch, processing } = useForm({
-        name: user.name,
-        email: user.email,
         theme_preference: user.theme_preference ?? 'system',
     });
 

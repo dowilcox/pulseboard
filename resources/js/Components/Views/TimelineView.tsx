@@ -213,7 +213,7 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                     <Box
                         sx={{
                             position: 'absolute',
-                            left: `calc(200px + ${todayOffset}% * (100% - 200px) / 100)`,
+                            left: `calc(200px + (100% - 200px) * ${todayOffset / 100})`,
                             top: 0,
                             bottom: 0,
                             width: 2,

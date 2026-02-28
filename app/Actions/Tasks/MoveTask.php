@@ -26,6 +26,8 @@ class MoveTask
             ActivityLogger::log($task, 'moved', [
                 'from_column' => $fromColumn->name,
                 'to_column' => $column->name,
+                'from_column_id' => $fromColumn->id,
+                'to_column_id' => $column->id,
             ]);
         } else {
             // Same-column reorder — no activity log, but still broadcast

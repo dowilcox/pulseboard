@@ -113,7 +113,7 @@ export default function BoardSettings({ board, team, teams, boards, members }: P
         }));
 
         router.put(
-            route('teams.boards.columns.sync', [team.id, board.id]),
+            route('teams.boards.columns.reorder', [team.id, board.id]),
             { columns: payload },
             {
                 onSuccess: () => setSavingColumns(false),

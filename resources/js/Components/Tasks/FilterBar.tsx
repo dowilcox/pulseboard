@@ -153,12 +153,14 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 value={filters.search}
                 onChange={(e) => updateFilter('search', e.target.value)}
                 sx={{ minWidth: 180 }}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                        </InputAdornment>
-                    ),
+                slotProps={{
+                    input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                            </InputAdornment>
+                        ),
+                    },
                 }}
             />
 
@@ -259,7 +261,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 label="From"
                 value={filters.dueDateFrom}
                 onChange={(e) => updateFilter('dueDateFrom', e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ width: 140 }}
             />
             <TextField
@@ -268,7 +270,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 label="To"
                 value={filters.dueDateTo}
                 onChange={(e) => updateFilter('dueDateTo', e.target.value)}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ width: 140 }}
             />
 

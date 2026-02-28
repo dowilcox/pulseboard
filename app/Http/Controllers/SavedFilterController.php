@@ -48,6 +48,8 @@ class SavedFilterController extends Controller
 
     public function update(Request $request, Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
+        abort_unless($savedFilter->user_id === auth()->id(), 403);
+
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'filter_config' => ['sometimes', 'array'],
@@ -68,6 +70,8 @@ class SavedFilterController extends Controller
 
     public function destroy(Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
+        abort_unless($savedFilter->user_id === auth()->id(), 403);
+
         $savedFilter->delete();
 
         return response()->json(['message' => 'Deleted']);

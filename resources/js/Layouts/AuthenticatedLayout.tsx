@@ -54,14 +54,12 @@ export default function AuthenticatedLayout({
     const [navigating, setNavigating] = useState(false);
 
     useEffect(() => {
-        const startHandler = () => setNavigating(true);
-        const finishHandler = () => setNavigating(false);
-
-        router.on('start', startHandler);
-        router.on('finish', finishHandler);
+        const removeStart = router.on('start', () => setNavigating(true));
+        const removeFinish = router.on('finish', () => setNavigating(false));
 
         return () => {
-            // Inertia event handlers are cleaned up by returning the removal function
+            removeStart();
+            removeFinish();
         };
     }, []);
 

@@ -27,6 +27,7 @@ class TaskGitlabController extends Controller
 
     public function createBranch(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
+        $this->authorize('update', $task);
         $validated = $request->validate([
             'gitlab_project_id' => ['required', 'exists:gitlab_projects,id'],
         ]);
@@ -44,6 +45,7 @@ class TaskGitlabController extends Controller
 
     public function createMergeRequest(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
+        $this->authorize('update', $task);
         $validated = $request->validate([
             'gitlab_project_id' => ['required', 'exists:gitlab_projects,id'],
             'source_branch' => ['nullable', 'string'],
@@ -66,6 +68,8 @@ class TaskGitlabController extends Controller
 
     public function destroy(Team $team, Board $board, Task $task, TaskGitlabLink $link): JsonResponse
     {
+        $this->authorize('update', $task);
+
         $link->delete();
 
         return response()->json(['message' => 'Link removed']);

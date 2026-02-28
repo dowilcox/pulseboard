@@ -99,6 +99,11 @@ class BoardTemplateController extends Controller
 
     public function destroy(BoardTemplate $boardTemplate): JsonResponse
     {
+        abort_unless(
+            $boardTemplate->created_by === auth()->id() || auth()->user()->is_admin,
+            403,
+        );
+
         $boardTemplate->delete();
 
         return response()->json(['message' => 'Template deleted']);

@@ -136,7 +136,10 @@ class ExecuteAutomationRules
         }
 
         if (! $task->assignees()->where('users.id', $userId)->exists()) {
-            $task->assignees()->attach($userId);
+            $task->assignees()->attach($userId, [
+                'assigned_at' => now(),
+                'assigned_by' => $userId,
+            ]);
         }
     }
 

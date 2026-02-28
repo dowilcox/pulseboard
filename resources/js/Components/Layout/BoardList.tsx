@@ -23,7 +23,7 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
     };
 
     const handleAddBoard = () => {
-        router.get(route('teams.boards.create', teamId));
+        router.get(route('teams.show', teamId));
     };
 
     return (

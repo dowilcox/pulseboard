@@ -19,7 +19,7 @@ class VerifyGitlabWebhook
 
         $token = $request->header('X-Gitlab-Token');
 
-        if (! $token || $token !== $connection->webhook_secret) {
+        if (! $token || ! hash_equals($connection->webhook_secret, $token)) {
             abort(403, 'Invalid webhook token.');
         }
 

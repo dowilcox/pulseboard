@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 import TextField from '@mui/material/TextField';
@@ -23,18 +23,18 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
     const [loading, setLoading] = useState(false);
     const [inputValue, setInputValue] = useState('');
 
-    const debounceRef = { timer: null as ReturnType<typeof setTimeout> | null };
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const search = useCallback(
         (query: string) => {
-            if (debounceRef.timer) clearTimeout(debounceRef.timer);
+            if (debounceRef.current) clearTimeout(debounceRef.current);
 
             if (query.length < 2) {
                 setOptions([]);
                 return;
             }
 
-            debounceRef.timer = setTimeout(async () => {
+            debounceRef.current = setTimeout(async () => {
                 setLoading(true);
                 try {
                     const params = new URLSearchParams({

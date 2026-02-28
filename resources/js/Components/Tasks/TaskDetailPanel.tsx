@@ -184,9 +184,11 @@ export default function TaskDetailPanel({
                                 setTitle(e.target.value);
                                 saveTitle(e.target.value);
                             }}
-                            InputProps={{
-                                sx: { fontSize: '1.25rem', fontWeight: 600 },
-                                disableUnderline: true,
+                            slotProps={{
+                                input: {
+                                    sx: { fontSize: '1.25rem', fontWeight: 600 },
+                                    disableUnderline: true,
+                                },
                             }}
                         />
                         {displayTask.creator && (
@@ -233,10 +235,12 @@ export default function TaskDetailPanel({
                                 setDueDate(e.target.value);
                                 saveDueDate(e.target.value);
                             }}
-                            InputProps={{
-                                startAdornment: <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />,
+                            slotProps={{
+                                input: {
+                                    startAdornment: <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />,
+                                },
+                                inputLabel: { shrink: true },
                             }}
-                            InputLabelProps={{ shrink: true }}
                         />
                     </Box>
 

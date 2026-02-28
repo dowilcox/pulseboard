@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { usePage } from '@inertiajs/react';
 import { useWebSocket } from '@/Contexts/WebSocketContext';
 import type { AppNotification, PageProps } from '@/types';
@@ -21,25 +21,6 @@ export function useNotifications() {
         setUnreadCount(unreadNotificationsCount ?? 0);
     }, [unreadNotificationsCount]);
 
-    // Listen for real-time notification events
-    useEffect(() => {
-        if (!auth.user) return;
-
-        const channel = echo.private(`user.${auth.user.id}`);
-
-        channel.listen('.notification.created', (_event: NotificationEvent) => {
-            setUnreadCount((prev) => prev + 1);
-            // Refresh notifications list if already loaded
-            if (loaded) {
-                fetchNotifications();
-            }
-        });
-
-        return () => {
-            echo.leave(`user.${auth.user.id}`);
-        };
-    }, [auth.user?.id, echo, loaded]);
-
     const fetchNotifications = useCallback(async () => {
         try {
             const res = await fetch(route('notifications.index'), {
@@ -52,6 +33,29 @@ export function useNotifications() {
             // silently fail
         }
     }, []);
+
+    // Track loaded state in a ref to avoid re-subscribing the channel
+    const loadedRef = useRef(loaded);
+    loadedRef.current = loaded;
+
+    // Listen for real-time notification events
+    useEffect(() => {
+        if (!auth.user) return;
+
+        const channel = echo.private(`user.${auth.user.id}`);
+
+        channel.listen('.notification.created', (_event: NotificationEvent) => {
+            setUnreadCount((prev) => prev + 1);
+            // Refresh notifications list if already loaded
+            if (loadedRef.current) {
+                fetchNotifications();
+            }
+        });
+
+        return () => {
+            echo.leave(`user.${auth.user.id}`);
+        };
+    }, [auth.user?.id, echo, fetchNotifications]);
 
     const markRead = useCallback(async (id: string) => {
         try {
