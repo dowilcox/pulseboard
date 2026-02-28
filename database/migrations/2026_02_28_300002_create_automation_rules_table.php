@@ -14,9 +14,9 @@ return new class extends Migration
             $table->string('name');
             $table->boolean('is_active')->default(true);
             $table->string('trigger_type');
-            $table->json('trigger_config')->default('{}');
+            $table->json('trigger_config')->nullable();
             $table->string('action_type');
-            $table->json('action_config')->default('{}');
+            $table->json('action_config')->nullable();
             $table->timestamps();
 
             $table->index(['board_id', 'is_active']);

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('url');
             $table->string('pipeline_status')->nullable();
             $table->string('author')->nullable();
-            $table->json('meta')->default('{}');
+            $table->json('meta')->nullable();
             $table->timestamp('last_synced_at')->nullable();
             $table->timestamps();
 

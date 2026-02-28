@@ -3,7 +3,7 @@
 # PHP 8.3-FPM + Nginx + Node.js 20 LTS
 # ---------------------------------------------------------------------------
 
-FROM php:8.4-fpm
+FROM docker.io/library/php:8.4-fpm
 
 LABEL maintainer="PulseBoard Development"
 
@@ -42,7 +42,7 @@ RUN pecl install redis \
     && docker-php-ext-enable redis
 
 # ---- Composer --------------------------------------------------------------
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=docker.io/library/composer:2 /usr/bin/composer /usr/bin/composer
 
 # ---- Node.js 20 LTS -------------------------------------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \

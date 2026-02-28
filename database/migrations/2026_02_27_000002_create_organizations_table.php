@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->json('settings')->default('{}');
+            $table->json('settings')->nullable();
             $table->timestamps();
         });
     }

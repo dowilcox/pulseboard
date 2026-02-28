@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->foreignUuid('created_by')->constrained('users')->cascadeOnDelete();
-            $table->json('template_data')->default('{}');
+            $table->json('template_data')->nullable();
             $table->timestamps();
         });
     }
