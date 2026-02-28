@@ -86,10 +86,16 @@ class BoardController extends Controller
 
         $board->load('columns');
 
+        $members = $team->members()
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
         return Inertia::render('Boards/Settings', [
             'team' => $team,
             'board' => $board,
             'columns' => $board->columns,
+            'members' => $members,
         ]);
     }
 }

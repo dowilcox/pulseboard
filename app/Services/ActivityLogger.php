@@ -38,6 +38,9 @@ class ActivityLogger
 
         static::dispatchNotifications($task, $action, $changes, $user ?? User::find($userId));
 
+        // Execute automation rules
+        static::executeAutomationRules($task, $action, $changes);
+
         return $activity;
     }
 
@@ -135,6 +138,38 @@ class ActivityLogger
                 type: class_basename($notification),
                 message: $message,
             ));
+        }
+    }
+
+    protected static function executeAutomationRules(Task $task, string $action, array $changes): void
+    {
+        $triggerMap = [
+            'created' => 'task_created',
+            'moved' => 'task_moved',
+            'assigned' => 'task_assigned',
+            'labels_changed' => 'label_added',
+            'gitlab_mr_merged' => 'gitlab_mr_merged',
+        ];
+
+        $triggerType = $triggerMap[$action] ?? null;
+        if (! $triggerType) {
+            return;
+        }
+
+        $context = array_merge($changes, ['task_id' => $task->id]);
+
+        try {
+            \App\Actions\Automation\ExecuteAutomationRules::run(
+                $task->board,
+                $triggerType,
+                $context,
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Automation execution failed', [
+                'task_id' => $task->id,
+                'trigger' => $triggerType,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 }

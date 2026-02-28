@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\Admin\GitlabConnectionController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\AutomationRuleController;
 use App\Http\Controllers\BoardController;
+use App\Http\Controllers\BoardTemplateController;
 use App\Http\Controllers\ColumnController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GitlabProjectController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedFilterController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskGitlabController;
 use App\Http\Controllers\TeamController;
@@ -26,9 +30,8 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -49,6 +52,11 @@ Route::middleware('auth')->group(function () {
         Route::delete('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('gitlab-connections.destroy');
         Route::post('/gitlab-connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'testConnection'])->name('gitlab-connections.test');
     });
+
+    // Board Templates
+    Route::get('/templates', [BoardTemplateController::class, 'index'])->name('templates.index');
+    Route::post('/templates', [BoardTemplateController::class, 'store'])->name('templates.store');
+    Route::delete('/templates/{boardTemplate}', [BoardTemplateController::class, 'destroy'])->name('templates.destroy');
 
     // Teams
     Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
@@ -102,11 +110,32 @@ Route::middleware('auth')->group(function () {
         Route::get('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::delete('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
+        // Team Dashboard
+        Route::get('/teams/{team}/dashboard', [DashboardController::class, 'teamDashboard'])->name('teams.dashboard');
+        Route::get('/teams/{team}/dashboard/stats', [DashboardController::class, 'teamStats'])->name('teams.dashboard.stats');
+        Route::get('/teams/{team}/export/csv', [DashboardController::class, 'exportCsv'])->name('teams.export.csv');
+
         // GitLab Projects
         Route::get('/teams/{team}/gitlab/projects', [GitlabProjectController::class, 'index'])->name('teams.gitlab-projects.index');
         Route::get('/teams/{team}/gitlab/search', [GitlabProjectController::class, 'search'])->name('teams.gitlab-projects.search');
         Route::post('/teams/{team}/gitlab/projects', [GitlabProjectController::class, 'store'])->name('teams.gitlab-projects.store');
         Route::delete('/teams/{team}/gitlab/projects/{gitlabProject}', [GitlabProjectController::class, 'destroy'])->name('teams.gitlab-projects.destroy');
+
+        // Automation Rules
+        Route::get('/teams/{team}/boards/{board}/automation-rules', [AutomationRuleController::class, 'index'])->name('boards.automation-rules.index');
+        Route::post('/teams/{team}/boards/{board}/automation-rules', [AutomationRuleController::class, 'store'])->name('boards.automation-rules.store');
+        Route::put('/teams/{team}/boards/{board}/automation-rules/{automationRule}', [AutomationRuleController::class, 'update'])->name('boards.automation-rules.update');
+        Route::delete('/teams/{team}/boards/{board}/automation-rules/{automationRule}', [AutomationRuleController::class, 'destroy'])->name('boards.automation-rules.destroy');
+
+        // Board Templates
+        Route::post('/teams/{team}/boards/{board}/create-template', [BoardTemplateController::class, 'createFromBoard'])->name('boards.create-template');
+        Route::post('/teams/{team}/templates/{boardTemplate}/create-board', [BoardTemplateController::class, 'createBoardFromTemplate'])->name('teams.templates.create-board');
+
+        // Saved Filters
+        Route::get('/teams/{team}/boards/{board}/filters', [SavedFilterController::class, 'index'])->name('boards.filters.index');
+        Route::post('/teams/{team}/boards/{board}/filters', [SavedFilterController::class, 'store'])->name('boards.filters.store');
+        Route::put('/teams/{team}/boards/{board}/filters/{savedFilter}', [SavedFilterController::class, 'update'])->name('boards.filters.update');
+        Route::delete('/teams/{team}/boards/{board}/filters/{savedFilter}', [SavedFilterController::class, 'destroy'])->name('boards.filters.destroy');
 
         // Labels
         Route::get('/teams/{team}/labels', [LabelController::class, 'index'])->name('labels.index');

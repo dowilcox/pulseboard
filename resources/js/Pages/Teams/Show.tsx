@@ -3,6 +3,7 @@ import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
 import type { Board, Team } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GitlabIcon from '@mui/icons-material/AccountTree';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
@@ -80,6 +81,14 @@ export default function TeamsShow({ team, boards, teams }: Props) {
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<BarChartIcon />}
+                            size="small"
+                            onClick={() => router.get(route('teams.dashboard', team.id))}
+                        >
+                            Dashboard
+                        </Button>
                         <Button
                             variant="outlined"
                             startIcon={<GitlabIcon />}

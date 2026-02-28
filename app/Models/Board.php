@@ -64,6 +64,11 @@ class Board extends Model
         return $this->hasMany(Task::class);
     }
 
+    public function automationRules(): HasMany
+    {
+        return $this->hasMany(AutomationRule::class);
+    }
+
     /**
      * Scope to only active (non-archived) boards.
      */

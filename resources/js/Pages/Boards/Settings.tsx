@@ -1,8 +1,9 @@
+import AutomationRulesPanel from '@/Components/Automation/AutomationRulesPanel';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Link as InertiaLink } from '@inertiajs/react';
 import { useState } from 'react';
-import type { Board, Column, Team } from '@/types';
+import type { Board, Column, Team, User } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -35,9 +36,10 @@ interface Props {
     team: Team;
     teams: Team[];
     boards: Board[];
+    members: User[];
 }
 
-export default function BoardSettings({ board, team, teams, boards }: Props) {
+export default function BoardSettings({ board, team, teams, boards, members }: Props) {
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? '',
@@ -365,6 +367,14 @@ export default function BoardSettings({ board, team, teams, boards }: Props) {
                         </Button>
                     </CardContent>
                 </Card>
+
+                {/* Automation Rules */}
+                <AutomationRulesPanel
+                    teamId={team.id}
+                    boardId={board.id}
+                    columns={board.columns ?? []}
+                    members={members}
+                />
             </Box>
         </AuthenticatedLayout>
     );

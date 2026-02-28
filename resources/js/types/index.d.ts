@@ -206,6 +206,43 @@ export interface TaskGitlabLink {
     gitlab_project?: GitlabProject;
 }
 
+export interface SavedFilter {
+    id: string;
+    board_id: string;
+    user_id: string;
+    name: string;
+    filter_config: Record<string, unknown>;
+    is_default: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface AutomationRule {
+    id: string;
+    board_id: string;
+    name: string;
+    is_active: boolean;
+    trigger_type: string;
+    trigger_config: Record<string, unknown>;
+    action_type: string;
+    action_config: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface BoardTemplate {
+    id: string;
+    name: string;
+    description?: string;
+    created_by: string;
+    template_data: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+    creator?: User;
+}
+
+export type BoardViewMode = 'kanban' | 'list' | 'calendar' | 'timeline' | 'workload';
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
