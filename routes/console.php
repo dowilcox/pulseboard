@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('tasks:send-due-reminders')->hourly();
 Schedule::command('tasks:send-overdue-reminders')->dailyAt('09:00');
 Schedule::command('gitlab:sync-links')->everyFifteenMinutes();
+Schedule::command('tasks:process-recurring')->daily();

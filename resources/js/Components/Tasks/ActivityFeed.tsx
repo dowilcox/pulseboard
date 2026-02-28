@@ -1,5 +1,7 @@
-import type { Activity, Comment, User } from '@/types';
-import { router, useForm } from '@inertiajs/react';
+import RichTextDisplay from '@/Components/Common/RichTextDisplay';
+import RichTextEditor from '@/Components/Common/RichTextEditor';
+import type { Activity, Comment } from '@/types';
+import { router } from '@inertiajs/react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import Avatar from '@mui/material/Avatar';
@@ -7,10 +9,9 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 
 type FeedItem =
     | { type: 'comment'; item: Comment; timestamp: string }
@@ -23,6 +24,7 @@ interface Props {
     boardId: string;
     taskId: string;
     currentUserId: string;
+    uploadImageUrl?: string;
 }
 
 function formatTimestamp(ts: string): string {
@@ -54,6 +56,14 @@ function activityDescription(action: string, changes: Record<string, unknown>): 
             return 'updated labels';
         case 'commented':
             return 'added a comment';
+        case 'completed':
+            return 'marked this task as complete';
+        case 'uncompleted':
+            return 'marked this task as incomplete';
+        case 'dependency_added':
+            return `added a dependency on ${(changes.depends_on_title as string) ?? 'a task'}`;
+        case 'dependency_removed':
+            return `removed a dependency on ${(changes.depends_on_title as string) ?? 'a task'}`;
         case 'field_changed': {
             const fields = Object.keys(changes);
             return `updated ${fields.join(', ')}`;
@@ -63,6 +73,10 @@ function activityDescription(action: string, changes: Record<string, unknown>): 
     }
 }
 
+function isHtml(text: string): boolean {
+    return /<[a-z][\s\S]*>/i.test(text);
+}
+
 export default function ActivityFeed({
     comments,
     activities,
@@ -70,11 +84,12 @@ export default function ActivityFeed({
     boardId,
     taskId,
     currentUserId,
+    uploadImageUrl,
 }: Props) {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editBody, setEditBody] = useState('');
-
-    const { data, setData, post, processing, reset } = useForm({ body: '' });
+    const [newCommentBody, setNewCommentBody] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     // Merge and sort by timestamp
     const feed: FeedItem[] = [
@@ -84,14 +99,22 @@ export default function ActivityFeed({
             .map((a): FeedItem => ({ type: 'activity', item: a, timestamp: a.created_at })),
     ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
-    const handleAddComment = (e: FormEvent) => {
-        e.preventDefault();
-        if (!data.body.trim()) return;
+    const handleAddComment = () => {
+        if (!newCommentBody.trim() || submitting) return;
+        setSubmitting(true);
 
-        post(route('comments.store', [teamId, boardId, taskId]), {
-            preserveScroll: true,
-            onSuccess: () => reset('body'),
-        });
+        router.post(
+            route('comments.store', [teamId, boardId, taskId]),
+            { body: newCommentBody },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setNewCommentBody('');
+                    setSubmitting(false);
+                },
+                onError: () => setSubmitting(false),
+            },
+        );
     };
 
     const handleEditComment = (commentId: string) => {
@@ -101,7 +124,7 @@ export default function ActivityFeed({
             {
                 preserveScroll: true,
                 onSuccess: () => setEditingId(null),
-            }
+            },
         );
     };
 
@@ -163,13 +186,12 @@ export default function ActivityFeed({
                                     </Box>
                                     {isEditing ? (
                                         <Box sx={{ mt: 0.5 }}>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                multiline
-                                                minRows={2}
-                                                value={editBody}
-                                                onChange={(e) => setEditBody(e.target.value)}
+                                            <RichTextEditor
+                                                content={editBody}
+                                                onChange={setEditBody}
+                                                placeholder="Edit comment..."
+                                                uploadImageUrl={uploadImageUrl}
+                                                minHeight={100}
                                             />
                                             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
                                                 <Button
@@ -188,18 +210,25 @@ export default function ActivityFeed({
                                             </Box>
                                         </Box>
                                     ) : (
-                                        <Typography
-                                            variant="body2"
+                                        <Box
                                             sx={{
                                                 mt: 0.5,
                                                 p: 1.5,
                                                 bgcolor: 'action.hover',
                                                 borderRadius: 1,
-                                                whiteSpace: 'pre-wrap',
                                             }}
                                         >
-                                            {comment.body}
-                                        </Typography>
+                                            {isHtml(comment.body) ? (
+                                                <RichTextDisplay content={comment.body} />
+                                            ) : (
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ whiteSpace: 'pre-wrap' }}
+                                                >
+                                                    {comment.body}
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     )}
                                 </Box>
                             </Box>
@@ -227,22 +256,19 @@ export default function ActivityFeed({
             <Divider sx={{ my: 2 }} />
 
             {/* Add comment form */}
-            <Box component="form" onSubmit={handleAddComment}>
-                <TextField
-                    size="small"
-                    fullWidth
-                    multiline
-                    minRows={2}
+            <Box>
+                <RichTextEditor
+                    content={newCommentBody}
+                    onChange={setNewCommentBody}
                     placeholder="Write a comment..."
-                    value={data.body}
-                    onChange={(e) => setData('body', e.target.value)}
-                    disabled={processing}
+                    uploadImageUrl={uploadImageUrl}
+                    minHeight={100}
                 />
                 <Button
-                    type="submit"
                     size="small"
                     variant="contained"
-                    disabled={processing || !data.body.trim()}
+                    disabled={submitting || !newCommentBody.trim()}
+                    onClick={handleAddComment}
                     sx={{ mt: 1 }}
                 >
                     Comment

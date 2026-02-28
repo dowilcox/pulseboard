@@ -20,7 +20,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedFilterController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskDependencyController;
 use App\Http\Controllers\TaskGitlabController;
+use App\Http\Controllers\TaskTemplateController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Foundation\Application;
@@ -129,6 +131,19 @@ Route::middleware('auth')->group(function () {
         Route::patch('/teams/{team}/boards/{board}/tasks/{task}/move', [TaskController::class, 'move'])->name('tasks.move');
         Route::put('/teams/{team}/boards/{board}/tasks/{task}/assignees', [TaskController::class, 'updateAssignees'])->name('tasks.assignees.update');
         Route::put('/teams/{team}/boards/{board}/tasks/{task}/labels', [TaskController::class, 'updateLabels'])->name('tasks.labels.update');
+        Route::patch('/teams/{team}/boards/{board}/tasks/{task}/toggle-complete', [TaskController::class, 'toggleComplete'])->name('tasks.toggle-complete');
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/images', [TaskController::class, 'uploadImage'])->name('tasks.images.store');
+
+        // Task Dependencies
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/dependencies', [TaskDependencyController::class, 'store'])->name('tasks.dependencies.store');
+        Route::delete('/teams/{team}/boards/{board}/tasks/{task}/dependencies/{dependsOnTask}', [TaskDependencyController::class, 'destroy'])->name('tasks.dependencies.destroy');
+
+        // Task Templates
+        Route::get('/teams/{team}/task-templates', [TaskTemplateController::class, 'index'])->name('teams.task-templates.index');
+        Route::post('/teams/{team}/task-templates', [TaskTemplateController::class, 'store'])->name('teams.task-templates.store');
+        Route::delete('/teams/{team}/task-templates/{taskTemplate}', [TaskTemplateController::class, 'destroy'])->name('teams.task-templates.destroy');
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/save-template', [TaskTemplateController::class, 'createFromTask'])->name('tasks.save-template');
+        Route::post('/teams/{team}/boards/{board}/columns/{column}/from-template/{taskTemplate}', [TaskTemplateController::class, 'createTask'])->name('tasks.from-template');
 
         // Task GitLab
         Route::get('/teams/{team}/boards/{board}/tasks/{task}/gitlab', [TaskGitlabController::class, 'index'])->name('tasks.gitlab.index');

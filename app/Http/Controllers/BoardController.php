@@ -22,7 +22,13 @@ class BoardController extends Controller
 
         $board->load(['columns.tasks' => function ($query) {
             $query->with(['assignees', 'labels', 'gitlabLinks'])
-                ->withCount(['comments', 'subtasks'])
+                ->withCount([
+                    'comments',
+                    'subtasks',
+                    'subtasks as completed_subtasks_count' => function ($query) {
+                        $query->whereNotNull('completed_at');
+                    },
+                ])
                 ->orderBy('sort_order');
         }]);
 

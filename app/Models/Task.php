@@ -20,6 +20,8 @@ class Task extends Model
 
     protected $guarded = [];
 
+    protected $appends = ['is_completed', 'checklist_progress'];
+
     protected function casts(): array
     {
         return [
@@ -27,6 +29,10 @@ class Task extends Model
             'priority' => 'string',
             'due_date' => 'date',
             'custom_fields' => 'array',
+            'completed_at' => 'datetime',
+            'checklists' => 'array',
+            'recurrence_config' => 'array',
+            'recurrence_next_at' => 'datetime',
         ];
     }
 
@@ -95,5 +101,43 @@ class Task extends Model
     public function scopeWithPriority(Builder $query, string $priority): Builder
     {
         return $query->where('priority', $priority);
+    }
+
+    public function dependencies(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_dependencies', 'task_id', 'depends_on_task_id')
+            ->withPivot('created_by', 'created_at');
+    }
+
+    public function blockedBy(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_dependencies', 'depends_on_task_id', 'task_id')
+            ->withPivot('created_by', 'created_at');
+    }
+
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->completed_at !== null;
+    }
+
+    public function getChecklistProgressAttribute(): ?array
+    {
+        if (! $this->checklists) {
+            return null;
+        }
+
+        $total = 0;
+        $completed = 0;
+
+        foreach ($this->checklists as $checklist) {
+            foreach ($checklist['items'] ?? [] as $item) {
+                $total++;
+                if ($item['completed'] ?? false) {
+                    $completed++;
+                }
+            }
+        }
+
+        return $total > 0 ? ['completed' => $completed, 'total' => $total] : null;
     }
 }

@@ -7,12 +7,15 @@ use App\Actions\Tasks\CreateTask;
 use App\Actions\Tasks\DeleteTask;
 use App\Actions\Tasks\MoveTask;
 use App\Actions\Tasks\SyncTaskLabels;
+use App\Actions\Tasks\ToggleTaskCompletion;
 use App\Actions\Tasks\UpdateTask;
+use App\Actions\Tasks\UploadTaskImage;
 use App\Http\Requests\MoveTaskRequest;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Label;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
@@ -51,17 +54,43 @@ class TaskController extends Controller
             'subtasks.assignees',
             'subtasks.labels',
             'gitlabLinks.gitlabProject',
+            'dependencies',
+            'blockedBy',
+            'parentTask',
         ]);
-        $task->loadCount(['comments', 'subtasks']);
+        $task->loadCount([
+            'comments',
+            'subtasks',
+            'subtasks as completed_subtasks_count' => function ($query) {
+                $query->whereNotNull('completed_at');
+            },
+        ]);
 
         if (request()->wantsJson()) {
             return response()->json($task);
         }
 
+        $board->load('columns');
+        $members = $team->members()->get();
+        $labels = Label::where('team_id', $team->id)->get();
+
+        $gitlabProjects = $team->gitlabProjects()
+            ->with('connection')
+            ->get();
+
+        // Get all tasks in this board for dependency autocomplete
+        $boardTasks = Task::where('board_id', $board->id)
+            ->select('id', 'task_number', 'title', 'column_id')
+            ->get();
+
         return Inertia::render('Tasks/Show', [
             'team' => $team,
             'board' => $board,
             'task' => $task,
+            'members' => $members,
+            'labels' => $labels,
+            'gitlabProjects' => $gitlabProjects,
+            'boardTasks' => $boardTasks,
         ]);
     }
 
@@ -134,5 +163,33 @@ class TaskController extends Controller
         SyncTaskLabels::run($task, $validated['label_ids']);
 
         return Redirect::back();
+    }
+
+    /**
+     * Toggle task completion status.
+     */
+    public function toggleComplete(Request $request, Team $team, Board $board, Task $task): RedirectResponse
+    {
+        $this->authorize('update', $task);
+
+        ToggleTaskCompletion::run($task, $request->user());
+
+        return Redirect::back();
+    }
+
+    /**
+     * Upload an image for the task (e.g. for rich text editor).
+     */
+    public function uploadImage(Request $request, Team $team, Board $board, Task $task): JsonResponse
+    {
+        $this->authorize('update', $task);
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $url = UploadTaskImage::run($task, $request->file('image'));
+
+        return response()->json(['url' => $url]);
     }
 }

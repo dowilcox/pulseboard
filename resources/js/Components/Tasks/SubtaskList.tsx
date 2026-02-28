@@ -1,5 +1,5 @@
 import type { Task } from '@/types';
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import AddIcon from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
@@ -25,7 +25,7 @@ interface Props {
 export default function SubtaskList({ task, teamId, boardId, columnId, onSubtaskClick }: Props) {
     const subtasks = task.subtasks ?? [];
     const total = subtasks.length;
-    const completed = task.completed_subtasks_count ?? 0;
+    const completed = subtasks.filter((s) => s.completed_at !== null && s.completed_at !== undefined).length;
     const progress = total > 0 ? (completed / total) * 100 : 0;
 
     const [showForm, setShowForm] = useState(false);
@@ -49,6 +49,15 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
         });
     };
 
+    const handleToggleComplete = (subtask: Task, e: React.MouseEvent) => {
+        e.stopPropagation();
+        router.patch(
+            route('tasks.toggle-complete', [teamId, boardId, subtask.id]),
+            {},
+            { preserveScroll: true },
+        );
+    };
+
     return (
         <Box>
             {total > 0 && (
@@ -65,27 +74,38 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
             )}
 
             <List dense disablePadding>
-                {subtasks.map((subtask) => (
-                    <ListItem key={subtask.id} disablePadding>
-                        <ListItemButton
-                            onClick={() => onSubtaskClick?.(subtask)}
-                            dense
-                        >
-                            <ListItemIcon sx={{ minWidth: 32 }}>
-                                <Checkbox
-                                    edge="start"
-                                    size="small"
-                                    disabled
-                                    tabIndex={-1}
+                {subtasks.map((subtask) => {
+                    const isCompleted = subtask.completed_at !== null && subtask.completed_at !== undefined;
+                    return (
+                        <ListItem key={subtask.id} disablePadding>
+                            <ListItemButton
+                                onClick={() => onSubtaskClick?.(subtask)}
+                                dense
+                            >
+                                <ListItemIcon sx={{ minWidth: 32 }}>
+                                    <Checkbox
+                                        edge="start"
+                                        size="small"
+                                        checked={isCompleted}
+                                        onClick={(e) => handleToggleComplete(subtask, e)}
+                                        tabIndex={-1}
+                                        aria-label={`Mark ${subtask.title} as ${isCompleted ? 'incomplete' : 'complete'}`}
+                                    />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={subtask.title}
+                                    primaryTypographyProps={{
+                                        variant: 'body2',
+                                        sx: {
+                                            textDecoration: isCompleted ? 'line-through' : 'none',
+                                            color: isCompleted ? 'text.disabled' : 'text.primary',
+                                        },
+                                    }}
                                 />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={subtask.title}
-                                primaryTypographyProps={{ variant: 'body2' }}
-                            />
-                        </ListItemButton>
-                    </ListItem>
-                ))}
+                            </ListItemButton>
+                        </ListItem>
+                    );
+                })}
             </List>
 
             {showForm ? (

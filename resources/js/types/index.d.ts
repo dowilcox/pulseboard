@@ -80,6 +80,48 @@ export interface Column {
     tasks?: Task[];
 }
 
+export interface ChecklistItem {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface Checklist {
+    id: string;
+    title: string;
+    items: ChecklistItem[];
+}
+
+export interface RecurrenceConfig {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+    interval: number;
+    days_of_week?: number[];
+    day_of_month?: number;
+    end_date?: string;
+}
+
+export interface TaskSummary {
+    id: string;
+    task_number?: number;
+    title: string;
+    column_id: string;
+}
+
+export interface TaskTemplate {
+    id: string;
+    team_id: string;
+    name: string;
+    description_template?: string;
+    priority: 'urgent' | 'high' | 'medium' | 'low' | 'none';
+    effort_estimate?: number;
+    checklists?: Checklist[];
+    label_ids?: string[];
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    creator?: User;
+}
+
 export interface Task {
     id: string;
     board_id: string;
@@ -93,6 +135,10 @@ export interface Task {
     due_date?: string;
     effort_estimate?: number;
     custom_fields: Record<string, unknown>;
+    completed_at?: string;
+    checklists?: Checklist[];
+    recurrence_config?: RecurrenceConfig;
+    recurrence_next_at?: string;
     created_by: string;
     created_at: string;
     updated_at: string;
@@ -100,11 +146,19 @@ export interface Task {
     labels?: Label[];
     subtasks?: Task[];
     creator?: User;
+    parent_task?: Task;
+    dependencies?: Task[];
+    blocked_by?: Task[];
     gitlab_links?: TaskGitlabLink[];
+    comments?: Comment[];
+    activities?: Activity[];
+    attachments?: Attachment[];
     comments_count?: number;
     attachments_count?: number;
     subtasks_count?: number;
     completed_subtasks_count?: number;
+    checklist_progress?: { completed: number; total: number };
+    is_completed?: boolean;
 }
 
 export interface Label {

@@ -1,12 +1,17 @@
 import type { Attachment } from '@/types';
 import { router } from '@inertiajs/react';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import ImageIcon from '@mui/icons-material/Image';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
 import List from '@mui/material/List';
@@ -15,6 +20,7 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import axios from 'axios';
 import { useCallback, useRef, useState } from 'react';
 
 interface Props {
@@ -37,50 +43,76 @@ function isImage(mimeType: string): boolean {
 export default function AttachmentList({ attachments, teamId, boardId, taskId }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [dragOver, setDragOver] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
 
-    const uploadFile = useCallback(
-        (file: File) => {
+    const uploadFiles = useCallback(
+        async (files: FileList | File[]) => {
             setUploading(true);
-            router.post(
-                route('attachments.store', [teamId, boardId, taskId]),
-                { file },
-                {
-                    forceFormData: true,
-                    preserveScroll: true,
-                    onFinish: () => setUploading(false),
+            setUploadProgress(0);
+            const fileArray = Array.from(files);
+            const totalFiles = fileArray.length;
+            let completedFiles = 0;
+
+            for (const file of fileArray) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    await axios.post(
+                        route('attachments.store', [teamId, boardId, taskId]),
+                        formData,
+                        {
+                            headers: { 'Content-Type': 'multipart/form-data' },
+                            onUploadProgress: (progressEvent) => {
+                                const fileProgress = progressEvent.loaded / (progressEvent.total ?? progressEvent.loaded);
+                                const overall = ((completedFiles + fileProgress) / totalFiles) * 100;
+                                setUploadProgress(Math.round(overall));
+                            },
+                        },
+                    );
+                    completedFiles++;
+                } catch {
+                    // Continue with remaining files on error
+                    completedFiles++;
                 }
-            );
+            }
+
+            setUploading(false);
+            setUploadProgress(0);
+            router.reload();
         },
-        [teamId, boardId, taskId]
+        [teamId, boardId, taskId],
     );
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) uploadFile(file);
-        // Reset so same file can be selected again
+        const files = e.target.files;
+        if (files && files.length > 0) uploadFiles(files);
         e.target.value = '';
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setDragOver(false);
-        const file = e.dataTransfer.files[0];
-        if (file) uploadFile(file);
+        const files = e.dataTransfer.files;
+        if (files.length > 0) uploadFiles(files);
     };
 
     const handleDownload = (attachment: Attachment) => {
         window.open(
             route('attachments.download', [teamId, boardId, taskId, attachment.id]),
-            '_blank'
+            '_blank',
         );
     };
 
-    const handleDelete = (attachment: Attachment) => {
+    const handleDeleteConfirm = () => {
+        if (!deleteTarget) return;
         router.delete(
-            route('attachments.destroy', [teamId, boardId, taskId, attachment.id]),
-            { preserveScroll: true }
+            route('attachments.destroy', [teamId, boardId, taskId, deleteTarget.id]),
+            { preserveScroll: true },
         );
+        setDeleteTarget(null);
     };
 
     return (
@@ -112,20 +144,27 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             >
                 <CloudUploadIcon sx={{ fontSize: 28, color: 'text.secondary', mb: 0.5 }} />
                 <Typography variant="body2" color="text.secondary">
-                    Drop a file here or click to upload
+                    Drop files here or click to upload
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
-                    Max 10MB
+                    Max 10MB per file
                 </Typography>
                 <input
                     ref={fileInputRef}
                     type="file"
                     hidden
+                    multiple
                     onChange={handleFileSelect}
                 />
             </Box>
 
-            {uploading && <LinearProgress sx={{ mb: 1 }} />}
+            {uploading && (
+                <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                    sx={{ mb: 1 }}
+                />
+            )}
 
             {/* Attachment list */}
             {attachments.length > 0 && (
@@ -140,6 +179,7 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                                             edge="end"
                                             size="small"
                                             onClick={() => handleDownload(attachment)}
+                                            aria-label={`Download ${attachment.filename}`}
                                         >
                                             <DownloadIcon fontSize="small" />
                                         </IconButton>
@@ -148,8 +188,9 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                                         <IconButton
                                             edge="end"
                                             size="small"
-                                            onClick={() => handleDelete(attachment)}
+                                            onClick={() => setDeleteTarget(attachment)}
                                             color="error"
+                                            aria-label={`Delete ${attachment.filename}`}
                                         >
                                             <DeleteIcon fontSize="small" />
                                         </IconButton>
@@ -160,7 +201,26 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                         >
                             <ListItemIcon sx={{ minWidth: 36 }}>
                                 {isImage(attachment.mime_type) ? (
-                                    <ImageIcon sx={{ color: 'primary.main' }} />
+                                    <Box
+                                        component="img"
+                                        src={route('attachments.download', [teamId, boardId, taskId, attachment.id])}
+                                        alt={attachment.filename}
+                                        sx={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: 0.5,
+                                            objectFit: 'cover',
+                                        }}
+                                        onError={(e) => {
+                                            // Fall back to icon on load failure
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                            target.parentElement?.insertAdjacentHTML(
+                                                'beforeend',
+                                                '<span style="display:flex"><svg class="MuiSvgIcon-root" viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>',
+                                            );
+                                        }}
+                                    />
                                 ) : (
                                     <InsertDriveFileIcon sx={{ color: 'text.secondary' }} />
                                 )}
@@ -181,6 +241,22 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                     No attachments yet.
                 </Typography>
             )}
+
+            {/* Delete confirmation dialog */}
+            <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)}>
+                <DialogTitle>Delete Attachment</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete "{deleteTarget?.filename}"? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

@@ -1,6 +1,5 @@
 import FilterBar from '@/Components/Tasks/FilterBar';
 import PresenceAvatars from '@/Components/Layout/PresenceAvatars';
-import TaskDetailPanel from '@/Components/Tasks/TaskDetailPanel';
 import CalendarView from '@/Components/Views/CalendarView';
 import KanbanView from '@/Components/Views/KanbanView';
 import ListView from '@/Components/Views/ListView';
@@ -20,7 +19,7 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
     board: Board;
@@ -34,25 +33,15 @@ interface Props {
 export default function BoardsShow({ board, team, teams, boards, members, gitlabProjects = [] }: Props) {
     const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-    const [panelOpen, setPanelOpen] = useState(false);
     const [teamLabels, setTeamLabels] = useState<Label[]>([]);
     const [taskFilter, setTaskFilter] = useState<(task: Task) => boolean>(() => () => true);
-    const [lastBoardEvent, setLastBoardEvent] = useState<BoardEvent | null>(null);
     const [viewMode, setViewMode] = useState<BoardViewMode>('kanban');
 
     // Real-time: presence
     const presenceUsers = usePresence(board.id);
 
     // Real-time: board channel listener
-    const selectedTaskRef = useRef(selectedTask);
-    selectedTaskRef.current = selectedTask;
-    const panelOpenRef = useRef(panelOpen);
-    panelOpenRef.current = panelOpen;
-
     const handleBoardEvent = useCallback((event: BoardEvent) => {
-        setLastBoardEvent(event);
-
         switch (event.action) {
             case 'created':
             case 'task.deleted':
@@ -105,13 +94,7 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
     }, [team.id]);
 
     const handleTaskClick = (task: Task) => {
-        setSelectedTask(task);
-        setPanelOpen(true);
-    };
-
-    const handlePanelClose = () => {
-        setPanelOpen(false);
-        setSelectedTask(null);
+        router.visit(route('tasks.show', [team.id, board.id, task.id]));
     };
 
     const renderView = () => {
@@ -174,15 +157,6 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
                         <Breadcrumbs sx={{ mb: 0.5 }}>
                             <Link
                                 component={InertiaLink}
-                                href={route('teams.index')}
-                                underline="hover"
-                                color="text.secondary"
-                                variant="body2"
-                            >
-                                Teams
-                            </Link>
-                            <Link
-                                component={InertiaLink}
                                 href={route('teams.show', team.id)}
                                 underline="hover"
                                 color="text.secondary"
@@ -194,9 +168,6 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
                                 {board.name}
                             </Typography>
                         </Breadcrumbs>
-                        <Typography variant="h6" component="h2" fontWeight={600}>
-                            {board.name}
-                        </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <ViewSwitcher value={viewMode} onChange={setViewMode} />
@@ -226,19 +197,6 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
             )}
 
             {renderView()}
-
-            {/* Task detail panel */}
-            <TaskDetailPanel
-                task={selectedTask}
-                open={panelOpen}
-                onClose={handlePanelClose}
-                teamId={team.id}
-                boardId={board.id}
-                members={members}
-                labels={teamLabels}
-                gitlabProjects={gitlabProjects}
-                lastBoardEvent={lastBoardEvent}
-            />
         </AuthenticatedLayout>
     );
 }
