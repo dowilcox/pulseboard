@@ -285,7 +285,7 @@ export default function GitlabSection({
                         )}
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
                     <Button
                         variant="contained"

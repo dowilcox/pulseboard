@@ -1,3 +1,4 @@
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Team } from '@/types';
 import { Head, usePage } from '@inertiajs/react';
@@ -63,14 +64,6 @@ interface Stats {
     velocity: VelocityItem[];
     cycle_time: number;
 }
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: '#e5e7eb',
-};
 
 const PRIORITY_LABELS: Record<string, string> = {
     urgent: 'Urgent',
@@ -176,7 +169,7 @@ export default function TeamDashboard({ team }: Props) {
                 <Grid container spacing={3}>
                     {/* Summary cards */}
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                             <Typography variant="subtitle2" color="text.secondary">
                                 Total Tasks
                             </Typography>
@@ -186,7 +179,7 @@ export default function TeamDashboard({ team }: Props) {
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                             <Typography variant="subtitle2" color="text.secondary">
                                 Completed
                             </Typography>
@@ -199,7 +192,7 @@ export default function TeamDashboard({ team }: Props) {
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                         <Paper
-                            elevation={1}
+                            variant="outlined"
                             sx={{
                                 p: 2,
                                 textAlign: 'center',
@@ -220,7 +213,7 @@ export default function TeamDashboard({ team }: Props) {
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper elevation={1} sx={{ p: 2, textAlign: 'center' }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
                             <Typography variant="subtitle2" color="text.secondary">
                                 Avg Cycle Time
                             </Typography>
@@ -235,7 +228,7 @@ export default function TeamDashboard({ team }: Props) {
 
                     {/* Tasks by Column */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper elevation={1} sx={{ p: 2 }}>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
                             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                 Tasks by Status
                             </Typography>
@@ -245,7 +238,7 @@ export default function TeamDashboard({ team }: Props) {
                                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                                     <YAxis allowDecimals={false} />
                                     <Tooltip />
-                                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="count" fill={PRIORITY_COLORS.medium} radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </Paper>
@@ -253,7 +246,7 @@ export default function TeamDashboard({ team }: Props) {
 
                     {/* Tasks by Priority */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper elevation={1} sx={{ p: 2 }}>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
                             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                 Tasks by Priority
                             </Typography>
@@ -280,7 +273,7 @@ export default function TeamDashboard({ team }: Props) {
 
                     {/* Velocity */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper elevation={1} sx={{ p: 2 }}>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
                             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                 Velocity (Tasks Completed per Week)
                             </Typography>
@@ -312,7 +305,7 @@ export default function TeamDashboard({ team }: Props) {
 
                     {/* Workload Distribution */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper elevation={1} sx={{ p: 2 }}>
+                        <Paper variant="outlined" sx={{ p: 2 }}>
                             <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                 Workload Distribution
                             </Typography>
@@ -324,7 +317,7 @@ export default function TeamDashboard({ team }: Props) {
                                         <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={100} />
                                         <Tooltip />
                                         <Legend />
-                                        <Bar dataKey="task_count" name="Tasks" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                                        <Bar dataKey="task_count" name="Tasks" fill={PRIORITY_COLORS.medium} radius={[0, 4, 4, 0]} />
                                         <Bar dataKey="total_effort" name="Effort" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
@@ -341,7 +334,7 @@ export default function TeamDashboard({ team }: Props) {
                     {/* Overdue Tasks */}
                     {stats.overdue_tasks.length > 0 && (
                         <Grid size={12}>
-                            <Paper elevation={1} sx={{ p: 2 }}>
+                            <Paper variant="outlined" sx={{ p: 2 }}>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }} color="error">
                                     Overdue Tasks
                                 </Typography>
@@ -410,7 +403,7 @@ export default function TeamDashboard({ team }: Props) {
                     )}
                 </Grid>
             ) : (
-                <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
+                <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
                     <Typography color="text.secondary">
                         Failed to load dashboard stats
                     </Typography>

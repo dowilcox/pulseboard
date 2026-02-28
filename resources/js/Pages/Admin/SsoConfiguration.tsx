@@ -178,13 +178,13 @@ export default function SsoConfigurationPage({ configurations }: Props) {
                     </Box>
 
                     {configurations.length === 0 ? (
-                        <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
+                        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
                             <Typography color="text.secondary">
                                 No SSO providers configured. Add one to enable enterprise single sign-on.
                             </Typography>
                         </Paper>
                     ) : (
-                        <TableContainer component={Paper} elevation={1}>
+                        <TableContainer component={Paper} variant="outlined">
                             <Table>
                                 <TableHead>
                                     <TableRow>
@@ -351,7 +351,7 @@ export default function SsoConfigurationPage({ configurations }: Props) {
                         </Box>
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
                     <Button variant="contained" onClick={handleSubmit} disabled={form.processing}>
                         {editing ? 'Update' : 'Create'}
@@ -367,7 +367,7 @@ export default function SsoConfigurationPage({ configurations }: Props) {
                         This will remove the SSO provider. Users authenticated via this provider will need to reset their password or use another authentication method.
                     </Alert>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
                     <Button
                         variant="contained"

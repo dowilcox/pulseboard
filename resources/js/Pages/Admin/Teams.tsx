@@ -74,13 +74,13 @@ export default function Teams({ teams }: Props) {
 
                 <Box sx={{ flex: 1 }}>
                     {teams.length === 0 ? (
-                        <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
+                        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
                             <Typography color="text.secondary">
                                 No teams have been created yet.
                             </Typography>
                         </Paper>
                     ) : (
-                        <TableContainer component={Paper} elevation={1}>
+                        <TableContainer component={Paper} variant="outlined">
                             <Table>
                                 <TableHead>
                                     <TableRow>

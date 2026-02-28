@@ -95,7 +95,7 @@ export default function TeamsIndex({ teams }: Props) {
                 <Grid container spacing={3}>
                     {teams.map((team) => (
                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={team.id}>
-                            <Card elevation={1}>
+                            <Card variant="outlined" sx={{ transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { borderColor: 'action.selected' } }}>
                                 <CardActionArea
                                     onClick={() => router.get(route('teams.show', team.id))}
                                 >
@@ -181,7 +181,7 @@ export default function TeamsIndex({ teams }: Props) {
                             helperText={errors.description}
                         />
                     </DialogContent>
-                    <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <DialogActions sx={{ px: 3, py: 2 }}>
                         <Button onClick={handleClose}>Cancel</Button>
                         <Button type="submit" variant="contained" disabled={processing}>
                             Create

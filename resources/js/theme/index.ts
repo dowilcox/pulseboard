@@ -2,13 +2,16 @@ import { createTheme, type ThemeOptions } from '@mui/material/styles';
 
 const commonOptions: ThemeOptions = {
     typography: {
-        fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+        fontFamily: '"Inter", "Helvetica Neue", "Arial", sans-serif',
     },
     shape: {
-        borderRadius: 8,
+        borderRadius: 10,
     },
     components: {
         MuiButton: {
+            defaultProps: {
+                disableElevation: true,
+            },
             styleOverrides: {
                 root: {
                     textTransform: 'none',
@@ -18,7 +21,14 @@ const commonOptions: ThemeOptions = {
         MuiCard: {
             styleOverrides: {
                 root: {
-                    borderRadius: 8,
+                    borderRadius: 10,
+                },
+            },
+        },
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: 12,
                 },
             },
         },
@@ -36,7 +46,7 @@ export const lightTheme = createTheme({
             main: '#ec4899', // pink
         },
         background: {
-            default: '#f5f5f5',
+            default: '#fafafa',
             paper: '#ffffff',
         },
     },
@@ -53,8 +63,8 @@ export const darkTheme = createTheme({
             main: '#f472b6', // lighter pink for dark mode
         },
         background: {
-            default: '#121212',
-            paper: '#1e1e1e',
+            default: '#0f0f0f',
+            paper: '#181818',
         },
     },
 });

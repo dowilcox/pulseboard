@@ -126,7 +126,7 @@ export default function AutomationRulesPanel({ teamId, boardId, columns, members
     const actionLabel = (type: string) => ACTION_TYPES.find((a) => a.value === type)?.label ?? type;
 
     return (
-        <Card elevation={1}>
+        <Card variant="outlined">
             <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="subtitle1" fontWeight={600}>
@@ -345,7 +345,7 @@ export default function AutomationRulesPanel({ teamId, boardId, columns, members
                         </Box>
                     )}
                 </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
                     <Button
                         variant="contained"

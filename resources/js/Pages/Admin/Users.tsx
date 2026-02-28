@@ -165,7 +165,7 @@ export default function Users({ users, filters }: Props) {
                         </Button>
                     </Box>
 
-                    <TableContainer component={Paper} elevation={1}>
+                    <TableContainer component={Paper} variant="outlined">
                         <Table>
                             <TableHead>
                                 <TableRow>
@@ -310,7 +310,7 @@ export default function Users({ users, filters }: Props) {
                         />
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
                     <Button
                         variant="contained"
@@ -342,7 +342,7 @@ export default function Users({ users, filters }: Props) {
                         </Alert>
                     )}
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setConfirmAction(null)}>Cancel</Button>
                     <Button
                         variant="contained"

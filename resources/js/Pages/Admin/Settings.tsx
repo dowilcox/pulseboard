@@ -37,7 +37,7 @@ export default function Settings({ organization }: Props) {
                 <AdminNav />
 
                 <Box sx={{ flex: 1, maxWidth: 600 }}>
-                    <Paper elevation={1} sx={{ p: 3 }}>
+                    <Paper variant="outlined" sx={{ p: 3 }}>
                         <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                             Organization Details
                         </Typography>

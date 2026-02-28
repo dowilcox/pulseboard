@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Column, Task } from '@/types';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
@@ -7,15 +8,6 @@ import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useState } from 'react';
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: '#e5e7eb',
-};
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 

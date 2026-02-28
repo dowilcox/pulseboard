@@ -26,30 +26,30 @@ export default function Edit({
             <Head title="Profile" />
 
             <Box sx={{ maxWidth: 'lg', mx: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <AuthProviderInfo />
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <UpdateProfileInformationForm
                         mustVerifyEmail={mustVerifyEmail}
                         status={status}
                     />
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <UpdatePasswordForm />
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <ThemePreferenceForm />
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <NotificationPreferencesForm />
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: { xs: 3, sm: 4 } }}>
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <DeleteUserForm />
                 </Paper>
             </Box>

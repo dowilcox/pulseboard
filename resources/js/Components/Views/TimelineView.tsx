@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Column, Task } from '@/types';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -6,14 +7,6 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: '#e5e7eb',
-};
 
 interface Props {
     columns: Column[];

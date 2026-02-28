@@ -1,3 +1,4 @@
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Task } from '@/types';
 import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
 import PipelineBadge from '@/Components/Gitlab/PipelineBadge';
@@ -9,14 +10,6 @@ import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: 'transparent',
-};
-
 interface Props {
     task: Task;
     onClick?: (task: Task) => void;
@@ -27,7 +20,7 @@ export default function TaskCard({ task, onClick }: Props) {
 
     return (
         <Paper
-            elevation={1}
+            variant="outlined"
             role="button"
             tabIndex={0}
             aria-label={`${task.title}${task.priority !== 'none' ? `, ${task.priority} priority` : ''}`}
@@ -42,15 +35,16 @@ export default function TaskCard({ task, onClick }: Props) {
                 p: 1.5,
                 cursor: 'pointer',
                 borderLeft: `3px solid ${priorityColor}`,
+                transition: 'border-color 150ms ease, background-color 150ms ease',
                 '&:hover': {
                     bgcolor: 'action.hover',
+                    borderColor: 'action.selected',
                 },
                 '&:focus-visible': {
                     outline: '2px solid',
                     outlineColor: 'primary.main',
                     outlineOffset: 1,
                 },
-                transition: 'background-color 0.15s',
             }}
         >
             {/* Labels */}

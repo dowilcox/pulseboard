@@ -177,7 +177,7 @@ export default function BoardSettings({ board, team, teams, boards, members }: P
 
             <Box sx={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Board details */}
-                <Card elevation={1}>
+                <Card variant="outlined">
                     <CardContent>
                         <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                             Board Details
@@ -216,7 +216,7 @@ export default function BoardSettings({ board, team, teams, boards, members }: P
                 </Card>
 
                 {/* Column management */}
-                <Card elevation={1}>
+                <Card variant="outlined">
                     <CardContent>
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                             <Typography variant="subtitle1" fontWeight={600}>

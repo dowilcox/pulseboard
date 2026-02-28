@@ -34,13 +34,13 @@ export default function GuestLayout({ children }: PropsWithChildren) {
             </Box>
 
             <Paper
-                elevation={3}
+                elevation={2}
                 sx={{
                     width: '100%',
-                    maxWidth: 448,
+                    maxWidth: 440,
                     px: 4,
-                    py: 3,
-                    borderRadius: 2,
+                    py: 4,
+                    borderRadius: 1.5,
                 }}
             >
                 {children}

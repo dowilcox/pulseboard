@@ -87,13 +87,13 @@ export default function GitlabProjects({ team, gitlabProjects, connections }: Pr
             )}
 
             {gitlabProjects.length === 0 ? (
-                <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
                     <Typography color="text.secondary">
                         No GitLab projects linked to this team yet.
                     </Typography>
                 </Paper>
             ) : (
-                <Paper elevation={1}>
+                <Paper variant="outlined">
                     <List>
                         {gitlabProjects.map((project, index) => (
                             <ListItem
@@ -181,7 +181,7 @@ export default function GitlabProjects({ team, gitlabProjects, connections }: Pr
                         )}
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setLinkDialogOpen(false)}>Cancel</Button>
                 </DialogActions>
             </Dialog>
@@ -195,7 +195,7 @@ export default function GitlabProjects({ team, gitlabProjects, connections }: Pr
                         webhook will be removed from GitLab.
                     </Alert>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
                     <Button
                         variant="contained"

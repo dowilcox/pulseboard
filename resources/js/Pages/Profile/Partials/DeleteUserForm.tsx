@@ -104,7 +104,7 @@ export default function DeleteUserForm({
                         />
                     </DialogContent>
 
-                    <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <DialogActions sx={{ px: 3, py: 2 }}>
                         <Button onClick={closeModal}>
                             Cancel
                         </Button>

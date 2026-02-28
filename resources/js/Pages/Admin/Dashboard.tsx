@@ -48,7 +48,7 @@ export default function Dashboard({ stats }: Props) {
                     <Grid container spacing={3} sx={{ mb: 4 }}>
                         {statCards.map((card) => (
                             <Grid key={card.key} size={{ xs: 12, sm: 6, md: 4 }}>
-                                <Card elevation={1}>
+                                <Card variant="outlined">
                                     <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                         <Box sx={{ color: 'primary.main' }}>
                                             {card.icon}
@@ -75,8 +75,8 @@ export default function Dashboard({ stats }: Props) {
                             <Card
                                 component={Link}
                                 href={route('admin.users.index')}
-                                elevation={1}
-                                sx={{ textDecoration: 'none', display: 'block', '&:hover': { bgcolor: 'action.hover' } }}
+                                variant="outlined"
+                                sx={{ textDecoration: 'none', display: 'block', transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { bgcolor: 'action.hover', borderColor: 'action.selected' } }}
                             >
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight={600}>
@@ -92,8 +92,8 @@ export default function Dashboard({ stats }: Props) {
                             <Card
                                 component={Link}
                                 href={route('admin.teams.index')}
-                                elevation={1}
-                                sx={{ textDecoration: 'none', display: 'block', '&:hover': { bgcolor: 'action.hover' } }}
+                                variant="outlined"
+                                sx={{ textDecoration: 'none', display: 'block', transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { bgcolor: 'action.hover', borderColor: 'action.selected' } }}
                             >
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight={600}>
@@ -109,8 +109,8 @@ export default function Dashboard({ stats }: Props) {
                             <Card
                                 component={Link}
                                 href={route('admin.settings.index')}
-                                elevation={1}
-                                sx={{ textDecoration: 'none', display: 'block', '&:hover': { bgcolor: 'action.hover' } }}
+                                variant="outlined"
+                                sx={{ textDecoration: 'none', display: 'block', transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { bgcolor: 'action.hover', borderColor: 'action.selected' } }}
                             >
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight={600}>

@@ -151,9 +151,11 @@ export default function AuthenticatedLayout({
                 <AppBar
                     position="sticky"
                     color="default"
-                    elevation={1}
+                    elevation={0}
                     sx={{
                         bgcolor: 'background.paper',
+                        borderBottom: 1,
+                        borderColor: 'divider',
                     }}
                 >
                     {navigating && (

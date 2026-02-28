@@ -1,3 +1,4 @@
+import { PRIORITY_OPTIONS } from '@/constants/priorities';
 import type { Label, Task, User } from '@/types';
 import ClearIcon from '@mui/icons-material/Clear';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -31,14 +32,6 @@ const EMPTY_FILTERS: Filters = {
     dueDateFrom: '',
     dueDateTo: '',
 };
-
-const PRIORITY_OPTIONS = [
-    { value: 'urgent', label: 'Urgent', color: '#d32f2f' },
-    { value: 'high', label: 'High', color: '#ed6c02' },
-    { value: 'medium', label: 'Medium', color: '#1976d2' },
-    { value: 'low', label: 'Low', color: '#9e9e9e' },
-    { value: 'none', label: 'None', color: 'transparent' },
-];
 
 interface Props {
     members: User[];

@@ -1,3 +1,4 @@
+import { PRIORITY_OPTIONS } from '@/constants/priorities';
 import type { Task } from '@/types';
 import { router } from '@inertiajs/react';
 import FlagIcon from '@mui/icons-material/Flag';
@@ -5,14 +6,6 @@ import Box from '@mui/material/Box';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import type { SelectChangeEvent } from '@mui/material/Select';
-
-const PRIORITIES = [
-    { value: 'urgent', label: 'Urgent', color: '#ef4444' },
-    { value: 'high', label: 'High', color: '#f97316' },
-    { value: 'medium', label: 'Medium', color: '#3b82f6' },
-    { value: 'low', label: 'Low', color: '#9ca3af' },
-    { value: 'none', label: 'None', color: '#d1d5db' },
-] as const;
 
 interface Props {
     task: Task;
@@ -36,7 +29,7 @@ export default function PrioritySelector({ task, teamId, boardId }: Props) {
             size="small"
             fullWidth
             renderValue={(value) => {
-                const p = PRIORITIES.find((pr) => pr.value === value);
+                const p = PRIORITY_OPTIONS.find((pr) => pr.value === value);
                 return (
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <FlagIcon sx={{ fontSize: 16, color: p?.color }} />
@@ -45,7 +38,7 @@ export default function PrioritySelector({ task, teamId, boardId }: Props) {
                 );
             }}
         >
-            {PRIORITIES.map((p) => (
+            {PRIORITY_OPTIONS.map((p) => (
                 <MenuItem key={p.value} value={p.value}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <FlagIcon sx={{ fontSize: 16, color: p.color }} />

@@ -1,3 +1,4 @@
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Task } from '@/types';
 import { Head, router } from '@inertiajs/react';
@@ -16,14 +17,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useMemo } from 'react';
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: 'transparent',
-};
 
 interface MyTask extends Task {
     board?: { id: string; name: string; team?: { id: string; name: string; slug: string } };
@@ -76,7 +69,7 @@ export default function Dashboard({ myTasks }: Props) {
 
             {/* Summary stats */}
             <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                <Paper elevation={1} sx={{ p: 2, flex: 1, minWidth: 180 }}>
+                <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 180 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <AssignmentIcon color="primary" fontSize="small" />
                         <Typography variant="subtitle2" color="text.secondary">
@@ -89,7 +82,7 @@ export default function Dashboard({ myTasks }: Props) {
                 </Paper>
 
                 <Paper
-                    elevation={1}
+                    variant="outlined"
                     sx={{
                         p: 2,
                         flex: 1,
@@ -109,7 +102,7 @@ export default function Dashboard({ myTasks }: Props) {
                     </Typography>
                 </Paper>
 
-                <Paper elevation={1} sx={{ p: 2, flex: 1, minWidth: 180 }}>
+                <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 180 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <AssignmentIcon color="success" fontSize="small" />
                         <Typography variant="subtitle2" color="text.secondary">
@@ -127,7 +120,7 @@ export default function Dashboard({ myTasks }: Props) {
                 My Tasks
             </Typography>
 
-            <TableContainer component={Paper} elevation={1}>
+            <TableContainer component={Paper} variant="outlined">
                 <Table size="small">
                     <TableHead>
                         <TableRow>

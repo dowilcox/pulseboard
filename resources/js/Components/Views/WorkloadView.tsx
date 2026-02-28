@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Column, Task, User } from '@/types';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -6,14 +7,6 @@ import Chip from '@mui/material/Chip';
 import LinearProgress from '@mui/material/LinearProgress';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: '#e5e7eb',
-};
 
 interface Props {
     columns: Column[];
@@ -107,7 +100,7 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
             ) : (
                 <>
                     {workloads.workloads.map((wl) => (
-                        <Paper key={wl.user.id} elevation={1} sx={{ p: 2 }}>
+                        <Paper key={wl.user.id} variant="outlined" sx={{ p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
                                 <Avatar
                                     alt={wl.user.name}
@@ -173,7 +166,7 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
 
                     {/* Unassigned tasks */}
                     {workloads.unassigned.length > 0 && (
-                        <Paper elevation={1} sx={{ p: 2, bgcolor: 'action.hover' }}>
+                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
                             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
                                 Unassigned ({workloads.unassigned.length})
                             </Typography>

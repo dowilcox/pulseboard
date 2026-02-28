@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Column, Task } from '@/types';
 import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
 import Avatar from '@mui/material/Avatar';
@@ -14,14 +15,6 @@ import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-
-const PRIORITY_COLORS: Record<string, string> = {
-    urgent: '#ef4444',
-    high: '#f97316',
-    medium: '#3b82f6',
-    low: '#9ca3af',
-    none: 'transparent',
-};
 
 type SortKey = 'task_number' | 'title' | 'priority' | 'due_date' | 'column' | 'assignees';
 type SortDir = 'asc' | 'desc';
@@ -112,7 +105,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
     );
 
     return (
-        <TableContainer component={Paper} elevation={1}>
+        <TableContainer component={Paper} variant="outlined">
             <Table size="small">
                 <TableHead>
                     <TableRow>

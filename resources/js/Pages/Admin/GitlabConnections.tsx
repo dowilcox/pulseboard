@@ -154,13 +154,13 @@ export default function GitlabConnections({ connections }: Props) {
             </Box>
 
             {connections.length === 0 ? (
-                <Paper elevation={1} sx={{ p: 4, textAlign: 'center' }}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
                     <Typography color="text.secondary">
                         No GitLab connections configured yet. Add one to get started.
                     </Typography>
                 </Paper>
             ) : (
-                <TableContainer component={Paper} elevation={1}>
+                <TableContainer component={Paper} variant="outlined">
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -299,7 +299,7 @@ export default function GitlabConnections({ connections }: Props) {
                         </Box>
                     </Box>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
                     <Button
                         variant="contained"
@@ -319,7 +319,7 @@ export default function GitlabConnections({ connections }: Props) {
                         This will remove the connection and all linked projects. Webhooks will be cleaned up from GitLab.
                     </Alert>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
                     <Button
                         variant="contained"
