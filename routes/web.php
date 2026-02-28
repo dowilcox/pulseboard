@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\ColumnController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\LabelController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Foundation\Application;
@@ -53,6 +57,31 @@ Route::middleware('auth')->group(function () {
         Route::put('/teams/{team}/boards/{board}/columns/{column}', [ColumnController::class, 'update'])->name('teams.boards.columns.update');
         Route::put('/teams/{team}/boards/{board}/columns', [ColumnController::class, 'reorder'])->name('teams.boards.columns.reorder');
         Route::delete('/teams/{team}/boards/{board}/columns/{column}', [ColumnController::class, 'destroy'])->name('teams.boards.columns.destroy');
+
+        // Tasks
+        Route::post('/teams/{team}/boards/{board}/columns/{column}/tasks', [TaskController::class, 'store'])->name('tasks.store');
+        Route::get('/teams/{team}/boards/{board}/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
+        Route::put('/teams/{team}/boards/{board}/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+        Route::delete('/teams/{team}/boards/{board}/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+        Route::patch('/teams/{team}/boards/{board}/tasks/{task}/move', [TaskController::class, 'move'])->name('tasks.move');
+        Route::put('/teams/{team}/boards/{board}/tasks/{task}/assignees', [TaskController::class, 'updateAssignees'])->name('tasks.assignees.update');
+        Route::put('/teams/{team}/boards/{board}/tasks/{task}/labels', [TaskController::class, 'updateLabels'])->name('tasks.labels.update');
+
+        // Comments
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
+        Route::put('/teams/{team}/boards/{board}/tasks/{task}/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+        Route::delete('/teams/{team}/boards/{board}/tasks/{task}/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+        // Attachments
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
+        Route::get('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
+        Route::delete('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+        // Labels
+        Route::get('/teams/{team}/labels', [LabelController::class, 'index'])->name('labels.index');
+        Route::post('/teams/{team}/labels', [LabelController::class, 'store'])->name('labels.store');
+        Route::put('/teams/{team}/labels/{label}', [LabelController::class, 'update'])->name('labels.update');
+        Route::delete('/teams/{team}/labels/{label}', [LabelController::class, 'destroy'])->name('labels.destroy');
     });
 });
 

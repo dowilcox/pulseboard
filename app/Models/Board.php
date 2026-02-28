@@ -59,12 +59,9 @@ class Board extends Model
         return $this->hasMany(Column::class)->orderBy('sort_order');
     }
 
-    /**
-     * The tasks on this board (through columns).
-     */
     public function tasks(): HasMany
     {
-        return $this->hasMany(Column::class);
+        return $this->hasMany(Task::class);
     }
 
     /**

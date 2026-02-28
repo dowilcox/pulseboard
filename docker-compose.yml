@@ -67,6 +67,27 @@ services:
     networks:
       - pulseboard
 
+  test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    container_name: pulseboard-test
+    volumes:
+      - .:/var/www/html
+    environment:
+      - APP_ENV=testing
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=:memory:
+      - CACHE_STORE=array
+      - SESSION_DRIVER=array
+      - QUEUE_CONNECTION=sync
+    working_dir: /var/www/html
+    entrypoint: ["php", "artisan", "test"]
+    profiles:
+      - test
+    networks:
+      - pulseboard
+
 volumes:
   mysql-data:
     driver: local

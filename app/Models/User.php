@@ -86,4 +86,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(TeamMember::class);
     }
+
+    /**
+     * The tasks assigned to this user.
+     */
+    public function assignedTasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_assignees')
+            ->withPivot('assigned_at', 'assigned_by')
+            ->using(TaskAssignee::class);
+    }
 }

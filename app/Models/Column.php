@@ -51,15 +51,8 @@ class Column extends Model
         return $this->belongsTo(Board::class);
     }
 
-    /**
-     * The tasks in this column, ordered by sort_order.
-     *
-     * Note: Task model will be created in a later phase.
-     */
     public function tasks(): HasMany
     {
-        // This will reference a Task model created in a later phase.
-        // For now, it's defined to document the intended relationship.
-        return $this->hasMany('App\Models\Task')->orderBy('sort_order');
+        return $this->hasMany(Task::class)->orderBy('sort_order');
     }
 }

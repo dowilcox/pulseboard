@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------------
-# PulseBoard Development Container
-# PHP 8.3-FPM + Nginx + Node.js 20 LTS
+# PulseBoard Development + Testing Container
+# PHP 8.3-FPM with all extensions needed for dev/test
 # ---------------------------------------------------------------------------
 
 FROM php:8.4-fpm
@@ -15,11 +15,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libfreetype6-dev \
         libjpeg62-turbo-dev \
         libpng-dev \
-        libwebp-dev \
         libsqlite3-dev \
+        libwebp-dev \
         libzip-dev \
-        nginx \
-        supervisor \
         unzip \
         zip \
     && rm -rf /var/lib/apt/lists/*
@@ -49,14 +47,6 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# ---- Configuration files ---------------------------------------------------
-COPY docker/nginx.conf   /etc/nginx/sites-available/default
-COPY docker/php.ini      /usr/local/etc/php/conf.d/99-custom.ini
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/entrypoint.sh    /usr/local/bin/entrypoint.sh
-
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # ---- Working directory -----------------------------------------------------
 WORKDIR /var/www/html
 
@@ -68,12 +58,3 @@ RUN groupadd -g 1000 appuser \
 RUN mkdir -p /var/www/html/storage/logs \
     && mkdir -p /var/www/html/bootstrap/cache \
     && chown -R appuser:appuser /var/www/html
-
-# ---- Remove default Nginx site & pid path fix ------------------------------
-RUN rm -f /etc/nginx/sites-enabled/default \
-    && ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default \
-    && mkdir -p /run/nginx
-
-EXPOSE 80
-
-ENTRYPOINT ["entrypoint.sh"]

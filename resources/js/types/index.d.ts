@@ -83,6 +83,7 @@ export interface Task {
     assignees?: User[];
     labels?: Label[];
     subtasks?: Task[];
+    creator?: User;
     comments_count?: number;
     attachments_count?: number;
     subtasks_count?: number;
@@ -113,6 +114,18 @@ export interface Activity {
     user_id?: string;
     action: string;
     changes: Record<string, unknown>;
+    created_at: string;
+    user?: User;
+}
+
+export interface Attachment {
+    id: string;
+    task_id: string;
+    user_id: string;
+    filename: string;
+    file_path: string;
+    file_size: number;
+    mime_type: string;
     created_at: string;
     user?: User;
 }

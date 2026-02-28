@@ -41,9 +41,6 @@ class Team extends Model
         ];
     }
 
-    /**
-     * The members belonging to this team.
-     */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'team_members')

@@ -16,19 +16,23 @@ use Inertia\Response;
 
 class BoardController extends Controller
 {
-    /**
-     * Display the board with its columns.
-     */
     public function show(Team $team, Board $board): Response
     {
         $this->authorize('view', $board);
 
-        $board->load('columns');
+        $board->load(['columns.tasks' => function ($query) {
+            $query->with(['assignees', 'labels'])
+                ->withCount(['comments', 'subtasks'])
+                ->orderBy('sort_order');
+        }]);
+
+        $members = $team->members()->get();
 
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
             'columns' => $board->columns,
+            'members' => $members,
         ]);
     }
 
