@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GitlabConnectionController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\SsoConfigurationController;
+use App\Http\Controllers\Admin\TeamController as AdminTeamController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\Auth\SamlController;
 use App\Http\Controllers\AutomationRuleController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardTemplateController;
@@ -30,6 +36,11 @@ Route::get('/', function () {
     ]);
 });
 
+// SAML SSO routes (no auth required)
+Route::get('/auth/saml/login', [SamlController::class, 'redirect'])->name('saml.login');
+Route::post('/auth/saml/acs', [SamlController::class, 'acs'])->name('saml.acs');
+Route::get('/auth/saml/metadata', [SamlController::class, 'metadata'])->name('saml.metadata');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -46,11 +57,36 @@ Route::middleware('auth')->group(function () {
 
     // Admin
     Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Users
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/toggle-active', [AdminUserController::class, 'toggleActive'])->name('users.toggle-active');
+        Route::post('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
+
+        // Teams
+        Route::get('/teams', [AdminTeamController::class, 'index'])->name('teams.index');
+        Route::get('/teams/{team}', [AdminTeamController::class, 'show'])->name('teams.show');
+
+        // GitLab Connections
         Route::get('/gitlab-connections', [GitlabConnectionController::class, 'index'])->name('gitlab-connections.index');
         Route::post('/gitlab-connections', [GitlabConnectionController::class, 'store'])->name('gitlab-connections.store');
         Route::put('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'update'])->name('gitlab-connections.update');
         Route::delete('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('gitlab-connections.destroy');
         Route::post('/gitlab-connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'testConnection'])->name('gitlab-connections.test');
+
+        // SSO Configuration
+        Route::get('/sso', [SsoConfigurationController::class, 'index'])->name('sso.index');
+        Route::post('/sso', [SsoConfigurationController::class, 'store'])->name('sso.store');
+        Route::put('/sso/{ssoConfiguration}', [SsoConfigurationController::class, 'update'])->name('sso.update');
+        Route::delete('/sso/{ssoConfiguration}', [SsoConfigurationController::class, 'destroy'])->name('sso.destroy');
+        Route::post('/sso/{ssoConfiguration}/test', [SsoConfigurationController::class, 'test'])->name('sso.test');
+
+        // Settings
+        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
     });
 
     // Board Templates

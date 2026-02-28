@@ -13,6 +13,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "lorisleiva/laravel-actions": "^2.9",
+        "onelogin/php-saml": "^4.3",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {

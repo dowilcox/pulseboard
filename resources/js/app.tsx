@@ -6,6 +6,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { ThemeContextProvider } from '@/Contexts/ThemeContext';
 import { WebSocketProvider } from '@/Contexts/WebSocketContext';
+import ErrorBoundary from '@/Components/Common/ErrorBoundary';
 import CssBaseline from '@mui/material/CssBaseline';
 
 const appName = import.meta.env.VITE_APP_NAME || 'PulseBoard';
@@ -23,9 +24,11 @@ createInertiaApp({
         root.render(
             <ThemeContextProvider>
                 <CssBaseline />
-                <WebSocketProvider>
-                    <App {...props} />
-                </WebSocketProvider>
+                <ErrorBoundary>
+                    <WebSocketProvider>
+                        <App {...props} />
+                    </WebSocketProvider>
+                </ErrorBoundary>
             </ThemeContextProvider>
         );
     },

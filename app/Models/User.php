@@ -42,11 +42,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -55,6 +50,7 @@ class User extends Authenticatable
             'is_admin' => 'boolean',
             'email_notification_prefs' => 'array',
             'theme_preference' => 'string',
+            'deactivated_at' => 'datetime',
         ];
     }
 
@@ -109,5 +105,13 @@ class User extends Authenticatable
         }
 
         return (bool) ($prefs[$type][$channel] ?? true);
+    }
+
+    /**
+     * Scope: only active (non-deactivated) users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereNull('deactivated_at');
     }
 }

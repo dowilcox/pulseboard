@@ -52,11 +52,12 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
             <Divider />
 
             {/* My Tasks link */}
-            <Box component="nav" sx={{ pt: 1 }}>
+            <Box component="nav" aria-label="Main navigation" sx={{ pt: 1 }}>
                 <MenuItem
                     component={Link}
                     href={route('dashboard')}
                     selected={route().current('dashboard')}
+                    aria-current={route().current('dashboard') ? 'page' : undefined}
                     sx={{ py: 1.5, px: 2.5 }}
                 >
                     <ListItemIcon>
@@ -69,6 +70,7 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                     component={Link}
                     href={route('teams.index')}
                     selected={route().current('teams.index')}
+                    aria-current={route().current('teams.index') ? 'page' : undefined}
                     sx={{ py: 1.5, px: 2.5 }}
                 >
                     <ListItemIcon>
@@ -80,8 +82,9 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                 {auth.user.is_admin && (
                     <MenuItem
                         component={Link}
-                        href={route('admin.gitlab-connections.index')}
+                        href={route('admin.dashboard')}
                         selected={route().current('admin.*')}
+                        aria-current={route().current('admin.*') ? 'page' : undefined}
                         sx={{ py: 1.5, px: 2.5 }}
                     >
                         <ListItemIcon>

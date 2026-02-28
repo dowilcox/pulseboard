@@ -25,7 +25,14 @@ export default function SortableTaskCard({ task, onClick }: Props) {
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
+            aria-roledescription="sortable item"
+            aria-label={`Draggable task: ${task.title}`}
+        >
             <TaskCard task={task} onClick={onClick} />
         </div>
     );

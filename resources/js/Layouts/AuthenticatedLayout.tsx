@@ -1,8 +1,9 @@
 import { Link, usePage, router } from '@inertiajs/react';
-import { type PropsWithChildren, type ReactNode, useState } from 'react';
+import { type PropsWithChildren, type ReactNode, useEffect, useState } from 'react';
 import type { Board, PageProps, Team } from '@/types';
 import Sidebar from '@/Components/Layout/Sidebar';
 import AppBar from '@mui/material/AppBar';
+import LinearProgress from '@mui/material/LinearProgress';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
@@ -50,6 +51,19 @@ export default function AuthenticatedLayout({
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [navigating, setNavigating] = useState(false);
+
+    useEffect(() => {
+        const startHandler = () => setNavigating(true);
+        const finishHandler = () => setNavigating(false);
+
+        router.on('start', startHandler);
+        router.on('finish', finishHandler);
+
+        return () => {
+            // Inertia event handlers are cleaned up by returning the removal function
+        };
+    }, []);
 
     const menuOpen = Boolean(anchorEl);
 
@@ -144,6 +158,18 @@ export default function AuthenticatedLayout({
                         bgcolor: 'background.paper',
                     }}
                 >
+                    {navigating && (
+                        <LinearProgress
+                            sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                zIndex: 1,
+                                height: 2,
+                            }}
+                        />
+                    )}
                     <Toolbar>
                         <IconButton
                             color="inherit"
@@ -239,6 +265,7 @@ export default function AuthenticatedLayout({
                 {/* Page content */}
                 <Box
                     component="main"
+                    role="main"
                     sx={{
                         flexGrow: 1,
                         bgcolor: 'background.default',

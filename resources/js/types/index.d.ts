@@ -20,6 +20,7 @@ export interface User {
     is_admin: boolean;
     theme_preference: 'light' | 'dark' | 'system';
     email_notification_prefs?: NotificationPreferences;
+    deactivated_at?: string;
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
@@ -239,6 +240,23 @@ export interface BoardTemplate {
     created_at: string;
     updated_at: string;
     creator?: User;
+}
+
+export interface SsoConfiguration {
+    id: string;
+    provider: string;
+    name: string;
+    entity_id: string;
+    login_url: string;
+    logout_url?: string;
+    metadata_url?: string;
+    attribute_mapping?: {
+        email?: string;
+        name?: string;
+    };
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export type BoardViewMode = 'kanban' | 'list' | 'calendar' | 'timeline' | 'workload';

@@ -172,6 +172,8 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
             onDragEnd={handleDragEnd}
         >
             <Box
+                role="region"
+                aria-label="Kanban board"
                 sx={{
                     display: 'flex',
                     gap: 2,
@@ -217,6 +219,8 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                             <Paper
                                 key={column.id}
                                 elevation={0}
+                                role="region"
+                                aria-label={`${column.name} column, ${taskCount} tasks`}
                                 sx={{
                                     minWidth: 280,
                                     maxWidth: 320,

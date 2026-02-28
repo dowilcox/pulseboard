@@ -1,59 +1,161 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PulseBoard
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A self-hosted Kanban project management application with GitLab integration, real-time collaboration, and enterprise SSO support.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend:** Laravel 12, PHP 8.2+
+- **Frontend:** React 18, TypeScript, Inertia.js v2, MUI v6
+- **Database:** MySQL 8.0
+- **Cache/Queue:** Redis 7
+- **Real-time:** Laravel Reverb (WebSocket server), Laravel Echo
+- **Auth:** Laravel Breeze + SAML2 SSO (onelogin/php-saml)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Kanban boards with drag-and-drop task management
+- 5 board views: Kanban, List, Calendar, Timeline, Workload
+- Team management with role-based access (owner/admin/member)
+- Real-time collaboration with WebSocket presence indicators
+- GitLab integration (branches, merge requests, webhooks, pipeline status)
+- Automation engine for workflow rules
+- Board templates for quick setup
+- SAML2 SSO with JIT user provisioning
+- In-app and email notifications with configurable preferences
+- Personal and team dashboards with analytics
+- Dark/light theme support
+- Admin panel for user, team, and organization management
 
-## Learning Laravel
+## Prerequisites
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP 8.2+
+- Composer
+- Node.js 18+ and npm
+- MySQL 8.0
+- Redis 7
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Quick Start
 
-## Laravel Sponsors
+### Using Docker (recommended)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+git clone <repo-url> pulseboard
+cd pulseboard
+cp .env.example .env
+docker-compose up -d
+docker-compose exec app composer setup
+```
 
-### Premium Partners
+The app will be available at `http://localhost:8000`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Local Development
 
-## Contributing
+```bash
+git clone <repo-url> pulseboard
+cd pulseboard
+composer setup       # Install deps, generate .env, run migrations, build frontend
+composer dev         # Start all dev services (Laravel, Vite HMR, queue, Reverb)
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Environment Variables
 
-## Code of Conduct
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `APP_URL` | Application URL | `http://localhost:8000` |
+| `DB_CONNECTION` | Database driver | `mysql` |
+| `DB_HOST` | Database host | `127.0.0.1` |
+| `DB_PORT` | Database port | `3306` |
+| `DB_DATABASE` | Database name | `pulseboard` |
+| `DB_USERNAME` | Database user | `root` |
+| `DB_PASSWORD` | Database password | |
+| `REDIS_HOST` | Redis host | `127.0.0.1` |
+| `REDIS_PORT` | Redis port | `6379` |
+| `REVERB_APP_ID` | Reverb WebSocket app ID | |
+| `REVERB_APP_KEY` | Reverb WebSocket app key | |
+| `REVERB_APP_SECRET` | Reverb WebSocket app secret | |
+| `REVERB_HOST` | Reverb host | `localhost` |
+| `REVERB_PORT` | Reverb port | `8080` |
+| `MAIL_MAILER` | Mail driver | `smtp` |
+| `MAIL_HOST` | SMTP host | |
+| `MAIL_PORT` | SMTP port | `587` |
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Development Commands
 
-## Security Vulnerabilities
+```bash
+composer dev                    # Start all dev services
+composer test                   # Run test suite
+php artisan test --filter=Name  # Run specific test
+./vendor/bin/pint               # PHP code formatting (PSR-12)
+npx tsc --noEmit                # TypeScript type checking
+npx vite build                  # Production frontend build
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Architecture Overview
+
+### Backend
+
+- **Actions pattern:** Business logic in `app/Actions/`, controllers are thin wrappers
+- **Authorization:** Route middleware (`team.member`, `admin`) + Laravel Policies
+- **Models:** UUID primary keys, `$guarded = []` (validation in Form Requests)
+- **Broadcasting:** Laravel Reverb, events dispatched via `BoardChanged` event
+- **Notifications:** Database + mail channels, preferences stored as JSON on User model
+
+### Frontend
+
+- **Inertia.js** bridges Laravel routes to React page components (`resources/js/Pages/`)
+- **MUI v6** for all UI components, styled via `sx` prop
+- **Theme** context with light/dark/system mode support
+- **WebSocket** context provides Echo instance for real-time features
+- **TypeScript** interfaces for all backend models in `resources/js/types/index.d.ts`
+
+## Production Deployment
+
+1. **Build frontend assets:**
+   ```bash
+   npm ci && npx vite build
+   ```
+
+2. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with production values
+   php artisan key:generate
+   php artisan migrate --force
+   ```
+
+3. **Run queue workers** (for notifications, GitLab sync, automation):
+   ```bash
+   php artisan queue:work redis --sleep=3 --tries=3
+   ```
+
+4. **Run WebSocket server** (for real-time features):
+   ```bash
+   php artisan reverb:start
+   ```
+
+5. **Schedule tasks** (for due date reminders, overdue alerts):
+   ```bash
+   # Add to crontab:
+   * * * * * cd /path/to/pulseboard && php artisan schedule:run >> /dev/null 2>&1
+   ```
+
+6. **Optimize for production:**
+   ```bash
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:cache
+   php artisan event:cache
+   ```
+
+## Docker Production
+
+The included `docker-compose.yml` runs the app with:
+- PHP-FPM + Nginx (port 8000)
+- MySQL 8.0 (port 3306)
+- Redis 7 (port 6379)
+- Laravel Reverb (port 8080)
+- Queue worker and scheduler via Supervisor
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proprietary. All rights reserved.

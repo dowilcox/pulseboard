@@ -1,9 +1,11 @@
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { type FormEvent } from 'react';
+import LockIcon from '@mui/icons-material/Lock';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import MuiLink from '@mui/material/Link';
@@ -12,9 +14,10 @@ import TextField from '@mui/material/TextField';
 interface LoginProps {
     status?: string;
     canResetPassword: boolean;
+    ssoEnabled?: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status, canResetPassword, ssoEnabled }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -110,6 +113,22 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </Button>
                 </Box>
             </Box>
+
+            {ssoEnabled && (
+                <>
+                    <Divider sx={{ my: 3 }}>or</Divider>
+
+                    <Button
+                        component="a"
+                        href={route('saml.login')}
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<LockIcon />}
+                    >
+                        Sign in with SSO
+                    </Button>
+                </>
+            )}
         </GuestLayout>
     );
 }

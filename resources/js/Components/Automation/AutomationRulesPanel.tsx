@@ -167,6 +167,7 @@ export default function AutomationRulesPanel({ teamId, boardId, columns, members
                                     size="small"
                                     checked={rule.is_active}
                                     onChange={() => handleToggle(rule)}
+                                    inputProps={{ 'aria-label': `Enable or disable rule: ${rule.name}` }}
                                 />
                                 <Box sx={{ flex: 1 }}>
                                     <Typography variant="body2" fontWeight={500}>

@@ -28,13 +28,27 @@ export default function TaskCard({ task, onClick }: Props) {
     return (
         <Paper
             elevation={1}
+            role="button"
+            tabIndex={0}
+            aria-label={`${task.title}${task.priority !== 'none' ? `, ${task.priority} priority` : ''}`}
             onClick={() => onClick?.(task)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onClick?.(task);
+                }
+            }}
             sx={{
                 p: 1.5,
                 cursor: 'pointer',
                 borderLeft: `3px solid ${priorityColor}`,
                 '&:hover': {
                     bgcolor: 'action.hover',
+                },
+                '&:focus-visible': {
+                    outline: '2px solid',
+                    outlineColor: 'primary.main',
+                    outlineOffset: 1,
                 },
                 transition: 'background-color 0.15s',
             }}
