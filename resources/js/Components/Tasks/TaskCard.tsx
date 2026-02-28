@@ -32,9 +32,10 @@ export default function TaskCard({ task, onClick }: Props) {
                 }
             }}
             sx={{
-                p: 1.5,
+                p: 2,
                 cursor: 'pointer',
-                borderLeft: `3px solid ${priorityColor}`,
+                borderLeft: `2.5px solid ${priorityColor}`,
+                borderRadius: 2,
                 transition: 'border-color 150ms ease, background-color 150ms ease',
                 '&:hover': {
                     bgcolor: 'action.hover',
@@ -49,7 +50,7 @@ export default function TaskCard({ task, onClick }: Props) {
         >
             {/* Labels */}
             {task.labels && task.labels.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 0.75 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
                     {task.labels.map((label) => (
                         <Chip
                             key={label.id}
@@ -67,13 +68,13 @@ export default function TaskCard({ task, onClick }: Props) {
             )}
 
             {/* Title */}
-            <Typography variant="body2" fontWeight={500} sx={{ mb: 0.75 }}>
+            <Typography variant="body2" fontWeight={500} sx={{ mb: 1 }}>
                 {task.task_number ? `PB-${task.task_number} ` : ''}{task.title}
             </Typography>
 
             {/* GitLab MR badges */}
             {task.gitlab_links && task.gitlab_links.filter(l => l.link_type === 'merge_request').length > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 0.75 }} onClick={(e) => e.stopPropagation()}>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }} onClick={(e) => e.stopPropagation()}>
                     {task.gitlab_links
                         .filter(l => l.link_type === 'merge_request')
                         .map((link) => (
@@ -118,7 +119,7 @@ export default function TaskCard({ task, onClick }: Props) {
                     <AvatarGroup
                         max={3}
                         sx={{
-                            '& .MuiAvatar-root': { width: 22, height: 22, fontSize: '0.65rem' },
+                            '& .MuiAvatar-root': { width: 24, height: 24, fontSize: '0.65rem' },
                         }}
                     >
                         {task.assignees.map((user) => (

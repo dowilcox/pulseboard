@@ -32,6 +32,27 @@ const commonOptions: ThemeOptions = {
                 },
             },
         },
+        MuiPaper: {
+            styleOverrides: {
+                rounded: {
+                    borderRadius: 10,
+                },
+            },
+        },
+        MuiChip: {
+            styleOverrides: {
+                sizeSmall: {
+                    height: 22,
+                },
+            },
+        },
+        MuiToggleButton: {
+            styleOverrides: {
+                sizeSmall: {
+                    padding: '4px 10px',
+                },
+            },
+        },
     },
 };
 
@@ -63,8 +84,9 @@ export const darkTheme = createTheme({
             main: '#f472b6', // lighter pink for dark mode
         },
         background: {
-            default: '#0f0f0f',
-            paper: '#181818',
+            default: '#0a0a0a',
+            paper: '#161616',
         },
+        divider: 'rgba(255,255,255,0.08)',
     },
 });

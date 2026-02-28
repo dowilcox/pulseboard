@@ -58,7 +58,7 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                     href={route('dashboard')}
                     selected={route().current('dashboard')}
                     aria-current={route().current('dashboard') ? 'page' : undefined}
-                    sx={{ py: 1.5, px: 2.5 }}
+                    sx={{ py: 1.5, px: 2 }}
                 >
                     <ListItemIcon>
                         <AssignmentIcon fontSize="small" />
@@ -71,7 +71,7 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                     href={route('teams.index')}
                     selected={route().current('teams.index')}
                     aria-current={route().current('teams.index') ? 'page' : undefined}
-                    sx={{ py: 1.5, px: 2.5 }}
+                    sx={{ py: 1.5, px: 2 }}
                 >
                     <ListItemIcon>
                         <GroupsIcon fontSize="small" />
@@ -85,7 +85,7 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                         href={route('admin.dashboard')}
                         selected={route().current('admin.*')}
                         aria-current={route().current('admin.*') ? 'page' : undefined}
-                        sx={{ py: 1.5, px: 2.5 }}
+                        sx={{ py: 1.5, px: 2 }}
                     >
                         <ListItemIcon>
                             <AdminPanelSettingsIcon fontSize="small" />
@@ -95,12 +95,10 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                 )}
             </Box>
 
-            <Divider sx={{ my: 1 }} />
+            <Divider sx={{ my: 1.5 }} />
 
             {/* Team selector */}
             <TeamSelector teams={teams} currentTeam={currentTeam} />
-
-            <Box sx={{ mt: 1 }} />
 
             {/* Board list */}
             {currentTeam && (

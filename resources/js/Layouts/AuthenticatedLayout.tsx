@@ -194,7 +194,7 @@ export default function AuthenticatedLayout({
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 1,
+                                gap: 1.5,
                             }}
                         >
                             <ConnectionStatus />

@@ -128,11 +128,11 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
         <Box
             sx={{
                 display: 'flex',
-                gap: 1.5,
+                gap: 2,
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                mb: 2,
-                px: 0.5,
+                mb: 2.5,
+                px: 0,
             }}
         >
             <Badge badgeContent={activeFilterCount} color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem' } }}>
@@ -145,7 +145,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 placeholder="Search tasks..."
                 value={filters.search}
                 onChange={(e) => updateFilter('search', e.target.value)}
-                sx={{ minWidth: 180 }}
+                sx={{ minWidth: 200 }}
                 slotProps={{
                     input: {
                         startAdornment: (
@@ -255,7 +255,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 value={filters.dueDateFrom}
                 onChange={(e) => updateFilter('dueDateFrom', e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 140 }}
+                sx={{ width: 145 }}
             />
             <TextField
                 size="small"
@@ -264,7 +264,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                 value={filters.dueDateTo}
                 onChange={(e) => updateFilter('dueDateTo', e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 140 }}
+                sx={{ width: 145 }}
             />
 
             {/* Clear all */}

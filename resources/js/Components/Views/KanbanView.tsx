@@ -176,7 +176,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                 aria-label="Kanban board"
                 sx={{
                     display: 'flex',
-                    gap: 2,
+                    gap: 2.5,
                     overflowX: 'auto',
                     pb: 2,
                     minHeight: 'calc(100vh - 200px)',
@@ -222,11 +222,11 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                 role="region"
                                 aria-label={`${column.name} column, ${taskCount} tasks`}
                                 sx={{
-                                    minWidth: 280,
-                                    maxWidth: 320,
-                                    flex: '0 0 280px',
+                                    minWidth: 300,
+                                    maxWidth: 340,
+                                    flex: '0 0 300px',
                                     bgcolor: 'action.hover',
-                                    borderRadius: 2,
+                                    borderRadius: 3,
                                     display: 'flex',
                                     flexDirection: 'column',
                                 }}
@@ -236,15 +236,15 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 1,
-                                        p: 2,
-                                        pb: 1.5,
+                                        gap: 1.25,
+                                        px: 2,
+                                        py: 1.75,
                                     }}
                                 >
                                     <Box
                                         sx={{
-                                            width: 12,
-                                            height: 12,
+                                            width: 10,
+                                            height: 10,
                                             borderRadius: '50%',
                                             bgcolor: column.color || '#9e9e9e',
                                             flexShrink: 0,
@@ -262,14 +262,14 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                         label={taskCount}
                                         size="small"
                                         variant="outlined"
-                                        sx={{ height: 20, fontSize: '0.65rem', minWidth: 28 }}
+                                        sx={{ height: 22, fontSize: '0.7rem', minWidth: 28 }}
                                     />
                                     {column.wip_limit != null && column.wip_limit > 0 && (
                                         <Chip
                                             label={`WIP: ${column.wip_limit}`}
                                             size="small"
                                             variant="outlined"
-                                            sx={{ height: 20, fontSize: '0.65rem' }}
+                                            sx={{ height: 22, fontSize: '0.7rem' }}
                                         />
                                     )}
                                 </Box>
@@ -281,12 +281,13 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                 >
                                     <Box
                                         sx={{
-                                            p: 1.5,
-                                            pt: 0.5,
-                                            minHeight: 200,
+                                            px: 1.5,
+                                            pt: 1,
+                                            pb: 1.5,
+                                            minHeight: 100,
                                             display: 'flex',
                                             flexDirection: 'column',
-                                            gap: 1,
+                                            gap: 1.25,
                                         }}
                                     >
                                         {tasks.map((task) => (

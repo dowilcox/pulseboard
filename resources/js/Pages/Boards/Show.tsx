@@ -198,7 +198,7 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
                             {board.name}
                         </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <ViewSwitcher value={viewMode} onChange={setViewMode} />
                         <PresenceAvatars users={presenceUsers} currentUserId={auth.user.id} />
                         <Tooltip title="Board Settings">

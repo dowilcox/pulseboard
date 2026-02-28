@@ -28,7 +28,7 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <Box sx={{ px: 2, py: 1 }}>
+            <Box sx={{ px: 2, py: 0.75 }}>
                 <Typography
                     variant="overline"
                     color="text.secondary"
@@ -52,8 +52,8 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
                                 selected={board.id === activeBoardId}
                                 onClick={() => handleBoardClick(board.id)}
                                 sx={{
-                                    px: 2.5,
-                                    py: 0.75,
+                                    px: 2,
+                                    py: 1,
                                     '&.Mui-selected': {
                                         bgcolor: 'action.selected',
                                         '&:hover': {
@@ -82,7 +82,7 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
                 </List>
             )}
 
-            <Box sx={{ px: 1.5, pt: 1 }}>
+            <Box sx={{ px: 2, pt: 1.5 }}>
                 <Button
                     startIcon={<AddIcon />}
                     size="small"

@@ -31,7 +31,7 @@ export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) 
     }
 
     return (
-        <Box sx={{ px: 1.5 }}>
+        <Box sx={{ px: 2 }}>
             <Select
                 value={currentTeam?.id ?? ''}
                 onChange={handleChange}
