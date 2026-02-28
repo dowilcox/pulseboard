@@ -21,18 +21,23 @@ class BoardController extends Controller
         $this->authorize('view', $board);
 
         $board->load(['columns.tasks' => function ($query) {
-            $query->with(['assignees', 'labels'])
+            $query->with(['assignees', 'labels', 'gitlabLinks'])
                 ->withCount(['comments', 'subtasks'])
                 ->orderBy('sort_order');
         }]);
 
         $members = $team->members()->get();
 
+        $gitlabProjects = $team->gitlabProjects()
+            ->with('connection')
+            ->get();
+
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
             'columns' => $board->columns,
             'members' => $members,
+            'gitlabProjects' => $gitlabProjects,
         ]);
     }
 

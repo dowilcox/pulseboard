@@ -7,7 +7,7 @@ import TaskDetailPanel from '@/Components/Tasks/TaskDetailPanel';
 import { useBoardChannel, type BoardEvent } from '@/hooks/useBoardChannel';
 import { usePresence } from '@/hooks/usePresence';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Board, Column, Label, PageProps, Task, Team, User } from '@/types';
+import type { Board, Column, GitlabProject, Label, PageProps, Task, Team, User } from '@/types';
 import { computeSortOrder } from '@/utils/sortOrder';
 import {
     closestCorners,
@@ -43,6 +43,7 @@ interface Props {
     teams: Team[];
     boards: Board[];
     members: User[];
+    gitlabProjects?: GitlabProject[];
 }
 
 // Build a map of columnId -> tasks[] for DnD state management
@@ -63,7 +64,7 @@ function findColumnForTask(columnTasks: Record<string, Task[]>, taskId: string):
     return null;
 }
 
-export default function BoardsShow({ board, team, teams, boards, members }: Props) {
+export default function BoardsShow({ board, team, teams, boards, members, gitlabProjects = [] }: Props) {
     const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -123,6 +124,14 @@ export default function BoardsShow({ board, team, teams, boards, members }: Prop
             case 'attachment_removed':
                 // These don't affect the board view, only the detail panel
                 // lastBoardEvent will trigger a re-fetch in TaskDetailPanel
+                break;
+
+            case 'gitlab_branch_created':
+            case 'gitlab_mr_created':
+            case 'gitlab_mr_merged':
+            case 'gitlab_mr_closed':
+                // Reload to show updated gitlab badges on task cards
+                router.reload();
                 break;
 
             default:
@@ -495,6 +504,7 @@ export default function BoardsShow({ board, team, teams, boards, members }: Prop
                 boardId={board.id}
                 members={members}
                 labels={teamLabels}
+                gitlabProjects={gitlabProjects}
                 lastBoardEvent={lastBoardEvent}
             />
         </AuthenticatedLayout>

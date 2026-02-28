@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Board, Team } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import GitlabIcon from '@mui/icons-material/AccountTree';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -78,14 +79,24 @@ export default function TeamsShow({ team, boards, teams }: Props) {
                             {team.name}
                         </Typography>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        size="small"
-                        onClick={() => setCreateOpen(true)}
-                    >
-                        Create Board
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<GitlabIcon />}
+                            size="small"
+                            onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
+                        >
+                            GitLab
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            size="small"
+                            onClick={() => setCreateOpen(true)}
+                        >
+                            Create Board
+                        </Button>
+                    </Box>
                 </Box>
             }
         >

@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\GitlabConnectionController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\ColumnController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\GitlabProjectController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskGitlabController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Foundation\Application;
@@ -37,6 +40,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    // Admin
+    Route::middleware('admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/gitlab-connections', [GitlabConnectionController::class, 'index'])->name('gitlab-connections.index');
+        Route::post('/gitlab-connections', [GitlabConnectionController::class, 'store'])->name('gitlab-connections.store');
+        Route::put('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'update'])->name('gitlab-connections.update');
+        Route::delete('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('gitlab-connections.destroy');
+        Route::post('/gitlab-connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'testConnection'])->name('gitlab-connections.test');
+    });
 
     // Teams
     Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
@@ -74,6 +86,12 @@ Route::middleware('auth')->group(function () {
         Route::put('/teams/{team}/boards/{board}/tasks/{task}/assignees', [TaskController::class, 'updateAssignees'])->name('tasks.assignees.update');
         Route::put('/teams/{team}/boards/{board}/tasks/{task}/labels', [TaskController::class, 'updateLabels'])->name('tasks.labels.update');
 
+        // Task GitLab
+        Route::get('/teams/{team}/boards/{board}/tasks/{task}/gitlab', [TaskGitlabController::class, 'index'])->name('tasks.gitlab.index');
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/gitlab/branch', [TaskGitlabController::class, 'createBranch'])->name('tasks.gitlab.branch');
+        Route::post('/teams/{team}/boards/{board}/tasks/{task}/gitlab/merge-request', [TaskGitlabController::class, 'createMergeRequest'])->name('tasks.gitlab.merge-request');
+        Route::delete('/teams/{team}/boards/{board}/tasks/{task}/gitlab/{link}', [TaskGitlabController::class, 'destroy'])->name('tasks.gitlab.destroy');
+
         // Comments
         Route::post('/teams/{team}/boards/{board}/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
         Route::put('/teams/{team}/boards/{board}/tasks/{task}/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
@@ -83,6 +101,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/teams/{team}/boards/{board}/tasks/{task}/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
         Route::get('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::delete('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+        // GitLab Projects
+        Route::get('/teams/{team}/gitlab/projects', [GitlabProjectController::class, 'index'])->name('teams.gitlab-projects.index');
+        Route::get('/teams/{team}/gitlab/search', [GitlabProjectController::class, 'search'])->name('teams.gitlab-projects.search');
+        Route::post('/teams/{team}/gitlab/projects', [GitlabProjectController::class, 'store'])->name('teams.gitlab-projects.store');
+        Route::delete('/teams/{team}/gitlab/projects/{gitlabProject}', [GitlabProjectController::class, 'destroy'])->name('teams.gitlab-projects.destroy');
 
         // Labels
         Route::get('/teams/{team}/labels', [LabelController::class, 'index'])->name('labels.index');

@@ -1,4 +1,6 @@
 import type { Task } from '@/types';
+import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
+import PipelineBadge from '@/Components/Gitlab/PipelineBadge';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
@@ -58,8 +60,19 @@ export default function TaskCard({ task, onClick }: Props) {
 
             {/* Title */}
             <Typography variant="body2" fontWeight={500} sx={{ mb: 0.75 }}>
-                {task.title}
+                {task.task_number ? `PB-${task.task_number} ` : ''}{task.title}
             </Typography>
+
+            {/* GitLab MR badges */}
+            {task.gitlab_links && task.gitlab_links.filter(l => l.link_type === 'merge_request').length > 0 && (
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 0.75 }} onClick={(e) => e.stopPropagation()}>
+                    {task.gitlab_links
+                        .filter(l => l.link_type === 'merge_request')
+                        .map((link) => (
+                            <MergeRequestChip key={link.id} link={link} />
+                        ))}
+                </Box>
+            )}
 
             {/* Footer row: metadata + assignees */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

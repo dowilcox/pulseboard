@@ -1,4 +1,5 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import GroupsIcon from '@mui/icons-material/Groups';
 import Box from '@mui/material/Box';
@@ -8,7 +9,7 @@ import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import type { Board, Team } from '@/types';
+import type { Board, PageProps, Team } from '@/types';
 import BoardList from './BoardList';
 import TeamSelector from './TeamSelector';
 
@@ -20,6 +21,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: SidebarProps) {
+    const { auth } = usePage<PageProps>().props;
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Logo */}
@@ -73,6 +76,20 @@ export default function Sidebar({ teams, currentTeam, boards, activeBoardId }: S
                     </ListItemIcon>
                     <ListItemText primary="Teams" />
                 </MenuItem>
+
+                {auth.user.is_admin && (
+                    <MenuItem
+                        component={Link}
+                        href={route('admin.gitlab-connections.index')}
+                        selected={route().current('admin.*')}
+                        sx={{ py: 1.5, px: 2.5 }}
+                    >
+                        <ListItemIcon>
+                            <AdminPanelSettingsIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Admin" />
+                    </MenuItem>
+                )}
             </Box>
 
             <Divider sx={{ my: 1 }} />

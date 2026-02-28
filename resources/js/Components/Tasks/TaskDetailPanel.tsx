@@ -1,3 +1,4 @@
+import GitlabSection from '@/Components/Gitlab/GitlabSection';
 import ActivityFeed from '@/Components/Tasks/ActivityFeed';
 import AssigneeSelector from '@/Components/Tasks/AssigneeSelector';
 import AttachmentList from '@/Components/Tasks/AttachmentList';
@@ -5,7 +6,7 @@ import LabelSelector from '@/Components/Tasks/LabelSelector';
 import PrioritySelector from '@/Components/Tasks/PrioritySelector';
 import SubtaskList from '@/Components/Tasks/SubtaskList';
 import type { BoardEvent } from '@/hooks/useBoardChannel';
-import type { Activity, Attachment, Comment, Label, Task, User } from '@/types';
+import type { Activity, Attachment, Comment, GitlabProject, Label, Task, TaskGitlabLink, User } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CloseIcon from '@mui/icons-material/Close';
@@ -28,6 +29,7 @@ interface Props {
     boardId: string;
     members: User[];
     labels: Label[];
+    gitlabProjects?: GitlabProject[];
     lastBoardEvent?: BoardEvent | null;
 }
 
@@ -46,6 +48,7 @@ export default function TaskDetailPanel({
     boardId,
     members,
     labels,
+    gitlabProjects = [],
     lastBoardEvent,
 }: Props) {
     const { auth } = usePage().props as { auth: { user: User } };
@@ -93,6 +96,7 @@ export default function TaskDetailPanel({
             'field_changed', 'assigned', 'unassigned', 'labels_changed',
             'commented', 'comment.updated', 'comment.deleted',
             'attachment_added', 'attachment_removed',
+            'gitlab_branch_created', 'gitlab_mr_created', 'gitlab_mr_merged', 'gitlab_mr_closed',
         ];
         if (!relevantActions.includes(lastBoardEvent.action)) return;
 
@@ -309,6 +313,36 @@ export default function TaskDetailPanel({
                         taskId={displayTask.id}
                     />
                 </Box>
+
+                {/* GitLab */}
+                {gitlabProjects.length > 0 && (
+                    <Box sx={{ mb: 3 }}>
+                        <GitlabSection
+                            task={displayTask}
+                            teamId={teamId}
+                            boardId={boardId}
+                            gitlabProjects={gitlabProjects}
+                            onLinkCreated={(link: TaskGitlabLink) => {
+                                if (detail) {
+                                    setDetail({
+                                        ...detail,
+                                        gitlab_links: [...(detail.gitlab_links ?? []), link],
+                                    });
+                                }
+                            }}
+                            onLinkRemoved={(linkId: string) => {
+                                if (detail) {
+                                    setDetail({
+                                        ...detail,
+                                        gitlab_links: (detail.gitlab_links ?? []).filter(
+                                            (l) => l.id !== linkId,
+                                        ),
+                                    });
+                                }
+                            }}
+                        />
+                    </Box>
+                )}
 
                 <Divider sx={{ mb: 2 }} />
 

@@ -7,6 +7,7 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateTask
@@ -17,9 +18,15 @@ class CreateTask
     {
         $maxSort = Task::where('column_id', $column->id)->max('sort_order') ?? 0;
 
+        $taskNumber = DB::table('tasks')
+            ->where('board_id', $board->id)
+            ->lockForUpdate()
+            ->max('task_number') ?? 0;
+
         $task = Task::create([
             'board_id' => $board->id,
             'column_id' => $column->id,
+            'task_number' => $taskNumber + 1,
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
             'priority' => $data['priority'] ?? 'none',

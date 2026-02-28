@@ -64,6 +64,11 @@ class Team extends Model
         return $this->hasMany(Label::class);
     }
 
+    public function gitlabProjects(): HasMany
+    {
+        return $this->hasMany(GitlabProject::class);
+    }
+
     /**
      * Determine if the given user is a member of this team.
      */

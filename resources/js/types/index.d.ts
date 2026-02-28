@@ -83,6 +83,7 @@ export interface Task {
     id: string;
     board_id: string;
     column_id: string;
+    task_number?: number;
     parent_task_id?: string;
     title: string;
     description?: string;
@@ -98,6 +99,7 @@ export interface Task {
     labels?: Label[];
     subtasks?: Task[];
     creator?: User;
+    gitlab_links?: TaskGitlabLink[];
     comments_count?: number;
     attachments_count?: number;
     subtasks_count?: number;
@@ -158,6 +160,50 @@ export interface AppNotification {
     };
     read_at: string | null;
     created_at: string;
+}
+
+export interface GitlabConnection {
+    id: string;
+    name: string;
+    base_url: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface GitlabProject {
+    id: string;
+    gitlab_connection_id: string;
+    team_id: string;
+    gitlab_project_id: number;
+    name: string;
+    path_with_namespace: string;
+    default_branch: string;
+    web_url: string;
+    webhook_id?: number;
+    last_synced_at?: string;
+    created_at: string;
+    updated_at: string;
+    connection?: GitlabConnection;
+}
+
+export interface TaskGitlabLink {
+    id: string;
+    task_id: string;
+    gitlab_project_id: string;
+    link_type: 'issue' | 'merge_request' | 'branch';
+    gitlab_iid?: number;
+    gitlab_ref?: string;
+    title?: string;
+    state?: string;
+    url: string;
+    pipeline_status?: string;
+    author?: string;
+    meta: Record<string, unknown>;
+    last_synced_at: string;
+    created_at: string;
+    updated_at: string;
+    gitlab_project?: GitlabProject;
 }
 
 export type PageProps<

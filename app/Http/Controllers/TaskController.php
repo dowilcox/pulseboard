@@ -50,6 +50,7 @@ class TaskController extends Controller
             'attachments.user',
             'subtasks.assignees',
             'subtasks.labels',
+            'gitlabLinks.gitlabProject',
         ]);
         $task->loadCount(['comments', 'subtasks']);
 

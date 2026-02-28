@@ -77,6 +77,11 @@ class Task extends Model
         return $this->hasMany(Attachment::class);
     }
 
+    public function gitlabLinks(): HasMany
+    {
+        return $this->hasMany(TaskGitlabLink::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
