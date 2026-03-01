@@ -3,6 +3,7 @@
 namespace App\Actions\Tasks;
 
 use App\Events\BoardChanged;
+use App\Models\Column;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
@@ -18,6 +19,34 @@ class ToggleTaskCompletion
         $task->save();
 
         ActivityLogger::log($task, $task->completed_at ? 'completed' : 'uncompleted', [], $user);
+
+        // Auto-move to Done column if enabled and task was just completed
+        if ($task->completed_at) {
+            $task->loadMissing('board');
+            $board = $task->board;
+
+            if ($board->setting('auto_move_to_done')) {
+                $doneColumn = Column::where('board_id', $board->id)
+                    ->where('is_done_column', true)
+                    ->orderBy('sort_order')
+                    ->first();
+
+                if ($doneColumn && $doneColumn->id !== $task->column_id) {
+                    $fromColumn = Column::find($task->column_id);
+                    $maxSort = Task::where('column_id', $doneColumn->id)->max('sort_order') ?? 0;
+
+                    $task->column_id = $doneColumn->id;
+                    $task->sort_order = $maxSort + 1;
+                    $task->save();
+
+                    ActivityLogger::log($task, 'moved', [
+                        'from_column' => $fromColumn?->name ?? 'Unknown',
+                        'to_column' => $doneColumn->name,
+                        'auto_moved' => true,
+                    ], $user);
+                }
+            }
+        }
 
         BoardChanged::dispatch(
             boardId: $task->board_id,

@@ -1,12 +1,18 @@
 import RichTextDisplay from '@/Components/Common/RichTextDisplay';
 import RichTextEditor from '@/Components/Common/RichTextEditor';
-import type { Activity, Comment } from '@/types';
-import { router } from '@inertiajs/react';
+import type { Activity, Comment, PageProps } from '@/types';
+import { router, usePage } from '@inertiajs/react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import SwapVertIcon from '@mui/icons-material/SwapVert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -47,6 +53,9 @@ function activityDescription(action: string, changes: Record<string, unknown>): 
         case 'created':
             return 'created this task';
         case 'moved':
+            if (changes.auto_moved) {
+                return `auto-moved from ${changes.from_column ?? '?'} to ${changes.to_column ?? '?'}`;
+            }
             return `moved from ${changes.from_column ?? '?'} to ${changes.to_column ?? '?'}`;
         case 'assigned':
             return `assigned ${(changes.users as string[])?.join(', ') ?? 'users'}`;
@@ -86,10 +95,16 @@ export default function ActivityFeed({
     currentUserId,
     uploadImageUrl,
 }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const savedSort = auth.user.ui_preferences?.activity_sort_order ?? 'desc';
+
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editBody, setEditBody] = useState('');
     const [newCommentBody, setNewCommentBody] = useState('');
+    const [commentEditorKey, setCommentEditorKey] = useState(0);
     const [submitting, setSubmitting] = useState(false);
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(savedSort);
+    const [deleteCommentTarget, setDeleteCommentTarget] = useState<string | null>(null);
 
     // Merge and sort by timestamp
     const feed: FeedItem[] = [
@@ -97,7 +112,20 @@ export default function ActivityFeed({
         ...activities
             .filter((a) => a.action !== 'commented')
             .map((a): FeedItem => ({ type: 'activity', item: a, timestamp: a.created_at })),
-    ].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    ].sort((a, b) => {
+        const diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        return sortOrder === 'asc' ? diff : -diff;
+    });
+
+    const handleToggleSort = () => {
+        const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        setSortOrder(newOrder);
+        router.patch(
+            route('profile.ui-preferences.update'),
+            { activity_sort_order: newOrder },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
 
     const handleAddComment = () => {
         if (!newCommentBody.trim() || submitting) return;
@@ -110,6 +138,7 @@ export default function ActivityFeed({
                 preserveScroll: true,
                 onSuccess: () => {
                     setNewCommentBody('');
+                    setCommentEditorKey((k) => k + 1);
                     setSubmitting(false);
                 },
                 onError: () => setSubmitting(false),
@@ -128,14 +157,62 @@ export default function ActivityFeed({
         );
     };
 
-    const handleDeleteComment = (commentId: string) => {
-        router.delete(route('comments.destroy', [teamId, boardId, taskId, commentId]), {
+    const handleDeleteComment = () => {
+        if (!deleteCommentTarget) return;
+        router.delete(route('comments.destroy', [teamId, boardId, taskId, deleteCommentTarget]), {
             preserveScroll: true,
         });
+        setDeleteCommentTarget(null);
     };
 
     return (
         <Box>
+            {/* Add comment form */}
+            <Box sx={{ mb: 2 }}>
+                <RichTextEditor
+                    key={commentEditorKey}
+                    content={newCommentBody}
+                    onChange={setNewCommentBody}
+                    placeholder="Write a comment..."
+                    uploadImageUrl={uploadImageUrl}
+                    minHeight={100}
+                />
+                <Button
+                    size="small"
+                    variant="contained"
+                    disabled={submitting || !newCommentBody.trim()}
+                    onClick={handleAddComment}
+                    sx={{ mt: 1 }}
+                >
+                    Comment
+                </Button>
+            </Box>
+
+            <Divider sx={{ mb: 2 }} />
+
+            {/* Sort toggle header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 1 }}>
+                <Tooltip title={sortOrder === 'desc' ? 'Showing newest first' : 'Showing oldest first'}>
+                    <IconButton size="small" onClick={handleToggleSort}>
+                        <SwapVertIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                <Typography variant="caption" color="text.secondary">
+                    {sortOrder === 'desc' ? 'Newest first' : 'Oldest first'}
+                </Typography>
+            </Box>
+
+            {/* Empty state */}
+            {feed.length === 0 && (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', py: 3 }}
+                >
+                    No activity yet
+                </Typography>
+            )}
+
             {/* Feed items */}
             {feed.map((entry) => {
                 if (entry.type === 'comment') {
@@ -176,7 +253,7 @@ export default function ActivityFeed({
                                                 <Tooltip title="Delete">
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleDeleteComment(comment.id)}
+                                                        onClick={() => setDeleteCommentTarget(comment.id)}
                                                     >
                                                         <DeleteIcon sx={{ fontSize: 14 }} />
                                                     </IconButton>
@@ -253,27 +330,21 @@ export default function ActivityFeed({
                 );
             })}
 
-            <Divider sx={{ my: 2 }} />
-
-            {/* Add comment form */}
-            <Box>
-                <RichTextEditor
-                    content={newCommentBody}
-                    onChange={setNewCommentBody}
-                    placeholder="Write a comment..."
-                    uploadImageUrl={uploadImageUrl}
-                    minHeight={100}
-                />
-                <Button
-                    size="small"
-                    variant="contained"
-                    disabled={submitting || !newCommentBody.trim()}
-                    onClick={handleAddComment}
-                    sx={{ mt: 1 }}
-                >
-                    Comment
-                </Button>
-            </Box>
+            {/* Delete comment confirmation dialog */}
+            <Dialog open={deleteCommentTarget !== null} onClose={() => setDeleteCommentTarget(null)}>
+                <DialogTitle>Delete Comment</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete this comment? This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteCommentTarget(null)}>Cancel</Button>
+                    <Button onClick={handleDeleteComment} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

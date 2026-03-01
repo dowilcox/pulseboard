@@ -24,6 +24,8 @@ class UpdateBoardRequest extends FormRequest
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'settings' => ['sometimes', 'array'],
+            'settings.auto_move_to_done' => ['sometimes', 'boolean'],
         ];
     }
 }

@@ -1,6 +1,8 @@
 import type { Task } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import AddIcon from '@mui/icons-material/Add';
+import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
 import IconButton from '@mui/material/IconButton';
@@ -11,6 +13,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { type FormEvent, useRef, useState } from 'react';
 
@@ -76,6 +79,7 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
             <List dense disablePadding>
                 {subtasks.map((subtask) => {
                     const isCompleted = subtask.completed_at !== null && subtask.completed_at !== undefined;
+                    const assignees = subtask.assignees ?? [];
                     return (
                         <ListItem key={subtask.id} disablePadding>
                             <ListItemButton
@@ -102,6 +106,23 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
                                         },
                                     }}
                                 />
+                                {assignees.length > 0 && (
+                                    <AvatarGroup
+                                        max={3}
+                                        sx={{
+                                            ml: 1,
+                                            '& .MuiAvatar-root': { width: 22, height: 22, fontSize: '0.65rem' },
+                                        }}
+                                    >
+                                        {assignees.map((user) => (
+                                            <Tooltip key={user.id} title={user.name}>
+                                                <Avatar src={user.avatar_url}>
+                                                    {user.name?.charAt(0).toUpperCase()}
+                                                </Avatar>
+                                            </Tooltip>
+                                        ))}
+                                    </AvatarGroup>
+                                )}
                             </ListItemButton>
                         </ListItem>
                     );

@@ -3,7 +3,6 @@ import { router } from '@inertiajs/react';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
-import ImageIcon from '@mui/icons-material/Image';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -22,6 +21,11 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import axios from 'axios';
 import { useCallback, useRef, useState } from 'react';
+import Lightbox from 'yet-another-react-lightbox';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
+import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails';
+import 'yet-another-react-lightbox/styles.css';
+import 'yet-another-react-lightbox/plugins/thumbnails.css';
 
 interface Props {
     attachments: Attachment[];
@@ -46,6 +50,16 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
     const [uploadProgress, setUploadProgress] = useState(0);
     const [dragOver, setDragOver] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
+    const [lightboxIndex, setLightboxIndex] = useState(-1);
+
+    const imageAttachments = attachments.filter((a) => isImage(a.mime_type));
+    const fileAttachments = attachments.filter((a) => !isImage(a.mime_type));
+
+    const lightboxSlides = imageAttachments.map((a) => ({
+        src: route('attachments.download', [teamId, boardId, taskId, a.id]),
+        alt: a.filename,
+        title: a.filename,
+    }));
 
     const uploadFiles = useCallback(
         async (files: FileList | File[]) => {
@@ -66,7 +80,8 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                         {
                             headers: { 'Content-Type': 'multipart/form-data' },
                             onUploadProgress: (progressEvent) => {
-                                const fileProgress = progressEvent.loaded / (progressEvent.total ?? progressEvent.loaded);
+                                const fileProgress =
+                                    progressEvent.loaded / (progressEvent.total ?? progressEvent.loaded);
                                 const overall = ((completedFiles + fileProgress) / totalFiles) * 100;
                                 setUploadProgress(Math.round(overall));
                             },
@@ -74,7 +89,6 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                     );
                     completedFiles++;
                 } catch {
-                    // Continue with remaining files on error
                     completedFiles++;
                 }
             }
@@ -159,81 +173,156 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             </Box>
 
             {uploading && (
-                <LinearProgress
-                    variant="determinate"
-                    value={uploadProgress}
-                    sx={{ mb: 1 }}
-                />
+                <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 1 }} />
             )}
 
-            {/* Attachment list */}
-            {attachments.length > 0 && (
-                <List dense disablePadding>
-                    {attachments.map((attachment) => (
-                        <ListItem
-                            key={attachment.id}
-                            secondaryAction={
-                                <Box sx={{ display: 'flex', gap: 0.25 }}>
-                                    <Tooltip title="Download">
-                                        <IconButton
-                                            edge="end"
-                                            size="small"
-                                            onClick={() => handleDownload(attachment)}
-                                            aria-label={`Download ${attachment.filename}`}
-                                        >
-                                            <DownloadIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Delete">
-                                        <IconButton
-                                            edge="end"
-                                            size="small"
-                                            onClick={() => setDeleteTarget(attachment)}
-                                            color="error"
-                                            aria-label={`Delete ${attachment.filename}`}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+            {/* Image gallery */}
+            {imageAttachments.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+                        Images ({imageAttachments.length})
+                    </Typography>
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                            gap: 1,
+                        }}
+                    >
+                        {imageAttachments.map((attachment, index) => (
+                            <Box
+                                key={attachment.id}
+                                sx={{
+                                    position: 'relative',
+                                    aspectRatio: '1',
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    '&:hover .overlay': { opacity: 1 },
+                                }}
+                                onClick={() => setLightboxIndex(index)}
+                            >
+                                <Box
+                                    component="img"
+                                    src={route('attachments.download', [teamId, boardId, taskId, attachment.id])}
+                                    alt={attachment.filename}
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        display: 'block',
+                                    }}
+                                />
+                                <Box
+                                    className="overlay"
+                                    sx={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        bgcolor: 'rgba(0,0,0,0.5)',
+                                        opacity: 0,
+                                        transition: 'opacity 0.2s',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 0.5,
+                                    }}
+                                >
+                                    <Typography variant="caption" color="white" noWrap sx={{ px: 1, maxWidth: '100%' }}>
+                                        {attachment.filename}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                        <Tooltip title="Download">
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: 'white' }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDownload(attachment);
+                                                }}
+                                            >
+                                                <DownloadIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                size="small"
+                                                sx={{ color: 'white' }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteTarget(attachment);
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
                                 </Box>
-                            }
-                            sx={{ px: 0 }}
-                        >
-                            <ListItemIcon sx={{ minWidth: 36 }}>
-                                {isImage(attachment.mime_type) ? (
-                                    <Box
-                                        component="img"
-                                        src={route('attachments.download', [teamId, boardId, taskId, attachment.id])}
-                                        alt={attachment.filename}
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: 0.5,
-                                            objectFit: 'cover',
-                                        }}
-                                        onError={(e) => {
-                                            // Fall back to icon on load failure
-                                            const target = e.target as HTMLImageElement;
-                                            target.style.display = 'none';
-                                            target.parentElement?.insertAdjacentHTML(
-                                                'beforeend',
-                                                '<span style="display:flex"><svg class="MuiSvgIcon-root" viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></span>',
-                                            );
-                                        }}
-                                    />
-                                ) : (
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
+            )}
+
+            {/* Lightbox */}
+            <Lightbox
+                open={lightboxIndex >= 0}
+                close={() => setLightboxIndex(-1)}
+                index={lightboxIndex}
+                slides={lightboxSlides}
+                plugins={[Zoom, Thumbnails]}
+            />
+
+            {/* File list (non-images) */}
+            {fileAttachments.length > 0 && (
+                <Box>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>
+                        Files ({fileAttachments.length})
+                    </Typography>
+                    <List dense disablePadding>
+                        {fileAttachments.map((attachment) => (
+                            <ListItem
+                                key={attachment.id}
+                                secondaryAction={
+                                    <Box sx={{ display: 'flex', gap: 0.25 }}>
+                                        <Tooltip title="Download">
+                                            <IconButton
+                                                edge="end"
+                                                size="small"
+                                                onClick={() => handleDownload(attachment)}
+                                                aria-label={`Download ${attachment.filename}`}
+                                            >
+                                                <DownloadIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                edge="end"
+                                                size="small"
+                                                onClick={() => setDeleteTarget(attachment)}
+                                                color="error"
+                                                aria-label={`Delete ${attachment.filename}`}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                }
+                                sx={{ px: 0 }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 36 }}>
                                     <InsertDriveFileIcon sx={{ color: 'text.secondary' }} />
-                                )}
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={attachment.filename}
-                                secondary={`${formatFileSize(attachment.file_size)} ${attachment.user ? `by ${attachment.user.name}` : ''}`}
-                                primaryTypographyProps={{ variant: 'body2', noWrap: true }}
-                                secondaryTypographyProps={{ variant: 'caption' }}
-                            />
-                        </ListItem>
-                    ))}
-                </List>
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={attachment.filename}
+                                    secondary={`${formatFileSize(attachment.file_size)} ${attachment.user ? `by ${attachment.user.name}` : ''}`}
+                                    primaryTypographyProps={{ variant: 'body2', noWrap: true }}
+                                    secondaryTypographyProps={{ variant: 'caption' }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </Box>
             )}
 
             {attachments.length === 0 && !uploading && (
@@ -247,7 +336,8 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                 <DialogTitle>Delete Attachment</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete "{deleteTarget?.filename}"? This action cannot be undone.
+                        Are you sure you want to delete "{deleteTarget?.filename}"? This action cannot be
+                        undone.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>

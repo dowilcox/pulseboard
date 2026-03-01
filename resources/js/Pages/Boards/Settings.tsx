@@ -41,6 +41,9 @@ export default function BoardSettings({ board, team, members }: Props) {
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? '',
+        settings: {
+            auto_move_to_done: board.settings?.auto_move_to_done ?? false,
+        },
     });
 
     const initialColumns: ColumnFormData[] = (board.columns ?? []).map((col) => ({
@@ -198,6 +201,26 @@ export default function BoardSettings({ board, team, members }: Props) {
                                 onChange={(e) => boardForm.setData('description', e.target.value)}
                                 error={!!boardForm.errors.description}
                                 helperText={boardForm.errors.description}
+                                sx={{ mb: 2 }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={boardForm.data.settings.auto_move_to_done}
+                                        onChange={(e) =>
+                                            boardForm.setData('settings', {
+                                                ...boardForm.data.settings,
+                                                auto_move_to_done: e.target.checked,
+                                            })
+                                        }
+                                        size="small"
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2">
+                                        Auto-move tasks to Done column when completed
+                                    </Typography>
+                                }
                                 sx={{ mb: 2 }}
                             />
                             <Button

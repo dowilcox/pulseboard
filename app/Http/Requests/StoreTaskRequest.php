@@ -24,6 +24,7 @@ class StoreTaskRequest extends FormRequest
             'assignee_ids.*' => ['uuid', 'exists:users,id'],
             'label_ids' => ['nullable', 'array'],
             'label_ids.*' => ['uuid', 'exists:labels,id'],
+            'parent_task_id' => ['nullable', 'uuid', 'exists:tasks,id'],
         ];
     }
 }

@@ -79,6 +79,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'email_notification_prefs' => 'array',
+            'ui_preferences' => 'array',
             'theme_preference' => 'string',
             'deactivated_at' => 'datetime',
         ];
@@ -141,6 +142,11 @@ class User extends Authenticatable
     /**
      * Scope: only active (non-deactivated) users.
      */
+    public function uiPreference(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->ui_preferences, $key, $default);
+    }
+
     public function scopeActive($query)
     {
         return $query->whereNull('deactivated_at');

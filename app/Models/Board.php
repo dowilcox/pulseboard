@@ -40,6 +40,7 @@ class Board extends Model
         return [
             'is_archived' => 'boolean',
             'sort_order' => 'integer',
+            'settings' => 'array',
         ];
     }
 
@@ -72,6 +73,11 @@ class Board extends Model
     /**
      * Scope to only active (non-archived) boards.
      */
+    public function setting(string $key, mixed $default = null): mixed
+    {
+        return data_get($this->settings, $key, $default);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_archived', false);

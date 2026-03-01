@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import { Markdown } from 'tiptap-markdown';
 import { createLowlight, common } from 'lowlight';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -68,6 +69,11 @@ export default function RichTextEditor({
             CodeBlockLowlight.configure({
                 lowlight,
             }),
+            Markdown.configure({
+                html: true,
+                transformPastedText: true,
+                transformCopiedText: false,
+            }),
         ],
         content,
         editable,
@@ -88,6 +94,19 @@ export default function RichTextEditor({
                     }
                 }
                 return false;
+            },
+            handleDrop: (_view, event, _slice, moved) => {
+                if (moved || !uploadImageUrl) return false;
+
+                const files = event.dataTransfer?.files;
+                if (!files?.length) return false;
+
+                const images = Array.from(files).filter((f) => f.type.startsWith('image/'));
+                if (!images.length) return false;
+
+                event.preventDefault();
+                images.forEach((file) => uploadImage(file));
+                return true;
             },
         },
     });

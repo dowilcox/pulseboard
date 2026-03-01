@@ -71,6 +71,25 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's UI preferences (partial merge).
+     */
+    public function updateUiPreferences(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'activity_sort_order' => ['sometimes', 'in:asc,desc'],
+        ]);
+
+        $user = $request->user();
+        $prefs = $user->ui_preferences ?? [];
+
+        $user->update([
+            'ui_preferences' => array_merge($prefs, $validated),
+        ]);
+
+        return Redirect::back();
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

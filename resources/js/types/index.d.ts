@@ -11,6 +11,10 @@ export interface NotificationPreferences {
     task_overdue?: NotificationPreferenceChannels;
 }
 
+export interface UiPreferences {
+    activity_sort_order?: 'asc' | 'desc';
+}
+
 export interface User {
     id: string;
     name: string;
@@ -20,6 +24,7 @@ export interface User {
     is_admin: boolean;
     theme_preference: 'light' | 'dark' | 'system';
     email_notification_prefs?: NotificationPreferences;
+    ui_preferences?: UiPreferences;
     deactivated_at?: string;
     email_verified_at?: string;
     created_at: string;
@@ -54,6 +59,10 @@ export interface TeamMember {
     user?: User;
 }
 
+export interface BoardSettings {
+    auto_move_to_done?: boolean;
+}
+
 export interface Board {
     id: string;
     team_id: string;
@@ -61,6 +70,7 @@ export interface Board {
     description?: string;
     is_archived: boolean;
     sort_order: number;
+    settings?: BoardSettings;
     created_at: string;
     updated_at: string;
     columns?: Column[];

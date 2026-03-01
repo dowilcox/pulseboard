@@ -35,6 +35,7 @@ class CreateTask
                 'due_date' => $data['due_date'] ?? null,
                 'effort_estimate' => $data['effort_estimate'] ?? null,
                 'custom_fields' => $data['custom_fields'] ?? null,
+                'parent_task_id' => $data['parent_task_id'] ?? null,
                 'created_by' => $creator->id,
             ]);
 
