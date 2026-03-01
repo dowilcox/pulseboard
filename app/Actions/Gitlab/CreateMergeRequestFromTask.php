@@ -33,7 +33,7 @@ class CreateMergeRequestFromTask
             }
         }
 
-        $description = "Task: PB-{$task->task_number}";
+        $description = "Task: #{$task->task_number}";
         if ($task->description) {
             $description .= "\n\n".mb_substr($task->description, 0, 500);
         }
@@ -41,7 +41,7 @@ class CreateMergeRequestFromTask
         $mrData = $api->createMergeRequest($gitlabProject->gitlab_project_id, [
             'source_branch' => $sourceBranch,
             'target_branch' => $gitlabProject->default_branch,
-            'title' => "PB-{$task->task_number}: {$task->title}",
+            'title' => "#{$task->task_number}: {$task->title}",
             'description' => $description,
         ]);
 

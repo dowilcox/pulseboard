@@ -155,7 +155,7 @@ export default function Dashboard({ myTasks }: Props) {
                                 >
                                     <TableCell>
                                         <Typography variant="body2" color="text.secondary">
-                                            {task.task_number ? `PB-${task.task_number}` : ''}
+                                            {task.task_number ? `#${task.task_number}` : ''}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>

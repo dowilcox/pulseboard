@@ -163,7 +163,7 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                                     onClick={() => onTaskClick(task)}
                                 >
                                     <Typography variant="caption" noWrap>
-                                        {task.task_number ? `PB-${task.task_number} ` : ''}{task.title}
+                                        {task.task_number ? `#${task.task_number} ` : ''}{task.title}
                                     </Typography>
                                 </Box>
                                 <Box sx={{ flex: 1, position: 'relative', height: 28 }}>

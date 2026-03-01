@@ -12,7 +12,7 @@ class AutoLinkTask
     use AsAction;
 
     /**
-     * Parse text for PB-{number} patterns and auto-link matching tasks.
+     * Parse text for #{number} patterns and auto-link matching tasks.
      *
      * @return TaskGitlabLink[] Created links
      */

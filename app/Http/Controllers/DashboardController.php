@@ -138,7 +138,7 @@ class DashboardController extends Controller
                 fputcsv($handle, [
                     $task->board->name ?? '',
                     $task->column->name ?? '',
-                    'PB-'.$task->task_number,
+                    '#'.$task->task_number,
                     $task->title,
                     $task->priority,
                     $task->column->is_done_column ? 'Done' : 'In Progress',

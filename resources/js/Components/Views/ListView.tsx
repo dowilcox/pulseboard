@@ -138,7 +138,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                 >
                                     <TableCell>
                                         <Typography variant="body2" color="text.secondary">
-                                            PB-{task.task_number}
+                                            #{task.task_number}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>

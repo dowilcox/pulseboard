@@ -368,7 +368,7 @@ export default function TeamDashboard({ team }: Props) {
                                             >
                                                 <Box component="td" sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
                                                     <Typography variant="body2">
-                                                        {task.task_number ? `PB-${task.task_number} ` : ''}
+                                                        {task.task_number ? `#${task.task_number} ` : ''}
                                                         {task.title}
                                                     </Typography>
                                                 </Box>

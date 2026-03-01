@@ -76,7 +76,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
     };
 
     const formatTaskLabel = (t: TaskSummary | Task) => {
-        const num = t.task_number ? `PB-${t.task_number}` : '';
+        const num = t.task_number ? `#${t.task_number}` : '';
         return `${num} ${t.title}`.trim();
     };
 

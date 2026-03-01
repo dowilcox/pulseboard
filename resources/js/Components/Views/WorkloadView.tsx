@@ -142,7 +142,7 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
                                 {wl.tasks.slice(0, 10).map((task) => (
                                     <Chip
                                         key={task.id}
-                                        label={`${task.task_number ? `PB-${task.task_number}` : ''} ${task.title}`}
+                                        label={`${task.task_number ? `#${task.task_number}` : ''} ${task.title}`}
                                         size="small"
                                         onClick={() => onTaskClick(task)}
                                         sx={{
@@ -174,7 +174,7 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
                                 {workloads.unassigned.slice(0, 10).map((task) => (
                                     <Chip
                                         key={task.id}
-                                        label={`${task.task_number ? `PB-${task.task_number}` : ''} ${task.title}`}
+                                        label={`${task.task_number ? `#${task.task_number}` : ''} ${task.title}`}
                                         size="small"
                                         onClick={() => onTaskClick(task)}
                                         sx={{

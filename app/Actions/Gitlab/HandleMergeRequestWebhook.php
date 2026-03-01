@@ -29,7 +29,7 @@ class HandleMergeRequestWebhook
         // Build searchable text for auto-linking
         $searchText = implode(' ', [$title, $description, $sourceBranch]);
 
-        // Try to auto-link using PB-{number} pattern
+        // Try to auto-link using #{number} pattern
         AutoLinkTask::run(
             gitlabProject: $gitlabProject,
             text: $searchText,

@@ -81,7 +81,7 @@ export default function TaskCard({ task, onClick }: Props) {
             {/* Task number */}
             {task.task_number && (
                 <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
-                    PB-{task.task_number}
+                    #{task.task_number}
                 </Typography>
             )}
 

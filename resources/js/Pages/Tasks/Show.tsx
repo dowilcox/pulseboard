@@ -197,7 +197,7 @@ export default function TasksShow({
     };
 
     const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
-    const taskNumber = task.task_number ? `PB-${task.task_number}` : '';
+    const taskNumber = task.task_number ? `#${task.task_number}` : '';
 
     const formatTimestamp = (ts: string) => {
         const date = new Date(ts);
@@ -283,7 +283,7 @@ export default function TasksShow({
                                     underline="hover"
                                 >
                                     {task.parent_task.task_number
-                                        ? `PB-${task.parent_task.task_number}`
+                                        ? `#${task.parent_task.task_number}`
                                         : ''}{' '}
                                     {task.parent_task.title}
                                 </Link>
