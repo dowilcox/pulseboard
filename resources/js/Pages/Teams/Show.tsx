@@ -8,7 +8,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import GitlabIcon from '@mui/icons-material/AccountTree';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
@@ -19,19 +18,16 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid2';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { Link as InertiaLink } from '@inertiajs/react';
 
 interface Props {
     team: Team;
     boards: Board[];
-    teams: Team[];
 }
 
-export default function TeamsShow({ team, boards, teams }: Props) {
+export default function TeamsShow({ team, boards }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -56,30 +52,12 @@ export default function TeamsShow({ team, boards, teams }: Props) {
 
     return (
         <AuthenticatedLayout
-            teams={teams}
             currentTeam={team}
-            boards={boards}
             header={
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Box>
-                        <Breadcrumbs sx={{ mb: 0.5 }}>
-                            <Link
-                                component={InertiaLink}
-                                href={route('teams.index')}
-                                underline="hover"
-                                color="text.secondary"
-                                variant="body2"
-                            >
-                                Teams
-                            </Link>
-                            <Typography variant="body2" color="text.primary">
-                                {team.name}
-                            </Typography>
-                        </Breadcrumbs>
-                        <Typography variant="h6" component="h2" fontWeight={600}>
-                            {team.name}
-                        </Typography>
-                    </Box>
+                    <Typography variant="h6" component="h2" fontWeight={600}>
+                        {team.name}
+                    </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                             variant="outlined"

@@ -19,11 +19,16 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { router } from '@inertiajs/react';
 
-interface Props {
-    teams: Team[];
+interface IndexTeam extends Team {
+    members_count?: number;
+    boards_count?: number;
 }
 
-export default function TeamsIndex({ teams }: Props) {
+interface Props {
+    pageTeams: IndexTeam[];
+}
+
+export default function TeamsIndex({ pageTeams: teams }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -140,10 +145,10 @@ export default function TeamsIndex({ teams }: Props) {
 
                                         <Box sx={{ display: 'flex', gap: 2 }}>
                                             <Typography variant="caption" color="text.secondary">
-                                                {team.members?.length ?? 0} member{(team.members?.length ?? 0) !== 1 ? 's' : ''}
+                                                {team.members_count ?? team.members?.length ?? 0} member{(team.members_count ?? team.members?.length ?? 0) !== 1 ? 's' : ''}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                {team.boards?.length ?? 0} board{(team.boards?.length ?? 0) !== 1 ? 's' : ''}
+                                                {team.boards_count ?? team.boards?.length ?? 0} board{(team.boards_count ?? team.boards?.length ?? 0) !== 1 ? 's' : ''}
                                             </Typography>
                                         </Box>
                                     </CardContent>

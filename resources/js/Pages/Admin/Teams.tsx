@@ -35,10 +35,10 @@ interface TeamDetail extends Team {
 }
 
 interface Props extends PageProps {
-    teams: TeamWithCounts[];
+    adminTeams: TeamWithCounts[];
 }
 
-export default function Teams({ teams }: Props) {
+export default function Teams({ adminTeams: teams }: Props) {
     const [detailOpen, setDetailOpen] = useState(false);
     const [teamDetail, setTeamDetail] = useState<TeamDetail | null>(null);
     const [loading, setLoading] = useState(false);

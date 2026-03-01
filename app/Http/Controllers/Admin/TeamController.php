@@ -17,7 +17,7 @@ class TeamController extends Controller
             ->get();
 
         return Inertia::render('Admin/Teams', [
-            'teams' => $teams,
+            'adminTeams' => $teams,
         ]);
     }
 

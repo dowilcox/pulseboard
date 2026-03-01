@@ -61,6 +61,7 @@ export default function GitlabProjects({ team, gitlabProjects, connections }: Pr
 
     return (
         <AuthenticatedLayout
+            currentTeam={team}
             header={
                 <Typography variant="h6" component="h2" fontWeight={600}>
                     {team.name} — GitLab Projects

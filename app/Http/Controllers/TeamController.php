@@ -21,12 +21,13 @@ class TeamController extends Controller
     {
         $teams = auth()->user()
             ->teams()
-            ->withCount('members')
+            ->withCount(['members', 'boards'])
+            ->withPivot('role')
             ->orderBy('name')
             ->get();
 
         return Inertia::render('Teams/Index', [
-            'teams' => $teams,
+            'pageTeams' => $teams,
         ]);
     }
 

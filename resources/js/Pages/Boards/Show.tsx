@@ -24,13 +24,11 @@ import { useCallback, useEffect, useState } from 'react';
 interface Props {
     board: Board;
     team: Team;
-    teams: Team[];
-    boards: Board[];
     members: User[];
     gitlabProjects?: GitlabProject[];
 }
 
-export default function BoardsShow({ board, team, teams, boards, members, gitlabProjects = [] }: Props) {
+export default function BoardsShow({ board, team, members, gitlabProjects = [] }: Props) {
     const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
     const [teamLabels, setTeamLabels] = useState<Label[]>([]);
@@ -147,9 +145,7 @@ export default function BoardsShow({ board, team, teams, boards, members, gitlab
 
     return (
         <AuthenticatedLayout
-            teams={teams}
             currentTeam={team}
-            boards={boards}
             activeBoardId={board.id}
             header={
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>

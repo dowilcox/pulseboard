@@ -35,7 +35,10 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'teams' => fn () => $request->user()
-                ? $request->user()->teams()->withCount(['boards'])->withPivot('role')->get()
+                ? $request->user()->teams()
+                    ->with(['boards' => fn ($q) => $q->select('id', 'team_id', 'name', 'sort_order')->orderBy('sort_order')])
+                    ->withPivot('role')
+                    ->get()
                 : [],
             'unreadNotificationsCount' => fn () => $request->user()
                 ? $request->user()->unreadNotifications()->count()

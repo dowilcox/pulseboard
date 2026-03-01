@@ -34,12 +34,10 @@ interface ColumnFormData {
 interface Props {
     board: Board;
     team: Team;
-    teams: Team[];
-    boards: Board[];
     members: User[];
 }
 
-export default function BoardSettings({ board, team, teams, boards, members }: Props) {
+export default function BoardSettings({ board, team, members }: Props) {
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? '',
@@ -129,9 +127,7 @@ export default function BoardSettings({ board, team, teams, boards, members }: P
 
     return (
         <AuthenticatedLayout
-            teams={teams}
             currentTeam={team}
-            boards={boards}
             activeBoardId={board.id}
             header={
                 <Box>

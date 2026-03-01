@@ -1,8 +1,6 @@
 import { router } from '@inertiajs/react';
-import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -20,10 +18,6 @@ interface BoardListProps {
 export default function BoardList({ boards, teamId, activeBoardId }: BoardListProps) {
     const handleBoardClick = (boardId: string) => {
         router.get(route('teams.boards.show', [teamId, boardId]));
-    };
-
-    const handleAddBoard = () => {
-        router.get(route('teams.show', teamId));
     };
 
     return (
@@ -82,24 +76,6 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
                 </List>
             )}
 
-            <Box sx={{ px: 2, pt: 1.5 }}>
-                <Button
-                    startIcon={<AddIcon />}
-                    size="small"
-                    onClick={handleAddBoard}
-                    sx={{
-                        width: '100%',
-                        justifyContent: 'flex-start',
-                        textTransform: 'none',
-                        color: 'text.secondary',
-                        '&:hover': {
-                            color: 'primary.main',
-                        },
-                    }}
-                >
-                    Add Board
-                </Button>
-            </Box>
         </Box>
     );
 }

@@ -1,6 +1,7 @@
 import { Link, usePage, router } from '@inertiajs/react';
 import { type PropsWithChildren, type ReactNode, useEffect, useState } from 'react';
-import type { Board, PageProps, Team } from '@/types';
+import type { PageProps, Team } from '@/types';
+import { SidebarProvider, useSidebar } from '@/Contexts/SidebarContext';
 import Sidebar from '@/Components/Layout/Sidebar';
 import AppBar from '@mui/material/AppBar';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -22,32 +23,36 @@ import ConnectionStatus from '@/Components/Layout/ConnectionStatus';
 import NotificationBell from '@/Components/Layout/NotificationBell';
 
 const DRAWER_WIDTH = 260;
+const COLLAPSED_WIDTH = 64;
 
 interface AuthenticatedLayoutProps {
     header?: ReactNode;
-    teams?: Team[];
     currentTeam?: Team;
-    boards?: Board[];
     activeBoardId?: string;
 }
 
-export default function AuthenticatedLayout({
+export default function AuthenticatedLayout(props: PropsWithChildren<AuthenticatedLayoutProps>) {
+    return (
+        <SidebarProvider
+            currentTeamOverride={props.currentTeam}
+            activeBoardId={props.activeBoardId}
+        >
+            <AuthenticatedLayoutInner {...props} />
+        </SidebarProvider>
+    );
+}
+
+function AuthenticatedLayoutInner({
     header,
     children,
-    teams: teamsProp,
-    currentTeam: currentTeamProp,
-    boards: boardsProp,
-    activeBoardId: activeBoardIdProp,
+    activeBoardId,
 }: PropsWithChildren<AuthenticatedLayoutProps>) {
     const pageProps = usePage<PageProps>().props;
     const { auth } = pageProps;
     const user = auth.user;
+    const { collapsed } = useSidebar();
 
-    // Use props if provided directly, otherwise fall back to shared Inertia page props
-    const teams = teamsProp ?? pageProps.teams ?? [];
-    const currentTeam = currentTeamProp ?? pageProps.currentTeam;
-    const boards = boardsProp ?? currentTeam?.boards ?? [];
-    const activeBoardId = activeBoardIdProp;
+    const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -87,23 +92,18 @@ export default function AuthenticatedLayout({
         setMobileOpen((prev) => !prev);
     };
 
-    const sidebarContent = (
-        <Sidebar
-            teams={teams}
-            currentTeam={currentTeam}
-            boards={boards}
-            activeBoardId={activeBoardId}
-        />
-    );
-
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
             {/* Sidebar - permanent on desktop, temporary on mobile */}
             <Box
                 component="nav"
-                sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+                sx={{
+                    width: { md: drawerWidth },
+                    flexShrink: { md: 0 },
+                    transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
+                }}
             >
-                {/* Mobile drawer */}
+                {/* Mobile drawer — always full-width, unaffected by collapse */}
                 <Drawer
                     variant="temporary"
                     open={mobileOpen}
@@ -117,7 +117,7 @@ export default function AuthenticatedLayout({
                         },
                     }}
                 >
-                    {sidebarContent}
+                    <Sidebar activeBoardId={activeBoardId} forceExpanded />
                 </Drawer>
 
                 {/* Desktop drawer */}
@@ -127,14 +127,16 @@ export default function AuthenticatedLayout({
                         display: { xs: 'none', md: 'block' },
                         '& .MuiDrawer-paper': {
                             boxSizing: 'border-box',
-                            width: DRAWER_WIDTH,
+                            width: drawerWidth,
                             borderRight: 1,
                             borderColor: 'divider',
+                            transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
+                            overflowX: 'hidden',
                         },
                     }}
                     open
                 >
-                    {sidebarContent}
+                    <Sidebar activeBoardId={activeBoardId} />
                 </Drawer>
             </Box>
 
@@ -144,7 +146,8 @@ export default function AuthenticatedLayout({
                     flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+                    width: { md: `calc(100% - ${drawerWidth}px)` },
+                    transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
                 }}
             >
                 {/* Top AppBar */}

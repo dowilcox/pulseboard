@@ -69,7 +69,7 @@ export default function TasksShow({
     gitlabProjects,
     boardTasks,
 }: Props) {
-    const { auth, teams } = usePage<PageProps>().props;
+    const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
 
     // Local state for debounced fields
@@ -215,9 +215,7 @@ export default function TasksShow({
 
     return (
         <AuthenticatedLayout
-            teams={teams ?? []}
             currentTeam={team as any}
-            boards={board ? [board] : []}
             activeBoardId={board.id}
             header={
                 <Breadcrumbs>

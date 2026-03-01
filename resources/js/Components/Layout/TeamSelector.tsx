@@ -1,31 +1,70 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import type { Team } from '@/types';
+import type { PageProps } from '@/types';
+import { useSidebar } from '@/Contexts/SidebarContext';
 
 interface TeamSelectorProps {
-    teams: Team[];
-    currentTeam?: Team;
+    collapsed?: boolean;
 }
 
-export default function TeamSelector({ teams, currentTeam }: TeamSelectorProps) {
+export default function TeamSelector({ collapsed }: TeamSelectorProps) {
+    const { teams: sharedTeams } = usePage<PageProps>().props;
+    const teams = sharedTeams ?? [];
+    const { currentTeam, setSelectedTeamId } = useSidebar();
+
     const handleChange = (event: SelectChangeEvent<string>) => {
         const teamId = event.target.value;
         if (teamId && teamId !== currentTeam?.id) {
+            setSelectedTeamId(teamId);
             router.get(route('teams.show', teamId));
+        }
+    };
+
+    const handleCollapsedClick = () => {
+        if (currentTeam) {
+            router.get(route('teams.show', currentTeam.id));
         }
     };
 
     if (teams.length === 0) {
         return (
             <Box sx={{ px: 2, py: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                    No teams yet
-                </Typography>
+                {!collapsed && (
+                    <Typography variant="body2" color="text.secondary">
+                        No teams yet
+                    </Typography>
+                )}
+            </Box>
+        );
+    }
+
+    if (collapsed) {
+        const initial = currentTeam?.name?.charAt(0).toUpperCase() ?? '?';
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
+                <Tooltip title={currentTeam?.name ?? 'Select a team'} placement="right">
+                    <Avatar
+                        sx={{
+                            width: 32,
+                            height: 32,
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            cursor: 'pointer',
+                        }}
+                        onClick={handleCollapsedClick}
+                    >
+                        {initial}
+                    </Avatar>
+                </Tooltip>
             </Box>
         );
     }

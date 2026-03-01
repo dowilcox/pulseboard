@@ -118,6 +118,7 @@ export default function TeamDashboard({ team }: Props) {
 
     return (
         <AuthenticatedLayout
+            currentTeam={team}
             header={
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     <Box>
