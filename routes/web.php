@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\SamlController;
+use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\AutomationRuleController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardTemplateController;
@@ -37,6 +38,9 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// Public avatar endpoint
+Route::get('/avatars/{user}', [AvatarController::class, 'show'])->name('avatars.show');
 
 // SAML SSO routes (no auth required)
 Route::get('/auth/saml/login', [SamlController::class, 'redirect'])->name('saml.login');

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -41,6 +42,35 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var list<string>
+     */
+    protected $appends = [
+        'avatar_url',
+    ];
+
+
+    /**
+     * Get the user's avatar URL.
+     *
+     * Returns the DB value if explicitly set (e.g. SAML), otherwise our local
+     * initials-SVG endpoint which generates a colored avatar deterministically.
+     */
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value) {
+                if ($value) {
+                    return $value;
+                }
+
+                return url("/avatars/{$this->id}");
+            },
+        );
+    }
 
     protected function casts(): array
     {
