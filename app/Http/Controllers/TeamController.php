@@ -82,4 +82,19 @@ class TeamController extends Controller
 
         return Redirect::route('teams.index');
     }
+
+    /**
+     * Display team settings.
+     */
+    public function settings(Team $team): Response
+    {
+        $this->authorize('view', $team);
+
+        $labels = $team->labels()->orderBy('name')->get();
+
+        return Inertia::render('Teams/Settings', [
+            'team' => $team,
+            'labels' => $labels,
+        ]);
+    }
 }

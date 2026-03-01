@@ -17,11 +17,11 @@ class LabelController extends Controller
         return response()->json($team->labels()->orderBy('name')->get());
     }
 
-    public function store(StoreLabelRequest $request, Team $team): JsonResponse
+    public function store(StoreLabelRequest $request, Team $team): RedirectResponse
     {
-        $label = $team->labels()->create($request->validated());
+        $team->labels()->create($request->validated());
 
-        return response()->json($label, 201);
+        return Redirect::back();
     }
 
     public function update(Request $request, Team $team, Label $label): RedirectResponse

@@ -6,6 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GitlabIcon from '@mui/icons-material/AccountTree';
+import SettingsIcon from '@mui/icons-material/Settings';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -74,6 +75,14 @@ export default function TeamsShow({ team, boards }: Props) {
                             onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
                         >
                             GitLab
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<SettingsIcon />}
+                            size="small"
+                            onClick={() => router.get(route('teams.settings', team.id))}
+                        >
+                            Settings
                         </Button>
                         <Button
                             variant="contained"

@@ -8,8 +8,8 @@ use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\SamlController;
-use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\AutomationRuleController;
+use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardTemplateController;
 use App\Http\Controllers\ColumnController;
@@ -109,6 +109,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
         Route::put('/teams/{team}', [TeamController::class, 'update'])->name('teams.update');
         Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->name('teams.destroy');
+        Route::get('/teams/{team}/settings', [TeamController::class, 'settings'])->name('teams.settings');
 
         // Team Members
         Route::post('/teams/{team}/members', [TeamMemberController::class, 'store'])->name('teams.members.store');
