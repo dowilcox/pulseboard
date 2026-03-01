@@ -9,6 +9,7 @@ import {
     DragOverlay,
     KeyboardSensor,
     PointerSensor,
+    useDroppable,
     useSensor,
     useSensors,
 } from '@dnd-kit/core';
@@ -40,6 +41,34 @@ function findColumnForTask(columnTasks: Record<string, Task[]>, taskId: string):
         }
     }
     return null;
+}
+
+interface DroppableColumnBodyProps {
+    columnId: string;
+    children: React.ReactNode;
+}
+
+function DroppableColumnBody({ columnId, children }: DroppableColumnBodyProps) {
+    const { setNodeRef, isOver } = useDroppable({ id: columnId });
+    return (
+        <Box
+            ref={setNodeRef}
+            sx={{
+                px: 1,
+                pt: 1,
+                pb: 1.5,
+                minHeight: 100,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.25,
+                borderRadius: '0 0 12px 12px',
+                transition: 'background-color 150ms ease',
+                bgcolor: isOver ? 'action.selected' : 'transparent',
+            }}
+        >
+            {children}
+        </Box>
+    );
 }
 
 interface Props {
@@ -226,7 +255,9 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     maxWidth: 340,
                                     flex: '0 0 300px',
                                     bgcolor: 'action.hover',
-                                    borderRadius: 3,
+                                    borderRadius: '12px',
+                                    border: 1,
+                                    borderColor: 'divider',
                                     display: 'flex',
                                     flexDirection: 'column',
                                 }}
@@ -279,17 +310,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     items={tasks.map((t) => t.id)}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <Box
-                                        sx={{
-                                            px: 1.5,
-                                            pt: 1,
-                                            pb: 1.5,
-                                            minHeight: 100,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 1.25,
-                                        }}
-                                    >
+                                    <DroppableColumnBody columnId={column.id}>
                                         {tasks.map((task) => (
                                             <SortableTaskCard
                                                 key={task.id}
@@ -303,7 +324,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                             boardId={board.id}
                                             columnId={column.id}
                                         />
-                                    </Box>
+                                    </DroppableColumnBody>
                                 </SortableContext>
                             </Paper>
                         );
@@ -314,7 +335,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
             {/* Drag overlay */}
             <DragOverlay>
                 {activeTask ? (
-                    <Box sx={{ opacity: 0.85, transform: 'rotate(2deg)' }}>
+                    <Box sx={{ opacity: 0.9, transform: 'rotate(2deg)', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
                         <TaskCard task={activeTask} />
                     </Box>
                 ) : null}

@@ -39,12 +39,15 @@ export default function TaskCard({ task, onClick }: Props) {
                 }
             }}
             sx={{
-                p: 2,
+                p: 1.5,
                 cursor: 'pointer',
-                borderLeft: `2.5px solid ${priorityColor}`,
-                borderRadius: 2,
+                borderLeft: `3px solid ${priorityColor}`,
+                borderRadius: '8px',
                 opacity: isCompleted ? 0.7 : 1,
                 transition: 'border-color 150ms ease, background-color 150ms ease',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1,
                 '&:hover': {
                     bgcolor: 'action.hover',
                     borderColor: 'action.selected',
@@ -58,7 +61,7 @@ export default function TaskCard({ task, onClick }: Props) {
         >
             {/* Labels */}
             {task.labels && task.labels.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                     {task.labels.map((label) => (
                         <Chip
                             key={label.id}
@@ -75,8 +78,15 @@ export default function TaskCard({ task, onClick }: Props) {
                 </Box>
             )}
 
+            {/* Task number */}
+            {task.task_number && (
+                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
+                    PB-{task.task_number}
+                </Typography>
+            )}
+
             {/* Title + indicators */}
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mb: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
                 {isBlocked && (
                     <Tooltip title="Blocked by dependencies">
                         <LockIcon sx={{ fontSize: 16, color: 'warning.main', mt: 0.25, flexShrink: 0 }} />
@@ -95,13 +105,13 @@ export default function TaskCard({ task, onClick }: Props) {
                         color: isCompleted ? 'text.disabled' : 'text.primary',
                     }}
                 >
-                    {task.task_number ? `PB-${task.task_number} ` : ''}{task.title}
+                    {task.title}
                 </Typography>
             </Box>
 
             {/* GitLab MR badges */}
             {task.gitlab_links && task.gitlab_links.filter(l => l.link_type === 'merge_request').length > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mb: 1 }} onClick={(e) => e.stopPropagation()}>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
                     {task.gitlab_links
                         .filter(l => l.link_type === 'merge_request')
                         .map((link) => (
@@ -112,7 +122,7 @@ export default function TaskCard({ task, onClick }: Props) {
 
             {/* Checklist progress bar */}
             {checklistProgress && checklistProgress.total > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <LinearProgress
                         variant="determinate"
                         value={(checklistProgress.completed / checklistProgress.total) * 100}
@@ -124,66 +134,59 @@ export default function TaskCard({ task, onClick }: Props) {
                 </Box>
             )}
 
-            {/* Footer row: metadata + assignees */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {/* Due date */}
-                    {task.due_date && (
-                        <Typography variant="caption" color="text.secondary">
-                            {new Date(task.due_date).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                            })}
-                        </Typography>
-                    )}
-
-                    {/* Comment count */}
-                    {(task.comments_count ?? 0) > 0 && (
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                            <ChatBubbleOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+            {/* Footer row: metadata + assignees (only if there's content) */}
+            {(task.due_date || (task.comments_count ?? 0) > 0 || (task.subtasks_count ?? 0) > 0 || (task.effort_estimate != null && task.effort_estimate > 0) || (task.assignees && task.assignees.length > 0)) && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {task.due_date && (
                             <Typography variant="caption" color="text.secondary">
-                                {task.comments_count}
+                                {new Date(task.due_date).toLocaleDateString(undefined, {
+                                    month: 'short',
+                                    day: 'numeric',
+                                })}
                             </Typography>
-                        </Box>
-                    )}
-
-                    {/* Subtask progress */}
-                    {(task.subtasks_count ?? 0) > 0 && (
-                        <Typography variant="caption" color="text.secondary">
-                            {task.completed_subtasks_count ?? 0}/{task.subtasks_count}
-                        </Typography>
-                    )}
-
-                    {/* Effort estimate */}
-                    {task.effort_estimate != null && task.effort_estimate > 0 && (
-                        <Tooltip title="Effort estimate">
-                            <Chip
-                                icon={<SpeedIcon sx={{ fontSize: '14px !important' }} />}
-                                label={task.effort_estimate}
-                                size="small"
-                                variant="outlined"
-                                sx={{ height: 20, fontSize: '0.65rem', '& .MuiChip-icon': { ml: 0.5 } }}
-                            />
-                        </Tooltip>
+                        )}
+                        {(task.comments_count ?? 0) > 0 && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                                <ChatBubbleOutlineIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                <Typography variant="caption" color="text.secondary">
+                                    {task.comments_count}
+                                </Typography>
+                            </Box>
+                        )}
+                        {(task.subtasks_count ?? 0) > 0 && (
+                            <Typography variant="caption" color="text.secondary">
+                                {task.completed_subtasks_count ?? 0}/{task.subtasks_count}
+                            </Typography>
+                        )}
+                        {task.effort_estimate != null && task.effort_estimate > 0 && (
+                            <Tooltip title="Effort estimate">
+                                <Chip
+                                    icon={<SpeedIcon sx={{ fontSize: '14px !important' }} />}
+                                    label={task.effort_estimate}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ height: 20, fontSize: '0.65rem', '& .MuiChip-icon': { ml: 0.5 } }}
+                                />
+                            </Tooltip>
+                        )}
+                    </Box>
+                    {task.assignees && task.assignees.length > 0 && (
+                        <AvatarGroup
+                            max={3}
+                            sx={{
+                                '& .MuiAvatar-root': { width: 24, height: 24, fontSize: '0.65rem' },
+                            }}
+                        >
+                            {task.assignees.map((user) => (
+                                <Avatar key={user.id} alt={user.name} src={user.avatar_url}>
+                                    {user.name.charAt(0).toUpperCase()}
+                                </Avatar>
+                            ))}
+                        </AvatarGroup>
                     )}
                 </Box>
-
-                {/* Assignee avatars */}
-                {task.assignees && task.assignees.length > 0 && (
-                    <AvatarGroup
-                        max={3}
-                        sx={{
-                            '& .MuiAvatar-root': { width: 24, height: 24, fontSize: '0.65rem' },
-                        }}
-                    >
-                        {task.assignees.map((user) => (
-                            <Avatar key={user.id} alt={user.name} src={user.avatar_url}>
-                                {user.name.charAt(0).toUpperCase()}
-                            </Avatar>
-                        ))}
-                    </AvatarGroup>
-                )}
-            </Box>
+            )}
         </Paper>
     );
 }
