@@ -31,15 +31,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function teamDashboard(Team $team): Response
-    {
-        $this->authorize('view', $team);
-
-        return Inertia::render('Teams/Dashboard', [
-            'team' => $team,
-        ]);
-    }
-
     public function teamStats(Request $request, Team $team): JsonResponse
     {
         $this->authorize('view', $team);
@@ -47,7 +38,7 @@ class DashboardController extends Controller
         $boardIds = $team->boards()->pluck('id');
 
         // Task counts by column (for burndown-like data)
-        $tasksByColumn = Task::whereIn('board_id', $boardIds)
+        $tasksByColumn = Task::whereIn('tasks.board_id', $boardIds)
             ->join('columns', 'tasks.column_id', '=', 'columns.id')
             ->select('columns.name as column_name', 'columns.is_done_column', DB::raw('count(*) as count'))
             ->groupBy('columns.name', 'columns.is_done_column')

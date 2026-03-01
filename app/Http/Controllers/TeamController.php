@@ -49,7 +49,7 @@ class TeamController extends Controller
         $this->authorize('view', $team);
 
         $team->load(['members', 'boards' => function ($query) {
-            $query->active()->orderBy('sort_order');
+            $query->active()->with('columns')->orderBy('sort_order');
         }]);
 
         return Inertia::render('Teams/Show', [

@@ -168,7 +168,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
         // Team Dashboard
-        Route::get('/teams/{team}/dashboard', [DashboardController::class, 'teamDashboard'])->name('teams.dashboard');
         Route::get('/teams/{team}/dashboard/stats', [DashboardController::class, 'teamStats'])->name('teams.dashboard.stats');
         Route::get('/teams/{team}/export/csv', [DashboardController::class, 'exportCsv'])->name('teams.export.csv');
 

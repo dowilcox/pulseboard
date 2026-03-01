@@ -1,10 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Board, Team } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import DownloadIcon from '@mui/icons-material/Download';
 import GitlabIcon from '@mui/icons-material/AccountTree';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
@@ -14,6 +14,7 @@ import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -23,6 +24,28 @@ import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+interface ColumnStat {
+    column_name: string;
+    is_done_column: boolean;
+    count: number;
+}
+
+interface OverdueTask {
+    id: string;
+    title: string;
+    task_number?: number;
+    due_date: string;
+    board?: { id: string; name: string };
+    column?: { name: string };
+    assignees?: { id: string; name: string }[];
+}
+
+interface Stats {
+    tasks_by_column: ColumnStat[];
+    overdue_tasks: OverdueTask[];
+    cycle_time: number;
+}
+
 interface Props {
     team: Team;
     boards: Board[];
@@ -30,11 +53,36 @@ interface Props {
 
 export default function TeamsShow({ team, boards }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
+    const [stats, setStats] = useState<Stats | null>(null);
+    const [statsLoading, setStatsLoading] = useState(true);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         description: '',
     });
+
+    useEffect(() => {
+        fetch(route('teams.dashboard.stats', team.id), {
+            headers: { Accept: 'application/json' },
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error(`Stats request failed: ${res.status}`);
+                return res.json();
+            })
+            .then((data: Stats) => {
+                setStats(data);
+                setStatsLoading(false);
+            })
+            .catch(() => setStatsLoading(false));
+    }, [team.id]);
+
+    const columnData = (stats?.tasks_by_column ?? []).map((c) => ({
+        name: c.column_name,
+        count: c.count,
+        isDone: c.is_done_column,
+    }));
+
+    const overdueTasks = stats?.overdue_tasks ?? [];
 
     const handleCreateBoard = (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,11 +110,11 @@ export default function TeamsShow({ team, boards }: Props) {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                             variant="outlined"
-                            startIcon={<BarChartIcon />}
+                            startIcon={<DownloadIcon />}
                             size="small"
-                            onClick={() => router.get(route('teams.dashboard', team.id))}
+                            href={route('teams.export.csv', team.id)}
                         >
-                            Dashboard
+                            Export CSV
                         </Button>
                         <Button
                             variant="outlined"
@@ -113,6 +161,73 @@ export default function TeamsShow({ team, boards }: Props) {
                     </Box>
                 </Paper>
             )}
+
+            {/* Summary stats */}
+            {statsLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress size={32} />
+                </Box>
+            ) : stats ? (
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid size={{ xs: 6, md: 3 }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Total Tasks
+                            </Typography>
+                            <Typography variant="h4" fontWeight={700}>
+                                {columnData.reduce((s, c) => s + c.count, 0)}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 6, md: 3 }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Completed
+                            </Typography>
+                            <Typography variant="h4" fontWeight={700} color="success.main">
+                                {columnData
+                                    .filter((c) => c.isDone)
+                                    .reduce((s, c) => s + c.count, 0)}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 6, md: 3 }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{
+                                p: 2,
+                                textAlign: 'center',
+                                borderLeft: overdueTasks.length > 0 ? 3 : 0,
+                                borderColor: 'error.main',
+                            }}
+                        >
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Overdue
+                            </Typography>
+                            <Typography
+                                variant="h4"
+                                fontWeight={700}
+                                color={overdueTasks.length > 0 ? 'error' : 'text.primary'}
+                            >
+                                {overdueTasks.length}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                    <Grid size={{ xs: 6, md: 3 }}>
+                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Avg Cycle Time
+                            </Typography>
+                            <Typography variant="h4" fontWeight={700}>
+                                {stats.cycle_time}
+                                <Typography component="span" variant="body2" color="text.secondary">
+                                    {' '}days
+                                </Typography>
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                </Grid>
+            ) : null}
 
             {/* Boards grid */}
             {boards.length === 0 ? (
