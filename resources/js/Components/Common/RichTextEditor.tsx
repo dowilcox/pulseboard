@@ -188,9 +188,13 @@ export default function RichTextEditor({
         <Box
             sx={{
                 border: 1,
-                borderColor: 'divider',
+                borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.16)' : 'divider',
                 borderRadius: 1,
                 overflow: 'hidden',
+                bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : 'transparent',
+                '&:hover': {
+                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.30)' : 'text.primary',
+                },
                 '&:focus-within': {
                     borderColor: 'primary.main',
                     boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,

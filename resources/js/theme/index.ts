@@ -113,4 +113,29 @@ export const darkTheme = createTheme({
         },
         divider: 'rgba(255,255,255,0.10)',
     },
+    components: {
+        ...commonOptions.components,
+        MuiPaper: {
+            ...commonOptions.components?.MuiPaper,
+            styleOverrides: {
+                ...commonOptions.components?.MuiPaper?.styleOverrides,
+                root: {
+                    backgroundImage: 'none',
+                },
+            },
+        },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: '#1f1f1f',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255,255,255,0.16)',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: 'rgba(255,255,255,0.30)',
+                    },
+                },
+            },
+        },
+    },
 });
