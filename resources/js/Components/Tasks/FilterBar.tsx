@@ -1,5 +1,6 @@
 import { PRIORITY_OPTIONS } from '@/constants/priorities';
 import type { Label, Task, User } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import ClearIcon from '@mui/icons-material/Clear';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
@@ -191,7 +192,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                             key={option.id}
                             label={option.name}
                             size="small"
-                            sx={{ bgcolor: option.color, color: '#fff' }}
+                            sx={{ bgcolor: option.color, color: getContrastText(option.color) }}
                         />
                     ))
                 }
@@ -270,7 +271,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
             {/* Clear all */}
             {activeFilterCount > 0 && (
                 <Tooltip title="Clear all filters">
-                    <IconButton size="small" onClick={clearAll}>
+                    <IconButton size="small" onClick={clearAll} aria-label="Clear all filters">
                         <ClearIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>

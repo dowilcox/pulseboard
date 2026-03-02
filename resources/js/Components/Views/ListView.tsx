@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Column, Task } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
@@ -133,8 +134,16 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                 <TableRow
                                     key={task.id}
                                     hover
+                                    tabIndex={0}
+                                    aria-label={`Task ${task.task_number ? '#' + task.task_number + ' ' : ''}${task.title}`}
                                     sx={{ cursor: 'pointer' }}
                                     onClick={() => onTaskClick(task)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            onTaskClick(task);
+                                        }
+                                    }}
                                 >
                                     <TableCell>
                                         <Typography variant="body2" color="text.secondary">
@@ -153,7 +162,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                                 size="small"
                                                 sx={{
                                                     bgcolor: col.color,
-                                                    color: '#fff',
+                                                    color: getContrastText(col.color),
                                                     height: 22,
                                                     fontSize: '0.7rem',
                                                 }}
@@ -226,7 +235,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                                         height: 18,
                                                         fontSize: '0.6rem',
                                                         bgcolor: label.color,
-                                                        color: '#fff',
+                                                        color: getContrastText(label.color),
                                                     }}
                                                 />
                                             ))}

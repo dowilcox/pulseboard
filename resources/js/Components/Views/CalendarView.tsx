@@ -76,13 +76,13 @@ export default function CalendarView({ columns, filterFn, onTaskClick }: Props) 
         <Box>
             {/* Month navigation */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-                <IconButton onClick={prevMonth} size="small">
+                <IconButton onClick={prevMonth} size="small" aria-label="Previous month">
                     <ChevronLeftIcon />
                 </IconButton>
                 <Typography variant="h6" fontWeight={600}>
                     {formatMonthYear(currentDate)}
                 </Typography>
-                <IconButton onClick={nextMonth} size="small">
+                <IconButton onClick={nextMonth} size="small" aria-label="Next month">
                     <ChevronRightIcon />
                 </IconButton>
             </Box>

@@ -1,5 +1,6 @@
 import { PRIORITY_COLORS } from '@/constants/priorities';
 import type { Task } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -71,7 +72,7 @@ export default function TaskCard({ task, onClick }: Props) {
                                 height: 18,
                                 fontSize: '0.65rem',
                                 bgcolor: label.color,
-                                color: '#fff',
+                                color: getContrastText(label.color),
                             }}
                         />
                     ))}

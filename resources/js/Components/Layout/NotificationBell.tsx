@@ -54,7 +54,7 @@ export default function NotificationBell() {
 
     return (
         <>
-            <IconButton size="small" onClick={handleOpen}>
+            <IconButton size="small" onClick={handleOpen} aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}>
                 <Badge badgeContent={unreadCount} color="error" max={99}>
                     <NotificationsIcon />
                 </Badge>

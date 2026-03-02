@@ -1,6 +1,7 @@
 import { PRIORITY_COLORS } from '@/constants/priorities';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Task } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import { Head, router } from '@inertiajs/react';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -138,11 +139,19 @@ export default function Dashboard({ myTasks }: Props) {
                                 <TableRow
                                     key={task.id}
                                     hover
+                                    tabIndex={0}
+                                    aria-label={`Task ${task.task_number ? '#' + task.task_number + ' ' : ''}${task.title}`}
                                     sx={{
                                         cursor: 'pointer',
                                         opacity: task.column?.is_done_column ? 0.5 : 1,
                                     }}
                                     onClick={() => handleTaskClick(task)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            handleTaskClick(task);
+                                        }
+                                    }}
                                 >
                                     <TableCell>
                                         <Typography variant="body2" color="text.secondary">
@@ -174,7 +183,7 @@ export default function Dashboard({ myTasks }: Props) {
                                                 size="small"
                                                 sx={{
                                                     bgcolor: task.column.color,
-                                                    color: '#fff',
+                                                    color: getContrastText(task.column.color),
                                                     height: 22,
                                                     fontSize: '0.7rem',
                                                 }}
@@ -226,7 +235,7 @@ export default function Dashboard({ myTasks }: Props) {
                                                         height: 20,
                                                         fontSize: '0.65rem',
                                                         bgcolor: label.color,
-                                                        color: '#fff',
+                                                        color: getContrastText(label.color),
                                                     }}
                                                 />
                                             ))}

@@ -87,7 +87,7 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
         <Box>
             {/* Navigation */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-                <IconButton onClick={() => setWeekOffset((w) => w - WEEKS_TO_SHOW)} size="small">
+                <IconButton onClick={() => setWeekOffset((w) => w - WEEKS_TO_SHOW)} size="small" aria-label="Previous weeks">
                     <ChevronLeftIcon />
                 </IconButton>
                 <Typography variant="subtitle1" fontWeight={600}>
@@ -95,7 +95,7 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                     {' - '}
                     {dates[dates.length - 1].toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Typography>
-                <IconButton onClick={() => setWeekOffset((w) => w + WEEKS_TO_SHOW)} size="small">
+                <IconButton onClick={() => setWeekOffset((w) => w + WEEKS_TO_SHOW)} size="small" aria-label="Next weeks">
                     <ChevronRightIcon />
                 </IconButton>
             </Box>

@@ -81,6 +81,11 @@ export default function RichTextEditor({
             onChange(ed.getHTML());
         },
         editorProps: {
+            attributes: {
+                role: 'textbox',
+                'aria-multiline': 'true',
+                'aria-label': placeholder,
+            },
             handlePaste: (_view, event) => {
                 const items = event.clipboardData?.items;
                 if (!items || !uploadImageUrl) return false;
@@ -173,6 +178,8 @@ export default function RichTextEditor({
             <IconButton
                 size="small"
                 onClick={action}
+                aria-label={label}
+                aria-pressed={isActive}
                 sx={{
                     color: isActive ? 'primary.main' : 'text.secondary',
                     bgcolor: isActive ? 'action.selected' : 'transparent',
@@ -277,6 +284,8 @@ export default function RichTextEditor({
         >
             {editable && (
                 <Box
+                    role="toolbar"
+                    aria-label="Text formatting"
                     sx={{
                         display: 'flex',
                         flexWrap: 'wrap',

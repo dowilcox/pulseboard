@@ -193,7 +193,7 @@ export default function ActivityFeed({
             {/* Sort toggle header */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mb: 1 }}>
                 <Tooltip title={sortOrder === 'desc' ? 'Showing newest first' : 'Showing oldest first'}>
-                    <IconButton size="small" onClick={handleToggleSort}>
+                    <IconButton size="small" onClick={handleToggleSort} aria-label={sortOrder === 'desc' ? 'Sort oldest first' : 'Sort newest first'}>
                         <SwapVertIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>

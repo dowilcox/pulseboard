@@ -332,8 +332,8 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             )}
 
             {/* Delete confirmation dialog */}
-            <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)}>
-                <DialogTitle>Delete Attachment</DialogTitle>
+            <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} aria-labelledby="delete-attachment-dialog-title">
+                <DialogTitle id="delete-attachment-dialog-title">Delete Attachment</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Are you sure you want to delete "{deleteTarget?.filename}"? This action cannot be

@@ -94,6 +94,40 @@ function AuthenticatedLayoutInner({
 
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Skip navigation link */}
+            <Box
+                component="a"
+                href="#main-content"
+                sx={{
+                    position: 'absolute',
+                    left: '-9999px',
+                    top: 'auto',
+                    width: '1px',
+                    height: '1px',
+                    overflow: 'hidden',
+                    '&:focus': {
+                        position: 'fixed',
+                        top: 8,
+                        left: 8,
+                        width: 'auto',
+                        height: 'auto',
+                        overflow: 'visible',
+                        zIndex: 9999,
+                        bgcolor: 'background.paper',
+                        color: 'primary.main',
+                        px: 2,
+                        py: 1,
+                        borderRadius: 1,
+                        boxShadow: 3,
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        fontSize: '0.875rem',
+                    },
+                }}
+            >
+                Skip to main content
+            </Box>
+
             {/* Sidebar - permanent on desktop, temporary on mobile */}
             <Box
                 component="nav"
@@ -163,6 +197,7 @@ function AuthenticatedLayoutInner({
                 >
                     {navigating && (
                         <LinearProgress
+                            aria-label="Page loading"
                             sx={{
                                 position: 'absolute',
                                 top: 0,
@@ -179,6 +214,7 @@ function AuthenticatedLayoutInner({
                             edge="start"
                             onClick={handleDrawerToggle}
                             sx={{ mr: 2, display: { md: 'none' } }}
+                            aria-label="Open navigation menu"
                         >
                             <MenuIcon />
                         </IconButton>
@@ -269,6 +305,7 @@ function AuthenticatedLayoutInner({
                 <Box
                     component="main"
                     role="main"
+                    id="main-content"
                     sx={{
                         flexGrow: 1,
                         bgcolor: 'background.default',

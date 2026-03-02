@@ -349,8 +349,8 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
             </Box>
 
             {/* Delete confirmation dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                <DialogTitle>Delete Task</DialogTitle>
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} aria-labelledby="delete-task-dialog-title">
+                <DialogTitle id="delete-task-dialog-title">Delete Task</DialogTitle>
                 <DialogContent>
                     <Typography>
                         Are you sure you want to delete "{task.title}"? This will also delete all subtasks,
@@ -371,8 +371,9 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
                 onClose={() => setTemplateDialogOpen(false)}
                 maxWidth="xs"
                 fullWidth
+                aria-labelledby="save-template-dialog-title"
             >
-                <DialogTitle>Save as Template</DialogTitle>
+                <DialogTitle id="save-template-dialog-title">Save as Template</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus

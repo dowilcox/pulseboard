@@ -186,6 +186,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                     fullWidth
                                     autoFocus
                                     placeholder="Item text..."
+                                    slotProps={{ htmlInput: { 'aria-label': 'New checklist item' } }}
                                     value={newItemText}
                                     onChange={(e) => setNewItemText(e.target.value)}
                                     onKeyDown={(e) => {
@@ -244,6 +245,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                         fullWidth
                         autoFocus
                         placeholder="Checklist title..."
+                        slotProps={{ htmlInput: { 'aria-label': 'New checklist title' } }}
                         value={newChecklistTitle}
                         onChange={(e) => setNewChecklistTitle(e.target.value)}
                         onKeyDown={(e) => {

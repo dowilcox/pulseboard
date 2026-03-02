@@ -1,4 +1,5 @@
 import type { Label, Task } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import { router } from '@inertiajs/react';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
@@ -59,7 +60,7 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
                             size="small"
                             sx={{
                                 bgcolor: label.color,
-                                color: '#fff',
+                                color: getContrastText(label.color),
                             }}
                         />
                     );

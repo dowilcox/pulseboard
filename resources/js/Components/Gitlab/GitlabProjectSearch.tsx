@@ -103,7 +103,7 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
                             ...params.InputProps,
                             endAdornment: (
                                 <>
-                                    {loading && <CircularProgress size={20} />}
+                                    {loading && <CircularProgress size={20} aria-label="Searching projects" />}
                                     {params.InputProps.endAdornment}
                                 </>
                             ),

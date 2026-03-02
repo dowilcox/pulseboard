@@ -134,7 +134,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
                                 if (value) handleAddBlockedBy(value);
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} placeholder="Search tasks..." autoFocus />
+                                <TextField {...params} placeholder="Search tasks..." autoFocus aria-label="Search for blocking task" />
                             )}
                             noOptionsText="No available tasks"
                         />
@@ -206,7 +206,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
                                 if (value) handleAddBlocking(value);
                             }}
                             renderInput={(params) => (
-                                <TextField {...params} placeholder="Search tasks..." autoFocus />
+                                <TextField {...params} placeholder="Search tasks..." autoFocus aria-label="Search for blocked task" />
                             )}
                             noOptionsText="No available tasks"
                         />
