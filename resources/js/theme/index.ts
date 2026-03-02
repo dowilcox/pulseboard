@@ -3,6 +3,15 @@ import { createTheme, type ThemeOptions } from '@mui/material/styles';
 const commonOptions: ThemeOptions = {
     typography: {
         fontFamily: '"Inter", "Helvetica Neue", "Arial", sans-serif',
+        h4: {
+            letterSpacing: '-0.03em',
+        },
+        h5: {
+            letterSpacing: '-0.02em',
+        },
+        h6: {
+            letterSpacing: '-0.01em',
+        },
     },
     shape: {
         borderRadius: 10,
@@ -53,6 +62,17 @@ const commonOptions: ThemeOptions = {
                 },
             },
         },
+        MuiTableHead: {
+            styleOverrides: {
+                root: {
+                    '& .MuiTableCell-head': {
+                        fontWeight: 600,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.02em',
+                    },
+                },
+            },
+        },
     },
 };
 
@@ -61,10 +81,10 @@ export const lightTheme = createTheme({
     palette: {
         mode: 'light',
         primary: {
-            main: '#6366f1', // indigo
+            main: '#6366f1',
         },
         secondary: {
-            main: '#ec4899', // pink
+            main: '#ec4899',
         },
         background: {
             default: '#fafafa',
@@ -78,15 +98,19 @@ export const darkTheme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#818cf8', // lighter indigo for dark mode
+            main: '#818cf8',
         },
         secondary: {
-            main: '#f472b6', // lighter pink for dark mode
+            main: '#f472b6',
         },
         background: {
-            default: '#0a0a0a',
-            paper: '#161616',
+            default: '#191919',
+            paper: '#262626',
         },
-        divider: 'rgba(255,255,255,0.08)',
+        text: {
+            primary: 'rgba(255,255,255,0.87)',
+            secondary: 'rgba(255,255,255,0.55)',
+        },
+        divider: 'rgba(255,255,255,0.10)',
     },
 });

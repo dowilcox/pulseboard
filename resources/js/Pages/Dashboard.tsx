@@ -68,11 +68,11 @@ export default function Dashboard({ myTasks }: Props) {
             <Head title="Dashboard" />
 
             {/* Summary stats */}
-            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 180 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <AssignmentIcon color="primary" fontSize="small" />
-                        <Typography variant="subtitle2" color="text.secondary">
+            <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
+                <Paper variant="outlined" sx={{ p: 2.5, flex: 1, minWidth: 160 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <AssignmentIcon color="primary" sx={{ fontSize: 18 }} />
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
                             Active Tasks
                         </Typography>
                     </Box>
@@ -81,31 +81,22 @@ export default function Dashboard({ myTasks }: Props) {
                     </Typography>
                 </Paper>
 
-                <Paper
-                    variant="outlined"
-                    sx={{
-                        p: 2,
-                        flex: 1,
-                        minWidth: 180,
-                        borderLeft: overdueTasks.length > 0 ? 3 : 0,
-                        borderColor: 'error.main',
-                    }}
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <WarningAmberIcon color={overdueTasks.length > 0 ? 'error' : 'disabled'} fontSize="small" />
-                        <Typography variant="subtitle2" color="text.secondary">
+                <Paper variant="outlined" sx={{ p: 2.5, flex: 1, minWidth: 160 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <WarningAmberIcon color={overdueTasks.length > 0 ? 'error' : 'disabled'} sx={{ fontSize: 18 }} />
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
                             Overdue
                         </Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={700} color={overdueTasks.length > 0 ? 'error' : 'text.primary'}>
+                    <Typography variant="h4" fontWeight={700} color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}>
                         {overdueTasks.length}
                     </Typography>
                 </Paper>
 
-                <Paper variant="outlined" sx={{ p: 2, flex: 1, minWidth: 180 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                        <AssignmentIcon color="success" fontSize="small" />
-                        <Typography variant="subtitle2" color="text.secondary">
+                <Paper variant="outlined" sx={{ p: 2.5, flex: 1, minWidth: 160 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                        <AssignmentIcon color="success" sx={{ fontSize: 18 }} />
+                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
                             Completed
                         </Typography>
                     </Box>
@@ -116,7 +107,7 @@ export default function Dashboard({ myTasks }: Props) {
             </Box>
 
             {/* My Tasks table */}
-            <Typography variant="h6" fontWeight={600} sx={{ mb: 1.5 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 1.5, letterSpacing: '0.02em' }}>
                 My Tasks
             </Typography>
 
@@ -124,19 +115,19 @@ export default function Dashboard({ myTasks }: Props) {
                 <Table size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell sx={{ width: 80 }}>#</TableCell>
+                            <TableCell sx={{ width: 60 }}>#</TableCell>
                             <TableCell>Title</TableCell>
                             <TableCell sx={{ width: 140 }}>Board</TableCell>
                             <TableCell sx={{ width: 120 }}>Status</TableCell>
                             <TableCell sx={{ width: 100 }}>Priority</TableCell>
-                            <TableCell sx={{ width: 120 }}>Due Date</TableCell>
+                            <TableCell sx={{ width: 110 }}>Due Date</TableCell>
                             <TableCell sx={{ width: 120 }}>Labels</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {myTasks.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                     <Typography color="text.secondary">
                                         No tasks assigned to you
                                     </Typography>
@@ -149,7 +140,7 @@ export default function Dashboard({ myTasks }: Props) {
                                     hover
                                     sx={{
                                         cursor: 'pointer',
-                                        opacity: task.column?.is_done_column ? 0.6 : 1,
+                                        opacity: task.column?.is_done_column ? 0.5 : 1,
                                     }}
                                     onClick={() => handleTaskClick(task)}
                                 >
@@ -232,8 +223,8 @@ export default function Dashboard({ myTasks }: Props) {
                                                     label={label.name}
                                                     size="small"
                                                     sx={{
-                                                        height: 18,
-                                                        fontSize: '0.6rem',
+                                                        height: 20,
+                                                        fontSize: '0.65rem',
                                                         bgcolor: label.color,
                                                         color: '#fff',
                                                     }}

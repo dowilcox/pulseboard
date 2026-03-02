@@ -82,6 +82,8 @@ export default function TeamsShow({ team, boards }: Props) {
         isDone: c.is_done_column,
     }));
 
+    const totalTasks = columnData.reduce((s, c) => s + c.count, 0);
+    const completedTasks = columnData.filter((c) => c.isDone).reduce((s, c) => s + c.count, 0);
     const overdueTasks = stats?.overdue_tasks ?? [];
 
     const handleCreateBoard = (e: React.FormEvent) => {
@@ -148,7 +150,7 @@ export default function TeamsShow({ team, boards }: Props) {
 
             {/* Team info */}
             {team.description && (
-                <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: 'action.hover' }}>
+                <Paper elevation={0} sx={{ p: 2.5, mb: 3, bgcolor: 'action.hover' }}>
                     <Typography variant="body2" color="text.secondary">
                         {team.description}
                     </Typography>
@@ -165,71 +167,74 @@ export default function TeamsShow({ team, boards }: Props) {
             {/* Summary stats */}
             {statsLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress size={32} />
+                    <CircularProgress size={28} />
                 </Box>
             ) : stats ? (
-                <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid container spacing={2} sx={{ mb: 4 }}>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle2" color="text.secondary">
+                        <Paper variant="outlined" sx={{ p: 2.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Total Tasks
                             </Typography>
-                            <Typography variant="h4" fontWeight={700}>
-                                {columnData.reduce((s, c) => s + c.count, 0)}
+                            <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                                {totalTasks}
                             </Typography>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle2" color="text.secondary">
+                        <Paper variant="outlined" sx={{ p: 2.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Completed
                             </Typography>
-                            <Typography variant="h4" fontWeight={700} color="success.main">
-                                {columnData
-                                    .filter((c) => c.isDone)
-                                    .reduce((s, c) => s + c.count, 0)}
+                            <Typography variant="h4" fontWeight={700} color="success.main" sx={{ mt: 0.5 }}>
+                                {completedTasks}
                             </Typography>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper
-                            variant="outlined"
-                            sx={{
-                                p: 2,
-                                textAlign: 'center',
-                                borderLeft: overdueTasks.length > 0 ? 3 : 0,
-                                borderColor: 'error.main',
-                            }}
-                        >
-                            <Typography variant="subtitle2" color="text.secondary">
+                        <Paper variant="outlined" sx={{ p: 2.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Overdue
                             </Typography>
                             <Typography
                                 variant="h4"
                                 fontWeight={700}
-                                color={overdueTasks.length > 0 ? 'error' : 'text.primary'}
+                                color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}
+                                sx={{ mt: 0.5 }}
                             >
                                 {overdueTasks.length}
                             </Typography>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                            <Typography variant="subtitle2" color="text.secondary">
+                        <Paper variant="outlined" sx={{ p: 2.5 }}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Avg Cycle Time
                             </Typography>
-                            <Typography variant="h4" fontWeight={700}>
-                                {stats.cycle_time}
-                                <Typography component="span" variant="body2" color="text.secondary">
-                                    {' '}days
-                                </Typography>
+                            <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                                {stats.cycle_time > 0 ? (
+                                    <>
+                                        {stats.cycle_time}
+                                        <Typography component="span" variant="body2" color="text.secondary">
+                                            {' '}days
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <Box component="span" sx={{ color: 'text.secondary' }}>—</Box>
+                                )}
                             </Typography>
                         </Paper>
                     </Grid>
                 </Grid>
             ) : null}
 
-            {/* Boards grid */}
+            {/* Boards */}
+            {boards.length > 0 && (
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 1.5, letterSpacing: '0.02em' }}>
+                    Boards
+                </Typography>
+            )}
+
             {boards.length === 0 ? (
                 <Box
                     sx={{
@@ -240,11 +245,11 @@ export default function TeamsShow({ team, boards }: Props) {
                         py: 8,
                     }}
                 >
-                    <DashboardIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                    <DashboardIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
+                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
                         No boards yet
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 3 }}>
                         Create your first board to start organizing tasks.
                     </Typography>
                     <Button
@@ -256,23 +261,29 @@ export default function TeamsShow({ team, boards }: Props) {
                     </Button>
                 </Box>
             ) : (
-                <Grid container spacing={3}>
+                <Grid container spacing={2}>
                     {boards.map((board) => (
                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={board.id}>
-                            <Card variant="outlined" sx={{ transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { borderColor: 'action.selected' } }}>
+                            <Card
+                                variant="outlined"
+                                sx={{
+                                    transition: 'border-color 150ms ease, background-color 150ms ease',
+                                    '&:hover': { borderColor: 'action.selected' },
+                                }}
+                            >
                                 <CardActionArea
                                     onClick={() =>
                                         router.get(route('teams.boards.show', [team.id, board.id]))
                                     }
                                 >
-                                    <CardContent>
+                                    <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                             <DashboardIcon
                                                 fontSize="small"
                                                 sx={{ color: 'primary.main', mr: 1 }}
                                             />
                                             <Typography
-                                                variant="h6"
+                                                variant="subtitle1"
                                                 component="h3"
                                                 fontWeight={600}
                                                 noWrap
@@ -287,7 +298,7 @@ export default function TeamsShow({ team, boards }: Props) {
                                                 variant="body2"
                                                 color="text.secondary"
                                                 sx={{
-                                                    mb: 2,
+                                                    mb: 1.5,
                                                     overflow: 'hidden',
                                                     textOverflow: 'ellipsis',
                                                     display: '-webkit-box',
@@ -299,8 +310,8 @@ export default function TeamsShow({ team, boards }: Props) {
                                             </Typography>
                                         )}
 
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <ViewColumnIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                            <ViewColumnIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
                                             <Typography variant="caption" color="text.secondary">
                                                 {board.columns?.length ?? 0} column{(board.columns?.length ?? 0) !== 1 ? 's' : ''}
                                             </Typography>
@@ -316,8 +327,10 @@ export default function TeamsShow({ team, boards }: Props) {
             {/* Create Board Dialog */}
             <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth>
                 <form onSubmit={handleCreateBoard}>
-                    <DialogTitle>Create Board</DialogTitle>
-                    <DialogContent>
+                    <DialogTitle sx={{ pb: 1 }}>
+                        <Typography variant="subtitle1" fontWeight={600}>Create Board</Typography>
+                    </DialogTitle>
+                    <DialogContent sx={{ pt: '8px !important' }}>
                         <TextField
                             autoFocus
                             label="Board Name"
@@ -327,7 +340,7 @@ export default function TeamsShow({ team, boards }: Props) {
                             onChange={(e) => setData('name', e.target.value)}
                             error={!!errors.name}
                             helperText={errors.name}
-                            sx={{ mt: 1, mb: 2 }}
+                            sx={{ mb: 2 }}
                         />
                         <TextField
                             label="Description"
@@ -341,7 +354,7 @@ export default function TeamsShow({ team, boards }: Props) {
                         />
                     </DialogContent>
                     <DialogActions sx={{ px: 3, py: 2 }}>
-                        <Button onClick={handleClose}>Cancel</Button>
+                        <Button variant="text" onClick={handleClose}>Cancel</Button>
                         <Button type="submit" variant="contained" disabled={processing}>
                             Create
                         </Button>
