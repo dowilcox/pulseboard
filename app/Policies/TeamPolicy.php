@@ -57,6 +57,14 @@ class TeamPolicy
     }
 
     /**
+     * Determine whether the user can manage admins and owners.
+     */
+    public function manageAdmin(User $user, Team $team): bool
+    {
+        return $this->isOwner($user, $team);
+    }
+
+    /**
      * Check if the user is an owner of the team.
      */
     private function isOwner(User $user, Team $team): bool

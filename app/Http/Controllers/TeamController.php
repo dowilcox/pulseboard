@@ -91,10 +91,16 @@ class TeamController extends Controller
         $this->authorize('view', $team);
 
         $labels = $team->labels()->orderBy('name')->get();
+        $members = $team->members()->orderBy('name')->get();
+        $canManageMembers = auth()->user()->can('manageMember', $team);
+        $canManageAdmins = auth()->user()->can('manageAdmin', $team);
 
         return Inertia::render('Teams/Settings', [
             'team' => $team,
             'labels' => $labels,
+            'members' => $members,
+            'canManageMembers' => $canManageMembers,
+            'canManageAdmins' => $canManageAdmins,
         ]);
     }
 }
