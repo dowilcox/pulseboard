@@ -186,6 +186,7 @@ export default function Dashboard({ myTasks }: Props) {
                                                     color: getContrastText(task.column.color),
                                                     height: 22,
                                                     fontSize: '0.7rem',
+                                                    fontWeight: 600,
                                                 }}
                                             />
                                         )}
