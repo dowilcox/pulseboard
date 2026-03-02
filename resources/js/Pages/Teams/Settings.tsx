@@ -1,7 +1,10 @@
+import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
+import { LABEL_COLORS } from '@/constants/labelColors';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import type { Label, Team } from '@/types';
+import { getContrastText } from '@/utils/colorContrast';
 import { Head, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import type { Label, Team } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -10,6 +13,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -32,7 +36,7 @@ export default function TeamSettings({ team, labels }: Props) {
     const [editColor, setEditColor] = useState('');
     const [deleteLabel, setDeleteLabel] = useState<Label | null>(null);
 
-    const addForm = useForm({ name: '', color: '#9e9e9e' });
+    const addForm = useForm({ name: '', color: LABEL_COLORS[0] as string });
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
@@ -123,40 +127,36 @@ export default function TeamSettings({ team, labels }: Props) {
                                         }}
                                     >
                                         {editingId === label.id ? (
-                                            <>
-                                                <TextField
-                                                    size="small"
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    sx={{ flex: 1 }}
-                                                    slotProps={{
-                                                        htmlInput: { maxLength: 50 },
-                                                    }}
-                                                />
-                                                <TextField
-                                                    size="small"
-                                                    type="color"
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        value={editName}
+                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        sx={{ flex: 1 }}
+                                                        slotProps={{
+                                                            htmlInput: { maxLength: 50 },
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        onClick={() => saveEdit(label)}
+                                                        disabled={!editName.trim()}
+                                                    >
+                                                        Save
+                                                    </Button>
+                                                    <Tooltip title="Cancel">
+                                                        <IconButton size="small" onClick={cancelEdit}>
+                                                            <CloseIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                                <ColorSwatchPicker
                                                     value={editColor}
-                                                    onChange={(e) => setEditColor(e.target.value)}
-                                                    sx={{ width: 80 }}
-                                                    slotProps={{
-                                                        input: { sx: { cursor: 'pointer' } },
-                                                    }}
+                                                    onChange={setEditColor}
                                                 />
-                                                <Button
-                                                    size="small"
-                                                    variant="contained"
-                                                    onClick={() => saveEdit(label)}
-                                                    disabled={!editName.trim()}
-                                                >
-                                                    Save
-                                                </Button>
-                                                <Tooltip title="Cancel">
-                                                    <IconButton size="small" onClick={cancelEdit}>
-                                                        <CloseIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </>
+                                            </Box>
                                         ) : (
                                             <>
                                                 <Box
@@ -214,18 +214,36 @@ export default function TeamSettings({ team, labels }: Props) {
                                 htmlInput: { maxLength: 50 },
                             }}
                         />
-                        <TextField
-                            label="Color"
-                            fullWidth
-                            type="color"
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Color
+                        </Typography>
+                        <ColorSwatchPicker
                             value={addForm.data.color}
-                            onChange={(e) => addForm.setData('color', e.target.value)}
-                            error={!!addForm.errors.color}
-                            helperText={addForm.errors.color}
-                            slotProps={{
-                                input: { sx: { cursor: 'pointer' } },
-                            }}
+                            onChange={(color) => addForm.setData('color', color)}
                         />
+                        {addForm.errors.color && (
+                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                                {addForm.errors.color}
+                            </Typography>
+                        )}
+                        {addForm.data.name && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Preview
+                                </Typography>
+                                <Box sx={{ mt: 0.5 }}>
+                                    <Chip
+                                        label={addForm.data.name}
+                                        size="small"
+                                        sx={{
+                                            fontWeight: 600,
+                                            bgcolor: addForm.data.color,
+                                            color: getContrastText(addForm.data.color),
+                                        }}
+                                    />
+                                </Box>
+                            </Box>
+                        )}
                     </DialogContent>
                     <DialogActions sx={{ px: 3, py: 2 }}>
                         <Button onClick={handleAddClose}>Cancel</Button>

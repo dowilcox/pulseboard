@@ -234,6 +234,7 @@ export default function Dashboard({ myTasks }: Props) {
                                                     sx={{
                                                         height: 20,
                                                         fontSize: '0.65rem',
+                                                        fontWeight: 600,
                                                         bgcolor: label.color,
                                                         color: getContrastText(label.color),
                                                     }}

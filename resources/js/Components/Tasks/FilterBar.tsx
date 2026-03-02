@@ -192,7 +192,7 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
                             key={option.id}
                             label={option.name}
                             size="small"
-                            sx={{ bgcolor: option.color, color: getContrastText(option.color) }}
+                            sx={{ fontWeight: 600, bgcolor: option.color, color: getContrastText(option.color) }}
                         />
                     ))
                 }

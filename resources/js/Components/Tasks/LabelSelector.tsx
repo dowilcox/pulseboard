@@ -59,6 +59,7 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
                             label={label.name}
                             size="small"
                             sx={{
+                                fontWeight: 600,
                                 bgcolor: label.color,
                                 color: getContrastText(label.color),
                             }}

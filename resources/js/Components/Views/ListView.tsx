@@ -234,6 +234,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                                     sx={{
                                                         height: 18,
                                                         fontSize: '0.6rem',
+                                                        fontWeight: 600,
                                                         bgcolor: label.color,
                                                         color: getContrastText(label.color),
                                                     }}

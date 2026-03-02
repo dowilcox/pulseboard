@@ -71,6 +71,7 @@ export default function TaskCard({ task, onClick }: Props) {
                             sx={{
                                 height: 18,
                                 fontSize: '0.65rem',
+                                fontWeight: 600,
                                 bgcolor: label.color,
                                 color: getContrastText(label.color),
                             }}
