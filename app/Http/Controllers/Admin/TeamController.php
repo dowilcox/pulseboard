@@ -24,7 +24,7 @@ class TeamController extends Controller
     public function show(Team $team): JsonResponse
     {
         $team->load([
-            'members:id,name,email',
+            'members',
             'boards:id,team_id,name,is_archived,created_at',
         ]);
 

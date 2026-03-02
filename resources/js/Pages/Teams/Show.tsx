@@ -1,13 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import type { Board, Team } from '@/types';
+import type { Board, Team, UserWithTeamPivot } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DownloadIcon from '@mui/icons-material/Download';
 import GitlabIcon from '@mui/icons-material/AccountTree';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import Avatar from '@mui/material/Avatar';
+import AvatarGroup from '@mui/material/AvatarGroup';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -22,6 +24,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 interface ColumnStat {
@@ -48,10 +51,11 @@ interface Stats {
 
 interface Props {
     team: Team;
+    members: UserWithTeamPivot[];
     boards: Board[];
 }
 
-export default function TeamsShow({ team, boards }: Props) {
+export default function TeamsShow({ team, members, boards }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
     const [stats, setStats] = useState<Stats | null>(null);
     const [statsLoading, setStatsLoading] = useState(true);
@@ -149,20 +153,30 @@ export default function TeamsShow({ team, boards }: Props) {
             <Head title={team.name} />
 
             {/* Team info */}
-            {team.description && (
-                <Paper elevation={0} sx={{ p: 2.5, mb: 3, bgcolor: 'action.hover' }}>
-                    <Typography variant="body2" color="text.secondary">
+            <Paper elevation={0} sx={{ p: 2.5, mb: 3, bgcolor: 'action.hover' }}>
+                {team.description && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                         {team.description}
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                        <Chip
-                            label={`${team.members?.length ?? 0} member${(team.members?.length ?? 0) !== 1 ? 's' : ''}`}
-                            size="small"
-                            variant="outlined"
-                        />
-                    </Box>
-                </Paper>
-            )}
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <AvatarGroup
+                        max={5}
+                        sx={{
+                            '& .MuiAvatar-root': { width: 28, height: 28, fontSize: '0.75rem', fontWeight: 600 },
+                        }}
+                    >
+                        {members.map((member) => (
+                            <Tooltip key={member.id} title={member.name}>
+                                <Avatar>{member.name.charAt(0).toUpperCase()}</Avatar>
+                            </Tooltip>
+                        ))}
+                    </AvatarGroup>
+                    <Typography variant="body2" color="text.secondary">
+                        {members.length} member{members.length !== 1 ? 's' : ''}
+                    </Typography>
+                </Box>
+            </Paper>
 
             {/* Summary stats */}
             {statsLoading ? (

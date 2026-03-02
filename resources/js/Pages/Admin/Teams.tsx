@@ -2,7 +2,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
-import type { Board, PageProps, Team, TeamMember } from '@/types';
+import type { Board, PageProps, Team, UserWithTeamPivot } from '@/types';
 import GroupsIcon from '@mui/icons-material/Groups';
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
 import Box from '@mui/material/Box';
@@ -30,7 +30,7 @@ interface TeamWithCounts extends Team {
 }
 
 interface TeamDetail extends Team {
-    members: TeamMember[];
+    members: UserWithTeamPivot[];
     boards: Board[];
 }
 
@@ -153,10 +153,21 @@ export default function Teams({ adminTeams: teams }: Props) {
                                 {teamDetail.members.map((member) => (
                                     <ListItem key={member.id} disableGutters>
                                         <ListItemText
-                                            primary={member.user?.name}
-                                            secondary={member.user?.email}
+                                            primary={member.name}
+                                            secondary={member.email}
                                         />
-                                        <Chip label={member.role} size="small" variant="outlined" />
+                                        <Chip
+                                            label={member.pivot.role}
+                                            size="small"
+                                            variant="outlined"
+                                            color={
+                                                member.pivot.role === 'owner'
+                                                    ? 'primary'
+                                                    : member.pivot.role === 'admin'
+                                                      ? 'secondary'
+                                                      : 'default'
+                                            }
+                                        />
                                     </ListItem>
                                 ))}
                             </List>

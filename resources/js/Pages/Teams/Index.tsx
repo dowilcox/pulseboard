@@ -109,15 +109,15 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                                             <Typography variant="h6" component="h3" fontWeight={600} noWrap sx={{ flex: 1 }}>
                                                 {team.name}
                                             </Typography>
-                                            {team.members?.[0]?.role && (
+                                            {team.pivot?.role && (
                                                 <Chip
-                                                    label={team.members[0].role}
+                                                    label={team.pivot.role}
                                                     size="small"
                                                     variant="outlined"
                                                     color={
-                                                        team.members[0].role === 'owner'
+                                                        team.pivot.role === 'owner'
                                                             ? 'primary'
-                                                            : team.members[0].role === 'admin'
+                                                            : team.pivot.role === 'admin'
                                                               ? 'secondary'
                                                               : 'default'
                                                     }

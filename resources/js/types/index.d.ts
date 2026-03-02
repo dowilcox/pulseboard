@@ -38,6 +38,19 @@ export interface Organization {
     settings: Record<string, unknown>;
 }
 
+export interface TeamMemberPivot {
+    id: string;
+    user_id: string;
+    team_id: string;
+    role: 'owner' | 'admin' | 'member';
+    created_at: string;
+    updated_at: string;
+}
+
+export interface UserWithTeamPivot extends User {
+    pivot: TeamMemberPivot;
+}
+
 export interface Team {
     id: string;
     name: string;
@@ -46,7 +59,8 @@ export interface Team {
     settings: Record<string, unknown>;
     created_at: string;
     updated_at: string;
-    members?: TeamMember[];
+    pivot?: { role: 'owner' | 'admin' | 'member' };
+    members?: UserWithTeamPivot[];
     boards?: Board[];
 }
 

@@ -101,8 +101,7 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                 }}
             >
                 {teams.map((team) => {
-                    const member = team.members?.[0];
-                    const role = member?.role;
+                    const role = team.pivot?.role;
 
                     return (
                         <MenuItem key={team.id} value={team.id}>
