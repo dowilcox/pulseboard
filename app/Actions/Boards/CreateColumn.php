@@ -18,12 +18,17 @@ class CreateColumn
     public function handle(Board $board, array $data): Column
     {
         $nextSortOrder = $board->columns()->max('sort_order') + 1;
+        $isDone = $data['is_done_column'] ?? false;
+
+        if ($isDone) {
+            $board->columns()->update(['is_done_column' => false]);
+        }
 
         return $board->columns()->create([
             'name' => $data['name'],
             'color' => $data['color'] ?? '#6366f1',
             'wip_limit' => $data['wip_limit'] ?? null,
-            'is_done_column' => $data['is_done_column'] ?? false,
+            'is_done_column' => $isDone,
             'sort_order' => $nextSortOrder,
         ]);
     }

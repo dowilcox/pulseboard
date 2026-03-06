@@ -2,14 +2,14 @@ import AutomationRulesPanel from '@/Components/Automation/AutomationRulesPanel';
 import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
-import { Link as InertiaLink } from '@inertiajs/react';
 import { useState } from 'react';
 import type { Board, Column, Team, User } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
+import Collapse from '@mui/material/Collapse';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -17,7 +17,6 @@ import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
@@ -58,6 +57,7 @@ export default function BoardSettings({ board, team, members }: Props) {
     const [columns, setColumns] = useState<ColumnFormData[]>(initialColumns);
     const [columnErrors, setColumnErrors] = useState<Record<string, string>>({});
     const [savingColumns, setSavingColumns] = useState(false);
+    const [expandedColumn, setExpandedColumn] = useState<number | null>(null);
 
     const handleBoardSave = (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +82,15 @@ export default function BoardSettings({ board, team, members }: Props) {
         value: string | number | boolean | '',
     ) => {
         setColumns((prev) =>
-            prev.map((col, i) => (i === index ? { ...col, [field]: value } : col)),
+            prev.map((col, i) => {
+                if (i === index) {
+                    return { ...col, [field]: value };
+                }
+                if (field === 'is_done_column' && value === true) {
+                    return { ...col, is_done_column: false };
+                }
+                return col;
+            }),
         );
     };
 
@@ -97,6 +105,23 @@ export default function BoardSettings({ board, team, members }: Props) {
             }
             // Remove new unsaved column
             return prev.filter((_, i) => i !== index);
+        });
+    };
+
+    const handleMoveColumn = (index: number, direction: 'up' | 'down') => {
+        setColumns((prev) => {
+            const next = [...prev];
+            // Find the actual visible indices (skip _destroy items)
+            const visibleIndices = next.reduce<number[]>((acc, col, i) => {
+                if (!col._destroy) acc.push(i);
+                return acc;
+            }, []);
+            const visiblePos = visibleIndices.indexOf(index);
+            const swapVisiblePos = direction === 'up' ? visiblePos - 1 : visiblePos + 1;
+            if (swapVisiblePos < 0 || swapVisiblePos >= visibleIndices.length) return prev;
+            const swapIndex = visibleIndices[swapVisiblePos];
+            [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+            return next;
         });
     };
 
@@ -134,48 +159,14 @@ export default function BoardSettings({ board, team, members }: Props) {
             currentTeam={team}
             activeBoardId={board.id}
             header={
-                <Box>
-                    <Breadcrumbs sx={{ mb: 0.5 }}>
-                        <Link
-                            component={InertiaLink}
-                            href={route('teams.index')}
-                            underline="hover"
-                            color="text.secondary"
-                            variant="body2"
-                        >
-                            Teams
-                        </Link>
-                        <Link
-                            component={InertiaLink}
-                            href={route('teams.show', team.id)}
-                            underline="hover"
-                            color="text.secondary"
-                            variant="body2"
-                        >
-                            {team.name}
-                        </Link>
-                        <Link
-                            component={InertiaLink}
-                            href={route('teams.boards.show', [team.id, board.id])}
-                            underline="hover"
-                            color="text.secondary"
-                            variant="body2"
-                        >
-                            {board.name}
-                        </Link>
-                        <Typography variant="body2" color="text.primary">
-                            Settings
-                        </Typography>
-                    </Breadcrumbs>
-                    <Typography variant="h6" component="h2" fontWeight={600}>
-                        Board Settings
-                    </Typography>
-                </Box>
+                <Typography variant="h6" component="h2" fontWeight={600}>
+                    {board.name} Settings
+                </Typography>
             }
         >
             <Head title={`Settings - ${board.name}`} />
 
-            <Box sx={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Board details */}
                 <Card variant="outlined">
                     <CardContent>
@@ -265,6 +256,9 @@ export default function BoardSettings({ board, team, members }: Props) {
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {columns.map((column, index) => {
                                     if (column._destroy) return null;
+                                    const visibleIndex = visibleColumns.indexOf(column);
+                                    const isFirst = visibleIndex === 0;
+                                    const isLast = visibleIndex === visibleColumns.length - 1;
 
                                     return (
                                         <Paper
@@ -272,32 +266,61 @@ export default function BoardSettings({ board, team, members }: Props) {
                                             variant="outlined"
                                             sx={{ p: 2 }}
                                         >
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                {/* Row 1: Name + color + delete */}
                                                 <Box
                                                     sx={{
                                                         display: 'flex',
-                                                        alignItems: 'flex-start',
-                                                        gap: 2,
+                                                        alignItems: 'center',
+                                                        gap: 1.5,
                                                     }}
                                                 >
-                                                    <DragIndicatorIcon
-                                                        sx={{
-                                                            color: 'text.disabled',
-                                                            mt: 1.5,
-                                                            cursor: 'grab',
-                                                        }}
-                                                    />
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                                        <IconButton
+                                                            size="small"
+                                                            disabled={isFirst}
+                                                            onClick={() => handleMoveColumn(index, 'up')}
+                                                            aria-label="Move column up"
+                                                            sx={{ p: 0.25 }}
+                                                        >
+                                                            <KeyboardArrowUpIcon fontSize="small" />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            disabled={isLast}
+                                                            onClick={() => handleMoveColumn(index, 'down')}
+                                                            aria-label="Move column down"
+                                                            sx={{ p: 0.25 }}
+                                                        >
+                                                            <KeyboardArrowDownIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Box>
 
-                                                    <Box
-                                                        sx={{
-                                                            width: 20,
-                                                            height: 20,
-                                                            borderRadius: '50%',
-                                                            bgcolor: column.color,
-                                                            mt: 1.25,
-                                                            flexShrink: 0,
-                                                        }}
-                                                    />
+                                                    <Tooltip title="Click to change color">
+                                                        <Box
+                                                            component="button"
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setExpandedColumn(
+                                                                    expandedColumn === index ? null : index,
+                                                                )
+                                                            }
+                                                            sx={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                borderRadius: '50%',
+                                                                bgcolor: column.color,
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                p: 0,
+                                                                flexShrink: 0,
+                                                                transition: 'box-shadow 0.15s',
+                                                                '&:hover': {
+                                                                    boxShadow: '0 0 0 3px rgba(255,255,255,0.2)',
+                                                                },
+                                                            }}
+                                                        />
+                                                    </Tooltip>
 
                                                     <TextField
                                                         label="Name"
@@ -312,69 +335,88 @@ export default function BoardSettings({ board, team, members }: Props) {
                                                         sx={{ flex: 1 }}
                                                     />
 
-                                                    <TextField
-                                                        label="WIP Limit"
-                                                        size="small"
-                                                        type="number"
-                                                        value={column.wip_limit}
-                                                        onChange={(e) =>
-                                                            handleColumnChange(
-                                                                index,
-                                                                'wip_limit',
-                                                                e.target.value === '' ? '' : Number(e.target.value),
-                                                            )
-                                                        }
-                                                        sx={{ width: 100 }}
-                                                        slotProps={{
-                                                            htmlInput: { min: 0 },
-                                                        }}
-                                                    />
-
                                                     <Tooltip title="Remove column">
                                                         <IconButton
                                                             size="small"
                                                             color="error"
                                                             onClick={() => handleRemoveColumn(index)}
-                                                            sx={{ mt: 0.5 }}
                                                         >
                                                             <DeleteIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
                                                 </Box>
 
-                                                <Box sx={{ pl: 7 }}>
-                                                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                                                        Color
-                                                    </Typography>
-                                                    <ColorSwatchPicker
-                                                        value={column.color}
-                                                        onChange={(color) =>
-                                                            handleColumnChange(index, 'color', color)
-                                                        }
-                                                    />
-                                                </Box>
+                                                {/* Collapsible color picker */}
+                                                <Collapse in={expandedColumn === index}>
+                                                    <Box sx={{ pl: 0 }}>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                                                            Color
+                                                        </Typography>
+                                                        <ColorSwatchPicker
+                                                            value={column.color}
+                                                            onChange={(color) =>
+                                                                handleColumnChange(index, 'color', color)
+                                                            }
+                                                        />
+                                                    </Box>
+                                                </Collapse>
 
-                                                <Box sx={{ pl: 7 }}>
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={column.is_done_column}
-                                                                onChange={(e) =>
-                                                                    handleColumnChange(
-                                                                        index,
-                                                                        'is_done_column',
-                                                                        e.target.checked,
-                                                                    )
-                                                                }
-                                                                size="small"
-                                                            />
-                                                        }
-                                                        label={
-                                                            <Typography variant="body2">
-                                                                Mark as "Done" column
-                                                            </Typography>
-                                                        }
-                                                    />
+                                                {/* Row 2: WIP limit + Done checkbox */}
+                                                <Box
+                                                    sx={{
+                                                        pl: 0,
+                                                        display: 'flex',
+                                                        gap: 3,
+                                                        alignItems: 'flex-start',
+                                                    }}
+                                                >
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <TextField
+                                                            label="WIP Limit"
+                                                            size="small"
+                                                            type="number"
+                                                            placeholder="No limit"
+                                                            fullWidth
+                                                            value={column.wip_limit}
+                                                            onChange={(e) =>
+                                                                handleColumnChange(
+                                                                    index,
+                                                                    'wip_limit',
+                                                                    e.target.value === '' ? '' : Number(e.target.value),
+                                                                )
+                                                            }
+                                                            helperText="Max tasks allowed in this column"
+                                                            slotProps={{
+                                                                htmlInput: { min: 1 },
+                                                            }}
+                                                        />
+                                                    </Box>
+
+                                                    <Box sx={{ flex: 1, pt: 0.5 }}>
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={column.is_done_column}
+                                                                    onChange={(e) =>
+                                                                        handleColumnChange(
+                                                                            index,
+                                                                            'is_done_column',
+                                                                            e.target.checked,
+                                                                        )
+                                                                    }
+                                                                    size="small"
+                                                                />
+                                                            }
+                                                            label={
+                                                                <Typography variant="body2">
+                                                                    Mark as "Done" column
+                                                                </Typography>
+                                                            }
+                                                        />
+                                                        <Typography variant="caption" color="text.secondary" sx={{ pl: 3.5, display: 'block' }}>
+                                                            Tasks moved here are considered complete
+                                                        </Typography>
+                                                    </Box>
                                                 </Box>
                                             </Box>
                                         </Paper>

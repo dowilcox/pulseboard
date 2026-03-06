@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateTask
@@ -16,6 +17,15 @@ class CreateTask
 
     public function handle(Board $board, Column $column, array $data, User $creator): Task
     {
+        if ($column->wip_limit !== null && $column->wip_limit > 0) {
+            $currentCount = $column->tasks()->count();
+            if ($currentCount >= $column->wip_limit) {
+                throw ValidationException::withMessages([
+                    'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
+                ]);
+            }
+        }
+
         $task = DB::transaction(function () use ($board, $column, $data, $creator) {
             $maxSort = Task::where('column_id', $column->id)->max('sort_order') ?? 0;
 

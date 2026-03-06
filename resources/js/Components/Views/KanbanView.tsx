@@ -89,6 +89,21 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
         setColumnTasks(buildColumnTasksMap(columns));
     }, [columns]);
 
+    const columnMap = useMemo(() => {
+        const map: Record<string, Column> = {};
+        for (const col of columns) {
+            map[col.id] = col;
+        }
+        return map;
+    }, [columns]);
+
+    const isColumnFull = useCallback((columnId: string, extraCount = 0) => {
+        const col = columnMap[columnId];
+        if (!col?.wip_limit || col.wip_limit <= 0) return false;
+        const taskCount = (columnTasks[columnId]?.length ?? 0) + extraCount;
+        return taskCount >= col.wip_limit;
+    }, [columnMap, columnTasks]);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: { distance: 5 },
@@ -124,6 +139,8 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
 
         if (!activeCol || !overCol || activeCol === overCol) return;
 
+        if (isColumnFull(overCol)) return;
+
         setColumnTasks((prev) => {
             const activeTasks = [...prev[activeCol]];
             const overTasks = [...prev[overCol]];
@@ -144,7 +161,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                 [overCol]: overTasks,
             };
         });
-    }, [columnTasks]);
+    }, [columnTasks, isColumnFull]);
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event;
@@ -244,12 +261,13 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                         const allColTasks = columnTasks[column.id] ?? [];
                         const tasks = allColTasks.filter(filterFn);
                         const taskCount = allColTasks.length;
+                        const atWipLimit = column.wip_limit != null && column.wip_limit > 0 && taskCount >= column.wip_limit;
                         return (
                             <Paper
                                 key={column.id}
                                 elevation={0}
                                 role="region"
-                                aria-label={`${column.name} column, ${taskCount} tasks`}
+                                aria-label={`${column.name} column, ${taskCount} tasks${atWipLimit ? ', at WIP limit' : ''}`}
                                 sx={{
                                     minWidth: 300,
                                     maxWidth: 340,
@@ -257,7 +275,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     bgcolor: 'action.hover',
                                     borderRadius: '12px',
                                     border: 1,
-                                    borderColor: 'divider',
+                                    borderColor: atWipLimit ? 'warning.main' : 'divider',
                                     display: 'flex',
                                     flexDirection: 'column',
                                 }}
@@ -290,19 +308,15 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                         {column.name}
                                     </Typography>
                                     <Chip
-                                        label={taskCount}
+                                        label={column.wip_limit != null && column.wip_limit > 0
+                                            ? `${taskCount} / ${column.wip_limit}`
+                                            : taskCount
+                                        }
                                         size="small"
                                         variant="outlined"
+                                        color={atWipLimit ? 'warning' : 'default'}
                                         sx={{ height: 22, fontSize: '0.7rem', minWidth: 28 }}
                                     />
-                                    {column.wip_limit != null && column.wip_limit > 0 && (
-                                        <Chip
-                                            label={`WIP: ${column.wip_limit}`}
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ height: 22, fontSize: '0.7rem' }}
-                                        />
-                                    )}
                                 </Box>
 
                                 {/* Column body with sortable tasks */}
@@ -323,6 +337,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                             teamId={team.id}
                                             boardId={board.id}
                                             columnId={column.id}
+                                            disabled={atWipLimit}
                                         />
                                     </DroppableColumnBody>
                                 </SortableContext>

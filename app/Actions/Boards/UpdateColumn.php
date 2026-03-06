@@ -16,6 +16,12 @@ class UpdateColumn
      */
     public function handle(Column $column, array $data): Column
     {
+        if (!empty($data['is_done_column'])) {
+            $column->board->columns()
+                ->where('id', '!=', $column->id)
+                ->update(['is_done_column' => false]);
+        }
+
         $column->update($data);
 
         return $column->refresh();

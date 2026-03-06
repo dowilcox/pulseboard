@@ -7,6 +7,7 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class MoveTask
@@ -16,6 +17,15 @@ class MoveTask
     public function handle(Task $task, Column $column, float $sortOrder): Task
     {
         $fromColumn = $task->column;
+
+        if ($fromColumn->id !== $column->id && $column->wip_limit !== null && $column->wip_limit > 0) {
+            $currentCount = $column->tasks()->count();
+            if ($currentCount >= $column->wip_limit) {
+                throw ValidationException::withMessages([
+                    'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
+                ]);
+            }
+        }
 
         $task->update([
             'column_id' => $column->id,

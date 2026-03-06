@@ -147,7 +147,7 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
         >
             <Head title={`Settings - ${team.name}`} />
 
-            <Box sx={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Members */}
                 <Card variant="outlined">
                     <CardContent>

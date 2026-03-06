@@ -15,9 +15,10 @@ interface Props {
     boardId: string;
     columnId: string;
     templates?: TaskTemplate[];
+    disabled?: boolean;
 }
 
-export default function QuickCreateTask({ teamId, boardId, columnId, templates = [] }: Props) {
+export default function QuickCreateTask({ teamId, boardId, columnId, templates = [], disabled = false }: Props) {
     const [isCreating, setIsCreating] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -61,6 +62,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 <Button
                     startIcon={<AddIcon />}
                     size="small"
+                    disabled={disabled}
                     onClick={() => {
                         setIsCreating(true);
                         setTimeout(() => inputRef.current?.focus(), 0);
@@ -73,7 +75,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                         '&:hover': { bgcolor: 'action.hover' },
                     }}
                 >
-                    Add task
+                    {disabled ? 'WIP limit reached' : 'Add task'}
                 </Button>
                 {templates.length > 0 && (
                     <>
