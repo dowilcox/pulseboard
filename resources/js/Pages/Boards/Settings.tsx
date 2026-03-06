@@ -1,4 +1,5 @@
 import AutomationRulesPanel from '@/Components/Automation/AutomationRulesPanel';
+import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { Link as InertiaLink } from '@inertiajs/react';
@@ -68,7 +69,7 @@ export default function BoardSettings({ board, team, members }: Props) {
             ...prev,
             {
                 name: '',
-                color: '#9e9e9e',
+                color: '#64748b',
                 wip_limit: '',
                 is_done_column: false,
             },
@@ -271,71 +272,89 @@ export default function BoardSettings({ board, team, members }: Props) {
                                             variant="outlined"
                                             sx={{ p: 2 }}
                                         >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    gap: 2,
-                                                }}
-                                            >
-                                                <DragIndicatorIcon
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                                <Box
                                                     sx={{
-                                                        color: 'text.disabled',
-                                                        mt: 1.5,
-                                                        cursor: 'grab',
+                                                        display: 'flex',
+                                                        alignItems: 'flex-start',
+                                                        gap: 2,
                                                     }}
-                                                />
+                                                >
+                                                    <DragIndicatorIcon
+                                                        sx={{
+                                                            color: 'text.disabled',
+                                                            mt: 1.5,
+                                                            cursor: 'grab',
+                                                        }}
+                                                    />
 
-                                                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                                                        <TextField
-                                                            label="Name"
+                                                    <Box
+                                                        sx={{
+                                                            width: 20,
+                                                            height: 20,
+                                                            borderRadius: '50%',
+                                                            bgcolor: column.color,
+                                                            mt: 1.25,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    />
+
+                                                    <TextField
+                                                        label="Name"
+                                                        size="small"
+                                                        required
+                                                        value={column.name}
+                                                        onChange={(e) =>
+                                                            handleColumnChange(index, 'name', e.target.value)
+                                                        }
+                                                        error={!!columnErrors[`columns.${index}.name`]}
+                                                        helperText={columnErrors[`columns.${index}.name`]}
+                                                        sx={{ flex: 1 }}
+                                                    />
+
+                                                    <TextField
+                                                        label="WIP Limit"
+                                                        size="small"
+                                                        type="number"
+                                                        value={column.wip_limit}
+                                                        onChange={(e) =>
+                                                            handleColumnChange(
+                                                                index,
+                                                                'wip_limit',
+                                                                e.target.value === '' ? '' : Number(e.target.value),
+                                                            )
+                                                        }
+                                                        sx={{ width: 100 }}
+                                                        slotProps={{
+                                                            htmlInput: { min: 0 },
+                                                        }}
+                                                    />
+
+                                                    <Tooltip title="Remove column">
+                                                        <IconButton
                                                             size="small"
-                                                            required
-                                                            value={column.name}
-                                                            onChange={(e) =>
-                                                                handleColumnChange(index, 'name', e.target.value)
-                                                            }
-                                                            error={!!columnErrors[`columns.${index}.name`]}
-                                                            helperText={columnErrors[`columns.${index}.name`]}
-                                                            sx={{ flex: 1 }}
-                                                        />
+                                                            color="error"
+                                                            onClick={() => handleRemoveColumn(index)}
+                                                            sx={{ mt: 0.5 }}
+                                                        >
+                                                            <DeleteIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
 
-                                                        <TextField
-                                                            label="Color"
-                                                            size="small"
-                                                            type="color"
-                                                            value={column.color}
-                                                            onChange={(e) =>
-                                                                handleColumnChange(index, 'color', e.target.value)
-                                                            }
-                                                            sx={{ width: 80 }}
-                                                            slotProps={{
-                                                                input: {
-                                                                    sx: { cursor: 'pointer' },
-                                                                },
-                                                            }}
-                                                        />
+                                                <Box sx={{ pl: 7 }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                                                        Color
+                                                    </Typography>
+                                                    <ColorSwatchPicker
+                                                        value={column.color}
+                                                        onChange={(color) =>
+                                                            handleColumnChange(index, 'color', color)
+                                                        }
+                                                    />
+                                                </Box>
 
-                                                        <TextField
-                                                            label="WIP Limit"
-                                                            size="small"
-                                                            type="number"
-                                                            value={column.wip_limit}
-                                                            onChange={(e) =>
-                                                                handleColumnChange(
-                                                                    index,
-                                                                    'wip_limit',
-                                                                    e.target.value === '' ? '' : Number(e.target.value),
-                                                                )
-                                                            }
-                                                            sx={{ width: 100 }}
-                                                            slotProps={{
-                                                                htmlInput: { min: 0 },
-                                                            }}
-                                                        />
-                                                    </Box>
-
+                                                <Box sx={{ pl: 7 }}>
                                                     <FormControlLabel
                                                         control={
                                                             <Checkbox
@@ -357,17 +376,6 @@ export default function BoardSettings({ board, team, members }: Props) {
                                                         }
                                                     />
                                                 </Box>
-
-                                                <Tooltip title="Remove column">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleRemoveColumn(index)}
-                                                        sx={{ mt: 0.5 }}
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
                                             </Box>
                                         </Paper>
                                     );
