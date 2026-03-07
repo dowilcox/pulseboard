@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,13 +34,14 @@ class ApiTokenController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
         ]);
+
+        $email = Str::slug($validated['name']).'-'.Str::random(8).'@pulseboard.local';
 
         User::create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => bcrypt(str()->random(64)),
+            'email' => $email,
+            'password' => bcrypt(Str::random(64)),
             'is_bot' => true,
             'is_admin' => false,
             'auth_provider' => 'local',

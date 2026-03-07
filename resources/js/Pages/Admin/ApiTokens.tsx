@@ -66,7 +66,6 @@ export default function ApiTokens({ users, botUsers }: Props) {
 
     const botForm = useForm({
         name: '',
-        email: '',
     });
 
     const tokenForm = useForm({
@@ -164,7 +163,7 @@ export default function ApiTokens({ users, botUsers }: Props) {
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: user.tokens.length > 0 ? 1 : 0, borderColor: 'divider' }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         <Typography fontWeight={600}>{user.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+                                        {!user.is_bot && <Typography variant="body2" color="text.secondary">{user.email}</Typography>}
                                         {user.is_bot && <Chip label="Bot" size="small" color="info" icon={<SmartToyIcon />} />}
                                     </Box>
                                     <Button
@@ -253,16 +252,6 @@ export default function ApiTokens({ users, botUsers }: Props) {
                             onChange={(e) => botForm.setData('name', e.target.value)}
                             error={!!botForm.errors.name}
                             helperText={botForm.errors.name}
-                            fullWidth
-                            required
-                        />
-                        <TextField
-                            label="Email"
-                            type="email"
-                            value={botForm.data.email}
-                            onChange={(e) => botForm.setData('email', e.target.value)}
-                            error={!!botForm.errors.email}
-                            helperText={botForm.errors.email}
                             fullWidth
                             required
                         />
