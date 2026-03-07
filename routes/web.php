@@ -3,7 +3,6 @@
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GitlabConnectionController;
-use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\SsoConfigurationController;
 use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -99,10 +98,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/sso/{ssoConfiguration}', [SsoConfigurationController::class, 'update'])->name('sso.update');
         Route::delete('/sso/{ssoConfiguration}', [SsoConfigurationController::class, 'destroy'])->name('sso.destroy');
         Route::post('/sso/{ssoConfiguration}/test', [SsoConfigurationController::class, 'test'])->name('sso.test');
-
-        // Settings
-        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
-        Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
 
         // API Tokens
         Route::get('/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');

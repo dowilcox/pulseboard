@@ -33,13 +33,6 @@ export interface User {
     updated_at: string;
 }
 
-export interface Organization {
-    id: string;
-    name: string;
-    slug: string;
-    settings: Record<string, unknown>;
-}
-
 export interface TeamMemberPivot {
     id: string;
     user_id: string;

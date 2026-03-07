@@ -6,7 +6,6 @@ import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstruct
 import KeyIcon from '@mui/icons-material/Key';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
-import SettingsIcon from '@mui/icons-material/Settings';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import List from '@mui/material/List';
@@ -45,7 +44,6 @@ const navSections: NavSection[] = [
         label: 'Configuration',
         items: [
             { label: 'API Tokens', icon: <KeyIcon />, route: 'admin.api-tokens.index' },
-            { label: 'Settings', icon: <SettingsIcon />, route: 'admin.settings.index' },
         ],
     },
 ];
