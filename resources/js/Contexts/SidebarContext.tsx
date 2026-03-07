@@ -90,14 +90,21 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
     );
 
     const { auth } = usePage<PageProps>().props;
-    const boardOrder = auth.user?.ui_preferences?.board_order;
+    const serverBoardOrder = auth.user?.ui_preferences?.board_order;
+
+    // Optimistic local board order — keyed by team ID
+    const [localBoardOrder, setLocalBoardOrder] = useState<Record<string, string[]>>({});
+
+    // Sync local state when server props update (e.g. on full page navigation)
+    useEffect(() => {
+        setLocalBoardOrder({});
+    }, [serverBoardOrder]);
 
     const boards = useMemo(() => {
         const rawBoards = currentTeam?.boards ?? [];
-        if (!currentTeam || !boardOrder?.[currentTeam.id]) {
-            return rawBoards;
-        }
-        const order = boardOrder[currentTeam.id];
+        if (!currentTeam) return rawBoards;
+        const order = localBoardOrder[currentTeam.id] ?? serverBoardOrder?.[currentTeam.id];
+        if (!order) return rawBoards;
         const boardMap = new Map(rawBoards.map((b) => [b.id, b]));
         const ordered: Board[] = [];
         // Add boards in the saved order
@@ -113,10 +120,12 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
             ordered.push(board);
         }
         return ordered;
-    }, [currentTeam, boardOrder]);
+    }, [currentTeam, serverBoardOrder, localBoardOrder]);
 
     const reorderBoards = useCallback(
         (teamId: string, orderedBoardIds: string[]) => {
+            // Optimistically update local state so UI doesn't snap back
+            setLocalBoardOrder((prev) => ({ ...prev, [teamId]: orderedBoardIds }));
             router.patch(
                 route('profile.ui-preferences.update'),
                 { board_order: { [teamId]: orderedBoardIds } },
