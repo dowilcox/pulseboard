@@ -10,6 +10,7 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import PersonIcon from '@mui/icons-material/Person';
 import SearchIcon from '@mui/icons-material/Search';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -199,20 +200,25 @@ export default function Users({ users, filters }: Props) {
                                 {users.data.map((user) => (
                                     <TableRow key={user.id}>
                                         <TableCell>
-                                            <Typography fontWeight={500}>{user.name}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography fontWeight={500}>{user.name}</Typography>
+                                                {user.is_bot && <Chip label="Bot" size="small" color="info" icon={<SmartToyIcon />} />}
+                                            </Box>
                                         </TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {user.email}
-                                            </Typography>
+                                            {!user.is_bot && (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {user.email}
+                                                </Typography>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Chip label={user.auth_provider} size="small" variant="outlined" />
                                         </TableCell>
                                         <TableCell>
                                             <Chip
-                                                label={user.is_admin ? 'Admin' : 'User'}
-                                                color={user.is_admin ? 'primary' : 'default'}
+                                                label={user.is_bot ? 'Bot' : user.is_admin ? 'Admin' : 'User'}
+                                                color={user.is_bot ? 'info' : user.is_admin ? 'primary' : 'default'}
                                                 size="small"
                                             />
                                         </TableCell>
@@ -229,11 +235,13 @@ export default function Users({ users, filters }: Props) {
                                             </Typography>
                                         </TableCell>
                                         <TableCell align="right">
-                                            <Tooltip title="Edit">
-                                                <IconButton size="small" onClick={() => openEditDialog(user)}>
-                                                    <EditIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {!user.is_bot && (
+                                                <Tooltip title="Edit">
+                                                    <IconButton size="small" onClick={() => openEditDialog(user)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                             <Tooltip title={user.deactivated_at ? 'Reactivate' : 'Deactivate'}>
                                                 <IconButton
                                                     size="small"
@@ -243,14 +251,16 @@ export default function Users({ users, filters }: Props) {
                                                     {user.deactivated_at ? <PersonIcon fontSize="small" /> : <PersonOffIcon fontSize="small" />}
                                                 </IconButton>
                                             </Tooltip>
-                                            <Tooltip title="Reset Password">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => setConfirmAction({ user, action: 'reset' })}
-                                                >
-                                                    <LockResetIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                            {!user.is_bot && (
+                                                <Tooltip title="Reset Password">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => setConfirmAction({ user, action: 'reset' })}
+                                                    >
+                                                        <LockResetIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}

@@ -60,6 +60,11 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        if ($user->is_bot) {
+            return Redirect::route('admin.users.index')
+                ->with('error', 'Bot users cannot be edited.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
@@ -93,6 +98,11 @@ class UserController extends Controller
 
     public function resetPassword(User $user): RedirectResponse
     {
+        if ($user->is_bot) {
+            return Redirect::route('admin.users.index')
+                ->with('error', 'Bot users do not have passwords.');
+        }
+
         Password::sendResetLink(['email' => $user->email]);
 
         return Redirect::route('admin.users.index')
