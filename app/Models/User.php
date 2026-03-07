@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
     /**
      * The primary key type.
@@ -52,7 +53,6 @@ class User extends Authenticatable
         'avatar_url',
     ];
 
-
     /**
      * Get the user's avatar URL.
      *
@@ -78,6 +78,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_bot' => 'boolean',
             'email_notification_prefs' => 'array',
             'ui_preferences' => 'array',
             'theme_preference' => 'string',

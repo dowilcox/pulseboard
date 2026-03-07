@@ -23,6 +23,7 @@ export interface User {
     avatar_url?: string;
     auth_provider: 'local' | 'saml2' | 'okta';
     is_admin: boolean;
+    is_bot: boolean;
     theme_preference: 'light' | 'dark' | 'system';
     email_notification_prefs?: NotificationPreferences;
     ui_preferences?: UiPreferences;

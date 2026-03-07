@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GitlabConnectionController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
@@ -102,6 +103,12 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
         Route::put('/settings', [AdminSettingsController::class, 'update'])->name('settings.update');
+
+        // API Tokens
+        Route::get('/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
+        Route::post('/api-tokens/bots', [ApiTokenController::class, 'storeBot'])->name('api-tokens.store-bot');
+        Route::post('/api-tokens/{user}/tokens', [ApiTokenController::class, 'createToken'])->name('api-tokens.create-token');
+        Route::delete('/api-tokens/{user}/tokens/{tokenId}', [ApiTokenController::class, 'revokeToken'])->name('api-tokens.revoke-token');
     });
 
     // Board Templates

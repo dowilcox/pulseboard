@@ -3,6 +3,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupsIcon from '@mui/icons-material/Groups';
 import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstructions';
+import KeyIcon from '@mui/icons-material/Key';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -43,6 +44,7 @@ const navSections: NavSection[] = [
     {
         label: 'Configuration',
         items: [
+            { label: 'API Tokens', icon: <KeyIcon />, route: 'admin.api-tokens.index' },
             { label: 'Settings', icon: <SettingsIcon />, route: 'admin.settings.index' },
         ],
     },

@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'team.member' => \App\Http\Middleware\EnsureTeamMember::class,
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'ensure.active' => \App\Http\Middleware\EnsureNotDeactivated::class,
+            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
