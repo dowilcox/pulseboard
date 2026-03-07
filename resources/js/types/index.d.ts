@@ -350,7 +350,7 @@ export interface SsoConfiguration {
     updated_at: string;
 }
 
-export type BoardViewMode = 'kanban' | 'list' | 'calendar' | 'timeline' | 'workload';
+export type BoardViewMode = 'kanban' | 'list' | 'timeline' | 'workload';
 
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,

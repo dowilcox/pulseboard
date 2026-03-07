@@ -62,6 +62,11 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
                                 fontWeight: 600,
                                 bgcolor: label.color,
                                 color: getContrastText(label.color),
+                                '& .MuiChip-deleteIcon': {
+                                    color: getContrastText(label.color),
+                                    opacity: 0.7,
+                                    '&:hover': { opacity: 1, color: getContrastText(label.color) },
+                                },
                             }}
                         />
                     );

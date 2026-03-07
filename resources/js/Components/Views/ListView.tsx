@@ -45,9 +45,10 @@ interface Props {
     team: Team;
     filterFn: (task: Task) => boolean;
     onTaskClick: (task: Task) => void;
+    showGitlab?: boolean;
 }
 
-export default function ListView({ columns, board, team, filterFn, onTaskClick }: Props) {
+export default function ListView({ columns, board, team, filterFn, onTaskClick, showGitlab = false }: Props) {
     const [sortKey, setSortKey] = useState<SortKey>('task_number');
     const [sortDir, setSortDir] = useState<SortDir>('asc');
     const [extraTasks, setExtraTasks] = useState<Task[]>([]);
@@ -229,23 +230,23 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
 
     return (
         <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
+            <Table>
                 <TableHead>
-                    <TableRow>
-                        <TableCell sx={{ width: 80 }}>{renderSortLabel('task_number', '#')}</TableCell>
+                    <TableRow sx={{ '& .MuiTableCell-head': { fontWeight: 600, bgcolor: 'action.hover', py: 1.5 } }}>
+                        <TableCell sx={{ width: 70 }}>{renderSortLabel('task_number', '#')}</TableCell>
                         <TableCell>{renderSortLabel('title', 'Title')}</TableCell>
-                        <TableCell sx={{ width: 120 }}>{renderSortLabel('column', 'Status')}</TableCell>
-                        <TableCell sx={{ width: 100 }}>{renderSortLabel('priority', 'Priority')}</TableCell>
-                        <TableCell sx={{ width: 120 }}>{renderSortLabel('due_date', 'Due Date')}</TableCell>
+                        <TableCell sx={{ width: 130 }}>{renderSortLabel('column', 'Status')}</TableCell>
+                        <TableCell sx={{ width: 120 }}>{renderSortLabel('priority', 'Priority')}</TableCell>
+                        <TableCell sx={{ width: 130 }}>{renderSortLabel('due_date', 'Due Date')}</TableCell>
                         <TableCell sx={{ width: 150 }}>{renderSortLabel('assignees', 'Assignees')}</TableCell>
-                        <TableCell sx={{ width: 140 }}>Labels</TableCell>
-                        <TableCell sx={{ width: 100 }}>GitLab</TableCell>
+                        <TableCell sx={{ width: 160 }}>Labels</TableCell>
+                        {showGitlab && <TableCell sx={{ width: 110 }}>GitLab</TableCell>}
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {sortedTasks.length === 0 && !loading ? (
                         <TableRow>
-                            <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 6 }}>
                                 <Typography color="text.secondary">No tasks found</Typography>
                             </TableCell>
                         </TableRow>
@@ -258,7 +259,10 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                     hover
                                     tabIndex={0}
                                     aria-label={`Task ${task.task_number ? '#' + task.task_number + ' ' : ''}${task.title}`}
-                                    sx={{ cursor: 'pointer' }}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        '& .MuiTableCell-root': { py: 1.5 },
+                                    }}
                                     onClick={() => onTaskClick(task)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
@@ -268,7 +272,7 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                     }}
                                 >
                                     <TableCell>
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                                             #{task.task_number}
                                         </Typography>
                                     </TableCell>
@@ -285,22 +289,24 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                                 sx={{
                                                     bgcolor: col.color,
                                                     color: getContrastText(col.color),
-                                                    height: 22,
-                                                    fontSize: '0.7rem',
+                                                    height: 26,
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 500,
                                                 }}
                                             />
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Box
                                                 sx={{
-                                                    width: 8,
-                                                    height: 8,
+                                                    width: 10,
+                                                    height: 10,
                                                     borderRadius: '50%',
                                                     bgcolor: PRIORITY_COLORS[task.priority] ?? 'transparent',
                                                     border: task.priority === 'none' ? '1px solid' : 'none',
                                                     borderColor: 'divider',
+                                                    flexShrink: 0,
                                                 }}
                                             />
                                             <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
@@ -331,10 +337,11 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                             <AvatarGroup
                                                 max={3}
                                                 sx={{
+                                                    justifyContent: 'flex-end',
                                                     '& .MuiAvatar-root': {
-                                                        width: 24,
-                                                        height: 24,
-                                                        fontSize: '0.7rem',
+                                                        width: 28,
+                                                        height: 28,
+                                                        fontSize: '0.75rem',
                                                     },
                                                 }}
                                             >
@@ -354,8 +361,8 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                                     label={label.name}
                                                     size="small"
                                                     sx={{
-                                                        height: 18,
-                                                        fontSize: '0.6rem',
+                                                        height: 22,
+                                                        fontSize: '0.7rem',
                                                         fontWeight: 600,
                                                         bgcolor: label.color,
                                                         color: getContrastText(label.color),
@@ -364,15 +371,17 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                                             ))}
                                         </Box>
                                     </TableCell>
-                                    <TableCell onClick={(e) => e.stopPropagation()}>
-                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                            {(task.gitlab_links ?? [])
-                                                .filter((l) => l.link_type === 'merge_request')
-                                                .map((link) => (
-                                                    <MergeRequestChip key={link.id} link={link} />
-                                                ))}
-                                        </Box>
-                                    </TableCell>
+                                    {showGitlab && (
+                                        <TableCell onClick={(e) => e.stopPropagation()}>
+                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                                {(task.gitlab_links ?? [])
+                                                    .filter((l) => l.link_type === 'merge_request')
+                                                    .map((link) => (
+                                                        <MergeRequestChip key={link.id} link={link} />
+                                                    ))}
+                                            </Box>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             );
                         })
@@ -381,7 +390,7 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                     {/* Sentinel row for IntersectionObserver */}
                     {hasMore && (
                         <TableRow ref={sentinelRef}>
-                            <TableCell colSpan={8} align="center" sx={{ py: 2, border: 0 }}>
+                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 3, border: 0 }}>
                                 {loading && (
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
                                         <CircularProgress size={20} />
@@ -397,7 +406,7 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick }
                     {/* Task count summary */}
                     {!hasMore && sortedTasks.length > 0 && (
                         <TableRow>
-                            <TableCell colSpan={8} align="center" sx={{ py: 1.5, border: 0 }}>
+                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 2, border: 0 }}>
                                 <Typography variant="caption" color="text.secondary">
                                     Showing all {sortedTasks.length} tasks
                                 </Typography>

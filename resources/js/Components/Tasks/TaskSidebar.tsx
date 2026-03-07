@@ -178,16 +178,15 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
     );
 
     const fieldRow = (label: string, children: React.ReactNode) => (
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography
                 variant="caption"
                 color="text.secondary"
                 fontWeight={600}
-                sx={{ minWidth: 70, pt: 0.75, flexShrink: 0 }}
             >
                 {label}
             </Typography>
-            <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
+            <Box>{children}</Box>
         </Box>
     );
 

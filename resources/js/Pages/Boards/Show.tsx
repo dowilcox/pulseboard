@@ -1,6 +1,5 @@
 import FilterBar from '@/Components/Tasks/FilterBar';
 import PresenceAvatars from '@/Components/Layout/PresenceAvatars';
-import CalendarView from '@/Components/Views/CalendarView';
 import KanbanView from '@/Components/Views/KanbanView';
 import ListView from '@/Components/Views/ListView';
 import TimelineView from '@/Components/Views/TimelineView';
@@ -114,14 +113,7 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [], 
                         team={team}
                         filterFn={taskFilter}
                         onTaskClick={handleTaskClick}
-                    />
-                );
-            case 'calendar':
-                return (
-                    <CalendarView
-                        columns={columns}
-                        filterFn={taskFilter}
-                        onTaskClick={handleTaskClick}
+                        showGitlab={gitlabProjects.length > 0}
                     />
                 );
             case 'timeline':
