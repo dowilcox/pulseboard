@@ -8,6 +8,7 @@ use App\Actions\Teams\UpdateMemberRole;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -20,11 +21,11 @@ class TeamMemberController extends Controller
         $this->authorize('manageMember', $team);
 
         $validated = $request->validate([
-            'email' => ['required', 'email', 'exists:users,email'],
+            'user_id' => ['required', 'string', 'exists:users,id'],
             'role' => ['sometimes', 'string', Rule::in(['member', 'admin', 'owner'])],
         ]);
 
-        $user = User::where('email', $validated['email'])->firstOrFail();
+        $user = User::findOrFail($validated['user_id']);
         $role = $validated['role'] ?? 'member';
 
         // Only owners can add members with the owner role
@@ -36,6 +37,30 @@ class TeamMemberController extends Controller
 
         return Redirect::route('teams.settings', $team)
             ->with('success', 'Team member added successfully.');
+    }
+
+    public function search(Request $request, Team $team): JsonResponse
+    {
+        $this->authorize('manageMember', $team);
+
+        $query = $request->get('q', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $existingMemberIds = $team->members()->pluck('users.id');
+
+        $users = User::where(function ($q) use ($query) {
+            $q->where('name', 'like', "%{$query}%")
+              ->orWhere('email', 'like', "%{$query}%");
+        })
+            ->whereNotIn('id', $existingMemberIds)
+            ->where('deactivated_at', null)
+            ->limit(10)
+            ->get(['id', 'name', 'email', 'is_bot']);
+
+        return response()->json($users);
     }
 
     public function update(Request $request, Team $team, User $user): RedirectResponse

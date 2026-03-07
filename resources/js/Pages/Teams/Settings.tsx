@@ -2,18 +2,20 @@ import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
 import { LABEL_COLORS } from '@/constants/labelColors';
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Label, PageProps, Team, UserWithTeamPivot } from '@/types';
+import type { Label, PageProps, Team, User, UserWithTeamPivot } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import Autocomplete from '@mui/material/Autocomplete';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -63,8 +65,11 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
     // Member state
     const [addMemberOpen, setAddMemberOpen] = useState(false);
     const [removeMember, setRemoveMember] = useState<UserWithTeamPivot | null>(null);
+    const [userSearchResults, setUserSearchResults] = useState<Pick<User, 'id' | 'name' | 'email' | 'is_bot'>[]>([]);
+    const [userSearchLoading, setUserSearchLoading] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<Pick<User, 'id' | 'name' | 'email' | 'is_bot'> | null>(null);
 
-    const addMemberForm = useForm({ email: '', role: 'member' as string });
+    const addMemberForm = useForm({ user_id: '', role: 'member' as string });
 
     // Label handlers
     const handleAddLabel = (e: React.FormEvent) => {
@@ -109,12 +114,28 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
     };
 
     // Member handlers
+    const searchUsers = useCallback((query: string) => {
+        if (query.length < 2) {
+            setUserSearchResults([]);
+            return;
+        }
+        setUserSearchLoading(true);
+        fetch(route('teams.members.search', team.id) + '?q=' + encodeURIComponent(query), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        })
+            .then((res) => res.json())
+            .then((data) => setUserSearchResults(data))
+            .finally(() => setUserSearchLoading(false));
+    }, [team.id]);
+
     const handleAddMember = (e: React.FormEvent) => {
         e.preventDefault();
         addMemberForm.post(route('teams.members.store', team.id), {
             onSuccess: () => {
                 setAddMemberOpen(false);
                 addMemberForm.reset();
+                setSelectedUser(null);
+                setUserSearchResults([]);
             },
         });
     };
@@ -122,6 +143,8 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
     const handleAddMemberClose = () => {
         setAddMemberOpen(false);
         addMemberForm.reset();
+        setSelectedUser(null);
+        setUserSearchResults([]);
     };
 
     const handleRoleChange = (member: UserWithTeamPivot, newRole: string) => {
@@ -364,16 +387,56 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                 <form onSubmit={handleAddMember}>
                     <DialogTitle>Add Member</DialogTitle>
                     <DialogContent>
-                        <TextField
-                            autoFocus
-                            label="Email Address"
-                            type="email"
-                            fullWidth
-                            required
-                            value={addMemberForm.data.email}
-                            onChange={(e) => addMemberForm.setData('email', e.target.value)}
-                            error={!!addMemberForm.errors.email}
-                            helperText={addMemberForm.errors.email}
+                        <Autocomplete
+                            options={userSearchResults}
+                            getOptionLabel={(option) => option.name}
+                            filterOptions={(x) => x}
+                            value={selectedUser}
+                            loading={userSearchLoading}
+                            onInputChange={(_e, value, reason) => {
+                                if (reason === 'input') searchUsers(value);
+                            }}
+                            onChange={(_e, value) => {
+                                setSelectedUser(value);
+                                addMemberForm.setData('user_id', value?.id ?? '');
+                            }}
+                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            renderOption={(props, option) => (
+                                <li {...props} key={option.id}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="body2" fontWeight={500}>
+                                            {option.name}{option.is_bot ? ' (Bot)' : ''}
+                                        </Typography>
+                                        {!option.is_bot && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {option.email}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    autoFocus
+                                    label="Search users"
+                                    placeholder="Type a name or email..."
+                                    error={!!addMemberForm.errors.user_id}
+                                    helperText={addMemberForm.errors.user_id}
+                                    slotProps={{
+                                        input: {
+                                            ...params.InputProps,
+                                            endAdornment: (
+                                                <>
+                                                    {userSearchLoading ? <CircularProgress size={20} /> : null}
+                                                    {params.InputProps.endAdornment}
+                                                </>
+                                            ),
+                                        },
+                                    }}
+                                />
+                            )}
+                            noOptionsText="No users found"
                             sx={{ mt: 1, mb: 2 }}
                         />
                         <FormControl fullWidth>
@@ -396,7 +459,7 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                         <Button
                             type="submit"
                             variant="contained"
-                            disabled={addMemberForm.processing}
+                            disabled={addMemberForm.processing || !selectedUser}
                         >
                             Add
                         </Button>

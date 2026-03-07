@@ -127,6 +127,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/teams/{team}/settings', [TeamController::class, 'settings'])->name('teams.settings');
 
         // Team Members
+        Route::get('/teams/{team}/members/search', [TeamMemberController::class, 'search'])->name('teams.members.search');
         Route::post('/teams/{team}/members', [TeamMemberController::class, 'store'])->name('teams.members.store');
         Route::put('/teams/{team}/members/{user}', [TeamMemberController::class, 'update'])->name('teams.members.update');
         Route::delete('/teams/{team}/members/{user}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
