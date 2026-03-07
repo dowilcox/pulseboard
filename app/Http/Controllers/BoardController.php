@@ -16,21 +16,38 @@ use Inertia\Response;
 
 class BoardController extends Controller
 {
+    /**
+     * The maximum number of tasks loaded per column in the initial page load.
+     * Additional tasks are fetched on demand via the API.
+     */
+    private const INITIAL_TASKS_PER_COLUMN = 20;
+
     public function show(Team $team, Board $board): Response
     {
         $this->authorize('view', $board);
 
-        $board->load(['columns.tasks' => function ($query) {
-            $query->with(['assignees', 'labels', 'gitlabLinks'])
-                ->withCount([
-                    'comments',
-                    'subtasks',
-                    'subtasks as completed_subtasks_count' => function ($query) {
-                        $query->whereNotNull('completed_at');
-                    },
-                ])
-                ->orderBy('sort_order');
+        $board->load(['columns' => function ($query) {
+            $query->withCount('tasks');
         }]);
+
+        // Load a limited number of tasks per column for the initial render
+        $board->columns->each(function ($column) {
+            $column->setRelation(
+                'tasks',
+                $column->tasks()
+                    ->with(['assignees', 'labels', 'gitlabLinks'])
+                    ->withCount([
+                        'comments',
+                        'subtasks',
+                        'subtasks as completed_subtasks_count' => function ($query) {
+                            $query->whereNotNull('completed_at');
+                        },
+                    ])
+                    ->orderBy('sort_order')
+                    ->limit(self::INITIAL_TASKS_PER_COLUMN)
+                    ->get()
+            );
+        });
 
         $members = $team->members()->get();
 
@@ -44,6 +61,7 @@ class BoardController extends Controller
             'columns' => $board->columns,
             'members' => $members,
             'gitlabProjects' => $gitlabProjects,
+            'initialTasksPerColumn' => self::INITIAL_TASKS_PER_COLUMN,
         ]);
     }
 

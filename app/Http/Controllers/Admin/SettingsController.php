@@ -38,6 +38,7 @@ class SettingsController extends Controller
             ]));
         }
 
-        return Redirect::route('admin.settings.index');
+        return Redirect::route('admin.settings.index')
+            ->with('success', 'Settings saved successfully.');
     }
 }

@@ -27,6 +27,33 @@ class GitlabConnectionController extends Controller
         ]);
     }
 
+    public function show(GitlabConnection $gitlabConnection): JsonResponse
+    {
+        $gitlabConnection->load(['projects.team']);
+
+        $totalProjects = $gitlabConnection->projects->count();
+        $projectsWithWebhooks = $gitlabConnection->projects->filter(fn ($p) => $p->webhook_id !== null)->count();
+
+        return response()->json([
+            'connection' => $gitlabConnection,
+            'projects' => $gitlabConnection->projects->map(fn ($project) => [
+                'id' => $project->id,
+                'name' => $project->name,
+                'path_with_namespace' => $project->path_with_namespace,
+                'web_url' => $project->web_url,
+                'default_branch' => $project->default_branch,
+                'webhook_id' => $project->webhook_id,
+                'last_synced_at' => $project->last_synced_at?->toISOString(),
+                'team_name' => $project->team?->name ?? 'Unknown',
+                'team_id' => $project->team_id,
+            ]),
+            'stats' => [
+                'total_projects' => $totalProjects,
+                'projects_with_webhooks' => $projectsWithWebhooks,
+            ],
+        ]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -38,7 +65,8 @@ class GitlabConnectionController extends Controller
 
         CreateGitlabConnection::run($validated);
 
-        return Redirect::route('admin.gitlab-connections.index');
+        return Redirect::route('admin.gitlab-connections.index')
+            ->with('success', 'GitLab connection created successfully.');
     }
 
     public function update(Request $request, GitlabConnection $gitlabConnection): RedirectResponse
@@ -52,14 +80,16 @@ class GitlabConnectionController extends Controller
 
         UpdateGitlabConnection::run($gitlabConnection, $validated);
 
-        return Redirect::route('admin.gitlab-connections.index');
+        return Redirect::route('admin.gitlab-connections.index')
+            ->with('success', 'GitLab connection updated successfully.');
     }
 
     public function destroy(GitlabConnection $gitlabConnection): RedirectResponse
     {
         DeleteGitlabConnection::run($gitlabConnection);
 
-        return Redirect::route('admin.gitlab-connections.index');
+        return Redirect::route('admin.gitlab-connections.index')
+            ->with('success', 'GitLab connection deleted successfully.');
     }
 
     public function testConnection(GitlabConnection $gitlabConnection): JsonResponse

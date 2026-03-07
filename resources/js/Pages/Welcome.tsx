@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import Logo from '@/Components/Common/Logo';
 
 interface WelcomeProps {
     canLogin: boolean;
@@ -24,18 +25,9 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                     px: 2,
                 }}
             >
-                <Typography
-                    variant="h2"
-                    component="h1"
-                    sx={{
-                        color: 'primary.main',
-                        fontWeight: 800,
-                        letterSpacing: '-0.03em',
-                        mb: 2,
-                    }}
-                >
-                    PulseBoard
-                </Typography>
+                <Box sx={{ mb: 2 }}>
+                    <Logo size="large" showText />
+                </Box>
 
                 <Typography
                     variant="h6"

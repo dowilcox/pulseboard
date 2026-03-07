@@ -1,3 +1,4 @@
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm } from '@inertiajs/react';
 import { useState } from 'react';
@@ -54,19 +55,19 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Typography variant="h6" component="h2" fontWeight={600}>
-                        Teams
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        size="small"
-                        onClick={() => setCreateOpen(true)}
-                    >
-                        Create Team
-                    </Button>
-                </Box>
+                <PageHeader
+                    title="Teams"
+                    actions={
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            size="small"
+                            onClick={() => setCreateOpen(true)}
+                        >
+                            Create Team
+                        </Button>
+                    }
+                />
             }
         >
             <Head title="Teams" />

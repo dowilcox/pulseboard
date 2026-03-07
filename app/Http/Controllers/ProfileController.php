@@ -41,6 +41,20 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's theme preference.
+     */
+    public function updateTheme(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'theme_preference' => ['required', 'in:light,dark,system'],
+        ]);
+
+        $request->user()->update($validated);
+
+        return Redirect::route('profile.edit');
+    }
+
+    /**
      * Update the user's notification preferences.
      */
     public function updateNotifications(Request $request): RedirectResponse
@@ -77,10 +91,20 @@ class ProfileController extends Controller
     {
         $validated = $request->validate([
             'activity_sort_order' => ['sometimes', 'in:asc,desc'],
+            'board_order' => ['sometimes', 'array'],
+            'board_order.*' => ['array'],
+            'board_order.*.*' => ['string', 'uuid'],
         ]);
 
         $user = $request->user();
         $prefs = $user->ui_preferences ?? [];
+
+        // Deep-merge board_order so we don't overwrite other teams' orders
+        if (isset($validated['board_order'])) {
+            $existingBoardOrder = $prefs['board_order'] ?? [];
+            $prefs['board_order'] = array_merge($existingBoardOrder, $validated['board_order']);
+            unset($validated['board_order']);
+        }
 
         $user->update([
             'ui_preferences' => array_merge($prefs, $validated),

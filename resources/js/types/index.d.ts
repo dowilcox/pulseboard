@@ -13,6 +13,7 @@ export interface NotificationPreferences {
 
 export interface UiPreferences {
     activity_sort_order?: 'asc' | 'desc';
+    board_order?: Record<string, string[]>;
 }
 
 export interface User {
@@ -102,6 +103,17 @@ export interface Column {
     created_at: string;
     updated_at: string;
     tasks?: Task[];
+    tasks_count?: number;
+}
+
+export interface PaginatedResponse<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    next_page_url: string | null;
+    prev_page_url: string | null;
 }
 
 export interface ChecklistItem {
@@ -264,6 +276,7 @@ export interface GitlabProject {
     created_at: string;
     updated_at: string;
     connection?: GitlabConnection;
+    team?: Team;
 }
 
 export interface TaskGitlabLink {
@@ -348,4 +361,8 @@ export type PageProps<
     currentTeam?: Team;
     teams?: Team[];
     unreadNotificationsCount?: number;
+    flash?: {
+        success?: string | null;
+        error?: string | null;
+    };
 };

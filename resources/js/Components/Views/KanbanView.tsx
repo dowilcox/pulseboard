@@ -1,7 +1,7 @@
 import QuickCreateTask from '@/Components/Tasks/QuickCreateTask';
 import SortableTaskCard from '@/Components/Tasks/SortableTaskCard';
 import TaskCard from '@/Components/Tasks/TaskCard';
-import type { Column, Task } from '@/types';
+import type { Column, PaginatedResponse, Task } from '@/types';
 import { computeSortOrder } from '@/utils/sortOrder';
 import {
     closestCorners,
@@ -20,11 +20,17 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { router } from '@inertiajs/react';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 function buildColumnTasksMap(columns: Column[]): Record<string, Task[]> {
     const map: Record<string, Task[]> = {};
@@ -46,18 +52,49 @@ function findColumnForTask(columnTasks: Record<string, Task[]>, taskId: string):
 interface DroppableColumnBodyProps {
     columnId: string;
     children: React.ReactNode;
+    onScrollBottom?: () => void;
 }
 
-function DroppableColumnBody({ columnId, children }: DroppableColumnBodyProps) {
+function DroppableColumnBody({ columnId, children, onScrollBottom }: DroppableColumnBodyProps) {
     const { setNodeRef, isOver } = useDroppable({ id: columnId });
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    // Use IntersectionObserver on a sentinel at the bottom
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        const scrollContainer = scrollRef.current;
+        if (!sentinel || !scrollContainer || !onScrollBottom) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    onScrollBottom();
+                }
+            },
+            {
+                root: scrollContainer,
+                rootMargin: '100px',
+            }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [onScrollBottom]);
+
     return (
         <Box
-            ref={setNodeRef}
+            ref={(node: HTMLDivElement | null) => {
+                setNodeRef(node);
+                scrollRef.current = node;
+            }}
             sx={{
                 px: 1,
                 pt: 1,
                 pb: 1.5,
                 minHeight: 100,
+                maxHeight: 'calc(100vh - 280px)',
+                overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.25,
@@ -67,8 +104,120 @@ function DroppableColumnBody({ columnId, children }: DroppableColumnBodyProps) {
             }}
         >
             {children}
+            {onScrollBottom && <div ref={sentinelRef} style={{ height: 1, flexShrink: 0 }} />}
         </Box>
     );
+}
+
+function getCollapsedColumnsKey(boardId: string): string {
+    return `pulseboard:collapsed-columns:${boardId}`;
+}
+
+function loadCollapsedColumns(boardId: string): Set<string> {
+    try {
+        const stored = localStorage.getItem(getCollapsedColumnsKey(boardId));
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) return new Set(parsed);
+        }
+    } catch {
+        // ignore invalid localStorage data
+    }
+    return new Set();
+}
+
+function saveCollapsedColumns(boardId: string, collapsed: Set<string>): void {
+    try {
+        localStorage.setItem(getCollapsedColumnsKey(boardId), JSON.stringify([...collapsed]));
+    } catch {
+        // ignore localStorage errors
+    }
+}
+
+interface CollapsedColumnProps {
+    column: Column;
+    taskCount: number;
+    onExpand: () => void;
+}
+
+function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) {
+    const { setNodeRef, isOver } = useDroppable({ id: column.id });
+
+    return (
+        <Paper
+            ref={setNodeRef}
+            elevation={0}
+            role="region"
+            aria-label={`${column.name} column (collapsed), ${taskCount} tasks`}
+            sx={{
+                width: 48,
+                minWidth: 48,
+                flex: '0 0 48px',
+                bgcolor: isOver ? 'action.selected' : 'action.hover',
+                borderRadius: '12px',
+                border: 1,
+                borderColor: isOver ? 'primary.main' : 'divider',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                py: 1.5,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                minHeight: 200,
+                '&:hover': {
+                    borderColor: 'primary.main',
+                    bgcolor: 'action.focus',
+                },
+            }}
+            onClick={onExpand}
+        >
+            <Tooltip title="Expand column" placement="right">
+                <IconButton size="small" sx={{ mb: 1 }}>
+                    <ChevronRightIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Box
+                sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    bgcolor: column.color || '#9e9e9e',
+                    flexShrink: 0,
+                    mb: 1,
+                }}
+            />
+            <Chip
+                label={taskCount}
+                size="small"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '0.65rem', minWidth: 24, mb: 1.5 }}
+            />
+            <Typography
+                variant="caption"
+                fontWeight={700}
+                sx={{
+                    writingMode: 'vertical-rl',
+                    textOrientation: 'mixed',
+                    transform: 'rotate(180deg)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxHeight: 'calc(100vh - 360px)',
+                    letterSpacing: '0.05em',
+                    color: 'text.secondary',
+                    userSelect: 'none',
+                }}
+            >
+                {column.name}
+            </Typography>
+        </Paper>
+    );
+}
+
+interface ColumnLoadState {
+    page: number;
+    hasMore: boolean;
+    loading: boolean;
 }
 
 interface Props {
@@ -77,16 +226,50 @@ interface Props {
     team: { id: string };
     filterFn: (task: Task) => boolean;
     onTaskClick: (task: Task) => void;
+    initialTasksPerColumn?: number;
 }
 
-export default function KanbanView({ columns, board, team, filterFn, onTaskClick }: Props) {
+export default function KanbanView({ columns, board, team, filterFn, onTaskClick, initialTasksPerColumn = 20 }: Props) {
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [columnTasks, setColumnTasks] = useState<Record<string, Task[]>>(() =>
         buildColumnTasksMap(columns)
     );
+    const [columnLoadStates, setColumnLoadStates] = useState<Record<string, ColumnLoadState>>({});
+    const abortControllers = useRef<Record<string, AbortController>>({});
 
+    // Collapsed columns state, persisted to localStorage per board
+    const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(() =>
+        loadCollapsedColumns(board.id)
+    );
+
+    const toggleColumnCollapsed = useCallback((columnId: string) => {
+        setCollapsedColumns((prev) => {
+            const next = new Set(prev);
+            if (next.has(columnId)) {
+                next.delete(columnId);
+            } else {
+                next.add(columnId);
+            }
+            saveCollapsedColumns(board.id, next);
+            return next;
+        });
+    }, [board.id]);
+
+    // Initialize column tasks and load states from server data
     useEffect(() => {
         setColumnTasks(buildColumnTasksMap(columns));
+
+        const states: Record<string, ColumnLoadState> = {};
+        for (const col of columns) {
+            const loadedCount = col.tasks?.length ?? 0;
+            const totalCount = col.tasks_count ?? loadedCount;
+            states[col.id] = {
+                page: 1,
+                hasMore: loadedCount < totalCount,
+                loading: false,
+            };
+        }
+        setColumnLoadStates(states);
     }, [columns]);
 
     const columnMap = useMemo(() => {
@@ -103,6 +286,71 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
         const taskCount = (columnTasks[columnId]?.length ?? 0) + extraCount;
         return taskCount >= col.wip_limit;
     }, [columnMap, columnTasks]);
+
+    const loadMoreForColumn = useCallback(async (columnId: string) => {
+        const state = columnLoadStates[columnId];
+        if (!state || !state.hasMore || state.loading) return;
+
+        const key = `col-${columnId}`;
+        abortControllers.current[key]?.abort();
+        const controller = new AbortController();
+        abortControllers.current[key] = controller;
+
+        setColumnLoadStates((prev) => ({
+            ...prev,
+            [columnId]: { ...prev[columnId], loading: true },
+        }));
+
+        try {
+            const nextPage = state.page + 1;
+            const params = new URLSearchParams({
+                column_id: columnId,
+                page: String(nextPage),
+                per_page: String(initialTasksPerColumn),
+                sort: 'sort_order',
+                direction: 'asc',
+            });
+
+            const response = await fetch(
+                `${route('boards.tasks.index', [team.id, board.id])}?${params}`,
+                {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                }
+            );
+
+            if (!response.ok) throw new Error('Failed to load tasks');
+
+            const data: PaginatedResponse<Task> = await response.json();
+
+            // Append new tasks, deduplicating
+            setColumnTasks((prev) => {
+                const existing = prev[columnId] ?? [];
+                const existingIds = new Set(existing.map((t) => t.id));
+                const newTasks = data.data.filter((t) => !existingIds.has(t.id));
+                return {
+                    ...prev,
+                    [columnId]: [...existing, ...newTasks].sort((a, b) => a.sort_order - b.sort_order),
+                };
+            });
+
+            setColumnLoadStates((prev) => ({
+                ...prev,
+                [columnId]: {
+                    page: nextPage,
+                    hasMore: data.current_page < data.last_page,
+                    loading: false,
+                },
+            }));
+        } catch (error) {
+            if ((error as Error).name === 'AbortError') return;
+
+            setColumnLoadStates((prev) => ({
+                ...prev,
+                [columnId]: { ...prev[columnId], loading: false },
+            }));
+        }
+    }, [columnLoadStates, team.id, board.id, initialTasksPerColumn]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -260,14 +508,30 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                     columns.map((column) => {
                         const allColTasks = columnTasks[column.id] ?? [];
                         const tasks = allColTasks.filter(filterFn);
-                        const taskCount = allColTasks.length;
-                        const atWipLimit = column.wip_limit != null && column.wip_limit > 0 && taskCount >= column.wip_limit;
+                        const totalCount = column.tasks_count ?? allColTasks.length;
+                        const atWipLimit = column.wip_limit != null && column.wip_limit > 0 && totalCount >= column.wip_limit;
+                        const loadState = columnLoadStates[column.id];
+                        const hasMore = loadState?.hasMore ?? false;
+                        const isLoading = loadState?.loading ?? false;
+                        const isCollapsed = collapsedColumns.has(column.id);
+
+                        if (isCollapsed) {
+                            return (
+                                <CollapsedColumn
+                                    key={column.id}
+                                    column={column}
+                                    taskCount={totalCount}
+                                    onExpand={() => toggleColumnCollapsed(column.id)}
+                                />
+                            );
+                        }
+
                         return (
                             <Paper
                                 key={column.id}
                                 elevation={0}
                                 role="region"
-                                aria-label={`${column.name} column, ${taskCount} tasks${atWipLimit ? ', at WIP limit' : ''}`}
+                                aria-label={`${column.name} column, ${totalCount} tasks${atWipLimit ? ', at WIP limit' : ''}`}
                                 sx={{
                                     minWidth: 300,
                                     maxWidth: 340,
@@ -278,6 +542,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     borderColor: atWipLimit ? 'warning.main' : 'divider',
                                     display: 'flex',
                                     flexDirection: 'column',
+                                    transition: 'flex 200ms ease, min-width 200ms ease',
                                 }}
                             >
                                 {/* Column header */}
@@ -309,14 +574,30 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     </Typography>
                                     <Chip
                                         label={column.wip_limit != null && column.wip_limit > 0
-                                            ? `${taskCount} / ${column.wip_limit}`
-                                            : taskCount
+                                            ? `${totalCount} / ${column.wip_limit}`
+                                            : totalCount
                                         }
                                         size="small"
                                         variant="outlined"
                                         color={atWipLimit ? 'warning' : 'default'}
                                         sx={{ height: 22, fontSize: '0.7rem', minWidth: 28 }}
                                     />
+                                    <Tooltip title="Collapse column">
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => toggleColumnCollapsed(column.id)}
+                                            aria-label={`Collapse ${column.name} column`}
+                                            sx={{
+                                                ml: 0.5,
+                                                width: 26,
+                                                height: 26,
+                                                opacity: 0.6,
+                                                '&:hover': { opacity: 1 },
+                                            }}
+                                        >
+                                            <ChevronLeftIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
                                 </Box>
 
                                 {/* Column body with sortable tasks */}
@@ -324,7 +605,10 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     items={tasks.map((t) => t.id)}
                                     strategy={verticalListSortingStrategy}
                                 >
-                                    <DroppableColumnBody columnId={column.id}>
+                                    <DroppableColumnBody
+                                        columnId={column.id}
+                                        onScrollBottom={hasMore ? () => loadMoreForColumn(column.id) : undefined}
+                                    >
                                         {tasks.map((task) => (
                                             <SortableTaskCard
                                                 key={task.id}
@@ -332,6 +616,30 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                                 onClick={onTaskClick}
                                             />
                                         ))}
+
+                                        {/* Loading indicator */}
+                                        {isLoading && (
+                                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                                                <CircularProgress size={20} />
+                                            </Box>
+                                        )}
+
+                                        {/* Load more button as fallback */}
+                                        {hasMore && !isLoading && (
+                                            <Button
+                                                size="small"
+                                                variant="text"
+                                                onClick={() => loadMoreForColumn(column.id)}
+                                                sx={{
+                                                    fontSize: '0.7rem',
+                                                    textTransform: 'none',
+                                                    color: 'text.secondary',
+                                                    alignSelf: 'center',
+                                                }}
+                                            >
+                                                Load more ({allColTasks.length} of {totalCount})
+                                            </Button>
+                                        )}
 
                                         <QuickCreateTask
                                             teamId={team.id}

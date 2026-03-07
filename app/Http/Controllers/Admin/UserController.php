@@ -26,8 +26,10 @@ class UserController extends Controller
             });
         }
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 25;
+
         return Inertia::render('Admin/Users', [
-            'users' => $query->paginate(25)->withQueryString(),
+            'users' => $query->paginate($perPage)->withQueryString(),
             'filters' => [
                 'search' => $search,
             ],
@@ -52,7 +54,8 @@ class UserController extends Controller
 
         event(new Registered($user));
 
-        return Redirect::route('admin.users.index');
+        return Redirect::route('admin.users.index')
+            ->with('success', 'User created successfully.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -65,7 +68,8 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        return Redirect::route('admin.users.index');
+        return Redirect::route('admin.users.index')
+            ->with('success', 'User updated successfully.');
     }
 
     public function toggleActive(User $user): RedirectResponse
@@ -77,11 +81,14 @@ class UserController extends Controller
 
         if ($user->deactivated_at) {
             $user->update(['deactivated_at' => null]);
+            $message = 'User reactivated successfully.';
         } else {
             $user->update(['deactivated_at' => now()]);
+            $message = 'User deactivated successfully.';
         }
 
-        return Redirect::route('admin.users.index');
+        return Redirect::route('admin.users.index')
+            ->with('success', $message);
     }
 
     public function resetPassword(User $user): RedirectResponse

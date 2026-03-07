@@ -1,10 +1,14 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
 import type { Organization, PageProps } from '@/types';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
@@ -13,6 +17,17 @@ interface Props extends PageProps {
 }
 
 export default function Settings({ organization }: Props) {
+    const { flash } = usePage<PageProps>().props;
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+    useEffect(() => {
+        if (flash?.success) {
+            setSnackbar({ open: true, message: flash.success, severity: 'success' });
+        } else if (flash?.error) {
+            setSnackbar({ open: true, message: flash.error, severity: 'error' });
+        }
+    }, [flash?.success, flash?.error]);
+
     const form = useForm({
         name: organization?.name ?? '',
         slug: organization?.slug ?? '',
@@ -26,9 +41,10 @@ export default function Settings({ organization }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    Organization Settings
-                </Typography>
+                <PageHeader
+                    title="Organization Settings"
+                    breadcrumbs={[{ label: 'Admin', href: route('admin.dashboard') }]}
+                />
             }
         >
             <Head title="Organization Settings" />
@@ -77,6 +93,22 @@ export default function Settings({ organization }: Props) {
                     </Paper>
                 </Box>
             </Box>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                    severity={snackbar.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </AuthenticatedLayout>
     );
 }

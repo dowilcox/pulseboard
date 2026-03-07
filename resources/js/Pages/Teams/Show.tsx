@@ -1,3 +1,4 @@
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
@@ -109,45 +110,48 @@ export default function TeamsShow({ team, members, boards }: Props) {
         <AuthenticatedLayout
             currentTeam={team}
             header={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Typography variant="h6" component="h2" fontWeight={600}>
-                        {team.name}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<DownloadIcon />}
-                            size="small"
-                            href={route('teams.export.csv', team.id)}
-                        >
-                            Export CSV
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<GitlabIcon />}
-                            size="small"
-                            onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
-                        >
-                            GitLab
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={<SettingsIcon />}
-                            size="small"
-                            onClick={() => router.get(route('teams.settings', team.id))}
-                        >
-                            Settings
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            size="small"
-                            onClick={() => setCreateOpen(true)}
-                        >
-                            Create Board
-                        </Button>
-                    </Box>
-                </Box>
+                <PageHeader
+                    title={team.name}
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                    ]}
+                    actions={
+                        <>
+                            <Button
+                                variant="outlined"
+                                startIcon={<DownloadIcon />}
+                                size="small"
+                                href={route('teams.export.csv', team.id)}
+                            >
+                                Export CSV
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<GitlabIcon />}
+                                size="small"
+                                onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
+                            >
+                                GitLab
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={<SettingsIcon />}
+                                size="small"
+                                onClick={() => router.get(route('teams.settings', team.id))}
+                            >
+                                Settings
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                size="small"
+                                onClick={() => setCreateOpen(true)}
+                            >
+                                Create Board
+                            </Button>
+                        </>
+                    }
+                />
             }
         >
             <Head title={team.name} />
@@ -168,7 +172,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     >
                         {members.map((member) => (
                             <Tooltip key={member.id} title={member.name}>
-                                <Avatar>{member.name.charAt(0).toUpperCase()}</Avatar>
+                                <Avatar src={member.avatar_url} alt={member.name}>{member.name.charAt(0).toUpperCase()}</Avatar>
                             </Tooltip>
                         ))}
                     </AvatarGroup>

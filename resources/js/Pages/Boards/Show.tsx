@@ -8,17 +8,14 @@ import ViewSwitcher from '@/Components/Views/ViewSwitcher';
 import WorkloadView from '@/Components/Views/WorkloadView';
 import { useBoardChannel, type BoardEvent } from '@/hooks/useBoardChannel';
 import { usePresence } from '@/hooks/usePresence';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Board, BoardViewMode, Column, GitlabProject, Label, PageProps, Task, Team, User } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Link as InertiaLink } from '@inertiajs/react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
 import IconButton from '@mui/material/IconButton';
-import Link from '@mui/material/Link';
 import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
 import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
@@ -26,9 +23,10 @@ interface Props {
     team: Team;
     members: User[];
     gitlabProjects?: GitlabProject[];
+    initialTasksPerColumn?: number;
 }
 
-export default function BoardsShow({ board, team, members, gitlabProjects = [] }: Props) {
+export default function BoardsShow({ board, team, members, gitlabProjects = [], initialTasksPerColumn = 20 }: Props) {
     const { auth } = usePage<PageProps>().props;
     const columns = board.columns ?? [];
     const [teamLabels, setTeamLabels] = useState<Label[]>([]);
@@ -105,12 +103,15 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [] }
                         team={team}
                         filterFn={taskFilter}
                         onTaskClick={handleTaskClick}
+                        initialTasksPerColumn={initialTasksPerColumn}
                     />
                 );
             case 'list':
                 return (
                     <ListView
                         columns={columns}
+                        board={board}
+                        team={team}
                         filterFn={taskFilter}
                         onTaskClick={handleTaskClick}
                     />
@@ -148,37 +149,28 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [] }
             currentTeam={team}
             activeBoardId={board.id}
             header={
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                    <Box>
-                        <Breadcrumbs sx={{ mb: 0.5 }}>
-                            <Link
-                                component={InertiaLink}
-                                href={route('teams.show', team.id)}
-                                underline="hover"
-                                color="text.secondary"
-                                variant="body2"
-                            >
-                                {team.name}
-                            </Link>
-                            <Typography variant="body2" color="text.primary">
-                                {board.name}
-                            </Typography>
-                        </Breadcrumbs>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <ViewSwitcher value={viewMode} onChange={setViewMode} />
-                        <PresenceAvatars users={presenceUsers} currentUserId={auth.user.id} />
-                        <Tooltip title="Board Settings">
-                            <IconButton
-                                onClick={() =>
-                                    router.get(route('teams.boards.settings', [team.id, board.id]))
-                                }
-                            >
-                                <SettingsIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                </Box>
+                <PageHeader
+                    title={board.name}
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                        { label: team.name, href: route('teams.show', team.id) },
+                    ]}
+                    actions={
+                        <>
+                            <ViewSwitcher value={viewMode} onChange={setViewMode} />
+                            <PresenceAvatars users={presenceUsers} currentUserId={auth.user.id} />
+                            <Tooltip title="Board Settings">
+                                <IconButton
+                                    onClick={() =>
+                                        router.get(route('teams.boards.settings', [team.id, board.id]))
+                                    }
+                                >
+                                    <SettingsIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </>
+                    }
+                />
             }
         >
             <Head title={`${board.name} - ${team.name}`} />

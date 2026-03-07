@@ -6,6 +6,7 @@ import ChecklistEditor from '@/Components/Tasks/ChecklistEditor';
 import SubtaskList from '@/Components/Tasks/SubtaskList';
 import TaskSidebar from '@/Components/Tasks/TaskSidebar';
 import { useBoardChannel, type BoardEvent } from '@/hooks/useBoardChannel';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type {
     Board,
@@ -19,7 +20,6 @@ import type {
 } from '@/types';
 import { Head, Link as InertiaLink, router, usePage } from '@inertiajs/react';
 import Box from '@mui/material/Box';
-import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
@@ -114,29 +114,14 @@ export default function TasksShow({
             currentTeam={team as any}
             activeBoardId={board.id}
             header={
-                <Breadcrumbs>
-                    <Link
-                        component={InertiaLink}
-                        href={route('teams.show', team.id)}
-                        underline="hover"
-                        color="text.secondary"
-                        variant="body2"
-                    >
-                        {team.name}
-                    </Link>
-                    <Link
-                        component={InertiaLink}
-                        href={route('teams.boards.show', [team.id, board.id])}
-                        underline="hover"
-                        color="text.secondary"
-                        variant="body2"
-                    >
-                        {board.name}
-                    </Link>
-                    <Typography variant="body2" color="text.primary">
-                        {taskNumber || task.title}
-                    </Typography>
-                </Breadcrumbs>
+                <PageHeader
+                    title={taskNumber ? `${taskNumber} ${task.title}` : task.title}
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                        { label: team.name, href: route('teams.show', team.id) },
+                        { label: board.name, href: route('teams.boards.show', [team.id, board.id]) },
+                    ]}
+                />
             }
         >
             <Head title={`${taskNumber} ${task.title} - ${board.name}`} />

@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import GitlabProjectSearch from '@/Components/Gitlab/GitlabProjectSearch';
 import type { GitlabConnection, GitlabProject, PageProps, Team } from '@/types';
@@ -63,9 +64,13 @@ export default function GitlabProjects({ team, gitlabProjects, connections }: Pr
         <AuthenticatedLayout
             currentTeam={team}
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    {team.name} — GitLab Projects
-                </Typography>
+                <PageHeader
+                    title="GitLab Projects"
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                        { label: team.name, href: route('teams.show', team.id) },
+                    ]}
+                />
             }
         >
             <Head title={`${team.name} — GitLab Projects`} />

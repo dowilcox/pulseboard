@@ -1,9 +1,10 @@
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PageProps } from '@/types';
 import { Head } from '@inertiajs/react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+
 import AuthProviderInfo from './Partials/AuthProviderInfo';
 import DeleteUserForm from './Partials/DeleteUserForm';
 import NotificationPreferencesForm from './Partials/NotificationPreferencesForm';
@@ -17,11 +18,7 @@ export default function Edit({
 }: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
     return (
         <AuthenticatedLayout
-            header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    Profile
-                </Typography>
-            }
+            header={<PageHeader title="Profile" />}
         >
             <Head title="Profile" />
 

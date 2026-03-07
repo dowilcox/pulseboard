@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { useState } from 'react';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
 import type { Board, PageProps, Team, UserWithTeamPivot } from '@/types';
@@ -62,9 +63,10 @@ export default function Teams({ adminTeams: teams }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    Team Oversight
-                </Typography>
+                <PageHeader
+                    title="Team Oversight"
+                    breadcrumbs={[{ label: 'Admin', href: route('admin.dashboard') }]}
+                />
             }
         >
             <Head title="Team Oversight" />

@@ -40,7 +40,8 @@ class SsoConfigurationController extends Controller
 
         SsoConfiguration::create($validated);
 
-        return Redirect::route('admin.sso.index');
+        return Redirect::route('admin.sso.index')
+            ->with('success', 'SSO provider created successfully.');
     }
 
     public function update(Request $request, SsoConfiguration $ssoConfiguration): RedirectResponse
@@ -65,14 +66,16 @@ class SsoConfigurationController extends Controller
 
         $ssoConfiguration->update($validated);
 
-        return Redirect::route('admin.sso.index');
+        return Redirect::route('admin.sso.index')
+            ->with('success', 'SSO provider updated successfully.');
     }
 
     public function destroy(SsoConfiguration $ssoConfiguration): RedirectResponse
     {
         $ssoConfiguration->delete();
 
-        return Redirect::route('admin.sso.index');
+        return Redirect::route('admin.sso.index')
+            ->with('success', 'SSO provider deleted successfully.');
     }
 
     public function test(SsoConfiguration $ssoConfiguration, SamlService $samlService): JsonResponse

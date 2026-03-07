@@ -28,12 +28,19 @@ function getSystemPreference(): 'light' | 'dark' {
 }
 
 export function ThemeContextProvider({ children }: { children: ReactNode }) {
-    const [mode, setMode] = useState<ThemeMode>(() => {
+    const [mode, setModeState] = useState<ThemeMode>(() => {
         if (typeof window !== 'undefined') {
             return (localStorage.getItem('pulseboard-theme') as ThemeMode) || 'system';
         }
         return 'system';
     });
+
+    const setMode = (newMode: ThemeMode) => {
+        setModeState(newMode);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('pulseboard-theme', newMode);
+        }
+    };
 
     const [systemPref, setSystemPref] = useState<'light' | 'dark'>(getSystemPreference);
 
@@ -43,10 +50,6 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
         mq.addEventListener('change', handler);
         return () => mq.removeEventListener('change', handler);
     }, []);
-
-    useEffect(() => {
-        localStorage.setItem('pulseboard-theme', mode);
-    }, [mode]);
 
     const resolvedMode = mode === 'system' ? systemPref : mode;
     const theme = useMemo(() => (resolvedMode === 'dark' ? darkTheme : lightTheme), [resolvedMode]);

@@ -1,5 +1,6 @@
 import AutomationRulesPanel from '@/Components/Automation/AutomationRulesPanel';
 import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
@@ -159,9 +160,14 @@ export default function BoardSettings({ board, team, members }: Props) {
             currentTeam={team}
             activeBoardId={board.id}
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    {board.name} Settings
-                </Typography>
+                <PageHeader
+                    title="Settings"
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                        { label: team.name, href: route('teams.show', team.id) },
+                        { label: board.name, href: route('teams.boards.show', [team.id, board.id]) },
+                    ]}
+                />
             }
         >
             <Head title={`Settings - ${board.name}`} />

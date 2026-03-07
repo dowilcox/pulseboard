@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\SsoConfigurationController;
 use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\BoardTaskController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\SamlController;
 use App\Http\Controllers\AutomationRuleController;
@@ -58,6 +59,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
     Route::patch('/profile/notifications', [ProfileController::class, 'updateNotifications'])->name('profile.notifications.update');
     Route::patch('/profile/ui-preferences', [ProfileController::class, 'updateUiPreferences'])->name('profile.ui-preferences.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -87,6 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/gitlab-connections', [GitlabConnectionController::class, 'store'])->name('gitlab-connections.store');
         Route::put('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'update'])->name('gitlab-connections.update');
         Route::delete('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('gitlab-connections.destroy');
+        Route::get('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'show'])->name('gitlab-connections.show');
         Route::post('/gitlab-connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'testConnection'])->name('gitlab-connections.test');
 
         // SSO Configuration
@@ -124,6 +127,7 @@ Route::middleware('auth')->group(function () {
         // Boards
         Route::post('/teams/{team}/boards', [BoardController::class, 'store'])->name('teams.boards.store');
         Route::get('/teams/{team}/boards/{board}', [BoardController::class, 'show'])->name('teams.boards.show');
+        Route::get('/teams/{team}/boards/{board}/tasks', [BoardTaskController::class, 'index'])->name('boards.tasks.index');
         Route::put('/teams/{team}/boards/{board}', [BoardController::class, 'update'])->name('teams.boards.update');
         Route::post('/teams/{team}/boards/{board}/archive', [BoardController::class, 'archive'])->name('teams.boards.archive');
         Route::get('/teams/{team}/boards/{board}/settings', [BoardController::class, 'settings'])->name('teams.boards.settings');

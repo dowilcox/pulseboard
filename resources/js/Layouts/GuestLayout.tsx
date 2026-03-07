@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import Logo from '@/Components/Common/Logo';
 
 export default function GuestLayout({ children }: PropsWithChildren) {
     return (
@@ -19,17 +19,7 @@ export default function GuestLayout({ children }: PropsWithChildren) {
         >
             <Box sx={{ mb: 4 }}>
                 <Link href="/" style={{ textDecoration: 'none' }}>
-                    <Typography
-                        variant="h4"
-                        component="span"
-                        sx={{
-                            color: 'primary.main',
-                            fontWeight: 700,
-                            letterSpacing: '-0.02em',
-                        }}
-                    >
-                        PulseBoard
-                    </Typography>
+                    <Logo size="medium" showText />
                 </Link>
             </Box>
 

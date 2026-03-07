@@ -1,5 +1,6 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
 import type { PageProps, User } from '@/types';
@@ -21,6 +22,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
 import Switch from '@mui/material/Switch';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -60,10 +62,20 @@ interface EditFormData {
 }
 
 export default function Users({ users, filters }: Props) {
+    const { flash } = usePage<PageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [search, setSearch] = useState(filters.search ?? '');
     const [confirmAction, setConfirmAction] = useState<{ user: User; action: 'toggle' | 'reset' } | null>(null);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+
+    useEffect(() => {
+        if (flash?.success) {
+            setSnackbar({ open: true, message: flash.success, severity: 'success' });
+        } else if (flash?.error) {
+            setSnackbar({ open: true, message: flash.error, severity: 'error' });
+        }
+    }, [flash?.success, flash?.error]);
 
     const createForm = useForm<UserFormData>({
         name: '',
@@ -125,15 +137,20 @@ export default function Users({ users, filters }: Props) {
     };
 
     const handlePageChange = (_: unknown, page: number) => {
-        router.get(route('admin.users.index'), { page: page + 1, search: filters.search || undefined }, { preserveState: true });
+        router.get(route('admin.users.index'), { page: page + 1, per_page: users.per_page, search: filters.search || undefined }, { preserveState: true });
+    };
+
+    const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        router.get(route('admin.users.index'), { page: 1, per_page: parseInt(event.target.value, 10), search: filters.search || undefined }, { preserveState: true });
     };
 
     return (
         <AuthenticatedLayout
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    User Management
-                </Typography>
+                <PageHeader
+                    title="User Management"
+                    breadcrumbs={[{ label: 'Admin', href: route('admin.dashboard') }]}
+                />
             }
         >
             <Head title="User Management" />
@@ -245,7 +262,8 @@ export default function Users({ users, filters }: Props) {
                             page={users.current_page - 1}
                             rowsPerPage={users.per_page}
                             onPageChange={handlePageChange}
-                            rowsPerPageOptions={[25]}
+                            onRowsPerPageChange={handleRowsPerPageChange}
+                            rowsPerPageOptions={[10, 25, 50]}
                         />
                     </TableContainer>
                 </Box>
@@ -360,6 +378,22 @@ export default function Users({ users, filters }: Props) {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                    severity={snackbar.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </AuthenticatedLayout>
     );
 }

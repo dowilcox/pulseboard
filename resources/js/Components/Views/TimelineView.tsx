@@ -25,10 +25,9 @@ function getWeekDates(startDate: Date, weeks: number): Date[] {
     return dates;
 }
 
-function dateToOffset(date: string, startDate: Date, totalDays: number): number {
+function dateToDayOffset(date: string, startDate: Date): number {
     const d = new Date(date);
-    const diff = (d.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-    return Math.max(0, Math.min(diff / totalDays, 1)) * 100;
+    return (d.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
 }
 
 export default function TimelineView({ columns, filterFn, onTaskClick }: Props) {
@@ -45,12 +44,6 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
     const dates = useMemo(() => getWeekDates(startDate, WEEKS_TO_SHOW), [startDate]);
     const totalDays = WEEKS_TO_SHOW * 7;
 
-    const endDate = useMemo(() => {
-        const d = new Date(startDate);
-        d.setDate(d.getDate() + totalDays);
-        return d;
-    }, [startDate, totalDays]);
-
     const allTasks = useMemo(() => {
         const tasks: Task[] = [];
         for (const col of columns) {
@@ -58,14 +51,8 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                 tasks.push(task);
             }
         }
-        return tasks.filter(filterFn).filter((t) => t.due_date || t.created_at);
+        return tasks.filter(filterFn).filter((t) => t.due_date);
     }, [columns, filterFn]);
-
-    const columnMap = useMemo(() => {
-        const m: Record<string, Column> = {};
-        for (const col of columns) m[col.id] = col;
-        return m;
-    }, [columns]);
 
     // Group weeks for header
     const weeks = useMemo(() => {
@@ -81,7 +68,10 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
         return w;
     }, [dates]);
 
-    const todayOffset = dateToOffset(new Date().toISOString().substring(0, 10), startDate, totalDays);
+    const todayOffset = (() => {
+        const days = dateToDayOffset(new Date().toISOString().substring(0, 10), startDate);
+        return (days / totalDays) * 100;
+    })();
 
     return (
         <Box>
@@ -129,16 +119,33 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                 {/* Task rows */}
                 {allTasks.length === 0 ? (
                     <Box sx={{ py: 6, textAlign: 'center' }}>
-                        <Typography color="text.secondary">No tasks with dates in this range</Typography>
+                        <Typography color="text.secondary">No tasks with due dates to display</Typography>
                     </Box>
                 ) : (
                     allTasks.map((task) => {
-                        const taskStart = task.created_at.substring(0, 10);
-                        const taskEnd = task.due_date ?? taskStart;
-                        const col = columnMap[task.column_id];
-                        const left = dateToOffset(taskStart, startDate, totalDays);
-                        const right = dateToOffset(taskEnd, startDate, totalDays);
-                        const width = Math.max(right - left, 1.5);
+                        // Use created_at as start if available, otherwise 7 days before due_date
+                        const dueDate = task.due_date as string;
+                        const taskStart = task.created_at
+                            ? task.created_at.substring(0, 10)
+                            : (() => {
+                                const d = new Date(dueDate);
+                                d.setDate(d.getDate() - 7);
+                                return d.toISOString().substring(0, 10);
+                            })();
+                        const taskEnd = dueDate;
+
+                        // Calculate raw day offsets (can be negative or > totalDays)
+                        const startDay = dateToDayOffset(taskStart, startDate);
+                        const endDay = dateToDayOffset(taskEnd, startDate);
+
+                        // Skip tasks entirely outside the visible range
+                        if (endDay < 0 || startDay > totalDays) return null;
+
+                        // Clamp to visible range and ensure minimum 1-day width
+                        const clampedStart = Math.max(startDay, 0);
+                        const clampedEnd = Math.max(endDay, clampedStart + 1);
+                        const left = (clampedStart / totalDays) * 100;
+                        const width = Math.max(((clampedEnd - clampedStart) / totalDays) * 100, 1.8);
 
                         return (
                             <Box
@@ -198,7 +205,7 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                                 </Box>
                             </Box>
                         );
-                    })
+                    }).filter(Boolean)
                 )}
 
                 {/* Today marker */}

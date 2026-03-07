@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
 import type { PageProps } from '@/types';
@@ -34,9 +35,10 @@ export default function Dashboard({ stats }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    Admin Dashboard
-                </Typography>
+                <PageHeader
+                    title="Dashboard"
+                    breadcrumbs={[{ label: 'Admin' }]}
+                />
             }
         >
             <Head title="Admin Dashboard" />

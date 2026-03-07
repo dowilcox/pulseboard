@@ -1,5 +1,6 @@
 import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
 import { LABEL_COLORS } from '@/constants/labelColors';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Label, PageProps, Team, UserWithTeamPivot } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
@@ -140,9 +141,13 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
         <AuthenticatedLayout
             currentTeam={team}
             header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    {team.name} Settings
-                </Typography>
+                <PageHeader
+                    title="Settings"
+                    breadcrumbs={[
+                        { label: 'Teams', href: route('teams.index') },
+                        { label: team.name, href: route('teams.show', team.id) },
+                    ]}
+                />
             }
         >
             <Head title={`Settings - ${team.name}`} />

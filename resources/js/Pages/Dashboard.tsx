@@ -1,4 +1,5 @@
 import { PRIORITY_COLORS } from '@/constants/priorities';
+import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Task } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
@@ -60,11 +61,7 @@ export default function Dashboard({ myTasks }: Props) {
 
     return (
         <AuthenticatedLayout
-            header={
-                <Typography variant="h6" component="h2" fontWeight={600}>
-                    Dashboard
-                </Typography>
-            }
+            header={<PageHeader title="Dashboard" />}
         >
             <Head title="Dashboard" />
 

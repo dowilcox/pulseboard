@@ -1,5 +1,6 @@
 import { useForm, usePage } from '@inertiajs/react';
 import type { PageProps } from '@/types';
+import { useThemeMode } from '@/Contexts/ThemeContext';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
@@ -11,14 +12,20 @@ import Typography from '@mui/material/Typography';
 export default function ThemePreferenceForm() {
     const { auth } = usePage<PageProps>().props;
     const user = auth.user;
+    const { setMode } = useThemeMode();
 
-    const { data, setData, patch, processing } = useForm({
+    const { data, setData, patch, processing, recentlySuccessful } = useForm({
         theme_preference: user.theme_preference ?? 'system',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(route('profile.update'));
+        patch(route('profile.theme.update'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setMode(data.theme_preference as 'light' | 'dark' | 'system');
+            },
+        });
     };
 
     return (
@@ -41,10 +48,16 @@ export default function ThemePreferenceForm() {
                 </RadioGroup>
             </FormControl>
 
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Button type="submit" variant="contained" disabled={processing}>
                     Save Preference
                 </Button>
+
+                {recentlySuccessful && (
+                    <Typography variant="body2" color="text.secondary">
+                        Saved.
+                    </Typography>
+                )}
             </Box>
         </Box>
     );

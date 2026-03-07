@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PRIORITY_COLORS } from '@/constants/priorities';
-import type { Column, Task } from '@/types';
+import type { Board, Column, PaginatedResponse, Task, Team } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
 import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -28,15 +29,33 @@ const PRIORITY_ORDER: Record<string, number> = {
     none: 5,
 };
 
+/** Map client sort keys to API sort fields */
+const SORT_KEY_TO_API: Record<SortKey, string> = {
+    task_number: 'task_number',
+    title: 'title',
+    priority: 'priority',
+    due_date: 'due_date',
+    column: 'sort_order',
+    assignees: 'sort_order',
+};
+
 interface Props {
     columns: Column[];
+    board: Board;
+    team: Team;
     filterFn: (task: Task) => boolean;
     onTaskClick: (task: Task) => void;
 }
 
-export default function ListView({ columns, filterFn, onTaskClick }: Props) {
+export default function ListView({ columns, board, team, filterFn, onTaskClick }: Props) {
     const [sortKey, setSortKey] = useState<SortKey>('task_number');
     const [sortDir, setSortDir] = useState<SortDir>('asc');
+    const [extraTasks, setExtraTasks] = useState<Task[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const sentinelRef = useRef<HTMLTableRowElement | null>(null);
+    const abortRef = useRef<AbortController | null>(null);
 
     const columnMap = useMemo(() => {
         const m: Record<string, Column> = {};
@@ -46,15 +65,39 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
         return m;
     }, [columns]);
 
-    const allTasks = useMemo(() => {
+    // Compute total tasks from column counts (server-provided) vs initial loaded tasks
+    const totalTaskCount = useMemo(() => {
+        return columns.reduce((sum, col) => sum + (col.tasks_count ?? col.tasks?.length ?? 0), 0);
+    }, [columns]);
+
+    const initialTasks = useMemo(() => {
         const tasks: Task[] = [];
         for (const col of columns) {
             for (const task of col.tasks ?? []) {
                 tasks.push(task);
             }
         }
-        return tasks.filter(filterFn);
-    }, [columns, filterFn]);
+        return tasks;
+    }, [columns]);
+
+    // Merge initial tasks with lazily loaded extra tasks, deduplicating by id
+    const allTasks = useMemo(() => {
+        const seen = new Set<string>();
+        const merged: Task[] = [];
+        for (const task of initialTasks) {
+            if (!seen.has(task.id)) {
+                seen.add(task.id);
+                merged.push(task);
+            }
+        }
+        for (const task of extraTasks) {
+            if (!seen.has(task.id)) {
+                seen.add(task.id);
+                merged.push(task);
+            }
+        }
+        return merged.filter(filterFn);
+    }, [initialTasks, extraTasks, filterFn]);
 
     const sortedTasks = useMemo(() => {
         return [...allTasks].sort((a, b) => {
@@ -86,6 +129,82 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
         });
     }, [allTasks, sortKey, sortDir, columnMap]);
 
+    // Determine if there are more tasks to load
+    useEffect(() => {
+        const loadedUniqueCount = new Set([
+            ...initialTasks.map((t) => t.id),
+            ...extraTasks.map((t) => t.id),
+        ]).size;
+        setHasMore(loadedUniqueCount < totalTaskCount);
+    }, [initialTasks, extraTasks, totalTaskCount]);
+
+    // Reset extra tasks and pagination when columns change (e.g., Inertia reload)
+    useEffect(() => {
+        setExtraTasks([]);
+        setCurrentPage(1);
+    }, [columns]);
+
+    const fetchMoreTasks = useCallback(async () => {
+        if (loading || !hasMore) return;
+
+        abortRef.current?.abort();
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        setLoading(true);
+
+        try {
+            const nextPage = currentPage + 1;
+            const apiSort = SORT_KEY_TO_API[sortKey];
+            const params = new URLSearchParams({
+                page: String(nextPage),
+                per_page: '50',
+                sort: apiSort,
+                direction: sortDir,
+            });
+
+            const response = await fetch(
+                `${route('boards.tasks.index', [team.id, board.id])}?${params}`,
+                {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                }
+            );
+
+            if (!response.ok) throw new Error('Failed to load tasks');
+
+            const data: PaginatedResponse<Task> = await response.json();
+
+            setExtraTasks((prev) => [...prev, ...data.data]);
+            setCurrentPage(nextPage);
+            setHasMore(data.current_page < data.last_page);
+        } catch (error) {
+            if ((error as Error).name !== 'AbortError') {
+                console.error('Failed to load more tasks:', error);
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [loading, hasMore, currentPage, sortKey, sortDir, team.id, board.id]);
+
+    // IntersectionObserver for infinite scroll
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    fetchMoreTasks();
+                }
+            },
+            { rootMargin: '200px' }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [fetchMoreTasks]);
+
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
             setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -93,6 +212,9 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
             setSortKey(key);
             setSortDir('asc');
         }
+        // Reset lazy-loaded tasks when sort changes since server ordering differs
+        setExtraTasks([]);
+        setCurrentPage(1);
     };
 
     const renderSortLabel = (key: SortKey, label: string) => (
@@ -121,7 +243,7 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {sortedTasks.length === 0 ? (
+                    {sortedTasks.length === 0 && !loading ? (
                         <TableRow>
                             <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                 <Typography color="text.secondary">No tasks found</Typography>
@@ -254,6 +376,33 @@ export default function ListView({ columns, filterFn, onTaskClick }: Props) {
                                 </TableRow>
                             );
                         })
+                    )}
+
+                    {/* Sentinel row for IntersectionObserver */}
+                    {hasMore && (
+                        <TableRow ref={sentinelRef}>
+                            <TableCell colSpan={8} align="center" sx={{ py: 2, border: 0 }}>
+                                {loading && (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                        <CircularProgress size={20} />
+                                        <Typography variant="body2" color="text.secondary">
+                                            Loading more tasks...
+                                        </Typography>
+                                    </Box>
+                                )}
+                            </TableCell>
+                        </TableRow>
+                    )}
+
+                    {/* Task count summary */}
+                    {!hasMore && sortedTasks.length > 0 && (
+                        <TableRow>
+                            <TableCell colSpan={8} align="center" sx={{ py: 1.5, border: 0 }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Showing all {sortedTasks.length} tasks
+                                </Typography>
+                            </TableCell>
+                        </TableRow>
                     )}
                 </TableBody>
             </Table>

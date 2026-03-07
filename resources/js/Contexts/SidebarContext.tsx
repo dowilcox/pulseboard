@@ -1,5 +1,5 @@
-import { usePage } from '@inertiajs/react';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Board, PageProps, Team } from '@/types';
 
 interface SidebarContextValue {
@@ -9,6 +9,7 @@ interface SidebarContextValue {
     setCollapsed: (collapsed: boolean) => void;
     currentTeam: Team | undefined;
     boards: Board[];
+    reorderBoards: (teamId: string, orderedBoardIds: string[]) => void;
 }
 
 const SidebarContext = createContext<SidebarContextValue>({
@@ -18,6 +19,7 @@ const SidebarContext = createContext<SidebarContextValue>({
     setCollapsed: () => {},
     currentTeam: undefined,
     boards: [],
+    reorderBoards: () => {},
 });
 
 export function useSidebar() {
@@ -87,7 +89,42 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
         [teams, selectedTeamId],
     );
 
-    const boards = useMemo(() => currentTeam?.boards ?? [], [currentTeam]);
+    const { auth } = usePage<PageProps>().props;
+    const boardOrder = auth.user?.ui_preferences?.board_order;
+
+    const boards = useMemo(() => {
+        const rawBoards = currentTeam?.boards ?? [];
+        if (!currentTeam || !boardOrder?.[currentTeam.id]) {
+            return rawBoards;
+        }
+        const order = boardOrder[currentTeam.id];
+        const boardMap = new Map(rawBoards.map((b) => [b.id, b]));
+        const ordered: Board[] = [];
+        // Add boards in the saved order
+        for (const id of order) {
+            const board = boardMap.get(id);
+            if (board) {
+                ordered.push(board);
+                boardMap.delete(id);
+            }
+        }
+        // Append any boards not in the saved order (newly created)
+        for (const board of boardMap.values()) {
+            ordered.push(board);
+        }
+        return ordered;
+    }, [currentTeam, boardOrder]);
+
+    const reorderBoards = useCallback(
+        (teamId: string, orderedBoardIds: string[]) => {
+            router.patch(
+                route('profile.ui-preferences.update'),
+                { board_order: { [teamId]: orderedBoardIds } },
+                { preserveScroll: true, preserveState: true },
+            );
+        },
+        [],
+    );
 
     const value = useMemo<SidebarContextValue>(
         () => ({
@@ -97,8 +134,9 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
             setCollapsed,
             currentTeam,
             boards,
+            reorderBoards,
         }),
-        [selectedTeamId, collapsed, currentTeam, boards],
+        [selectedTeamId, collapsed, currentTeam, boards, reorderBoards],
     );
 
     return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
