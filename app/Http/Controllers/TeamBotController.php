@@ -17,6 +17,7 @@ class TeamBotController extends Controller
         $this->authorize('update', $team);
 
         $bots = $team->bots()
+            ->whereNull('deactivated_at')
             ->with(['tokens' => fn ($q) => $q->orderBy('created_at', 'desc')])
             ->orderBy('name')
             ->get();
@@ -44,6 +45,7 @@ class TeamBotController extends Controller
     {
         $this->authorize('update', $team);
         abort_unless($user->is_bot && $user->created_by_team_id === $team->id, 403);
+        abort_if($user->deactivated_at, 403, 'Cannot create tokens for a deactivated bot.');
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],

@@ -42,5 +42,11 @@ class RemoveTeamMember
         }
 
         $membership->delete();
+
+        // If the user is a bot owned by this team, deactivate it and revoke all tokens
+        if ($user->is_bot && $user->created_by_team_id === $team->id) {
+            $user->tokens()->delete();
+            $user->update(['deactivated_at' => now()]);
+        }
     }
 }
