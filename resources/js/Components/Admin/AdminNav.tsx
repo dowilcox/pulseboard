@@ -2,7 +2,6 @@ import { Link } from '@inertiajs/react';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import GroupsIcon from '@mui/icons-material/Groups';
-import IntegrationInstructionsIcon from '@mui/icons-material/IntegrationInstructions';
 import KeyIcon from '@mui/icons-material/Key';
 import LockIcon from '@mui/icons-material/Lock';
 import PeopleIcon from '@mui/icons-material/People';
@@ -36,7 +35,6 @@ const navSections: NavSection[] = [
     {
         label: 'Integrations',
         items: [
-            { label: 'GitLab', icon: <IntegrationInstructionsIcon />, route: 'admin.gitlab-connections.index' },
             { label: 'SSO', icon: <LockIcon />, route: 'admin.sso.index' },
         ],
     },

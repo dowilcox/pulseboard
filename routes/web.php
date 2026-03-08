@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Admin\ApiTokenController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\GitlabConnectionController;
 use App\Http\Controllers\Admin\SsoConfigurationController;
 use App\Http\Controllers\Admin\TeamController as AdminTeamController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -16,6 +15,7 @@ use App\Http\Controllers\BoardTemplateController;
 use App\Http\Controllers\ColumnController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GitlabConnectionController;
 use App\Http\Controllers\GitlabProjectController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\NotificationController;
@@ -83,14 +83,6 @@ Route::middleware('auth')->group(function () {
         // Teams
         Route::get('/teams', [AdminTeamController::class, 'index'])->name('teams.index');
         Route::get('/teams/{team}', [AdminTeamController::class, 'show'])->name('teams.show');
-
-        // GitLab Connections
-        Route::get('/gitlab-connections', [GitlabConnectionController::class, 'index'])->name('gitlab-connections.index');
-        Route::post('/gitlab-connections', [GitlabConnectionController::class, 'store'])->name('gitlab-connections.store');
-        Route::put('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'update'])->name('gitlab-connections.update');
-        Route::delete('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('gitlab-connections.destroy');
-        Route::get('/gitlab-connections/{gitlabConnection}', [GitlabConnectionController::class, 'show'])->name('gitlab-connections.show');
-        Route::post('/gitlab-connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'testConnection'])->name('gitlab-connections.test');
 
         // SSO Configuration
         Route::get('/sso', [SsoConfigurationController::class, 'index'])->name('sso.index');
@@ -182,6 +174,12 @@ Route::middleware('auth')->group(function () {
         // Team Dashboard
         Route::get('/teams/{team}/dashboard/stats', [DashboardController::class, 'teamStats'])->name('teams.dashboard.stats');
         Route::get('/teams/{team}/export/csv', [DashboardController::class, 'exportCsv'])->name('teams.export.csv');
+
+        // GitLab Connections (team-scoped)
+        Route::post('/teams/{team}/gitlab/connections', [GitlabConnectionController::class, 'store'])->name('teams.gitlab-connections.store');
+        Route::put('/teams/{team}/gitlab/connections/{gitlabConnection}', [GitlabConnectionController::class, 'update'])->name('teams.gitlab-connections.update');
+        Route::delete('/teams/{team}/gitlab/connections/{gitlabConnection}', [GitlabConnectionController::class, 'destroy'])->name('teams.gitlab-connections.destroy');
+        Route::post('/teams/{team}/gitlab/connections/{gitlabConnection}/test', [GitlabConnectionController::class, 'test'])->name('teams.gitlab-connections.test');
 
         // GitLab Projects
         Route::get('/teams/{team}/gitlab/projects', [GitlabProjectController::class, 'index'])->name('teams.gitlab-projects.index');

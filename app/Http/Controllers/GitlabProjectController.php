@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Actions\Gitlab\LinkGitlabProject;
 use App\Actions\Gitlab\UnlinkGitlabProject;
 use App\Exceptions\GitlabApiException;
-use App\Models\GitlabConnection;
 use App\Models\GitlabProject;
 use App\Models\Team;
 use App\Services\GitlabApiService;
@@ -27,14 +26,17 @@ class GitlabProjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        $connections = GitlabConnection::where('is_active', true)
+        $connections = $team->gitlabConnections()
             ->orderBy('name')
-            ->get(['id', 'name', 'base_url']);
+            ->get();
+
+        $activeConnections = $connections->where('is_active', true)->values();
 
         return Inertia::render('Teams/Settings/GitlabProjects', [
             'team' => $team,
             'gitlabProjects' => $projects,
             'connections' => $connections,
+            'activeConnections' => $activeConnections->map->only(['id', 'name', 'base_url']),
         ]);
     }
 
@@ -47,7 +49,7 @@ class GitlabProjectController extends Controller
             'q' => ['required', 'string', 'min:2'],
         ]);
 
-        $connection = GitlabConnection::findOrFail($request->connection_id);
+        $connection = $team->gitlabConnections()->findOrFail($request->connection_id);
 
         try {
             $api = GitlabApiService::for($connection);
@@ -85,7 +87,7 @@ class GitlabProjectController extends Controller
             'gitlab_project_id' => ['required', 'integer'],
         ]);
 
-        $connection = GitlabConnection::findOrFail($validated['connection_id']);
+        $connection = $team->gitlabConnections()->findOrFail($validated['connection_id']);
 
         LinkGitlabProject::run($team, $connection, $validated['gitlab_project_id']);
 
