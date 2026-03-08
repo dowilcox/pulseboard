@@ -391,20 +391,32 @@ class DemoSeeder extends Seeder
         // Checklists
         $sprintTasks['Set up OAuth2 provider integration']->update([
             'checklists' => [
-                ['id' => Str::uuid()->toString(), 'text' => 'Google OAuth setup', 'checked' => true],
-                ['id' => Str::uuid()->toString(), 'text' => 'GitHub OAuth setup', 'checked' => true],
-                ['id' => Str::uuid()->toString(), 'text' => 'Token refresh flow', 'checked' => true],
-                ['id' => Str::uuid()->toString(), 'text' => 'Account linking UI', 'checked' => false],
+                [
+                    'id' => Str::uuid()->toString(),
+                    'title' => 'OAuth Setup',
+                    'items' => [
+                        ['id' => Str::uuid()->toString(), 'text' => 'Google OAuth setup', 'completed' => true],
+                        ['id' => Str::uuid()->toString(), 'text' => 'GitHub OAuth setup', 'completed' => true],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Token refresh flow', 'completed' => true],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Account linking UI', 'completed' => false],
+                    ],
+                ],
             ],
         ]);
 
         $sprintTasks['Add search functionality to task list']->update([
             'checklists' => [
-                ['id' => Str::uuid()->toString(), 'text' => 'Backend search endpoint', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Frontend search UI', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Debounced input', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Highlight matches', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Filter integration', 'checked' => false],
+                [
+                    'id' => Str::uuid()->toString(),
+                    'title' => 'Implementation',
+                    'items' => [
+                        ['id' => Str::uuid()->toString(), 'text' => 'Backend search endpoint', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Frontend search UI', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Debounced input', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Highlight matches', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Filter integration', 'completed' => false],
+                    ],
+                ],
             ],
         ]);
 
@@ -837,10 +849,16 @@ class DemoSeeder extends Seeder
             'priority' => 'medium',
             'effort_estimate' => 3,
             'checklists' => [
-                ['id' => Str::uuid()->toString(), 'text' => 'Reproduce the bug', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Identify root cause', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Write fix', 'checked' => false],
-                ['id' => Str::uuid()->toString(), 'text' => 'Add regression test', 'checked' => false],
+                [
+                    'id' => Str::uuid()->toString(),
+                    'title' => 'Bug Fix Steps',
+                    'items' => [
+                        ['id' => Str::uuid()->toString(), 'text' => 'Reproduce the bug', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Identify root cause', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Write fix', 'completed' => false],
+                        ['id' => Str::uuid()->toString(), 'text' => 'Add regression test', 'completed' => false],
+                    ],
+                ],
             ],
             'label_ids' => [$engLabels['Bug']->id],
             'created_by' => $admin->id,
@@ -904,32 +922,52 @@ class DemoSeeder extends Seeder
         // ── Notifications (database channel) ───────────────────
         $notifications = [
             [$bob, 'App\Notifications\TaskAssignedNotification', [
+                'type' => 'task_assigned',
                 'task_id' => $sprintTasks['Implement API v2 pagination']->id,
                 'task_title' => 'Implement API v2 pagination',
-                'board_name' => 'Sprint 24 - Q1 2026',
-                'assigned_by' => $admin->name,
+                'board_id' => $sprintBoard->id,
+                'team_id' => $engineeringTeam->id,
+                'assigner_name' => $admin->name,
+                'message' => $admin->name.' assigned you to "Implement API v2 pagination"',
             ], null],
             [$admin, 'App\Notifications\TaskCommentedNotification', [
+                'type' => 'task_commented',
                 'task_id' => $sprintTasks['Optimize database queries for dashboard']->id,
                 'task_title' => 'Optimize database queries for dashboard',
-                'commenter' => $bob->name,
+                'board_id' => $sprintBoard->id,
+                'team_id' => $engineeringTeam->id,
+                'commenter_name' => $bob->name,
                 'comment_preview' => 'Have you tried eager loading the column relationships?',
+                'message' => $bob->name.' commented on "Optimize database queries for dashboard": Have you tried eager loading the column relationships?',
             ], null],
             [$dave, 'App\Notifications\TaskAssignedNotification', [
+                'type' => 'task_assigned',
                 'task_id' => $sprintTasks['Add WebSocket reconnection logic']->id,
                 'task_title' => 'Add WebSocket reconnection logic',
-                'board_name' => 'Sprint 24 - Q1 2026',
-                'assigned_by' => $bob->name,
+                'board_id' => $sprintBoard->id,
+                'team_id' => $engineeringTeam->id,
+                'assigner_name' => $bob->name,
+                'message' => $bob->name.' assigned you to "Add WebSocket reconnection logic"',
             ], now()->subHours(3)],
             [$admin, 'App\Notifications\TaskDueSoonNotification', [
+                'type' => 'task_due_soon',
                 'task_id' => $sprintTasks['Optimize database queries for dashboard']->id,
                 'task_title' => 'Optimize database queries for dashboard',
+                'board_id' => $sprintBoard->id,
+                'team_id' => $engineeringTeam->id,
                 'due_date' => now()->addDays(2)->toDateString(),
+                'board_name' => 'Sprint 24 - Q1 2026',
+                'message' => '"Optimize database queries for dashboard" is due in 2 days',
             ], null],
             [$carol, 'App\Notifications\TaskMentionedNotification', [
+                'type' => 'task_mentioned',
                 'task_id' => $sprintTasks['Implement API v2 pagination']->id,
                 'task_title' => 'Implement API v2 pagination',
-                'mentioned_by' => $admin->name,
+                'board_id' => $sprintBoard->id,
+                'team_id' => $engineeringTeam->id,
+                'mentioner_name' => $admin->name,
+                'comment_preview' => '@carol can you test this with the mobile client?',
+                'message' => $admin->name.' mentioned you in "Implement API v2 pagination": @carol can you test this with the mobile client?',
             ], now()->subDay()],
         ];
 

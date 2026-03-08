@@ -1,8 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Underline from '@tiptap/extension-underline';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
@@ -23,12 +21,11 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
         extensions: [
             StarterKit.configure({
                 codeBlock: false,
+                link: {
+                    openOnClick: true,
+                },
             }),
             Image,
-            Link.configure({
-                openOnClick: true,
-            }),
-            Underline,
             TaskList,
             TaskItem.configure({
                 nested: true,

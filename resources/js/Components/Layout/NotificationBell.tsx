@@ -39,16 +39,21 @@ export default function NotificationBell() {
         setAnchorEl(null);
     };
 
-    const handleClickNotification = (notification: (typeof notifications)[0]) => {
+    const handleClickNotification = async (notification: (typeof notifications)[0]) => {
         if (!notification.read_at) {
-            markRead(notification.id);
+            await markRead(notification.id);
         }
         handleClose();
 
         // Navigate to the task if we have the data
         const data = notification.data;
         if (data.team_id && data.board_id && data.task_id) {
-            router.get(route('teams.boards.show', [data.team_id, data.board_id]));
+            const target = route('tasks.show', [data.team_id, data.board_id, data.task_id]);
+            if (window.location.pathname === new URL(target, window.location.origin).pathname) {
+                router.reload();
+            } else {
+                router.get(target);
+            }
         }
     };
 

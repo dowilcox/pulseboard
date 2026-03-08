@@ -55,7 +55,7 @@ export default function Dashboard({ myTasks }: Props) {
 
     const handleTaskClick = (task: MyTask) => {
         if (task.board?.team?.id && task.board?.id) {
-            router.get(route('teams.boards.show', [task.board.team.id, task.board.id]));
+            router.get(route('tasks.show', [task.board.team.id, task.board.id, task.id]));
         }
     };
 
