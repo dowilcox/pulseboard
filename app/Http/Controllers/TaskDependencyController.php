@@ -4,14 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Actions\Tasks\AddTaskDependency;
 use App\Actions\Tasks\RemoveTaskDependency;
+use App\Models\Board;
 use App\Models\Task;
+use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 
 class TaskDependencyController extends Controller
 {
-    public function store(Request $request, Task $task): RedirectResponse
+    public function store(Request $request, Team $team, Board $board, Task $task): RedirectResponse
     {
         $this->authorize('update', $task);
 
@@ -26,7 +28,7 @@ class TaskDependencyController extends Controller
         return Redirect::back();
     }
 
-    public function destroy(Request $request, Task $task, Task $dependsOnTask): RedirectResponse
+    public function destroy(Request $request, Team $team, Board $board, Task $task, Task $dependsOnTask): RedirectResponse
     {
         $this->authorize('update', $task);
 

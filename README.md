@@ -83,11 +83,35 @@ composer dev         # Start all dev services (Laravel, Vite HMR, queue, Reverb)
 
 ```bash
 composer dev                    # Start all dev services
-composer test                   # Run test suite
-php artisan test --filter=Name  # Run specific test
 ./vendor/bin/pint               # PHP code formatting (PSR-12)
 npx tsc --noEmit                # TypeScript type checking
 npx vite build                  # Production frontend build
+```
+
+## Testing
+
+Tests run inside a dedicated Docker container that provides the correct isolated environment (SQLite in-memory DB, array sessions, sync queue). **Do not** run tests directly via `composer test`, inside the `app` container, or on the host — the `.env` file sets `SESSION_DRIVER=redis` and `DB_CONNECTION=mysql`, which will cause CSRF (419) and connection errors.
+
+```bash
+# Run the full test suite
+docker compose --profile test run --rm test
+
+# Run a specific test class
+docker compose --profile test run --rm test --filter=TaskControllerTest
+
+# Run a specific test file
+docker compose --profile test run --rm test tests/Feature/Api/V1/ApiAuthTest.php
+
+# Run tests with verbose output
+docker compose --profile test run --rm test --verbose
+```
+
+The test container is defined in `docker-compose.yml` under the `test` profile and uses `docker/Dockerfile.dev` — a lightweight PHP 8.4 image with SQLite, MySQL, and Redis extensions. It sets `APP_ENV=testing`, `DB_CONNECTION=sqlite`, and `DB_DATABASE=:memory:` to match `phpunit.xml`.
+
+**Note:** After adding new routes or controllers, reload Octane workers so the running dev app picks up changes:
+
+```bash
+docker compose exec app php artisan octane:reload
 ```
 
 ## Architecture Overview
@@ -150,10 +174,10 @@ npx vite build                  # Production frontend build
 ## Docker Production
 
 The included `docker-compose.yml` runs the app with:
-- PHP-FPM + Nginx (port 8000)
+- FrankenPHP via Laravel Octane (port 8000)
 - MySQL 8.0 (port 3306)
 - Redis 7 (port 6379)
-- Laravel Reverb (port 8080)
+- Laravel Reverb (port 8080/9080)
 - Queue worker and scheduler via Supervisor
 
 ## License

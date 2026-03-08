@@ -13,13 +13,10 @@ PulseBoard is a self-hosted Kanban project management app with GitLab integratio
 ```bash
 composer dev           # Start all dev services (Laravel serve + queue + logs + Vite HMR)
 composer setup         # First-time setup (install deps, .env, key, migrate, build)
-composer test          # Run all tests
-php artisan test --filter=ClassName           # Single test class
-php artisan test tests/Feature/SomeTest.php   # Single test file
 ./vendor/bin/pint      # PHP code formatting (PSR-12)
 npx tsc --noEmit       # TypeScript type checking
 npx vite build         # Production frontend build
-docker-compose up      # Containerized dev (app:8000, mysql:3306, redis:6379)
+docker compose up      # Containerized dev (app:8000, mysql:3306, redis:6379)
 ```
 
 ## Architecture
@@ -78,7 +75,26 @@ TypeScript interfaces for all backend models in `resources/js/types/index.d.ts`.
 
 ## Testing
 
+Tests **must** be run inside the Docker test container to ensure correct environment isolation (SQLite in-memory, array sessions, sync queue). Running tests directly in the `app` container or on the host will fail with 419 CSRF errors because `.env` values (e.g. `SESSION_DRIVER=redis`) override `phpunit.xml`.
+
+```bash
+# Run all tests
+docker compose --profile test run --rm test
+
+# Run a specific test class
+docker compose --profile test run --rm test --filter=TeamBotControllerTest
+
+# Run a specific test file
+docker compose --profile test run --rm test tests/Feature/SomeTest.php
+```
+
 PHPUnit with SQLite in-memory database. Config in `phpunit.xml`. Tests in `tests/Feature/` and `tests/Unit/`. Base class: `Tests\TestCase`.
+
+**After changing routes or adding controllers**, reload Octane workers so the running app picks up changes:
+
+```bash
+docker compose exec app php artisan octane:reload
+```
 
 ## Database
 

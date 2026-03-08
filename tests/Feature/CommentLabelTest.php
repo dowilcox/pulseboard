@@ -1,0 +1,172 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Board;
+use App\Models\Column;
+use App\Models\Comment;
+use App\Models\Label;
+use App\Models\Task;
+use App\Models\Team;
+use App\Models\TeamMember;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class CommentLabelTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $user;
+
+    private Team $team;
+
+    private Board $board;
+
+    private Column $column;
+
+    private Task $task;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create();
+        $this->team = Team::factory()->create();
+        $this->addTeamMember($this->user, $this->team, 'owner');
+        $this->board = Board::factory()->create(['team_id' => $this->team->id]);
+        $this->column = Column::factory()->create(['board_id' => $this->board->id]);
+        $this->task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+    }
+
+    private function addTeamMember(User $user, Team $team, string $role = 'member'): void
+    {
+        TeamMember::create([
+            'team_id' => $team->id,
+            'user_id' => $user->id,
+            'role' => $role,
+        ]);
+    }
+
+    // ---------------------------------------------------------------
+    // CommentController Tests
+    // ---------------------------------------------------------------
+
+    public function test_can_create_comment(): void
+    {
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => 'This is a test comment']
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('comments', [
+            'task_id' => $this->task->id,
+            'user_id' => $this->user->id,
+            'body' => 'This is a test comment',
+        ]);
+    }
+
+    public function test_can_update_comment(): void
+    {
+        $comment = Comment::factory()->create([
+            'task_id' => $this->task->id,
+            'user_id' => $this->user->id,
+            'body' => 'Original body',
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('comments.update', [$this->team, $this->board, $this->task, $comment]),
+            ['body' => 'Updated body']
+        );
+
+        $response->assertRedirect();
+        $comment->refresh();
+        $this->assertEquals('Updated body', $comment->body);
+    }
+
+    public function test_can_delete_comment(): void
+    {
+        $comment = Comment::factory()->create([
+            'task_id' => $this->task->id,
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->delete(
+            route('comments.destroy', [$this->team, $this->board, $this->task, $comment])
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('comments', ['id' => $comment->id]);
+    }
+
+    public function test_comment_requires_body(): void
+    {
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => '']
+        );
+
+        $response->assertSessionHasErrors('body');
+    }
+
+    // ---------------------------------------------------------------
+    // LabelController Tests
+    // ---------------------------------------------------------------
+
+    public function test_can_create_label(): void
+    {
+        $response = $this->actingAs($this->user)->post(
+            route('labels.store', [$this->team]),
+            ['name' => 'Bug', 'color' => '#ff0000']
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('labels', [
+            'team_id' => $this->team->id,
+            'name' => 'Bug',
+            'color' => '#ff0000',
+        ]);
+    }
+
+    public function test_can_update_label(): void
+    {
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('labels.update', [$this->team, $label]),
+            ['name' => 'Updated Label', 'color' => '#00ff00']
+        );
+
+        $response->assertRedirect();
+        $label->refresh();
+        $this->assertEquals('Updated Label', $label->name);
+        $this->assertEquals('#00ff00', $label->color);
+    }
+
+    public function test_can_delete_label(): void
+    {
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        $response = $this->actingAs($this->user)->delete(
+            route('labels.destroy', [$this->team, $label])
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('labels', ['id' => $label->id]);
+    }
+
+    public function test_label_requires_name(): void
+    {
+        $response = $this->actingAs($this->user)->post(
+            route('labels.store', [$this->team]),
+            ['name' => '', 'color' => '#ff0000']
+        );
+
+        $response->assertSessionHasErrors('name');
+    }
+}

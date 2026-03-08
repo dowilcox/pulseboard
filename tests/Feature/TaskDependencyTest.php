@@ -149,13 +149,13 @@ class TaskDependencyTest extends TestCase
         $taskA->load(['dependencies', 'blockedBy']);
         $taskB->load(['dependencies', 'blockedBy']);
 
-        // A depends on B, so B blocks A
-        $this->assertCount(1, $taskA->blockedBy);
-        $this->assertEquals($taskB->id, $taskA->blockedBy->first()->id);
+        // A depends on B, so A's dependencies include B
+        $this->assertCount(1, $taskA->dependencies);
+        $this->assertEquals($taskB->id, $taskA->dependencies->first()->id);
 
-        // B is blocking A, so B has A as a dependency
-        $this->assertCount(1, $taskB->dependencies);
-        $this->assertEquals($taskA->id, $taskB->dependencies->first()->id);
+        // B is depended on by A, so B's blockedBy includes A
+        $this->assertCount(1, $taskB->blockedBy);
+        $this->assertEquals($taskA->id, $taskB->blockedBy->first()->id);
     }
 
     public function test_prevents_duplicate_dependency(): void
