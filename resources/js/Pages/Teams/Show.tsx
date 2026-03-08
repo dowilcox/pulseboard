@@ -1,8 +1,8 @@
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import type { Board, Team, UserWithTeamPivot } from '@/types';
+import type { Board, PageProps, Team, UserWithTeamPivot } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -57,6 +57,10 @@ interface Props {
 }
 
 export default function TeamsShow({ team, members, boards }: Props) {
+    const { teams: sharedTeams } = usePage<PageProps>().props;
+    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
+    const canManage = userRole === 'owner' || userRole === 'admin';
+
     const [createOpen, setCreateOpen] = useState(false);
     const [stats, setStats] = useState<Stats | null>(null);
     const [statsLoading, setStatsLoading] = useState(true);
@@ -125,30 +129,36 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             >
                                 Export CSV
                             </Button>
-                            <Button
-                                variant="outlined"
-                                startIcon={<GitlabIcon />}
-                                size="small"
-                                onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
-                            >
-                                GitLab
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                startIcon={<SettingsIcon />}
-                                size="small"
-                                onClick={() => router.get(route('teams.settings', team.id))}
-                            >
-                                Settings
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                size="small"
-                                onClick={() => setCreateOpen(true)}
-                            >
-                                Create Board
-                            </Button>
+                            {canManage && (
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<GitlabIcon />}
+                                    size="small"
+                                    onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
+                                >
+                                    GitLab
+                                </Button>
+                            )}
+                            {canManage && (
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<SettingsIcon />}
+                                    size="small"
+                                    onClick={() => router.get(route('teams.settings', team.id))}
+                                >
+                                    Settings
+                                </Button>
+                            )}
+                            {canManage && (
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    size="small"
+                                    onClick={() => setCreateOpen(true)}
+                                >
+                                    Create Board
+                                </Button>
+                            )}
                         </>
                     }
                 />

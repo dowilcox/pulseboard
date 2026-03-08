@@ -26,7 +26,9 @@ interface Props {
 }
 
 export default function BoardsShow({ board, team, members, gitlabProjects = [], initialTasksPerColumn = 20 }: Props) {
-    const { auth } = usePage<PageProps>().props;
+    const { auth, teams: sharedTeams } = usePage<PageProps>().props;
+    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
+    const canManage = userRole === 'owner' || userRole === 'admin';
     const columns = board.columns ?? [];
     const [teamLabels, setTeamLabels] = useState<Label[]>([]);
     const [taskFilter, setTaskFilter] = useState<(task: Task) => boolean>(() => () => true);
@@ -151,15 +153,17 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [], 
                         <>
                             <ViewSwitcher value={viewMode} onChange={setViewMode} />
                             <PresenceAvatars users={presenceUsers} currentUserId={auth.user.id} />
-                            <Tooltip title="Board Settings">
-                                <IconButton
-                                    onClick={() =>
-                                        router.get(route('teams.boards.settings', [team.id, board.id]))
-                                    }
-                                >
-                                    <SettingsIcon />
-                                </IconButton>
-                            </Tooltip>
+                            {canManage && (
+                                <Tooltip title="Board Settings">
+                                    <IconButton
+                                        onClick={() =>
+                                            router.get(route('teams.boards.settings', [team.id, board.id]))
+                                        }
+                                    >
+                                        <SettingsIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            )}
                         </>
                     }
                 />
