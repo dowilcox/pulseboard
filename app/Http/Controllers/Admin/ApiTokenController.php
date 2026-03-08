@@ -13,8 +13,11 @@ class ApiTokenController extends Controller
 {
     public function index(Request $request): Response
     {
-        $users = User::whereHas('tokens')
-            ->orWhere('is_bot', true)
+        $users = User::where(function ($q) {
+            $q->whereHas('tokens')
+                ->orWhere('is_bot', true);
+        })
+            ->whereNull('deactivated_at')
             ->with([
                 'tokens' => fn ($q) => $q->orderBy('created_at', 'desc'),
                 'createdByTeam:id,name',
@@ -29,6 +32,8 @@ class ApiTokenController extends Controller
 
     public function createToken(Request $request, User $user)
     {
+        abort_if($user->deactivated_at, 403, 'Cannot create tokens for a deactivated user.');
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'abilities' => ['sometimes', 'array'],

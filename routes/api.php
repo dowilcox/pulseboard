@@ -15,7 +15,7 @@ Route::post('/webhooks/gitlab/{connection}', [GitlabWebhookController::class, 'h
     ->middleware(VerifyGitlabWebhook::class)
     ->name('webhooks.gitlab');
 
-Route::prefix('v1')->middleware(['auth:sanctum', 'throttle:api'])->name('api.v1.')->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'])->name('api.v1.')->group(function () {
     // Me
     Route::get('/me', [MeController::class, 'show'])->name('me');
     Route::get('/me/tasks', [MeController::class, 'tasks'])->name('me.tasks');

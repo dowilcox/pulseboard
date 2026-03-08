@@ -12,6 +12,10 @@ class EnsureNotDeactivated
     public function handle(Request $request, Closure $next): Response
     {
         if ($request->user() && $request->user()->deactivated_at !== null) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Your account has been deactivated.'], 403);
+            }
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

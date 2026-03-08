@@ -88,6 +88,7 @@ class UserController extends Controller
             $user->update(['deactivated_at' => null]);
             $message = 'User reactivated successfully.';
         } else {
+            $user->tokens()->delete();
             $user->update(['deactivated_at' => now()]);
             $message = 'User deactivated successfully.';
         }
