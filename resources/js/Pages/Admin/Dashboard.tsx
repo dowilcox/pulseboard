@@ -107,23 +107,6 @@ export default function Dashboard({ stats }: Props) {
                                 </CardContent>
                             </Card>
                         </Grid>
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                            <Card
-                                component={Link}
-                                href={route('admin.settings.index')}
-                                variant="outlined"
-                                sx={{ textDecoration: 'none', display: 'block', transition: 'border-color 150ms ease, background-color 150ms ease', '&:hover': { bgcolor: 'action.hover', borderColor: 'action.selected' } }}
-                            >
-                                <CardContent>
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        Organization Settings
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Configure organization name and preferences
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
                     </Grid>
                 </Box>
             </Box>
