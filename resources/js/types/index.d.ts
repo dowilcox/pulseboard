@@ -24,6 +24,7 @@ export interface User {
     auth_provider: 'local' | 'saml2' | 'okta';
     is_admin: boolean;
     is_bot: boolean;
+    created_by_team_id?: string;
     theme_preference: 'light' | 'dark' | 'system';
     email_notification_prefs?: NotificationPreferences;
     ui_preferences?: UiPreferences;
@@ -31,6 +32,14 @@ export interface User {
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface PersonalAccessToken {
+    id: number;
+    name: string;
+    abilities: string[];
+    last_used_at: string | null;
+    created_at: string;
 }
 
 export interface TeamMemberPivot {

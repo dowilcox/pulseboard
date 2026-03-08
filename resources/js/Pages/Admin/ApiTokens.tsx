@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminNav from '@/Components/Admin/AdminNav';
-import type { PageProps, User } from '@/types';
+import type { PageProps, PersonalAccessToken, Team, User } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
@@ -12,14 +13,15 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import Paper from '@mui/material/Paper';
-import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -31,56 +33,41 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-interface PersonalAccessToken {
-    id: number;
-    name: string;
-    abilities: string[];
-    last_used_at: string | null;
-    created_at: string;
-}
-
 interface UserWithTokens extends User {
     tokens: PersonalAccessToken[];
+    created_by_team?: Pick<Team, 'id' | 'name'>;
 }
 
 interface Props extends PageProps {
     users: UserWithTokens[];
-    botUsers: User[];
 }
 
-export default function ApiTokens({ users, botUsers }: Props) {
+export default function ApiTokens({ users }: Props) {
     const { flash } = usePage<PageProps>().props;
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
-    const [botDialogOpen, setBotDialogOpen] = useState(false);
     const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<UserWithTokens | null>(null);
     const [confirmRevoke, setConfirmRevoke] = useState<{ user: UserWithTokens; tokenId: number } | null>(null);
+    const [createdToken, setCreatedToken] = useState<string | null>(null);
+    const [tokenCopied, setTokenCopied] = useState(false);
 
     useEffect(() => {
         if (flash?.success) {
-            setSnackbar({ open: true, message: flash.success, severity: 'success' });
+            if (flash.success.startsWith('Token created: ')) {
+                setCreatedToken(flash.success.replace('Token created: ', ''));
+                setTokenCopied(false);
+            } else {
+                setSnackbar({ open: true, message: flash.success, severity: 'success' });
+            }
         } else if (flash?.error) {
             setSnackbar({ open: true, message: flash.error, severity: 'error' });
         }
     }, [flash?.success, flash?.error]);
 
-    const botForm = useForm({
-        name: '',
-    });
-
     const tokenForm = useForm({
         name: '',
         abilities: ['read'] as string[],
     });
-
-    const handleCreateBot = () => {
-        botForm.post(route('admin.api-tokens.store-bot'), {
-            onSuccess: () => {
-                setBotDialogOpen(false);
-                botForm.reset();
-            },
-        });
-    };
 
     const openTokenDialog = (user: UserWithTokens) => {
         setSelectedUser(user);
@@ -134,27 +121,16 @@ export default function ApiTokens({ users, botUsers }: Props) {
                 <AdminNav />
 
                 <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Box sx={{ mb: 2 }}>
                         <Typography variant="body2" color="text.secondary">
-                            Manage API tokens for bot users and regular users. Tokens authenticate external API access.
+                            Overview of all API tokens across the platform. Bot users are now created and managed within team settings.
                         </Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={<SmartToyIcon />}
-                            onClick={() => {
-                                botForm.reset();
-                                botForm.clearErrors();
-                                setBotDialogOpen(true);
-                            }}
-                        >
-                            Create Bot User
-                        </Button>
                     </Box>
 
                     {users.length === 0 ? (
                         <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
                             <Typography color="text.secondary">
-                                No users with API tokens yet. Create a bot user to get started.
+                                No users with API tokens yet. Teams can create bot users from their settings page.
                             </Typography>
                         </Paper>
                     ) : (
@@ -165,6 +141,21 @@ export default function ApiTokens({ users, botUsers }: Props) {
                                         <Typography fontWeight={600}>{user.name}</Typography>
                                         {!user.is_bot && <Typography variant="body2" color="text.secondary">{user.email}</Typography>}
                                         {user.is_bot && <Chip label="Bot" size="small" color="info" icon={<SmartToyIcon />} />}
+                                        {user.is_bot && user.created_by_team && (
+                                            <Chip
+                                                label={user.created_by_team.name}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        )}
+                                        {user.is_bot && !user.created_by_team && (
+                                            <Chip
+                                                label="No team"
+                                                size="small"
+                                                variant="outlined"
+                                                color="warning"
+                                            />
+                                        )}
                                     </Box>
                                     <Button
                                         size="small"
@@ -238,33 +229,6 @@ export default function ApiTokens({ users, botUsers }: Props) {
                 </Box>
             </Box>
 
-            {/* Create Bot Dialog */}
-            <Dialog open={botDialogOpen} onClose={() => setBotDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create Bot User</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <Alert severity="info">
-                            Bot users are special accounts for API integrations. Add them to teams as regular members.
-                        </Alert>
-                        <TextField
-                            label="Bot Name"
-                            value={botForm.data.name}
-                            onChange={(e) => botForm.setData('name', e.target.value)}
-                            error={!!botForm.errors.name}
-                            helperText={botForm.errors.name}
-                            fullWidth
-                            required
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setBotDialogOpen(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCreateBot} disabled={botForm.processing}>
-                        Create
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
             {/* Create Token Dialog */}
             <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Create API Token for {selectedUser?.name}</DialogTitle>
@@ -324,9 +288,57 @@ export default function ApiTokens({ users, botUsers }: Props) {
                 </DialogActions>
             </Dialog>
 
+            {/* Token Created Dialog */}
+            <Dialog open={!!createdToken} maxWidth="sm" fullWidth>
+                <DialogTitle>API Token Created</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Alert severity="warning">
+                            Copy this token now. It will not be shown again.
+                        </Alert>
+                        <TextField
+                            value={createdToken ?? ''}
+                            fullWidth
+                            slotProps={{
+                                input: {
+                                    readOnly: true,
+                                    sx: { fontFamily: 'monospace', fontSize: '0.85rem' },
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <Tooltip title={tokenCopied ? 'Copied!' : 'Copy to clipboard'}>
+                                                <IconButton
+                                                    onClick={() => {
+                                                        if (createdToken) {
+                                                            navigator.clipboard.writeText(createdToken);
+                                                            setTokenCopied(true);
+                                                        }
+                                                    }}
+                                                    edge="end"
+                                                >
+                                                    {tokenCopied ? <CheckIcon color="success" /> : <ContentCopyIcon />}
+                                                </IconButton>
+                                            </Tooltip>
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                            onClick={(e) => (e.target as HTMLInputElement).select()}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, py: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => setCreatedToken(null)}
+                    >
+                        Done
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Snackbar
                 open={snackbar.open}
-                autoHideDuration={6000}
+                autoHideDuration={4000}
                 onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
@@ -335,13 +347,6 @@ export default function ApiTokens({ users, botUsers }: Props) {
                     severity={snackbar.severity}
                     variant="filled"
                     sx={{ width: '100%' }}
-                    action={
-                        snackbar.message.startsWith('Token created:') ? (
-                            <IconButton size="small" color="inherit" onClick={() => copyToClipboard(snackbar.message.replace('Token created: ', ''))}>
-                                <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                        ) : undefined
-                    }
                 >
                     {snackbar.message}
                 </Alert>

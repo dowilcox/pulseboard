@@ -78,6 +78,11 @@ class Team extends Model
     /**
      * Determine if the given user is a member of this team.
      */
+    public function bots(): HasMany
+    {
+        return $this->hasMany(User::class, 'created_by_team_id')->where('is_bot', true);
+    }
+
     public function hasUser(User $user): bool
     {
         return $this->members()->where('users.id', $user->id)->exists();

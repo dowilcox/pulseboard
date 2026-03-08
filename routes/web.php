@@ -25,6 +25,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDependencyController;
 use App\Http\Controllers\TaskGitlabController;
 use App\Http\Controllers\TaskTemplateController;
+use App\Http\Controllers\TeamBotController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMemberController;
 use Illuminate\Foundation\Application;
@@ -91,9 +92,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('/sso/{ssoConfiguration}', [SsoConfigurationController::class, 'destroy'])->name('sso.destroy');
         Route::post('/sso/{ssoConfiguration}/test', [SsoConfigurationController::class, 'test'])->name('sso.test');
 
-        // API Tokens
+        // API Tokens (admin oversight)
         Route::get('/api-tokens', [ApiTokenController::class, 'index'])->name('api-tokens.index');
-        Route::post('/api-tokens/bots', [ApiTokenController::class, 'storeBot'])->name('api-tokens.store-bot');
         Route::post('/api-tokens/{user}/tokens', [ApiTokenController::class, 'createToken'])->name('api-tokens.create-token');
         Route::delete('/api-tokens/{user}/tokens/{tokenId}', [ApiTokenController::class, 'revokeToken'])->name('api-tokens.revoke-token');
     });
@@ -174,6 +174,13 @@ Route::middleware('auth')->group(function () {
         // Team Dashboard
         Route::get('/teams/{team}/dashboard/stats', [DashboardController::class, 'teamStats'])->name('teams.dashboard.stats');
         Route::get('/teams/{team}/export/csv', [DashboardController::class, 'exportCsv'])->name('teams.export.csv');
+
+        // Team Bots & API Tokens
+        Route::get('/teams/{team}/bots', [TeamBotController::class, 'index'])->name('teams.bots.index');
+        Route::post('/teams/{team}/bots', [TeamBotController::class, 'storeBot'])->name('teams.bots.store');
+        Route::delete('/teams/{team}/bots/{user}', [TeamBotController::class, 'destroyBot'])->name('teams.bots.destroy');
+        Route::post('/teams/{team}/bots/{user}/tokens', [TeamBotController::class, 'createToken'])->name('teams.bots.create-token');
+        Route::delete('/teams/{team}/bots/{user}/tokens/{tokenId}', [TeamBotController::class, 'revokeToken'])->name('teams.bots.revoke-token');
 
         // GitLab Connections (team-scoped)
         Route::post('/teams/{team}/gitlab/connections', [GitlabConnectionController::class, 'store'])->name('teams.gitlab-connections.store');

@@ -4,12 +4,13 @@ import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import type { Label, PageProps, Team, User, UserWithTeamPivot } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useCallback, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import KeyIcon from '@mui/icons-material/Key';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -380,6 +381,32 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                         )}
                     </CardContent>
                 </Card>
+
+                {/* API Tokens */}
+                {canManageMembers && (
+                    <Card variant="outlined">
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        API Tokens
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Create bot users and manage API tokens for external integrations.
+                                    </Typography>
+                                </Box>
+                                <Button
+                                    component={Link}
+                                    href={route('teams.bots.index', team.id)}
+                                    startIcon={<KeyIcon />}
+                                    size="small"
+                                >
+                                    Manage
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                )}
             </Box>
 
             {/* Add Member Dialog */}

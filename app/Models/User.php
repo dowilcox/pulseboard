@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -89,6 +90,11 @@ class User extends Authenticatable
     /**
      * The teams this user belongs to.
      */
+    public function createdByTeam(): BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'created_by_team_id');
+    }
+
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class, 'team_members')
