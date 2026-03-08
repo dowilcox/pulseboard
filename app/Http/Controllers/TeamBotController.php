@@ -56,7 +56,8 @@ class TeamBotController extends Controller
         $abilities = $validated['abilities'] ?? ['read'];
         $token = $user->createToken($validated['name'], $abilities);
 
-        return back()->with('success', 'Token created: '.$token->plainTextToken);
+        return back()->with('success', 'Token created successfully. Copy it now — it won\'t be shown again.')
+            ->with('token', $token->plainTextToken);
     }
 
     public function revokeToken(Request $request, Team $team, User $user, int $tokenId)

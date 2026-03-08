@@ -276,8 +276,8 @@ export default function SsoConfigurationPage({ configurations }: Props) {
             </Box>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-                <DialogTitle>{editing ? 'Edit SSO Provider' : 'Add SAML2 Provider'}</DialogTitle>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth aria-labelledby="sso-provider-dialog-title">
+                <DialogTitle id="sso-provider-dialog-title">{editing ? 'Edit SSO Provider' : 'Add SAML2 Provider'}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <TextField
@@ -373,8 +373,8 @@ export default function SsoConfigurationPage({ configurations }: Props) {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)}>
-                <DialogTitle>Delete SSO Provider</DialogTitle>
+            <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} aria-labelledby="delete-sso-dialog-title">
+                <DialogTitle id="delete-sso-dialog-title">Delete SSO Provider</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will remove the SSO provider. Users authenticated via this provider will need to reset their password or use another authentication method.
@@ -402,6 +402,7 @@ export default function SsoConfigurationPage({ configurations }: Props) {
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     severity={snackbar.severity}
                     variant="filled"
+                    role="status"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

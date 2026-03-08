@@ -204,7 +204,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Total Tasks
                             </Typography>
-                            <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                            <Typography variant="h4" component="p" fontWeight={700} sx={{ mt: 0.5 }}>
                                 {totalTasks}
                             </Typography>
                         </Paper>
@@ -214,7 +214,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Completed
                             </Typography>
-                            <Typography variant="h4" fontWeight={700} color="success.main" sx={{ mt: 0.5 }}>
+                            <Typography variant="h4" component="p" fontWeight={700} color="success.main" sx={{ mt: 0.5 }}>
                                 {completedTasks}
                             </Typography>
                         </Paper>
@@ -226,6 +226,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             </Typography>
                             <Typography
                                 variant="h4"
+                                component="p"
                                 fontWeight={700}
                                 color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}
                                 sx={{ mt: 0.5 }}
@@ -239,7 +240,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             <Typography variant="caption" color="text.secondary" fontWeight={600}>
                                 Avg Cycle Time
                             </Typography>
-                            <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                            <Typography variant="h4" component="p" fontWeight={700} sx={{ mt: 0.5 }}>
                                 {stats.cycle_time > 0 ? (
                                     <>
                                         {stats.cycle_time}
@@ -353,9 +354,9 @@ export default function TeamsShow({ team, members, boards }: Props) {
             )}
 
             {/* Create Board Dialog */}
-            <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+            <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="create-board-dialog-title">
                 <form onSubmit={handleCreateBoard}>
-                    <DialogTitle sx={{ pb: 1 }}>
+                    <DialogTitle id="create-board-dialog-title" sx={{ pb: 1 }}>
                         <Typography variant="subtitle1" fontWeight={600}>Create Board</Typography>
                     </DialogTitle>
                     <DialogContent sx={{ pt: '8px !important' }}>

@@ -80,6 +80,7 @@ export default function NotificationPreferencesForm() {
                                             checked={data.prefs[key]?.in_app ?? true}
                                             onChange={() => handleToggle(key, 'in_app')}
                                             size="small"
+                                            inputProps={{ 'aria-label': `${label} in-app notification` }}
                                         />
                                     </TableCell>
                                     <TableCell align="center">
@@ -87,6 +88,7 @@ export default function NotificationPreferencesForm() {
                                             checked={data.prefs[key]?.email ?? false}
                                             onChange={() => handleToggle(key, 'email')}
                                             size="small"
+                                            inputProps={{ 'aria-label': `${label} email notification` }}
                                         />
                                     </TableCell>
                                 </TableRow>

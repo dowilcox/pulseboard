@@ -91,7 +91,7 @@ export default function UpdateProfileInformationForm({
                         </Typography>
 
                         {status === 'verification-link-sent' && (
-                            <Alert severity="success" sx={{ mt: 2 }}>
+                            <Alert severity="success" role="status" aria-live="polite" sx={{ mt: 2 }}>
                                 A new verification link has been sent to your email address.
                             </Alert>
                         )}
@@ -108,7 +108,7 @@ export default function UpdateProfileInformationForm({
                     </Button>
 
                     {recentlySuccessful && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" role="status" aria-live="polite">
                             Saved.
                         </Typography>
                     )}

@@ -13,7 +13,7 @@ export interface BreadcrumbItem {
 }
 
 interface PageHeaderProps {
-    /** The current page title displayed as h2 */
+    /** The current page title displayed as h1 */
     title: string;
     /** Breadcrumb trail (excluding "Home" which is always first, and current page which uses title) */
     breadcrumbs?: BreadcrumbItem[];
@@ -63,7 +63,7 @@ export default function PageHeader({ title, breadcrumbs = [], actions }: PageHea
                         {title}
                     </Typography>
                 </MuiBreadcrumbs>
-                <Typography variant="h6" component="h2" fontWeight={600} noWrap>
+                <Typography variant="h6" component="h1" fontWeight={600} noWrap>
                     {title}
                 </Typography>
             </Box>

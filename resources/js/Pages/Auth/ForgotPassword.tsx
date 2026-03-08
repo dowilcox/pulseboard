@@ -32,7 +32,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
             </Typography>
 
             {status && (
-                <Alert severity="success" sx={{ mb: 2 }}>
+                <Alert severity="success" role="status" aria-live="polite" sx={{ mb: 2 }}>
                     {status}
                 </Alert>
             )}

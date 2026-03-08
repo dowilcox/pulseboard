@@ -48,7 +48,7 @@ const navSections: NavSection[] = [
 
 export default function AdminNav() {
     return (
-        <Box sx={{ minWidth: 200, mr: 3 }}>
+        <Box component="nav" aria-label="Admin navigation" sx={{ minWidth: 200, mr: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2, px: 1 }}>
                 <AdminPanelSettingsIcon sx={{ color: 'warning.main', fontSize: 20 }} />
                 <Chip

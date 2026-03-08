@@ -190,8 +190,8 @@ export default function AutomationRulesPanel({ teamId, boardId, columns, members
             </CardContent>
 
             {/* Create Rule Dialog */}
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create Automation Rule</DialogTitle>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="create-automation-rule-dialog-title">
+                <DialogTitle id="create-automation-rule-dialog-title">Create Automation Rule</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus

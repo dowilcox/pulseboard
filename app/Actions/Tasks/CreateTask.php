@@ -50,6 +50,14 @@ class CreateTask
             ]);
 
             if (! empty($data['assignee_ids'])) {
+                // Filter out deactivated users
+                $data['assignee_ids'] = User::whereIn('id', $data['assignee_ids'])
+                    ->whereNull('deactivated_at')
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            if (! empty($data['assignee_ids'])) {
                 $assignees = collect($data['assignee_ids'])->mapWithKeys(fn ($userId) => [
                     $userId => [
                         'assigned_at' => now(),

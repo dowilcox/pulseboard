@@ -268,8 +268,8 @@ export default function ApiTokens({ team, bots }: Props) {
             </Box>
 
             {/* Create Bot Dialog */}
-            <Dialog open={botDialogOpen} onClose={() => setBotDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create Bot User</DialogTitle>
+            <Dialog open={botDialogOpen} onClose={() => setBotDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="create-bot-dialog-title">
+                <DialogTitle id="create-bot-dialog-title">Create Bot User</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <Alert severity="info">
@@ -295,8 +295,8 @@ export default function ApiTokens({ team, bots }: Props) {
             </Dialog>
 
             {/* Create Token Dialog */}
-            <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create API Token for {selectedBot?.name}</DialogTitle>
+            <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="create-bot-token-dialog-title">
+                <DialogTitle id="create-bot-token-dialog-title">Create API Token for {selectedBot?.name}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <Alert severity="warning">
@@ -338,8 +338,8 @@ export default function ApiTokens({ team, bots }: Props) {
             </Dialog>
 
             {/* Confirm Revoke Token Dialog */}
-            <Dialog open={!!confirmRevoke} onClose={() => setConfirmRevoke(null)}>
-                <DialogTitle>Revoke Token</DialogTitle>
+            <Dialog open={!!confirmRevoke} onClose={() => setConfirmRevoke(null)} aria-labelledby="revoke-bot-token-dialog-title">
+                <DialogTitle id="revoke-bot-token-dialog-title">Revoke Token</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will immediately invalidate the token. Any applications using it will lose access.
@@ -354,8 +354,8 @@ export default function ApiTokens({ team, bots }: Props) {
             </Dialog>
 
             {/* Confirm Delete Bot Dialog */}
-            <Dialog open={!!confirmDeleteBot} onClose={() => setConfirmDeleteBot(null)}>
-                <DialogTitle>Remove Bot User</DialogTitle>
+            <Dialog open={!!confirmDeleteBot} onClose={() => setConfirmDeleteBot(null)} aria-labelledby="delete-bot-dialog-title">
+                <DialogTitle id="delete-bot-dialog-title">Remove Bot User</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will deactivate the bot user, revoke all its tokens, and remove it from the team. Any applications using its tokens will lose access.
@@ -370,8 +370,8 @@ export default function ApiTokens({ team, bots }: Props) {
             </Dialog>
 
             {/* Token Created Dialog */}
-            <Dialog open={!!createdToken} maxWidth="sm" fullWidth>
-                <DialogTitle>API Token Created</DialogTitle>
+            <Dialog open={!!createdToken} maxWidth="sm" fullWidth aria-labelledby="bot-token-created-dialog-title">
+                <DialogTitle id="bot-token-created-dialog-title">API Token Created</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <Alert severity="warning">
@@ -427,6 +427,7 @@ export default function ApiTokens({ team, bots }: Props) {
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     severity={snackbar.severity}
                     variant="filled"
+                    role="status"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

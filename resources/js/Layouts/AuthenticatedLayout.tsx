@@ -201,6 +201,7 @@ function AuthenticatedLayoutInner({
                 {/* Top AppBar */}
                 <AppBar
                     position="sticky"
+                    component="header"
                     color="default"
                     elevation={0}
                     sx={{
@@ -209,19 +210,26 @@ function AuthenticatedLayoutInner({
                         borderColor: 'divider',
                     }}
                 >
-                    {navigating && (
-                        <LinearProgress
-                            aria-label="Page loading"
-                            sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                zIndex: 1,
-                                height: 2,
-                            }}
-                        />
-                    )}
+                    <Box role="status" aria-live="polite">
+                        {navigating && (
+                            <LinearProgress
+                                aria-label="Page loading"
+                                sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    zIndex: 1,
+                                    height: 2,
+                                }}
+                            />
+                        )}
+                        {navigating && (
+                            <Typography sx={{ position: 'absolute', left: '-9999px' }}>
+                                Loading page
+                            </Typography>
+                        )}
+                    </Box>
                     <Toolbar>
                         <IconButton
                             color="inherit"

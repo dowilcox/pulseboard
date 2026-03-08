@@ -231,8 +231,9 @@ export default function GitlabSection({
                 onClose={() => setCreateDialogOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                aria-labelledby="create-gitlab-link-dialog-title"
             >
-                <DialogTitle>
+                <DialogTitle id="create-gitlab-link-dialog-title">
                     Create GitLab {createType === 'branch' ? 'Branch' : 'Merge Request'}
                 </DialogTitle>
                 <DialogContent>

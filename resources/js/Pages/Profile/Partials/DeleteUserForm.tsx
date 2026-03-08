@@ -74,9 +74,10 @@ export default function DeleteUserForm({
                 onClose={closeModal}
                 maxWidth="sm"
                 fullWidth
+                aria-labelledby="delete-account-dialog-title"
             >
                 <Box component="form" onSubmit={deleteUser}>
-                    <DialogTitle>
+                    <DialogTitle id="delete-account-dialog-title">
                         Are you sure you want to delete your account?
                     </DialogTitle>
 

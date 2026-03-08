@@ -410,9 +410,9 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Box>
 
             {/* Add Member Dialog */}
-            <Dialog open={addMemberOpen} onClose={handleAddMemberClose} maxWidth="xs" fullWidth>
+            <Dialog open={addMemberOpen} onClose={handleAddMemberClose} maxWidth="xs" fullWidth aria-labelledby="add-member-dialog-title">
                 <form onSubmit={handleAddMember}>
-                    <DialogTitle>Add Member</DialogTitle>
+                    <DialogTitle id="add-member-dialog-title">Add Member</DialogTitle>
                     <DialogContent>
                         <Autocomplete
                             options={userSearchResults}
@@ -495,8 +495,8 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Dialog>
 
             {/* Remove Member Confirmation Dialog */}
-            <Dialog open={!!removeMember} onClose={() => setRemoveMember(null)} maxWidth="xs">
-                <DialogTitle>Remove Member</DialogTitle>
+            <Dialog open={!!removeMember} onClose={() => setRemoveMember(null)} maxWidth="xs" aria-labelledby="remove-member-dialog-title">
+                <DialogTitle id="remove-member-dialog-title">Remove Member</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Are you sure you want to remove {removeMember?.name} from this team? They will lose access to all team boards.
@@ -511,9 +511,9 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Dialog>
 
             {/* Add Label Dialog */}
-            <Dialog open={addLabelOpen} onClose={handleAddLabelClose} maxWidth="xs" fullWidth>
+            <Dialog open={addLabelOpen} onClose={handleAddLabelClose} maxWidth="xs" fullWidth aria-labelledby="add-label-dialog-title">
                 <form onSubmit={handleAddLabel}>
-                    <DialogTitle>Add Label</DialogTitle>
+                    <DialogTitle id="add-label-dialog-title">Add Label</DialogTitle>
                     <DialogContent>
                         <TextField
                             autoFocus
@@ -574,8 +574,8 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Dialog>
 
             {/* Delete Label Confirmation Dialog */}
-            <Dialog open={!!deleteLabel} onClose={() => setDeleteLabel(null)} maxWidth="xs">
-                <DialogTitle>Delete Label</DialogTitle>
+            <Dialog open={!!deleteLabel} onClose={() => setDeleteLabel(null)} maxWidth="xs" aria-labelledby="delete-label-dialog-title">
+                <DialogTitle id="delete-label-dialog-title">Delete Label</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Are you sure you want to delete "{deleteLabel?.name}"? It will be removed from all tasks.

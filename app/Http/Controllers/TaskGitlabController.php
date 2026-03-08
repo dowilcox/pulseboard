@@ -6,7 +6,6 @@ use App\Actions\Gitlab\CreateBranchFromTask;
 use App\Actions\Gitlab\CreateMergeRequestFromTask;
 use App\Exceptions\GitlabApiException;
 use App\Models\Board;
-use App\Models\GitlabProject;
 use App\Models\Task;
 use App\Models\TaskGitlabLink;
 use App\Models\Team;
@@ -32,7 +31,8 @@ class TaskGitlabController extends Controller
             'gitlab_project_id' => ['required', 'exists:gitlab_projects,id'],
         ]);
 
-        $gitlabProject = GitlabProject::findOrFail($validated['gitlab_project_id']);
+        $taskTeam = $task->board->team;
+        $gitlabProject = $taskTeam->gitlabProjects()->where('gitlab_projects.id', $validated['gitlab_project_id'])->firstOrFail();
 
         try {
             $link = CreateBranchFromTask::run($task, $gitlabProject);
@@ -51,7 +51,8 @@ class TaskGitlabController extends Controller
             'source_branch' => ['nullable', 'string'],
         ]);
 
-        $gitlabProject = GitlabProject::findOrFail($validated['gitlab_project_id']);
+        $taskTeam = $task->board->team;
+        $gitlabProject = $taskTeam->gitlabProjects()->where('gitlab_projects.id', $validated['gitlab_project_id'])->firstOrFail();
 
         try {
             $link = CreateMergeRequestFromTask::run(

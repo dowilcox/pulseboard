@@ -379,8 +379,8 @@ export default function GitlabProjects({ team, gitlabProjects, connections, acti
             </Box>
 
             {/* Create/Edit Connection Dialog */}
-            <Dialog open={connDialogOpen} onClose={() => setConnDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>
+            <Dialog open={connDialogOpen} onClose={() => setConnDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="gitlab-connection-dialog-title">
+                <DialogTitle id="gitlab-connection-dialog-title">
                     {editingConnection ? 'Edit Connection' : 'Add GitLab Connection'}
                 </DialogTitle>
                 <DialogContent>
@@ -435,8 +435,8 @@ export default function GitlabProjects({ team, gitlabProjects, connections, acti
             </Dialog>
 
             {/* Delete Connection Confirmation */}
-            <Dialog open={!!deleteConnId} onClose={() => setDeleteConnId(null)}>
-                <DialogTitle>Delete Connection</DialogTitle>
+            <Dialog open={!!deleteConnId} onClose={() => setDeleteConnId(null)} aria-labelledby="delete-connection-dialog-title">
+                <DialogTitle id="delete-connection-dialog-title">Delete Connection</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will remove the connection and all linked projects. Webhooks will be cleaned up from GitLab.
@@ -460,8 +460,9 @@ export default function GitlabProjects({ team, gitlabProjects, connections, acti
                 onClose={() => setLinkDialogOpen(false)}
                 maxWidth="sm"
                 fullWidth
+                aria-labelledby="link-project-dialog-title"
             >
-                <DialogTitle>Link GitLab Project</DialogTitle>
+                <DialogTitle id="link-project-dialog-title">Link GitLab Project</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         {activeConnections.length > 1 && (
@@ -495,8 +496,8 @@ export default function GitlabProjects({ team, gitlabProjects, connections, acti
             </Dialog>
 
             {/* Unlink Project Confirmation */}
-            <Dialog open={!!deleteProjectId} onClose={() => setDeleteProjectId(null)}>
-                <DialogTitle>Unlink Project</DialogTitle>
+            <Dialog open={!!deleteProjectId} onClose={() => setDeleteProjectId(null)} aria-labelledby="unlink-project-dialog-title">
+                <DialogTitle id="unlink-project-dialog-title">Unlink Project</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will remove the project link and all associated task GitLab links. The
@@ -525,6 +526,7 @@ export default function GitlabProjects({ team, gitlabProjects, connections, acti
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     severity={snackbar.severity}
                     variant="filled"
+                    role="status"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

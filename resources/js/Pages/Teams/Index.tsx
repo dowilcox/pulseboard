@@ -161,9 +161,9 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
             )}
 
             {/* Create Team Dialog */}
-            <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth>
+            <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="create-team-dialog-title">
                 <form onSubmit={handleCreate}>
-                    <DialogTitle>Create Team</DialogTitle>
+                    <DialogTitle id="create-team-dialog-title">Create Team</DialogTitle>
                     <DialogContent>
                         <TextField
                             autoFocus

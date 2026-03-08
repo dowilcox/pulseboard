@@ -23,6 +23,10 @@ class TaskDependencyController extends Controller
 
         $dependsOn = Task::findOrFail($validated['depends_on_task_id']);
 
+        if ($dependsOn->board->team_id !== $task->board->team_id) {
+            abort(422, 'The dependency task must belong to the same team.');
+        }
+
         AddTaskDependency::run($task, $dependsOn, $request->user());
 
         return Redirect::back();

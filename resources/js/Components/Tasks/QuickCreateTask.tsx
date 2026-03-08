@@ -121,6 +121,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 fullWidth
                 autoFocus
                 placeholder="Task title..."
+                inputProps={{ 'aria-label': 'Task title' }}
                 value={data.title}
                 onChange={(e) => setData('title', e.target.value)}
                 onKeyDown={handleKeyDown}

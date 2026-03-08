@@ -74,7 +74,7 @@ export default function Dashboard({ myTasks }: Props) {
                             Active Tasks
                         </Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={700}>
+                    <Typography variant="h4" component="p" fontWeight={700}>
                         {activeTasks.length}
                     </Typography>
                 </Paper>
@@ -86,7 +86,7 @@ export default function Dashboard({ myTasks }: Props) {
                             Overdue
                         </Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={700} color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}>
+                    <Typography variant="h4" component="p" fontWeight={700} color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}>
                         {overdueTasks.length}
                     </Typography>
                 </Paper>
@@ -98,7 +98,7 @@ export default function Dashboard({ myTasks }: Props) {
                             Completed
                         </Typography>
                     </Box>
-                    <Typography variant="h4" fontWeight={700}>
+                    <Typography variant="h4" component="p" fontWeight={700}>
                         {doneTasks.length}
                     </Typography>
                 </Paper>

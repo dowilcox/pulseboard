@@ -147,8 +147,6 @@ function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) 
         <Paper
             ref={setNodeRef}
             elevation={0}
-            role="region"
-            aria-label={`${column.name} column (collapsed), ${taskCount} tasks`}
             sx={{
                 width: 48,
                 minWidth: 48,
@@ -170,6 +168,10 @@ function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) 
                 },
             }}
             onClick={onExpand}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onExpand(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={`Expand ${column.name} column`}
         >
             <Tooltip title="Expand column" placement="right">
                 <IconButton size="small" sx={{ mb: 1 }}>

@@ -23,18 +23,20 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                 </Link>
             </Box>
 
-            <Paper
-                elevation={2}
-                sx={{
-                    width: '100%',
-                    maxWidth: 440,
-                    px: 4,
-                    py: 4,
-                    borderRadius: 1.5,
-                }}
-            >
-                {children}
-            </Paper>
+            <Box component="main">
+                <Paper
+                    elevation={2}
+                    sx={{
+                        width: '100%',
+                        maxWidth: 440,
+                        px: 4,
+                        py: 4,
+                        borderRadius: 1.5,
+                    }}
+                >
+                    {children}
+                </Paper>
+            </Box>
         </Box>
     );
 }

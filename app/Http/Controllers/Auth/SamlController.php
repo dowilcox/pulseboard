@@ -50,14 +50,31 @@ class SamlController extends Controller
 
         if (! $user) {
             // Try to link by email
-            $user = User::where('email', $samlUser['email'])->first();
+            $existingUser = User::where('email', $samlUser['email'])->first();
 
-            if ($user) {
-                // Auto-link existing account
-                $user->update([
-                    'auth_provider' => 'saml2',
+            if ($existingUser) {
+                // Only auto-link if the user has no other auth provider set
+                if ($existingUser->auth_provider !== null && $existingUser->auth_provider !== 'saml2') {
+                    return redirect()->route('login')->with(
+                        'status',
+                        'An account with this email already exists using a different login method. Please log in with your password and link your SAML account from profile settings.'
+                    );
+                }
+
+                // Safe to auto-link: auth_provider is null (local) with no conflict, or already saml2
+                if ($existingUser->auth_provider === null) {
+                    // Local password account — do not overwrite, require manual linking
+                    return redirect()->route('login')->with(
+                        'status',
+                        'An account with this email already exists. Please log in with your password and link your SAML account from profile settings.'
+                    );
+                }
+
+                // auth_provider is already 'saml2' but different provider_id — link it
+                $existingUser->update([
                     'auth_provider_id' => $samlUser['name_id'],
                 ]);
+                $user = $existingUser;
             } else {
                 // JIT provisioning
                 $user = User::create([

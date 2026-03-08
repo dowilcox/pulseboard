@@ -286,8 +286,8 @@ export default function Users({ users, filters }: Props) {
             </Box>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>{editingUser ? 'Edit User' : 'Create User'}</DialogTitle>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="user-form-dialog-title">
+                <DialogTitle id="user-form-dialog-title">{editingUser ? 'Edit User' : 'Create User'}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <TextField
@@ -357,8 +357,8 @@ export default function Users({ users, filters }: Props) {
             </Dialog>
 
             {/* Confirm Action Dialog */}
-            <Dialog open={!!confirmAction} onClose={() => setConfirmAction(null)}>
-                <DialogTitle>
+            <Dialog open={!!confirmAction} onClose={() => setConfirmAction(null)} aria-labelledby="confirm-action-dialog-title">
+                <DialogTitle id="confirm-action-dialog-title">
                     {confirmAction?.action === 'toggle'
                         ? confirmAction.user.deactivated_at ? 'Reactivate User' : 'Deactivate User'
                         : 'Reset Password'}
@@ -405,6 +405,7 @@ export default function Users({ users, filters }: Props) {
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     severity={snackbar.severity}
                     variant="filled"
+                    role="status"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

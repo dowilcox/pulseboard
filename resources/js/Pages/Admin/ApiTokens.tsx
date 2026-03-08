@@ -230,8 +230,8 @@ export default function ApiTokens({ users }: Props) {
             </Box>
 
             {/* Create Token Dialog */}
-            <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Create API Token for {selectedUser?.name}</DialogTitle>
+            <Dialog open={tokenDialogOpen} onClose={() => setTokenDialogOpen(false)} maxWidth="sm" fullWidth aria-labelledby="create-token-dialog-title">
+                <DialogTitle id="create-token-dialog-title">Create API Token for {selectedUser?.name}</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <Alert severity="warning">
@@ -273,8 +273,8 @@ export default function ApiTokens({ users }: Props) {
             </Dialog>
 
             {/* Confirm Revoke Dialog */}
-            <Dialog open={!!confirmRevoke} onClose={() => setConfirmRevoke(null)}>
-                <DialogTitle>Revoke Token</DialogTitle>
+            <Dialog open={!!confirmRevoke} onClose={() => setConfirmRevoke(null)} aria-labelledby="revoke-token-dialog-title">
+                <DialogTitle id="revoke-token-dialog-title">Revoke Token</DialogTitle>
                 <DialogContent>
                     <Alert severity="warning" sx={{ mt: 1 }}>
                         This will immediately invalidate the token. Any applications using it will lose access.
@@ -289,8 +289,8 @@ export default function ApiTokens({ users }: Props) {
             </Dialog>
 
             {/* Token Created Dialog */}
-            <Dialog open={!!createdToken} maxWidth="sm" fullWidth>
-                <DialogTitle>API Token Created</DialogTitle>
+            <Dialog open={!!createdToken} maxWidth="sm" fullWidth aria-labelledby="token-created-dialog-title">
+                <DialogTitle id="token-created-dialog-title">API Token Created</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
                         <Alert severity="warning">
@@ -346,6 +346,7 @@ export default function ApiTokens({ users }: Props) {
                     onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
                     severity={snackbar.severity}
                     variant="filled"
+                    role="status"
                     sx={{ width: '100%' }}
                 >
                     {snackbar.message}

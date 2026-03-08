@@ -331,8 +331,8 @@ export default function ActivityFeed({
             })}
 
             {/* Delete comment confirmation dialog */}
-            <Dialog open={deleteCommentTarget !== null} onClose={() => setDeleteCommentTarget(null)}>
-                <DialogTitle>Delete Comment</DialogTitle>
+            <Dialog open={deleteCommentTarget !== null} onClose={() => setDeleteCommentTarget(null)} aria-labelledby="delete-comment-dialog-title">
+                <DialogTitle id="delete-comment-dialog-title">Delete Comment</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Are you sure you want to delete this comment? This action cannot be undone.

@@ -54,7 +54,7 @@ export default function ThemePreferenceForm() {
                 </Button>
 
                 {recentlySuccessful && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" role="status" aria-live="polite">
                         Saved.
                     </Typography>
                 )}

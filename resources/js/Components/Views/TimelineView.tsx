@@ -167,7 +167,11 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                                         cursor: 'pointer',
                                         overflow: 'hidden',
                                     }}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`Open task ${task.task_number ? `#${task.task_number} ` : ''}${task.title}`}
                                     onClick={() => onTaskClick(task)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTaskClick(task); } }}
                                 >
                                     <Typography variant="caption" noWrap>
                                         {task.task_number ? `#${task.task_number} ` : ''}{task.title}
@@ -176,7 +180,11 @@ export default function TimelineView({ columns, filterFn, onTaskClick }: Props) 
                                 <Box sx={{ flex: 1, position: 'relative', height: 28 }}>
                                     <Tooltip title={`${task.title} (${taskStart} - ${taskEnd})`}>
                                         <Box
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`Timeline bar for ${task.task_number ? `#${task.task_number} ` : ''}${task.title}, ${taskStart} to ${taskEnd}`}
                                             onClick={() => onTaskClick(task)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTaskClick(task); } }}
                                             sx={{
                                                 position: 'absolute',
                                                 left: `${left}%`,

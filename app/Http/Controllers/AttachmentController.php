@@ -21,7 +21,7 @@ class AttachmentController extends Controller
         $this->authorize('update', $task);
 
         $request->validate([
-            'file' => ['required', 'file', 'max:10240'], // 10MB max
+            'file' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,webm,svg'], // 10MB max
         ]);
 
         UploadAttachment::run($task, $request->file('file'), $request->user());

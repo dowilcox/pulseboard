@@ -34,7 +34,7 @@ export default function AssigneeSelector({ task, members, teamId, boardId }: Pro
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => (
-                <TextField {...params} size="small" placeholder="Add assignees..." />
+                <TextField {...params} size="small" placeholder="Add assignees..." inputProps={{ ...params.inputProps, 'aria-label': 'Add assignees' }} />
             )}
             renderOption={(props, option) => (
                 <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

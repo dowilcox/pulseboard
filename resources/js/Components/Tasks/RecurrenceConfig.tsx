@@ -97,7 +97,7 @@ export default function RecurrenceConfig({ config, onChange }: Props) {
                             size="small"
                             value={config.interval}
                             onChange={(e) => handleIntervalChange(parseInt(e.target.value) || 1)}
-                            slotProps={{ htmlInput: { min: 1, max: 365 } }}
+                            slotProps={{ htmlInput: { min: 1, max: 365, 'aria-label': 'Repeat interval' } }}
                             sx={{ width: 70 }}
                         />
                         <Select
@@ -106,6 +106,7 @@ export default function RecurrenceConfig({ config, onChange }: Props) {
                             onChange={(e) =>
                                 handleFrequencyChange(e.target.value as RecurrenceConfigType['frequency'])
                             }
+                            aria-label="Frequency"
                             sx={{ minWidth: 100 }}
                         >
                             <MenuItem value="daily">Day(s)</MenuItem>
@@ -168,7 +169,7 @@ export default function RecurrenceConfig({ config, onChange }: Props) {
                             size="small"
                             value={config.end_date ?? ''}
                             onChange={(e) => handleEndDateChange(e.target.value)}
-                            slotProps={{ inputLabel: { shrink: true } }}
+                            slotProps={{ inputLabel: { shrink: true }, htmlInput: { 'aria-label': 'End date' } }}
                             placeholder="No end date"
                             sx={{ flex: 1 }}
                         />

@@ -49,7 +49,7 @@ class BoardController extends Controller
             );
         });
 
-        $members = $team->members()->get();
+        $members = $team->members()->whereNull('deactivated_at')->get();
 
         $gitlabProjects = $team->gitlabProjects()
             ->with('connection')
@@ -110,7 +110,7 @@ class BoardController extends Controller
 
         $board->load('columns');
 
-        $members = $team->members()->get();
+        $members = $team->members()->whereNull('deactivated_at')->get();
 
         return Inertia::render('Boards/Settings', [
             'team' => $team,

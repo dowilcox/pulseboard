@@ -13,6 +13,12 @@ class AssignTask
 
     public function handle(Task $task, array $userIds, User $assigner): Task
     {
+        // Filter out deactivated users before processing
+        $userIds = User::whereIn('id', $userIds)
+            ->whereNull('deactivated_at')
+            ->pluck('id')
+            ->toArray();
+
         $currentIds = $task->assignees()->pluck('users.id')->toArray();
 
         $added = array_diff($userIds, $currentIds);

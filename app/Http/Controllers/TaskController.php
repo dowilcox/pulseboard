@@ -71,7 +71,7 @@ class TaskController extends Controller
         }
 
         $board->load('columns');
-        $members = $team->members()->get();
+        $members = $team->members()->whereNull('deactivated_at')->get();
         $labels = Label::where('team_id', $team->id)->get();
 
         $gitlabProjects = $team->gitlabProjects()
@@ -125,7 +125,7 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
-        $column = Column::findOrFail($request->validated('column_id'));
+        $column = $board->columns()->findOrFail($request->validated('column_id'));
         MoveTask::run($task, $column, $request->validated('sort_order'));
 
         return Redirect::back();
@@ -160,7 +160,9 @@ class TaskController extends Controller
             'label_ids.*' => ['uuid', 'exists:labels,id'],
         ]);
 
-        SyncTaskLabels::run($task, $validated['label_ids']);
+        $validLabelIds = Label::where('team_id', $team->id)->whereIn('id', $validated['label_ids'])->pluck('id')->toArray();
+
+        SyncTaskLabels::run($task, $validLabelIds);
 
         return Redirect::back();
     }

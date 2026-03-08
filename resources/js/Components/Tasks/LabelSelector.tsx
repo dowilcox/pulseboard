@@ -33,7 +33,7 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => (
-                <TextField {...params} size="small" placeholder="Add labels..." />
+                <TextField {...params} size="small" placeholder="Add labels..." inputProps={{ ...params.inputProps, 'aria-label': 'Add labels' }} />
             )}
             renderOption={(props, option) => (
                 <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

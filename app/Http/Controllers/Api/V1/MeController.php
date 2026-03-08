@@ -11,7 +11,7 @@ class MeController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        return response()->json(['data' => $request->user()]);
+        return response()->json(['data' => $request->user()->only(['id', 'name', 'email', 'avatar_url', 'theme_preference', 'is_bot', 'created_at'])]);
     }
 
     public function tasks(Request $request): JsonResponse

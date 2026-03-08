@@ -48,7 +48,9 @@ class TeamController extends Controller
     {
         $this->authorize('view', $team);
 
-        $team->load(['members', 'boards' => function ($query) {
+        $team->load(['members' => function ($query) {
+            $query->whereNull('deactivated_at');
+        }, 'boards' => function ($query) {
             $query->active()->with('columns')->orderBy('sort_order');
         }]);
 
@@ -91,14 +93,16 @@ class TeamController extends Controller
         $this->authorize('view', $team);
 
         $labels = $team->labels()->orderBy('name')->get();
-        $members = $team->members()->orderBy('name')->get();
+        $activeMembers = $team->members()->whereNull('deactivated_at')->orderBy('name')->get();
+        $deactivatedMembers = $team->members()->whereNotNull('deactivated_at')->orderBy('name')->get();
         $canManageMembers = auth()->user()->can('manageMember', $team);
         $canManageAdmins = auth()->user()->can('manageAdmin', $team);
 
         return Inertia::render('Teams/Settings', [
             'team' => $team,
             'labels' => $labels,
-            'members' => $members,
+            'members' => $activeMembers,
+            'deactivatedMembers' => $deactivatedMembers,
             'canManageMembers' => $canManageMembers,
             'canManageAdmins' => $canManageAdmins,
         ]);

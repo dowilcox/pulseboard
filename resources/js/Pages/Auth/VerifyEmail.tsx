@@ -31,7 +31,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
             </Typography>
 
             {status === 'verification-link-sent' && (
-                <Alert severity="success" sx={{ mb: 2 }}>
+                <Alert severity="success" role="status" aria-live="polite" sx={{ mb: 2 }}>
                     A new verification link has been sent to the email address
                     you provided during registration.
                 </Alert>

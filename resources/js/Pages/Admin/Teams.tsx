@@ -97,8 +97,11 @@ export default function Teams({ adminTeams: teams }: Props) {
                                         <TableRow
                                             key={team.id}
                                             hover
+                                            tabIndex={0}
                                             sx={{ cursor: 'pointer' }}
                                             onClick={() => handleRowClick(team)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(team); } }}
+                                            aria-label={`View details for team ${team.name}`}
                                         >
                                             <TableCell>
                                                 <Typography fontWeight={500}>{team.name}</Typography>
@@ -139,12 +142,12 @@ export default function Teams({ adminTeams: teams }: Props) {
             </Box>
 
             {/* Team Detail Dialog */}
-            <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>{teamDetail?.name ?? 'Team Details'}</DialogTitle>
+            <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth aria-labelledby="team-detail-dialog-title">
+                <DialogTitle id="team-detail-dialog-title">{teamDetail?.name ?? 'Team Details'}</DialogTitle>
                 <DialogContent>
                     {loading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                            <CircularProgress />
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }} role="status" aria-live="polite">
+                            <CircularProgress aria-label="Loading team details" />
                         </Box>
                     ) : teamDetail ? (
                         <Box>
