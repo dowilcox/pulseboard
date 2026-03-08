@@ -3,7 +3,7 @@
 # FrankenPHP (Octane) + Node.js 20 LTS
 # ---------------------------------------------------------------------------
 
-FROM dunglas/frankenphp:latest
+FROM docker.io/dunglas/frankenphp:latest
 
 LABEL maintainer="PulseBoard Development"
 
