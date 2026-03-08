@@ -29,7 +29,7 @@ class UserController extends Controller
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 25;
 
         return Inertia::render('Admin/Users', [
-            'users' => $query->paginate($perPage)->withQueryString(),
+            'users' => $query->with('createdByTeam:id,name')->paginate($perPage)->withQueryString(),
             'filters' => [
                 'search' => $search,
             ],

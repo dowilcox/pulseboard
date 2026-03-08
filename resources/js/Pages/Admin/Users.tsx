@@ -203,6 +203,12 @@ export default function Users({ users, filters }: Props) {
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 <Typography fontWeight={500}>{user.name}</Typography>
                                                 {user.is_bot && <Chip label="Bot" size="small" color="info" icon={<SmartToyIcon />} />}
+                                                {user.is_bot && user.created_by_team && (
+                                                    <Chip label={user.created_by_team.name} size="small" variant="outlined" />
+                                                )}
+                                                {user.is_bot && !user.created_by_team && (
+                                                    <Chip label="No team" size="small" variant="outlined" color="warning" />
+                                                )}
                                             </Box>
                                         </TableCell>
                                         <TableCell>

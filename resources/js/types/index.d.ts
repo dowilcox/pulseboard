@@ -25,6 +25,7 @@ export interface User {
     is_admin: boolean;
     is_bot: boolean;
     created_by_team_id?: string;
+    created_by_team?: Pick<Team, 'id' | 'name'>;
     theme_preference: 'light' | 'dark' | 'system';
     email_notification_prefs?: NotificationPreferences;
     ui_preferences?: UiPreferences;
