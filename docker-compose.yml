@@ -6,7 +6,7 @@ services:
     container_name: pulseboard-app
     restart: unless-stopped
     ports:
-      - "8000:80"
+      - "8000:8000"
       - "9080:8080"
     volumes:
       - .:/var/www/html
@@ -17,6 +17,7 @@ services:
       - redis
     environment:
       - APP_ENV=${APP_ENV:-local}
+      - OCTANE_SERVER=frankenphp
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_DATABASE=pulseboard
