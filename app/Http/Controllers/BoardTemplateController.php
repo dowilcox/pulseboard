@@ -14,6 +14,7 @@ class BoardTemplateController extends Controller
     public function index(): JsonResponse
     {
         $templates = BoardTemplate::with('creator:id,name')
+            ->where('created_by', auth()->id())
             ->orderBy('name')
             ->get();
 

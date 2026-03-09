@@ -14,11 +14,15 @@ class LabelController extends Controller
 {
     public function index(Team $team): JsonResponse
     {
+        $this->authorize('view', $team);
+
         return response()->json($team->labels()->orderBy('name')->get());
     }
 
     public function store(StoreLabelRequest $request, Team $team): RedirectResponse
     {
+        $this->authorize('update', $team);
+
         $team->labels()->create($request->validated());
 
         return Redirect::back();

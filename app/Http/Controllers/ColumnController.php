@@ -63,7 +63,7 @@ class ColumnController extends Controller
 
         $targetColumn = null;
         if ($request->filled('target_column_id')) {
-            $targetColumn = Column::findOrFail($request->input('target_column_id'));
+            $targetColumn = $board->columns()->where('id', '!=', $column->id)->findOrFail($request->input('target_column_id'));
         }
 
         DeleteColumn::run($column, $targetColumn);

@@ -15,7 +15,7 @@ class MoveTaskRequest extends FormRequest
     {
         return [
             'column_id' => ['required', 'uuid', 'exists:columns,id'],
-            'sort_order' => ['required', 'numeric'],
+            'sort_order' => ['required', 'numeric', 'min:0'],
         ];
     }
 }

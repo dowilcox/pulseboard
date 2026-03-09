@@ -16,7 +16,7 @@ class UpdateTaskRequest extends FormRequest
     {
         return [
             'title' => ['sometimes', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:50000'],
             'priority' => ['sometimes', Rule::in(['urgent', 'high', 'medium', 'low', 'none'])],
             'due_date' => ['nullable', 'date'],
             'effort_estimate' => ['nullable', 'integer', 'min:0'],

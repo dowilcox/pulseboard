@@ -12,6 +12,7 @@ class AutomationRuleController extends Controller
 {
     public function index(Team $team, Board $board): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
         $this->authorize('update', $board);
 
         return response()->json(
@@ -21,6 +22,7 @@ class AutomationRuleController extends Controller
 
     public function store(Request $request, Team $team, Board $board): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
         $this->authorize('update', $board);
 
         $validated = $request->validate([
@@ -45,6 +47,8 @@ class AutomationRuleController extends Controller
 
     public function update(Request $request, Team $team, Board $board, AutomationRule $automationRule): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
+        abort_unless($automationRule->board_id === $board->id, 404);
         $this->authorize('update', $board);
 
         $validated = $request->validate([
@@ -63,6 +67,8 @@ class AutomationRuleController extends Controller
 
     public function destroy(Team $team, Board $board, AutomationRule $automationRule): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
+        abort_unless($automationRule->board_id === $board->id, 404);
         $this->authorize('update', $board);
 
         $automationRule->delete();

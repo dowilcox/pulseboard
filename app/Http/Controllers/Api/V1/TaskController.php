@@ -90,7 +90,7 @@ class TaskController extends Controller
 
     public function store(StoreTaskRequest $request, Team $team, Board $board, Column $column): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('create', [Task::class, $board]);
 
         $task = CreateTask::run($board, $column, $request->validated(), $request->user());
 
@@ -99,7 +99,7 @@ class TaskController extends Controller
 
     public function update(UpdateTaskRequest $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('update', $task);
 
         $task = UpdateTask::run($task, $request->validated());
 
@@ -108,9 +108,9 @@ class TaskController extends Controller
 
     public function move(MoveTaskRequest $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('update', $task);
 
-        $column = Column::findOrFail($request->validated('column_id'));
+        $column = $board->columns()->findOrFail($request->validated('column_id'));
         $task = MoveTask::run($task, $column, $request->validated('sort_order'));
 
         return response()->json(['data' => $task]);
@@ -118,7 +118,7 @@ class TaskController extends Controller
 
     public function complete(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('update', $task);
 
         $task = ToggleTaskCompletion::run($task, $request->user());
 
@@ -127,7 +127,7 @@ class TaskController extends Controller
 
     public function assignees(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('update', $task);
 
         $validated = $request->validate([
             'user_ids' => ['required', 'array'],
@@ -141,7 +141,7 @@ class TaskController extends Controller
 
     public function labels(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('view', $board);
+        $this->authorize('update', $task);
 
         $validated = $request->validate([
             'label_ids' => ['required', 'array'],

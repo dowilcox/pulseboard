@@ -59,6 +59,14 @@ export default function TaskDetailPanel({
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Clean up pending timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
+            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
+        };
+    }, []);
+
     // Fetch full task details when opened
     useEffect(() => {
         if (!task || !open) {
@@ -70,8 +78,11 @@ export default function TaskDetailPanel({
         setDescription(task.description ?? '');
         setDueDate(task.due_date ?? '');
 
+        const controller = new AbortController();
+
         fetch(route('tasks.show', [teamId, boardId, task.id]), {
             headers: { Accept: 'application/json' },
+            signal: controller.signal,
         })
             .then((res) => res.json())
             .then((data: TaskDetail) => {
@@ -80,11 +91,14 @@ export default function TaskDetailPanel({
                 setDescription(data.description ?? '');
                 setDueDate(data.due_date ?? '');
             })
-            .catch(() => {
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
                 // Fall back to the task data we have
                 setDetail(task as TaskDetail);
             });
-    }, [task?.id, open]);
+
+        return () => controller.abort();
+    }, [task?.id, open, teamId, boardId]);
 
     // Re-fetch task detail when a relevant real-time event arrives
     useEffect(() => {
@@ -100,8 +114,11 @@ export default function TaskDetailPanel({
         ];
         if (!relevantActions.includes(lastBoardEvent.action)) return;
 
+        const controller = new AbortController();
+
         fetch(route('tasks.show', [teamId, boardId, task.id]), {
             headers: { Accept: 'application/json' },
+            signal: controller.signal,
         })
             .then((res) => res.json())
             .then((data: TaskDetail) => {
@@ -110,8 +127,12 @@ export default function TaskDetailPanel({
                 setDescription(data.description ?? '');
                 setDueDate(data.due_date ?? '');
             })
-            .catch(() => {});
-    }, [lastBoardEvent]);
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
+            });
+
+        return () => controller.abort();
+    }, [lastBoardEvent, task?.id, open, teamId, boardId]);
 
     const saveTitle = useCallback(
         (newTitle: string) => {

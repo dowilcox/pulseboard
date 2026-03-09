@@ -23,7 +23,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
 
     useEffect(() => {
-        const connector = echo.connector as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- laravel-echo doesn't expose Pusher types on connector
+        const connector = echo.connector as { pusher?: { connection: { bind: (event: string, cb: (...args: any[]) => void) => void; unbind: (event: string, cb: (...args: any[]) => void) => void; state: string } } };
         const pusher = connector?.pusher;
 
         if (!pusher) {

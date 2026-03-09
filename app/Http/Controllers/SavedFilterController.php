@@ -12,6 +12,8 @@ class SavedFilterController extends Controller
 {
     public function index(Team $team, Board $board): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
+
         $filters = SavedFilter::where('board_id', $board->id)
             ->where('user_id', auth()->id())
             ->orderBy('name')
@@ -22,6 +24,7 @@ class SavedFilterController extends Controller
 
     public function store(Request $request, Team $team, Board $board): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'filter_config' => ['required', 'array'],
@@ -48,6 +51,8 @@ class SavedFilterController extends Controller
 
     public function update(Request $request, Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
+        abort_unless($savedFilter->board_id === $board->id, 404);
         abort_unless($savedFilter->user_id === auth()->id(), 403);
 
         $validated = $request->validate([
@@ -70,6 +75,8 @@ class SavedFilterController extends Controller
 
     public function destroy(Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
+        abort_unless($board->team_id === $team->id, 404);
+        abort_unless($savedFilter->board_id === $board->id, 404);
         abort_unless($savedFilter->user_id === auth()->id(), 403);
 
         $savedFilter->delete();

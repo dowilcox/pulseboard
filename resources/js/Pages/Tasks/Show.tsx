@@ -16,6 +16,7 @@ import type {
     PageProps,
     Task,
     TaskSummary,
+    Team,
     User,
 } from '@/types';
 import { Head, Link as InertiaLink, router, usePage } from '@inertiajs/react';
@@ -24,7 +25,7 @@ import Divider from '@mui/material/Divider';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
     task: Task;
@@ -61,6 +62,15 @@ export default function TasksShow({
     const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const checklistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Clean up pending timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
+            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
+            if (checklistTimeoutRef.current) clearTimeout(checklistTimeoutRef.current);
+        };
+    }, []);
+
     // Real-time: board channel listener
     const handleBoardEvent = useCallback(
         (event: BoardEvent) => {
@@ -74,8 +84,9 @@ export default function TasksShow({
 
     // Debounced save helpers
     const saveField = useCallback(
-        (data: Record<string, unknown>) => {
-            router.put(route('tasks.update', [team.id, board.id, task.id]), data as any, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Inertia's RequestPayload doesn't accept interfaces without index signatures
+        (data: Record<string, any>) => {
+            router.put(route('tasks.update', [team.id, board.id, task.id]), data, {
                 preserveScroll: true,
                 preserveState: true,
             });
@@ -111,7 +122,7 @@ export default function TasksShow({
 
     return (
         <AuthenticatedLayout
-            currentTeam={team as any}
+            currentTeam={team as Team}
             activeBoardId={board.id}
             header={
                 <PageHeader
