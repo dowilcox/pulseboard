@@ -25,15 +25,28 @@ function normalizeUrl(url: string): string {
     return trimmed;
 }
 
+function isValidUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
+    }
+}
+
 export default function LinkEditor({ links, onChange }: Props) {
     const [adding, setAdding] = useState(false);
     const [newUrl, setNewUrl] = useState("");
     const [newLabel, setNewLabel] = useState("");
+    const [urlError, setUrlError] = useState("");
     const urlRef = useRef<HTMLInputElement>(null);
 
     const handleAdd = () => {
         const url = normalizeUrl(newUrl);
-        if (!url) return;
+        if (!isValidUrl(url)) {
+            setUrlError("Please enter a valid URL");
+            return;
+        }
 
         const link: TaskLink = {
             id: crypto.randomUUID(),
@@ -43,6 +56,7 @@ export default function LinkEditor({ links, onChange }: Props) {
         onChange([...links, link]);
         setNewUrl("");
         setNewLabel("");
+        setUrlError("");
         setAdding(false);
     };
 
@@ -119,12 +133,18 @@ export default function LinkEditor({ links, onChange }: Props) {
                         label="URL"
                         placeholder="https://example.com"
                         value={newUrl}
-                        onChange={(e) => setNewUrl(e.target.value)}
+                        error={!!urlError}
+                        helperText={urlError}
+                        onChange={(e) => {
+                            setNewUrl(e.target.value);
+                            if (urlError) setUrlError("");
+                        }}
                         onKeyDown={(e) => {
                             if (e.key === "Escape") {
                                 setAdding(false);
                                 setNewUrl("");
                                 setNewLabel("");
+                                setUrlError("");
                             }
                         }}
                         slotProps={{ inputLabel: { shrink: true } }}
@@ -145,6 +165,7 @@ export default function LinkEditor({ links, onChange }: Props) {
                                 setAdding(false);
                                 setNewUrl("");
                                 setNewLabel("");
+                                setUrlError("");
                             }
                         }}
                         slotProps={{ inputLabel: { shrink: true } }}
@@ -164,6 +185,7 @@ export default function LinkEditor({ links, onChange }: Props) {
                                 setAdding(false);
                                 setNewUrl("");
                                 setNewLabel("");
+                                setUrlError("");
                             }}
                         >
                             Cancel

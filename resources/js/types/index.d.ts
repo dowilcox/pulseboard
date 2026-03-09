@@ -376,5 +376,6 @@ export type PageProps<
     flash?: {
         success?: string | null;
         error?: string | null;
+        token?: string | null;
     };
 };

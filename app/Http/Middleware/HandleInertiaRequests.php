@@ -12,7 +12,7 @@ class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
-    protected $rootView = 'app';
+    protected $rootView = "app";
 
     /**
      * Determine the current asset version.
@@ -31,21 +31,28 @@ class HandleInertiaRequests extends Middleware
     {
         return [
             ...parent::share($request),
-            'auth' => [
-                'user' => $request->user(),
+            "auth" => [
+                "user" => $request->user(),
             ],
-            'teams' => fn () => $request->user()
-                ? $request->user()->teams()
-                    ->with(['boards' => fn ($q) => $q->select('id', 'team_id', 'name', 'sort_order')->orderBy('sort_order')])
-                    ->withPivot('role')
+            "teams" => fn() => $request->user()
+                ? $request
+                    ->user()
+                    ->teams()
+                    ->with([
+                        "boards" => fn($q) => $q
+                            ->select("id", "team_id", "name", "sort_order")
+                            ->orderBy("sort_order"),
+                    ])
+                    ->withPivot("role")
                     ->get()
                 : [],
-            'unreadNotificationsCount' => fn () => $request->user()
+            "unreadNotificationsCount" => fn() => $request->user()
                 ? $request->user()->unreadNotifications()->count()
                 : 0,
-            'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+            "flash" => [
+                "success" => fn() => $request->session()->get("success"),
+                "error" => fn() => $request->session()->get("error"),
+                "token" => fn() => $request->session()->get("token"),
             ],
         ];
     }
