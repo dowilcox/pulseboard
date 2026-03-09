@@ -8,6 +8,7 @@ use App\Actions\Boards\UpdateBoard;
 use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
+use App\Models\TaskTemplate;
 use App\Models\Team;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
@@ -55,12 +56,17 @@ class BoardController extends Controller
             ->with('connection')
             ->get();
 
+        $taskTemplates = TaskTemplate::where('team_id', $team->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
             'columns' => $board->columns,
             'members' => $members,
             'gitlabProjects' => $gitlabProjects,
+            'taskTemplates' => $taskTemplates,
             'initialTasksPerColumn' => self::INITIAL_TASKS_PER_COLUMN,
         ]);
     }

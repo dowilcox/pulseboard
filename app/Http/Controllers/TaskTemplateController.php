@@ -75,7 +75,16 @@ class TaskTemplateController extends Controller
 
     public function createTask(Request $request, Team $team, Board $board, Column $column, TaskTemplate $taskTemplate): RedirectResponse
     {
-        CreateTaskFromTemplate::run($taskTemplate, $column, $request->user());
+        $validated = $request->validate([
+            'title' => ['sometimes', 'string', 'max:255'],
+        ]);
+
+        CreateTaskFromTemplate::run(
+            $taskTemplate,
+            $column,
+            $request->user(),
+            $validated['title'] ?? null,
+        );
 
         return Redirect::back();
     }

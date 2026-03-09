@@ -1,20 +1,33 @@
 import { PRIORITY_OPTIONS } from '@/constants/priorities';
-import type { Label, Task, User } from '@/types';
+import type { Label, SavedFilter, Task, User } from '@/types';
 import { getContrastText } from '@/utils/colorContrast';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
 import ClearIcon from '@mui/icons-material/Clear';
+import CloseIcon from '@mui/icons-material/Close';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import SaveIcon from '@mui/icons-material/Save';
 import SearchIcon from '@mui/icons-material/Search';
+import StarIcon from '@mui/icons-material/Star';
 import Autocomplete from '@mui/material/Autocomplete';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
+import Popover from '@mui/material/Popover';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import { useCallback, useMemo, useState } from 'react';
+import Typography from '@mui/material/Typography';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Filters {
     search: string;
@@ -34,14 +47,26 @@ const EMPTY_FILTERS: Filters = {
     dueDateTo: '',
 };
 
+function getCsrfToken(): string {
+    return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+}
+
 interface Props {
     members: User[];
     labels: Label[];
+    teamId: string;
+    boardId: string;
     onFilterChange: (filterFn: (task: Task) => boolean) => void;
 }
 
-export default function FilterBar({ members, labels, onFilterChange }: Props) {
+export default function FilterBar({ members, labels, teamId, boardId, onFilterChange }: Props) {
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+    const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
+    const [savedFiltersMenuAnchor, setSavedFiltersMenuAnchor] = useState<HTMLElement | null>(null);
+    const [savePopoverAnchor, setSavePopoverAnchor] = useState<HTMLElement | null>(null);
+    const [saveFilterName, setSaveFilterName] = useState('');
+    const [saveFilterDefault, setSaveFilterDefault] = useState(false);
+    const defaultAppliedRef = useRef(false);
 
     const activeFilterCount = useMemo(() => {
         let count = 0;
@@ -125,6 +150,80 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
         applyFilters(EMPTY_FILTERS);
     };
 
+    // Load saved filters on mount
+    const fetchSavedFilters = useCallback(() => {
+        const controller = new AbortController();
+        fetch(route('boards.filters.index', [teamId, boardId]), {
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+        })
+            .then((res) => res.json())
+            .then((data: SavedFilter[]) => setSavedFilters(data))
+            .catch(() => {});
+        return controller;
+    }, [teamId, boardId]);
+
+    useEffect(() => {
+        const controller = fetchSavedFilters();
+        return () => controller.abort();
+    }, [fetchSavedFilters]);
+
+    // Auto-apply default filter on first load
+    useEffect(() => {
+        if (defaultAppliedRef.current || savedFilters.length === 0) return;
+        const defaultFilter = savedFilters.find((f) => f.is_default);
+        if (defaultFilter) {
+            const config = defaultFilter.filter_config as Partial<Filters>;
+            applyFilters({ ...EMPTY_FILTERS, ...config });
+        }
+        defaultAppliedRef.current = true;
+    }, [savedFilters, applyFilters]);
+
+    const handleSaveFilter = () => {
+        if (!saveFilterName.trim()) return;
+        fetch(route('boards.filters.store', [teamId, boardId]), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                name: saveFilterName.trim(),
+                filter_config: filters,
+                is_default: saveFilterDefault,
+            }),
+        })
+            .then((res) => res.json())
+            .then(() => {
+                fetchSavedFilters();
+                setSavePopoverAnchor(null);
+                setSaveFilterName('');
+                setSaveFilterDefault(false);
+            })
+            .catch(() => {});
+    };
+
+    const handleDeleteFilter = (filterId: string) => {
+        fetch(route('boards.filters.destroy', [teamId, boardId, filterId]), {
+            method: 'DELETE',
+            headers: {
+                Accept: 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+        })
+            .then(() => {
+                setSavedFilters((prev) => prev.filter((f) => f.id !== filterId));
+            })
+            .catch(() => {});
+    };
+
+    const handleApplySavedFilter = (savedFilter: SavedFilter) => {
+        const config = savedFilter.filter_config as Partial<Filters>;
+        applyFilters({ ...EMPTY_FILTERS, ...config });
+        setSavedFiltersMenuAnchor(null);
+    };
+
     return (
         <Box
             sx={{
@@ -139,6 +238,122 @@ export default function FilterBar({ members, labels, onFilterChange }: Props) {
             <Badge badgeContent={activeFilterCount} color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem' } }}>
                 <FilterListIcon sx={{ color: 'text.secondary' }} />
             </Badge>
+
+            {/* Saved Filters dropdown */}
+            <Tooltip title="Saved filters">
+                <IconButton
+                    size="small"
+                    onClick={(e) => setSavedFiltersMenuAnchor(e.currentTarget)}
+                    aria-label="Saved filters"
+                >
+                    {savedFilters.length > 0 ? (
+                        <BookmarkIcon fontSize="small" />
+                    ) : (
+                        <BookmarkBorderIcon fontSize="small" />
+                    )}
+                </IconButton>
+            </Tooltip>
+            <Menu
+                anchorEl={savedFiltersMenuAnchor}
+                open={Boolean(savedFiltersMenuAnchor)}
+                onClose={() => setSavedFiltersMenuAnchor(null)}
+                slotProps={{ paper: { sx: { minWidth: 200, maxWidth: 300 } } }}
+            >
+                {savedFilters.length === 0 ? (
+                    <MenuItem disabled>
+                        <Typography variant="body2" color="text.secondary">
+                            No saved filters
+                        </Typography>
+                    </MenuItem>
+                ) : (
+                    savedFilters.map((sf) => (
+                        <MenuItem
+                            key={sf.id}
+                            onClick={() => handleApplySavedFilter(sf)}
+                            sx={{ pr: 1 }}
+                        >
+                            {sf.is_default && (
+                                <ListItemIcon sx={{ minWidth: 28 }}>
+                                    <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                                </ListItemIcon>
+                            )}
+                            <ListItemText
+                                inset={!sf.is_default}
+                                primary={sf.name}
+                                slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }}
+                            />
+                            <IconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteFilter(sf.id);
+                                }}
+                                aria-label={`Delete filter ${sf.name}`}
+                                sx={{ ml: 1 }}
+                            >
+                                <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                        </MenuItem>
+                    ))
+                )}
+            </Menu>
+
+            {/* Save current filter button */}
+            {activeFilterCount > 0 && (
+                <>
+                    <Tooltip title="Save current filter">
+                        <IconButton
+                            size="small"
+                            onClick={(e) => setSavePopoverAnchor(e.currentTarget)}
+                            aria-label="Save current filter"
+                        >
+                            <SaveIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                    <Popover
+                        open={Boolean(savePopoverAnchor)}
+                        anchorEl={savePopoverAnchor}
+                        onClose={() => {
+                            setSavePopoverAnchor(null);
+                            setSaveFilterName('');
+                            setSaveFilterDefault(false);
+                        }}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                    >
+                        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 250 }}>
+                            <Typography variant="subtitle2">Save Filter</Typography>
+                            <TextField
+                                size="small"
+                                label="Filter name"
+                                value={saveFilterName}
+                                onChange={(e) => setSaveFilterName(e.target.value)}
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveFilter();
+                                }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        size="small"
+                                        checked={saveFilterDefault}
+                                        onChange={(e) => setSaveFilterDefault(e.target.checked)}
+                                    />
+                                }
+                                label={<Typography variant="body2">Set as default</Typography>}
+                            />
+                            <Button
+                                variant="contained"
+                                size="small"
+                                onClick={handleSaveFilter}
+                                disabled={!saveFilterName.trim()}
+                            >
+                                Save
+                            </Button>
+                        </Box>
+                    </Popover>
+                </>
+            )}
 
             {/* Search */}
             <TextField

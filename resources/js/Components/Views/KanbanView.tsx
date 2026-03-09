@@ -1,7 +1,7 @@
 import QuickCreateTask from '@/Components/Tasks/QuickCreateTask';
 import SortableTaskCard from '@/Components/Tasks/SortableTaskCard';
 import TaskCard from '@/Components/Tasks/TaskCard';
-import type { Column, PaginatedResponse, Task } from '@/types';
+import type { Column, PaginatedResponse, Task, TaskTemplate } from '@/types';
 import { computeSortOrder } from '@/utils/sortOrder';
 import {
     closestCorners,
@@ -228,10 +228,11 @@ interface Props {
     team: { id: string };
     filterFn: (task: Task) => boolean;
     onTaskClick: (task: Task) => void;
+    taskTemplates?: TaskTemplate[];
     initialTasksPerColumn?: number;
 }
 
-export default function KanbanView({ columns, board, team, filterFn, onTaskClick, initialTasksPerColumn = 20 }: Props) {
+export default function KanbanView({ columns, board, team, filterFn, onTaskClick, taskTemplates = [], initialTasksPerColumn = 20 }: Props) {
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [columnTasks, setColumnTasks] = useState<Record<string, Task[]>>(() =>
         buildColumnTasksMap(columns)
@@ -647,6 +648,7 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                             teamId={team.id}
                                             boardId={board.id}
                                             columnId={column.id}
+                                            templates={taskTemplates}
                                             disabled={atWipLimit}
                                         />
                                     </DroppableColumnBody>

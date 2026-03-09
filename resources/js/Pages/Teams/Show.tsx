@@ -1,9 +1,10 @@
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
-import type { Board, PageProps, Team, UserWithTeamPivot } from '@/types';
+import { useCallback, useEffect, useState } from 'react';
+import type { Board, BoardTemplate, PageProps, Team, UserWithTeamPivot } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DownloadIcon from '@mui/icons-material/Download';
 import GitlabIcon from '@mui/icons-material/AccountTree';
@@ -23,7 +24,12 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid2';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -62,6 +68,10 @@ export default function TeamsShow({ team, members, boards }: Props) {
     const canManage = userRole === 'owner' || userRole === 'admin';
 
     const [createOpen, setCreateOpen] = useState(false);
+    const [createTab, setCreateTab] = useState(0);
+    const [templates, setTemplates] = useState<BoardTemplate[]>([]);
+    const [templatesLoading, setTemplatesLoading] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate | null>(null);
     const [stats, setStats] = useState<Stats | null>(null);
     const [statsLoading, setStatsLoading] = useState(true);
 
@@ -69,6 +79,22 @@ export default function TeamsShow({ team, members, boards }: Props) {
         name: '',
         description: '',
     });
+
+    const fetchTemplates = useCallback(() => {
+        setTemplatesLoading(true);
+        fetch(route('templates.index'), {
+            headers: { Accept: 'application/json' },
+        })
+            .then((res) => {
+                if (!res.ok) throw new Error('Failed to fetch templates');
+                return res.json();
+            })
+            .then((data: BoardTemplate[]) => {
+                setTemplates(data);
+                setTemplatesLoading(false);
+            })
+            .catch(() => setTemplatesLoading(false));
+    }, []);
 
     useEffect(() => {
         fetch(route('teams.dashboard.stats', team.id), {
@@ -97,17 +123,47 @@ export default function TeamsShow({ team, members, boards }: Props) {
 
     const handleCreateBoard = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('teams.boards.store', team.id), {
-            onSuccess: () => {
-                setCreateOpen(false);
-                reset();
-            },
-        });
+        if (selectedTemplate) {
+            router.post(
+                route('teams.templates.create-board', [team.id, selectedTemplate.id]),
+                { name: data.name, description: data.description },
+                {
+                    onSuccess: () => {
+                        setCreateOpen(false);
+                        reset();
+                        setSelectedTemplate(null);
+                        setCreateTab(0);
+                    },
+                },
+            );
+        } else {
+            post(route('teams.boards.store', team.id), {
+                onSuccess: () => {
+                    setCreateOpen(false);
+                    reset();
+                },
+            });
+        }
     };
 
     const handleClose = () => {
         setCreateOpen(false);
         reset();
+        setSelectedTemplate(null);
+        setCreateTab(0);
+    };
+
+    const handleOpenCreate = () => {
+        setCreateOpen(true);
+        fetchTemplates();
+    };
+
+    const handleSelectTemplate = (template: BoardTemplate) => {
+        setSelectedTemplate(template);
+        setData({
+            name: template.name,
+            description: template.description ?? '',
+        });
     };
 
     return (
@@ -154,7 +210,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     variant="contained"
                                     startIcon={<AddIcon />}
                                     size="small"
-                                    onClick={() => setCreateOpen(true)}
+                                    onClick={handleOpenCreate}
                                 >
                                     Create Board
                                 </Button>
@@ -284,7 +340,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     <Button
                         variant="contained"
                         startIcon={<AddIcon />}
-                        onClick={() => setCreateOpen(true)}
+                        onClick={handleOpenCreate}
                     >
                         Create Board
                     </Button>
@@ -356,12 +412,61 @@ export default function TeamsShow({ team, members, boards }: Props) {
             {/* Create Board Dialog */}
             <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="create-board-dialog-title">
                 <form onSubmit={handleCreateBoard}>
-                    <DialogTitle id="create-board-dialog-title" sx={{ pb: 1 }}>
+                    <DialogTitle id="create-board-dialog-title" sx={{ pb: 0 }}>
                         <Typography variant="subtitle1" fontWeight={600}>Create Board</Typography>
+                        <Tabs
+                            value={createTab}
+                            onChange={(_, v) => {
+                                setCreateTab(v);
+                                if (v === 0) {
+                                    setSelectedTemplate(null);
+                                    reset();
+                                }
+                            }}
+                            sx={{ mt: 1 }}
+                        >
+                            <Tab label="Blank Board" />
+                            <Tab label="From Template" />
+                        </Tabs>
                     </DialogTitle>
-                    <DialogContent sx={{ pt: '8px !important' }}>
+                    <DialogContent sx={{ pt: '16px !important' }}>
+                        {createTab === 1 && (
+                            <Box sx={{ mb: 2 }}>
+                                {templatesLoading ? (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                                        <CircularProgress size={24} />
+                                    </Box>
+                                ) : templates.length === 0 ? (
+                                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                                        No templates available. Save a board as a template from its settings page.
+                                    </Typography>
+                                ) : (
+                                    <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto' }}>
+                                        <List disablePadding>
+                                            {templates.map((template) => (
+                                                <ListItemButton
+                                                    key={template.id}
+                                                    selected={selectedTemplate?.id === template.id}
+                                                    onClick={() => handleSelectTemplate(template)}
+                                                >
+                                                    <ListItemText
+                                                        primary={template.name}
+                                                        secondary={template.description}
+                                                        primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+                                                        secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                                                    />
+                                                    {selectedTemplate?.id === template.id && (
+                                                        <CheckCircleOutlineIcon color="primary" fontSize="small" />
+                                                    )}
+                                                </ListItemButton>
+                                            ))}
+                                        </List>
+                                    </Paper>
+                                )}
+                            </Box>
+                        )}
                         <TextField
-                            autoFocus
+                            autoFocus={createTab === 0}
                             label="Board Name"
                             fullWidth
                             required
@@ -384,8 +489,12 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     </DialogContent>
                     <DialogActions sx={{ px: 3, py: 2 }}>
                         <Button variant="text" onClick={handleClose}>Cancel</Button>
-                        <Button type="submit" variant="contained" disabled={processing}>
-                            Create
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={processing || (createTab === 1 && !selectedTemplate)}
+                        >
+                            {selectedTemplate ? 'Create from Template' : 'Create'}
                         </Button>
                     </DialogActions>
                 </form>

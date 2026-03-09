@@ -26,6 +26,7 @@ class UpdateBoardRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'settings' => ['sometimes', 'array'],
             'settings.auto_move_to_done' => ['sometimes', 'boolean'],
+            'default_task_template_id' => ['sometimes', 'nullable', 'uuid', 'exists:task_templates,id'],
         ];
     }
 }

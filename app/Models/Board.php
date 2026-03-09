@@ -70,6 +70,11 @@ class Board extends Model
         return $this->hasMany(AutomationRule::class);
     }
 
+    public function defaultTaskTemplate(): BelongsTo
+    {
+        return $this->belongsTo(TaskTemplate::class, 'default_task_template_id');
+    }
+
     /**
      * Scope to only active (non-archived) boards.
      */

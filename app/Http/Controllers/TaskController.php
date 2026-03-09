@@ -34,7 +34,20 @@ class TaskController extends Controller
     {
         $this->authorize('create', [Task::class, $board]);
 
-        CreateTask::run($board, $column, $request->validated(), $request->user());
+        $data = $request->validated();
+
+        // Apply default task template if set and no template was explicitly used
+        if ($board->default_task_template_id && $board->defaultTaskTemplate) {
+            $template = $board->defaultTaskTemplate;
+            $data = array_merge([
+                'description' => $template->description_template,
+                'priority' => $template->priority,
+                'effort_estimate' => $template->effort_estimate,
+                'label_ids' => $template->label_ids ?? [],
+            ], $data);
+        }
+
+        CreateTask::run($board, $column, $data, $request->user());
 
         return Redirect::back();
     }

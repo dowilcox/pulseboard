@@ -12,10 +12,10 @@ class CreateTaskFromTemplate
 {
     use AsAction;
 
-    public function handle(TaskTemplate $template, Column $column, User $creator): Task
+    public function handle(TaskTemplate $template, Column $column, User $creator, ?string $title = null): Task
     {
         $data = [
-            'title' => $template->name,
+            'title' => $title ?: $template->name,
             'description' => $template->description_template,
             'priority' => $template->priority,
             'effort_estimate' => $template->effort_estimate,

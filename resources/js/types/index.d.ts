@@ -89,6 +89,7 @@ export interface Board {
     description?: string;
     is_archived: boolean;
     sort_order: number;
+    default_task_template_id?: string;
     settings?: BoardSettings;
     created_at: string;
     updated_at: string;

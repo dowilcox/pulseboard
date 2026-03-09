@@ -2,14 +2,18 @@ import AutomationRulesPanel from '@/Components/Automation/AutomationRulesPanel';
 import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { PRIORITY_OPTIONS, PRIORITY_COLORS } from '@/constants/priorities';
 import { Head, useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
-import type { Board, Column, Team, User } from '@/types';
+import { useEffect, useState } from 'react';
+import type { Board, Column, TaskTemplate, Team, User } from '@/types';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import SaveIcon from '@mui/icons-material/Save';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -18,7 +22,9 @@ import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
@@ -42,6 +48,7 @@ export default function BoardSettings({ board, team, members }: Props) {
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? '',
+        default_task_template_id: board.default_task_template_id ?? '',
         settings: {
             auto_move_to_done: board.settings?.auto_move_to_done ?? false,
         },
@@ -59,6 +66,118 @@ export default function BoardSettings({ board, team, members }: Props) {
     const [columnErrors, setColumnErrors] = useState<Record<string, string>>({});
     const [savingColumns, setSavingColumns] = useState(false);
     const [expandedColumn, setExpandedColumn] = useState<number | null>(null);
+    const [savingTemplate, setSavingTemplate] = useState(false);
+    const [templateSnackbar, setTemplateSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    // Task Templates state
+    const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(true);
+    const [showTemplateForm, setShowTemplateForm] = useState(false);
+    const [templateFormData, setTemplateFormData] = useState({
+        name: '',
+        description_template: '',
+        priority: 'none' as TaskTemplate['priority'],
+        effort_estimate: '' as number | '',
+    });
+    const [templateFormErrors, setTemplateFormErrors] = useState<Record<string, string>>({});
+    const [savingTaskTemplate, setSavingTaskTemplate] = useState(false);
+
+    // Fetch task templates on mount
+    useEffect(() => {
+        const controller = new AbortController();
+
+        fetch(route('teams.task-templates.index', team.id), {
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' },
+        })
+            .then((res) => res.json())
+            .then((data: TaskTemplate[]) => {
+                setTaskTemplates(data);
+                setLoadingTemplates(false);
+            })
+            .catch((err) => {
+                if (err.name !== 'AbortError') {
+                    setLoadingTemplates(false);
+                }
+            });
+
+        return () => controller.abort();
+    }, [team.id]);
+
+    const handleDeleteTaskTemplate = (templateId: string) => {
+        fetch(route('teams.task-templates.destroy', [team.id, templateId]), {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+            },
+        })
+            .then((res) => {
+                if (res.ok) {
+                    setTaskTemplates((prev) => prev.filter((t) => t.id !== templateId));
+                }
+            });
+    };
+
+    const handleCreateTaskTemplate = () => {
+        if (!templateFormData.name.trim()) {
+            setTemplateFormErrors({ name: 'Name is required.' });
+            return;
+        }
+
+        setSavingTaskTemplate(true);
+        setTemplateFormErrors({});
+
+        router.post(
+            route('teams.task-templates.store', team.id),
+            {
+                name: templateFormData.name,
+                description_template: templateFormData.description_template || undefined,
+                priority: templateFormData.priority,
+                effort_estimate: templateFormData.effort_estimate === '' ? undefined : Number(templateFormData.effort_estimate),
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSavingTaskTemplate(false);
+                    setShowTemplateForm(false);
+                    setTemplateFormData({ name: '', description_template: '', priority: 'none', effort_estimate: '' });
+                    // Re-fetch templates after creation
+                    fetch(route('teams.task-templates.index', team.id), {
+                        headers: { 'Accept': 'application/json' },
+                    })
+                        .then((res) => res.json())
+                        .then((data: TaskTemplate[]) => setTaskTemplates(data));
+                },
+                onError: (errors) => {
+                    setTemplateFormErrors(errors as Record<string, string>);
+                    setSavingTaskTemplate(false);
+                },
+            },
+        );
+    };
+
+    const handleSaveAsTemplate = () => {
+        setSavingTemplate(true);
+        router.post(
+            route('boards.create-template', [team.id, board.id]),
+            {},
+            {
+                onSuccess: () => {
+                    setSavingTemplate(false);
+                    setTemplateSnackbar({ open: true, message: 'Board saved as template successfully.', severity: 'success' });
+                },
+                onError: () => {
+                    setSavingTemplate(false);
+                    setTemplateSnackbar({ open: true, message: 'Failed to save board as template.', severity: 'error' });
+                },
+            },
+        );
+    };
 
     const handleBoardSave = (e: React.FormEvent) => {
         e.preventDefault();
@@ -221,6 +340,24 @@ export default function BoardSettings({ board, team, members }: Props) {
                                 }
                                 sx={{ mb: 2 }}
                             />
+                            <TextField
+                                label="Default Task Template"
+                                select
+                                fullWidth
+                                value={boardForm.data.default_task_template_id}
+                                onChange={(e) => boardForm.setData('default_task_template_id', e.target.value)}
+                                helperText="New tasks created on this board will use this template's defaults"
+                                sx={{ mb: 2 }}
+                            >
+                                <MenuItem value="">
+                                    <Typography variant="body2" color="text.secondary">None</Typography>
+                                </MenuItem>
+                                {taskTemplates.map((tmpl) => (
+                                    <MenuItem key={tmpl.id} value={tmpl.id}>
+                                        {tmpl.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -443,6 +580,188 @@ export default function BoardSettings({ board, team, members }: Props) {
                     </CardContent>
                 </Card>
 
+                {/* Task Templates */}
+                <Card variant="outlined">
+                    <CardContent>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                            <Typography variant="subtitle1" fontWeight={600}>
+                                Task Templates
+                            </Typography>
+                            {!showTemplateForm && (
+                                <Button
+                                    startIcon={<AddIcon />}
+                                    size="small"
+                                    onClick={() => setShowTemplateForm(true)}
+                                >
+                                    Add Template
+                                </Button>
+                            )}
+                        </Box>
+
+                        {loadingTemplates ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                                Loading templates...
+                            </Typography>
+                        ) : taskTemplates.length === 0 && !showTemplateForm ? (
+                            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                                No task templates yet. Create one to quickly add pre-configured tasks.
+                            </Typography>
+                        ) : (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                {taskTemplates.map((tmpl) => (
+                                    <Paper
+                                        key={tmpl.id}
+                                        variant="outlined"
+                                        sx={{ px: 2, py: 1.5 }}
+                                    >
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Typography variant="body2" fontWeight={500} sx={{ flex: 1 }}>
+                                                {tmpl.name}
+                                            </Typography>
+                                            {tmpl.priority && tmpl.priority !== 'none' && (
+                                                <Chip
+                                                    label={tmpl.priority.charAt(0).toUpperCase() + tmpl.priority.slice(1)}
+                                                    size="small"
+                                                    sx={{
+                                                        bgcolor: PRIORITY_COLORS[tmpl.priority],
+                                                        color: '#fff',
+                                                        fontWeight: 500,
+                                                        fontSize: '0.7rem',
+                                                        height: 22,
+                                                    }}
+                                                />
+                                            )}
+                                            {tmpl.creator && (
+                                                <Typography variant="caption" color="text.secondary">
+                                                    by {tmpl.creator.name}
+                                                </Typography>
+                                            )}
+                                            <Tooltip title="Delete template">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => handleDeleteTaskTemplate(tmpl.id)}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </Paper>
+                                ))}
+                            </Box>
+                        )}
+
+                        {/* Inline create form */}
+                        <Collapse in={showTemplateForm}>
+                            <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
+                                <Typography variant="body2" fontWeight={600} sx={{ mb: 2 }}>
+                                    New Task Template
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <TextField
+                                        label="Name"
+                                        size="small"
+                                        required
+                                        fullWidth
+                                        value={templateFormData.name}
+                                        onChange={(e) =>
+                                            setTemplateFormData((prev) => ({ ...prev, name: e.target.value }))
+                                        }
+                                        error={!!templateFormErrors.name}
+                                        helperText={templateFormErrors.name}
+                                    />
+                                    <TextField
+                                        label="Description"
+                                        size="small"
+                                        fullWidth
+                                        multiline
+                                        rows={3}
+                                        value={templateFormData.description_template}
+                                        onChange={(e) =>
+                                            setTemplateFormData((prev) => ({ ...prev, description_template: e.target.value }))
+                                        }
+                                        error={!!templateFormErrors.description_template}
+                                        helperText={templateFormErrors.description_template}
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <TextField
+                                            label="Priority"
+                                            size="small"
+                                            select
+                                            value={templateFormData.priority}
+                                            onChange={(e) =>
+                                                setTemplateFormData((prev) => ({
+                                                    ...prev,
+                                                    priority: e.target.value as TaskTemplate['priority'],
+                                                }))
+                                            }
+                                            sx={{ minWidth: 160 }}
+                                        >
+                                            {PRIORITY_OPTIONS.map((opt) => (
+                                                <MenuItem key={opt.value} value={opt.value}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                        {opt.value !== 'none' && (
+                                                            <Box
+                                                                sx={{
+                                                                    width: 10,
+                                                                    height: 10,
+                                                                    borderRadius: '50%',
+                                                                    bgcolor: opt.color,
+                                                                    flexShrink: 0,
+                                                                }}
+                                                            />
+                                                        )}
+                                                        {opt.label}
+                                                    </Box>
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                        <TextField
+                                            label="Effort Estimate"
+                                            size="small"
+                                            type="number"
+                                            placeholder="Hours"
+                                            value={templateFormData.effort_estimate}
+                                            onChange={(e) =>
+                                                setTemplateFormData((prev) => ({
+                                                    ...prev,
+                                                    effort_estimate: e.target.value === '' ? '' : Number(e.target.value),
+                                                }))
+                                            }
+                                            error={!!templateFormErrors.effort_estimate}
+                                            helperText={templateFormErrors.effort_estimate}
+                                            slotProps={{
+                                                htmlInput: { min: 0, step: 0.5 },
+                                            }}
+                                            sx={{ width: 160 }}
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            onClick={handleCreateTaskTemplate}
+                                            disabled={savingTaskTemplate}
+                                        >
+                                            {savingTaskTemplate ? 'Saving...' : 'Save'}
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            onClick={() => {
+                                                setShowTemplateForm(false);
+                                                setTemplateFormData({ name: '', description_template: '', priority: 'none', effort_estimate: '' });
+                                                setTemplateFormErrors({});
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            </Paper>
+                        </Collapse>
+                    </CardContent>
+                </Card>
+
                 {/* Automation Rules */}
                 <AutomationRulesPanel
                     teamId={team.id}
@@ -450,7 +769,44 @@ export default function BoardSettings({ board, team, members }: Props) {
                     columns={board.columns ?? []}
                     members={members}
                 />
+
+                {/* Save as Template */}
+                <Card variant="outlined">
+                    <CardContent>
+                        <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                            Board Template
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Save this board's structure (columns, settings, and automation rules) as a reusable template.
+                            You can use it later to create new boards with the same setup.
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            startIcon={<SaveIcon />}
+                            onClick={handleSaveAsTemplate}
+                            disabled={savingTemplate}
+                        >
+                            {savingTemplate ? 'Saving...' : 'Save as Template'}
+                        </Button>
+                    </CardContent>
+                </Card>
             </Box>
+
+            <Snackbar
+                open={templateSnackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setTemplateSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setTemplateSnackbar((prev) => ({ ...prev, open: false }))}
+                    severity={templateSnackbar.severity}
+                    variant="filled"
+                    sx={{ width: '100%' }}
+                >
+                    {templateSnackbar.message}
+                </Alert>
+            </Snackbar>
         </AuthenticatedLayout>
     );
 }

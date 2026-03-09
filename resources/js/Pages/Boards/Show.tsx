@@ -9,7 +9,7 @@ import { useBoardChannel, type BoardEvent } from '@/hooks/useBoardChannel';
 import { usePresence } from '@/hooks/usePresence';
 import PageHeader from '@/Components/Layout/PageHeader';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Board, BoardViewMode, Column, GitlabProject, Label, PageProps, Task, Team, User } from '@/types';
+import type { Board, BoardViewMode, Column, GitlabProject, Label, PageProps, Task, TaskTemplate, Team, User } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import Box from '@mui/material/Box';
@@ -22,10 +22,11 @@ interface Props {
     team: Team;
     members: User[];
     gitlabProjects?: GitlabProject[];
+    taskTemplates?: TaskTemplate[];
     initialTasksPerColumn?: number;
 }
 
-export default function BoardsShow({ board, team, members, gitlabProjects = [], initialTasksPerColumn = 20 }: Props) {
+export default function BoardsShow({ board, team, members, gitlabProjects = [], taskTemplates = [], initialTasksPerColumn = 20 }: Props) {
     const { auth, teams: sharedTeams } = usePage<PageProps>().props;
     const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
     const canManage = userRole === 'owner' || userRole === 'admin';
@@ -104,6 +105,7 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [], 
                         team={team}
                         filterFn={taskFilter}
                         onTaskClick={handleTaskClick}
+                        taskTemplates={taskTemplates}
                         initialTasksPerColumn={initialTasksPerColumn}
                     />
                 );
@@ -176,6 +178,8 @@ export default function BoardsShow({ board, team, members, gitlabProjects = [], 
                 <FilterBar
                     members={members}
                     labels={teamLabels}
+                    teamId={team.id}
+                    boardId={board.id}
                     onFilterChange={(fn) => setTaskFilter(() => fn)}
                 />
             )}

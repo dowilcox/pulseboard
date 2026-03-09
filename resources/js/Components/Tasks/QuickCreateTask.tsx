@@ -1,7 +1,7 @@
 import type { TaskTemplate } from '@/types';
 import { router, useForm } from '@inertiajs/react';
 import AddIcon from '@mui/icons-material/Add';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
@@ -21,6 +21,7 @@ interface Props {
 export default function QuickCreateTask({ teamId, boardId, columnId, templates = [], disabled = false }: Props) {
     const [isCreating, setIsCreating] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, reset } = useForm({
@@ -31,29 +32,47 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
         e.preventDefault();
         if (!data.title.trim()) return;
 
-        post(route('tasks.store', [teamId, boardId, columnId]), {
-            preserveScroll: true,
-            onSuccess: () => {
-                reset('title');
-                inputRef.current?.focus();
-            },
-        });
+        if (selectedTemplate) {
+            router.post(
+                route('tasks.from-template', [teamId, boardId, columnId, selectedTemplate.id]),
+                { title: data.title },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        reset('title');
+                        setSelectedTemplate(null);
+                        inputRef.current?.focus();
+                    },
+                },
+            );
+        } else {
+            post(route('tasks.store', [teamId, boardId, columnId]), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    reset('title');
+                    inputRef.current?.focus();
+                },
+            });
+        }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
             setIsCreating(false);
+            setSelectedTemplate(null);
             reset('title');
         }
     };
 
-    const handleCreateFromTemplate = (template: TaskTemplate) => {
+    const handleSelectTemplate = (template: TaskTemplate) => {
         setAnchorEl(null);
-        router.post(
-            route('tasks.from-template', [teamId, boardId, columnId, template.id]),
-            {},
-            { preserveScroll: true },
-        );
+        setSelectedTemplate(template);
+        setData('title', template.name);
+        setIsCreating(true);
+        setTimeout(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }, 0);
     };
 
     if (!isCreating) {
@@ -64,6 +83,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                     size="small"
                     disabled={disabled}
                     onClick={() => {
+                        setSelectedTemplate(null);
                         setIsCreating(true);
                         setTimeout(() => inputRef.current?.focus(), 0);
                     }}
@@ -89,7 +109,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                             }}
                             aria-label="Create from template"
                         >
-                            <ContentCopyIcon sx={{ fontSize: 16 }} />
+                            <NoteAddIcon sx={{ fontSize: 16 }} />
                         </Button>
                         <Menu
                             anchorEl={anchorEl}
@@ -102,7 +122,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                                 </Typography>
                             </MenuItem>
                             {templates.map((tpl) => (
-                                <MenuItem key={tpl.id} onClick={() => handleCreateFromTemplate(tpl)}>
+                                <MenuItem key={tpl.id} onClick={() => handleSelectTemplate(tpl)}>
                                     {tpl.name}
                                 </MenuItem>
                             ))}
@@ -120,7 +140,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 size="small"
                 fullWidth
                 autoFocus
-                placeholder="Task title..."
+                placeholder={selectedTemplate ? `${selectedTemplate.name}...` : 'Task title...'}
                 inputProps={{ 'aria-label': 'Task title' }}
                 value={data.title}
                 onChange={(e) => setData('title', e.target.value)}
@@ -128,6 +148,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 onBlur={() => {
                     if (!data.title.trim()) {
                         setIsCreating(false);
+                        setSelectedTemplate(null);
                         reset('title');
                     }
                 }}
@@ -135,8 +156,13 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 sx={{
                     '& .MuiOutlinedInput-root': {
                         bgcolor: 'background.paper',
+                        ...(selectedTemplate && {
+                            borderColor: 'primary.main',
+                            '& fieldset': { borderColor: 'primary.main' },
+                        }),
                     },
                 }}
+                helperText={selectedTemplate ? `Template: ${selectedTemplate.name}` : undefined}
             />
         </Box>
     );
