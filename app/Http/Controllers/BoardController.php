@@ -35,7 +35,7 @@ class BoardController extends Controller
             $column->setRelation(
                 'tasks',
                 $column->tasks()
-                    ->with(['assignees', 'labels', 'gitlabLinks'])
+                    ->with(['assignees', 'labels', 'gitlabLinks', 'blockedBy:id'])
                     ->withCount([
                         'comments',
                         'subtasks',

@@ -38,7 +38,7 @@ class BoardTaskController extends Controller
         $direction = $validated['direction'] ?? 'asc';
 
         $query = Task::where('board_id', $board->id)
-            ->with(['assignees', 'labels', 'gitlabLinks'])
+            ->with(['assignees', 'labels', 'gitlabLinks', 'blockedBy:id'])
             ->withCount([
                 'comments',
                 'subtasks',
