@@ -1,8 +1,8 @@
-import QuickCreateTask from '@/Components/Tasks/QuickCreateTask';
-import SortableTaskCard from '@/Components/Tasks/SortableTaskCard';
-import TaskCard from '@/Components/Tasks/TaskCard';
-import type { Column, PaginatedResponse, Task, TaskTemplate } from '@/types';
-import { computeSortOrder } from '@/utils/sortOrder';
+import QuickCreateTask from "@/Components/Tasks/QuickCreateTask";
+import SortableTaskCard from "@/Components/Tasks/SortableTaskCard";
+import TaskCard from "@/Components/Tasks/TaskCard";
+import type { Column, PaginatedResponse, Task, TaskTemplate } from "@/types";
+import { computeSortOrder } from "@/utils/sortOrder";
 import {
     closestCorners,
     DndContext,
@@ -12,35 +12,44 @@ import {
     useDroppable,
     useSensor,
     useSensors,
-} from '@dnd-kit/core';
-import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
+} from "@dnd-kit/core";
+import type {
+    DragEndEvent,
+    DragOverEvent,
+    DragStartEvent,
+} from "@dnd-kit/core";
 import {
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { router } from '@inertiajs/react';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import IconButton from '@mui/material/IconButton';
-import Paper from '@mui/material/Paper';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+} from "@dnd-kit/sortable";
+import { router } from "@inertiajs/react";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import IconButton from "@mui/material/IconButton";
+import Paper from "@mui/material/Paper";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 function buildColumnTasksMap(columns: Column[]): Record<string, Task[]> {
     const map: Record<string, Task[]> = {};
     for (const col of columns) {
-        map[col.id] = [...(col.tasks ?? [])].sort((a, b) => a.sort_order - b.sort_order);
+        map[col.id] = [...(col.tasks ?? [])].sort(
+            (a, b) => a.sort_order - b.sort_order,
+        );
     }
     return map;
 }
 
-function findColumnForTask(columnTasks: Record<string, Task[]>, taskId: string): string | null {
+function findColumnForTask(
+    columnTasks: Record<string, Task[]>,
+    taskId: string,
+): string | null {
     for (const [colId, tasks] of Object.entries(columnTasks)) {
         if (tasks.some((t) => t.id === taskId)) {
             return colId;
@@ -55,7 +64,11 @@ interface DroppableColumnBodyProps {
     onScrollBottom?: () => void;
 }
 
-function DroppableColumnBody({ columnId, children, onScrollBottom }: DroppableColumnBodyProps) {
+function DroppableColumnBody({
+    columnId,
+    children,
+    onScrollBottom,
+}: DroppableColumnBodyProps) {
     const { setNodeRef, isOver } = useDroppable({ id: columnId });
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -74,8 +87,8 @@ function DroppableColumnBody({ columnId, children, onScrollBottom }: DroppableCo
             },
             {
                 root: scrollContainer,
-                rootMargin: '100px',
-            }
+                rootMargin: "100px",
+            },
         );
 
         observer.observe(sentinel);
@@ -93,18 +106,20 @@ function DroppableColumnBody({ columnId, children, onScrollBottom }: DroppableCo
                 pt: 1,
                 pb: 1.5,
                 minHeight: 100,
-                maxHeight: 'calc(100vh - 280px)',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
+                maxHeight: "calc(100vh - 280px)",
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
                 gap: 1.25,
-                borderRadius: '0 0 12px 12px',
-                transition: 'background-color 150ms ease',
-                bgcolor: isOver ? 'action.selected' : 'transparent',
+                borderRadius: "0 0 12px 12px",
+                transition: "background-color 150ms ease",
+                bgcolor: isOver ? "action.selected" : "transparent",
             }}
         >
             {children}
-            {onScrollBottom && <div ref={sentinelRef} style={{ height: 1, flexShrink: 0 }} />}
+            {onScrollBottom && (
+                <div ref={sentinelRef} style={{ height: 1, flexShrink: 0 }} />
+            )}
         </Box>
     );
 }
@@ -128,7 +143,10 @@ function loadCollapsedColumns(boardId: string): Set<string> {
 
 function saveCollapsedColumns(boardId: string, collapsed: Set<string>): void {
     try {
-        localStorage.setItem(getCollapsedColumnsKey(boardId), JSON.stringify([...collapsed]));
+        localStorage.setItem(
+            getCollapsedColumnsKey(boardId),
+            JSON.stringify([...collapsed]),
+        );
     } catch {
         // ignore localStorage errors
     }
@@ -140,7 +158,11 @@ interface CollapsedColumnProps {
     onExpand: () => void;
 }
 
-function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) {
+function CollapsedColumn({
+    column,
+    taskCount,
+    onExpand,
+}: CollapsedColumnProps) {
     const { setNodeRef, isOver } = useDroppable({ id: column.id });
 
     return (
@@ -150,25 +172,30 @@ function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) 
             sx={{
                 width: 48,
                 minWidth: 48,
-                flex: '0 0 48px',
-                bgcolor: isOver ? 'action.selected' : 'action.hover',
-                borderRadius: '12px',
+                flex: "0 0 48px",
+                bgcolor: isOver ? "action.selected" : "action.hover",
+                borderRadius: "12px",
                 border: 1,
-                borderColor: isOver ? 'primary.main' : 'divider',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
+                borderColor: isOver ? "primary.main" : "divider",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
                 py: 1.5,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
+                cursor: "pointer",
+                transition: "all 200ms ease",
                 minHeight: 200,
-                '&:hover': {
-                    borderColor: 'primary.main',
-                    bgcolor: 'action.focus',
+                "&:hover": {
+                    borderColor: "primary.main",
+                    bgcolor: "action.focus",
                 },
             }}
             onClick={onExpand}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onExpand(); } }}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onExpand();
+                }
+            }}
             role="button"
             tabIndex={0}
             aria-label={`Expand ${column.name} column`}
@@ -182,8 +209,8 @@ function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) 
                 sx={{
                     width: 8,
                     height: 8,
-                    borderRadius: '50%',
-                    bgcolor: column.color || '#9e9e9e',
+                    borderRadius: "50%",
+                    bgcolor: column.color || "#9e9e9e",
                     flexShrink: 0,
                     mb: 1,
                 }}
@@ -192,22 +219,22 @@ function CollapsedColumn({ column, taskCount, onExpand }: CollapsedColumnProps) 
                 label={taskCount}
                 size="small"
                 variant="outlined"
-                sx={{ height: 20, fontSize: '0.65rem', minWidth: 24, mb: 1.5 }}
+                sx={{ height: 20, fontSize: "0.65rem", minWidth: 24, mb: 1.5 }}
             />
             <Typography
                 variant="caption"
                 fontWeight={700}
                 sx={{
-                    writingMode: 'vertical-rl',
-                    textOrientation: 'mixed',
-                    transform: 'rotate(180deg)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxHeight: 'calc(100vh - 360px)',
-                    letterSpacing: '0.05em',
-                    color: 'text.secondary',
-                    userSelect: 'none',
+                    writingMode: "vertical-rl",
+                    textOrientation: "mixed",
+                    transform: "rotate(180deg)",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    maxHeight: "calc(100vh - 360px)",
+                    letterSpacing: "0.05em",
+                    color: "text.secondary",
+                    userSelect: "none",
                 }}
             >
                 {column.name}
@@ -232,31 +259,44 @@ interface Props {
     initialTasksPerColumn?: number;
 }
 
-export default function KanbanView({ columns, board, team, filterFn, onTaskClick, taskTemplates = [], initialTasksPerColumn = 20 }: Props) {
+export default function KanbanView({
+    columns,
+    board,
+    team,
+    filterFn,
+    onTaskClick,
+    taskTemplates = [],
+    initialTasksPerColumn = 20,
+}: Props) {
     const [activeTask, setActiveTask] = useState<Task | null>(null);
     const [columnTasks, setColumnTasks] = useState<Record<string, Task[]>>(() =>
-        buildColumnTasksMap(columns)
+        buildColumnTasksMap(columns),
     );
-    const [columnLoadStates, setColumnLoadStates] = useState<Record<string, ColumnLoadState>>({});
+    const [columnLoadStates, setColumnLoadStates] = useState<
+        Record<string, ColumnLoadState>
+    >({});
     const abortControllers = useRef<Record<string, AbortController>>({});
 
     // Collapsed columns state, persisted to localStorage per board
     const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(() =>
-        loadCollapsedColumns(board.id)
+        loadCollapsedColumns(board.id),
     );
 
-    const toggleColumnCollapsed = useCallback((columnId: string) => {
-        setCollapsedColumns((prev) => {
-            const next = new Set(prev);
-            if (next.has(columnId)) {
-                next.delete(columnId);
-            } else {
-                next.add(columnId);
-            }
-            saveCollapsedColumns(board.id, next);
-            return next;
-        });
-    }, [board.id]);
+    const toggleColumnCollapsed = useCallback(
+        (columnId: string) => {
+            setCollapsedColumns((prev) => {
+                const next = new Set(prev);
+                if (next.has(columnId)) {
+                    next.delete(columnId);
+                } else {
+                    next.add(columnId);
+                }
+                saveCollapsedColumns(board.id, next);
+                return next;
+            });
+        },
+        [board.id],
+    );
 
     // Initialize column tasks and load states from server data
     useEffect(() => {
@@ -283,77 +323,89 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
         return map;
     }, [columns]);
 
-    const isColumnFull = useCallback((columnId: string, extraCount = 0) => {
-        const col = columnMap[columnId];
-        if (!col?.wip_limit || col.wip_limit <= 0) return false;
-        const taskCount = (columnTasks[columnId]?.length ?? 0) + extraCount;
-        return taskCount >= col.wip_limit;
-    }, [columnMap, columnTasks]);
+    const isColumnFull = useCallback(
+        (columnId: string, extraCount = 0) => {
+            const col = columnMap[columnId];
+            if (!col?.wip_limit || col.wip_limit <= 0) return false;
+            const loadedCount = columnTasks[columnId]?.length ?? 0;
+            const taskCount =
+                Math.max(col.tasks_count ?? 0, loadedCount) + extraCount;
+            return taskCount >= col.wip_limit;
+        },
+        [columnMap, columnTasks],
+    );
 
-    const loadMoreForColumn = useCallback(async (columnId: string) => {
-        const state = columnLoadStates[columnId];
-        if (!state || !state.hasMore || state.loading) return;
+    const loadMoreForColumn = useCallback(
+        async (columnId: string) => {
+            const state = columnLoadStates[columnId];
+            if (!state || !state.hasMore || state.loading) return;
 
-        const key = `col-${columnId}`;
-        abortControllers.current[key]?.abort();
-        const controller = new AbortController();
-        abortControllers.current[key] = controller;
+            const key = `col-${columnId}`;
+            abortControllers.current[key]?.abort();
+            const controller = new AbortController();
+            abortControllers.current[key] = controller;
 
-        setColumnLoadStates((prev) => ({
-            ...prev,
-            [columnId]: { ...prev[columnId], loading: true },
-        }));
+            setColumnLoadStates((prev) => ({
+                ...prev,
+                [columnId]: { ...prev[columnId], loading: true },
+            }));
 
-        try {
-            const nextPage = state.page + 1;
-            const params = new URLSearchParams({
-                column_id: columnId,
-                page: String(nextPage),
-                per_page: String(initialTasksPerColumn),
-                sort: 'sort_order',
-                direction: 'asc',
-            });
+            try {
+                const nextPage = state.page + 1;
+                const params = new URLSearchParams({
+                    column_id: columnId,
+                    page: String(nextPage),
+                    per_page: String(initialTasksPerColumn),
+                    sort: "sort_order",
+                    direction: "asc",
+                });
 
-            const response = await fetch(
-                `${route('boards.tasks.index', [team.id, board.id])}?${params}`,
-                {
-                    headers: { Accept: 'application/json' },
-                    signal: controller.signal,
-                }
-            );
+                const response = await fetch(
+                    `${route("boards.tasks.index", [team.id, board.id])}?${params}`,
+                    {
+                        headers: { Accept: "application/json" },
+                        signal: controller.signal,
+                    },
+                );
 
-            if (!response.ok) throw new Error('Failed to load tasks');
+                if (!response.ok) throw new Error("Failed to load tasks");
 
-            const data: PaginatedResponse<Task> = await response.json();
+                const data: PaginatedResponse<Task> = await response.json();
 
-            // Append new tasks, deduplicating
-            setColumnTasks((prev) => {
-                const existing = prev[columnId] ?? [];
-                const existingIds = new Set(existing.map((t) => t.id));
-                const newTasks = data.data.filter((t) => !existingIds.has(t.id));
-                return {
+                // Append new tasks, deduplicating
+                setColumnTasks((prev) => {
+                    const existing = prev[columnId] ?? [];
+                    const existingIds = new Set(existing.map((t) => t.id));
+                    const newTasks = data.data.filter(
+                        (t) => !existingIds.has(t.id),
+                    );
+                    return {
+                        ...prev,
+                        [columnId]: [...existing, ...newTasks].sort(
+                            (a, b) => a.sort_order - b.sort_order,
+                        ),
+                    };
+                });
+
+                setColumnLoadStates((prev) => ({
                     ...prev,
-                    [columnId]: [...existing, ...newTasks].sort((a, b) => a.sort_order - b.sort_order),
-                };
-            });
+                    [columnId]: {
+                        page: nextPage,
+                        hasMore: data.current_page < data.last_page,
+                        loading: false,
+                    },
+                }));
+            } catch (error) {
+                if ((error as Error).name === "AbortError") return;
 
-            setColumnLoadStates((prev) => ({
-                ...prev,
-                [columnId]: {
-                    page: nextPage,
-                    hasMore: data.current_page < data.last_page,
-                    loading: false,
-                },
-            }));
-        } catch (error) {
-            if ((error as Error).name === 'AbortError') return;
-
-            setColumnLoadStates((prev) => ({
-                ...prev,
-                [columnId]: { ...prev[columnId], loading: false },
-            }));
-        }
-    }, [columnLoadStates, team.id, board.id, initialTasksPerColumn]);
+                setColumnLoadStates((prev) => ({
+                    ...prev,
+                    [columnId]: { ...prev[columnId], loading: false },
+                }));
+            }
+        },
+        [columnLoadStates, team.id, board.id, initialTasksPerColumn],
+    );
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -361,104 +413,116 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
         }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
-        })
+        }),
     );
 
-    const handleDragStart = useCallback((event: DragStartEvent) => {
-        const { active } = event;
-        for (const tasks of Object.values(columnTasks)) {
-            const task = tasks.find((t) => t.id === active.id);
-            if (task) {
-                setActiveTask(task);
-                break;
+    const handleDragStart = useCallback(
+        (event: DragStartEvent) => {
+            const { active } = event;
+            for (const tasks of Object.values(columnTasks)) {
+                const task = tasks.find((t) => t.id === active.id);
+                if (task) {
+                    setActiveTask(task);
+                    break;
+                }
             }
-        }
-    }, [columnTasks]);
+        },
+        [columnTasks],
+    );
 
-    const handleDragOver = useCallback((event: DragOverEvent) => {
-        const { active, over } = event;
-        if (!over) return;
+    const handleDragOver = useCallback(
+        (event: DragOverEvent) => {
+            const { active, over } = event;
+            if (!over) return;
 
-        const activeId = active.id as string;
-        const overId = over.id as string;
+            const activeId = active.id as string;
+            const overId = over.id as string;
 
-        const activeCol = findColumnForTask(columnTasks, activeId);
-        let overCol = findColumnForTask(columnTasks, overId);
-        if (!overCol && columnTasks[overId]) {
-            overCol = overId;
-        }
+            const activeCol = findColumnForTask(columnTasks, activeId);
+            let overCol = findColumnForTask(columnTasks, overId);
+            if (!overCol && columnTasks[overId]) {
+                overCol = overId;
+            }
 
-        if (!activeCol || !overCol || activeCol === overCol) return;
+            if (!activeCol || !overCol || activeCol === overCol) return;
 
-        if (isColumnFull(overCol)) return;
+            if (isColumnFull(overCol)) return;
 
-        setColumnTasks((prev) => {
-            const activeTasks = [...prev[activeCol]];
-            const overTasks = [...prev[overCol]];
-
-            const activeIndex = activeTasks.findIndex((t) => t.id === activeId);
-            if (activeIndex === -1) return prev;
-
-            const [movedTask] = activeTasks.splice(activeIndex, 1);
-
-            const overIndex = overTasks.findIndex((t) => t.id === overId);
-            const insertIndex = overIndex >= 0 ? overIndex : overTasks.length;
-
-            overTasks.splice(insertIndex, 0, movedTask);
-
-            return {
-                ...prev,
-                [activeCol]: activeTasks,
-                [overCol]: overTasks,
-            };
-        });
-    }, [columnTasks, isColumnFull]);
-
-    const handleDragEnd = useCallback((event: DragEndEvent) => {
-        const { active, over } = event;
-        setActiveTask(null);
-
-        if (!over) return;
-
-        const activeId = active.id as string;
-        const overId = over.id as string;
-
-        const targetCol = findColumnForTask(columnTasks, activeId);
-        if (!targetCol) return;
-
-        const tasks = columnTasks[targetCol];
-        const activeIndex = tasks.findIndex((t) => t.id === activeId);
-        const overIndex = tasks.findIndex((t) => t.id === overId);
-
-        if (activeIndex !== overIndex && overIndex >= 0) {
             setColumnTasks((prev) => {
-                const newTasks = [...prev[targetCol]];
-                const [moved] = newTasks.splice(activeIndex, 1);
-                newTasks.splice(overIndex, 0, moved);
-                return { ...prev, [targetCol]: newTasks };
+                const activeTasks = [...prev[activeCol]];
+                const overTasks = [...prev[overCol]];
+
+                const activeIndex = activeTasks.findIndex(
+                    (t) => t.id === activeId,
+                );
+                if (activeIndex === -1) return prev;
+
+                const [movedTask] = activeTasks.splice(activeIndex, 1);
+
+                const overIndex = overTasks.findIndex((t) => t.id === overId);
+                const insertIndex =
+                    overIndex >= 0 ? overIndex : overTasks.length;
+
+                overTasks.splice(insertIndex, 0, movedTask);
+
+                return {
+                    ...prev,
+                    [activeCol]: activeTasks,
+                    [overCol]: overTasks,
+                };
             });
-        }
+        },
+        [columnTasks, isColumnFull],
+    );
 
-        const finalTasks = (() => {
-            const t = [...tasks];
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const { active, over } = event;
+            setActiveTask(null);
+
+            if (!over) return;
+
+            const activeId = active.id as string;
+            const overId = over.id as string;
+
+            const targetCol = findColumnForTask(columnTasks, activeId);
+            if (!targetCol) return;
+
+            const tasks = columnTasks[targetCol];
+            const activeIndex = tasks.findIndex((t) => t.id === activeId);
+            const overIndex = tasks.findIndex((t) => t.id === overId);
+
             if (activeIndex !== overIndex && overIndex >= 0) {
-                const [moved] = t.splice(activeIndex, 1);
-                t.splice(overIndex, 0, moved);
+                setColumnTasks((prev) => {
+                    const newTasks = [...prev[targetCol]];
+                    const [moved] = newTasks.splice(activeIndex, 1);
+                    newTasks.splice(overIndex, 0, moved);
+                    return { ...prev, [targetCol]: newTasks };
+                });
             }
-            return t;
-        })();
 
-        const finalIndex = finalTasks.findIndex((t) => t.id === activeId);
-        const sortOrders = finalTasks.map((t) => t.sort_order);
-        sortOrders.splice(finalIndex, 1);
-        const newSortOrder = computeSortOrder(sortOrders, finalIndex);
+            const finalTasks = (() => {
+                const t = [...tasks];
+                if (activeIndex !== overIndex && overIndex >= 0) {
+                    const [moved] = t.splice(activeIndex, 1);
+                    t.splice(overIndex, 0, moved);
+                }
+                return t;
+            })();
 
-        router.patch(
-            route('tasks.move', [team.id, board.id, activeId]),
-            { column_id: targetCol, sort_order: newSortOrder },
-            { preserveScroll: true }
-        );
-    }, [columnTasks, team.id, board.id]);
+            const finalIndex = finalTasks.findIndex((t) => t.id === activeId);
+            const sortOrders = finalTasks.map((t) => t.sort_order);
+            sortOrders.splice(finalIndex, 1);
+            const newSortOrder = computeSortOrder(sortOrders, finalIndex);
+
+            router.patch(
+                route("tasks.move", [team.id, board.id, activeId]),
+                { column_id: targetCol, sort_order: newSortOrder },
+                { preserveScroll: true },
+            );
+        },
+        [columnTasks, team.id, board.id],
+    );
 
     return (
         <DndContext
@@ -472,35 +536,49 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                 role="region"
                 aria-label="Kanban board"
                 sx={{
-                    display: 'flex',
+                    display: "flex",
                     gap: 2.5,
-                    overflowX: 'auto',
+                    overflowX: "auto",
                     pb: 2,
-                    minHeight: 'calc(100vh - 200px)',
-                    alignItems: 'flex-start',
+                    minHeight: "calc(100vh - 200px)",
+                    alignItems: "flex-start",
                 }}
             >
                 {columns.length === 0 ? (
                     <Box
                         sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '100%',
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: "100%",
                             py: 8,
                         }}
                     >
-                        <Typography variant="h6" color="text.secondary" gutterBottom>
+                        <Typography
+                            variant="h6"
+                            color="text.secondary"
+                            gutterBottom
+                        >
                             No columns configured
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            Add columns in board settings to start organizing tasks.
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 2 }}
+                        >
+                            Add columns in board settings to start organizing
+                            tasks.
                         </Typography>
                         <Chip
                             label="Open Settings"
                             onClick={() =>
-                                router.get(route('teams.boards.settings', [team.id, board.id]))
+                                router.get(
+                                    route("teams.boards.settings", [
+                                        team.id,
+                                        board.id,
+                                    ]),
+                                )
                             }
                             clickable
                             color="primary"
@@ -511,8 +589,14 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                     columns.map((column) => {
                         const allColTasks = columnTasks[column.id] ?? [];
                         const tasks = allColTasks.filter(filterFn);
-                        const totalCount = column.tasks_count ?? allColTasks.length;
-                        const atWipLimit = column.wip_limit != null && column.wip_limit > 0 && totalCount >= column.wip_limit;
+                        const totalCount = Math.max(
+                            column.tasks_count ?? 0,
+                            allColTasks.length,
+                        );
+                        const atWipLimit =
+                            column.wip_limit != null &&
+                            column.wip_limit > 0 &&
+                            totalCount >= column.wip_limit;
                         const loadState = columnLoadStates[column.id];
                         const hasMore = loadState?.hasMore ?? false;
                         const isLoading = loadState?.loading ?? false;
@@ -524,7 +608,9 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                     key={column.id}
                                     column={column}
                                     taskCount={totalCount}
-                                    onExpand={() => toggleColumnCollapsed(column.id)}
+                                    onExpand={() =>
+                                        toggleColumnCollapsed(column.id)
+                                    }
                                 />
                             );
                         }
@@ -534,25 +620,28 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                 key={column.id}
                                 elevation={0}
                                 role="region"
-                                aria-label={`${column.name} column, ${totalCount} tasks${atWipLimit ? ', at WIP limit' : ''}`}
+                                aria-label={`${column.name} column, ${totalCount} tasks${atWipLimit ? ", at WIP limit" : ""}`}
                                 sx={{
                                     minWidth: 300,
                                     maxWidth: 340,
-                                    flex: '0 0 300px',
-                                    bgcolor: 'action.hover',
-                                    borderRadius: '12px',
+                                    flex: "0 0 300px",
+                                    bgcolor: "action.hover",
+                                    borderRadius: "12px",
                                     border: 1,
-                                    borderColor: atWipLimit ? 'warning.main' : 'divider',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    transition: 'flex 200ms ease, min-width 200ms ease',
+                                    borderColor: atWipLimit
+                                        ? "warning.main"
+                                        : "divider",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    transition:
+                                        "flex 200ms ease, min-width 200ms ease",
                                 }}
                             >
                                 {/* Column header */}
                                 <Box
                                     sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
+                                        display: "flex",
+                                        alignItems: "center",
                                         gap: 1.25,
                                         px: 2,
                                         py: 1.75,
@@ -562,8 +651,8 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                         sx={{
                                             width: 10,
                                             height: 10,
-                                            borderRadius: '50%',
-                                            bgcolor: column.color || '#9e9e9e',
+                                            borderRadius: "50%",
+                                            bgcolor: column.color || "#9e9e9e",
                                             flexShrink: 0,
                                         }}
                                     />
@@ -576,26 +665,36 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                         {column.name}
                                     </Typography>
                                     <Chip
-                                        label={column.wip_limit != null && column.wip_limit > 0
-                                            ? `${totalCount} / ${column.wip_limit}`
-                                            : totalCount
+                                        label={
+                                            column.wip_limit != null &&
+                                            column.wip_limit > 0
+                                                ? `${totalCount} / ${column.wip_limit}`
+                                                : totalCount
                                         }
                                         size="small"
                                         variant="outlined"
-                                        color={atWipLimit ? 'warning' : 'default'}
-                                        sx={{ height: 22, fontSize: '0.7rem', minWidth: 28 }}
+                                        color={
+                                            atWipLimit ? "warning" : "default"
+                                        }
+                                        sx={{
+                                            height: 22,
+                                            fontSize: "0.7rem",
+                                            minWidth: 28,
+                                        }}
                                     />
                                     <Tooltip title="Collapse column">
                                         <IconButton
                                             size="small"
-                                            onClick={() => toggleColumnCollapsed(column.id)}
+                                            onClick={() =>
+                                                toggleColumnCollapsed(column.id)
+                                            }
                                             aria-label={`Collapse ${column.name} column`}
                                             sx={{
                                                 ml: 0.5,
                                                 width: 26,
                                                 height: 26,
                                                 opacity: 0.6,
-                                                '&:hover': { opacity: 1 },
+                                                "&:hover": { opacity: 1 },
                                             }}
                                         >
                                             <ChevronLeftIcon fontSize="small" />
@@ -610,7 +709,14 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                 >
                                     <DroppableColumnBody
                                         columnId={column.id}
-                                        onScrollBottom={hasMore ? () => loadMoreForColumn(column.id) : undefined}
+                                        onScrollBottom={
+                                            hasMore
+                                                ? () =>
+                                                      loadMoreForColumn(
+                                                          column.id,
+                                                      )
+                                                : undefined
+                                        }
                                     >
                                         {tasks.map((task) => (
                                             <SortableTaskCard
@@ -622,7 +728,13 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
 
                                         {/* Loading indicator */}
                                         {isLoading && (
-                                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    py: 1,
+                                                }}
+                                            >
                                                 <CircularProgress size={20} />
                                             </Box>
                                         )}
@@ -632,15 +744,18 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
                                             <Button
                                                 size="small"
                                                 variant="text"
-                                                onClick={() => loadMoreForColumn(column.id)}
+                                                onClick={() =>
+                                                    loadMoreForColumn(column.id)
+                                                }
                                                 sx={{
-                                                    fontSize: '0.7rem',
-                                                    textTransform: 'none',
-                                                    color: 'text.secondary',
-                                                    alignSelf: 'center',
+                                                    fontSize: "0.7rem",
+                                                    textTransform: "none",
+                                                    color: "text.secondary",
+                                                    alignSelf: "center",
                                                 }}
                                             >
-                                                Load more ({allColTasks.length} of {totalCount})
+                                                Load more ({allColTasks.length}{" "}
+                                                of {totalCount})
                                             </Button>
                                         )}
 
@@ -662,7 +777,13 @@ export default function KanbanView({ columns, board, team, filterFn, onTaskClick
             {/* Drag overlay */}
             <DragOverlay>
                 {activeTask ? (
-                    <Box sx={{ opacity: 0.9, transform: 'rotate(2deg)', filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))' }}>
+                    <Box
+                        sx={{
+                            opacity: 0.9,
+                            transform: "rotate(2deg)",
+                            filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.15))",
+                        }}
+                    >
                         <TaskCard task={activeTask} />
                     </Box>
                 ) : null}

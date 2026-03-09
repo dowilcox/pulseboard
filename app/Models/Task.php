@@ -31,6 +31,7 @@ class Task extends Model
             "custom_fields" => "array",
             "completed_at" => "datetime",
             "checklists" => "array",
+            "links" => "array",
             "recurrence_config" => "array",
             "recurrence_next_at" => "datetime",
         ];

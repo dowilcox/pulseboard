@@ -1,14 +1,14 @@
-import type { TaskTemplate } from '@/types';
-import { router, useForm } from '@inertiajs/react';
-import AddIcon from '@mui/icons-material/Add';
-import NoteAddIcon from '@mui/icons-material/NoteAdd';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { type FormEvent, type KeyboardEvent, useRef, useState } from 'react';
+import type { TaskTemplate } from "@/types";
+import { router, useForm } from "@inertiajs/react";
+import AddIcon from "@mui/icons-material/Add";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { type FormEvent, type KeyboardEvent, useRef, useState } from "react";
 
 interface Props {
     teamId: string;
@@ -18,14 +18,21 @@ interface Props {
     disabled?: boolean;
 }
 
-export default function QuickCreateTask({ teamId, boardId, columnId, templates = [], disabled = false }: Props) {
+export default function QuickCreateTask({
+    teamId,
+    boardId,
+    columnId,
+    templates = [],
+    disabled = false,
+}: Props) {
     const [isCreating, setIsCreating] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-    const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
+    const [selectedTemplate, setSelectedTemplate] =
+        useState<TaskTemplate | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, reset } = useForm({
-        title: '',
+        title: "",
     });
 
     const handleSubmit = (e: FormEvent) => {
@@ -34,22 +41,27 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
 
         if (selectedTemplate) {
             router.post(
-                route('tasks.from-template', [teamId, boardId, columnId, selectedTemplate.id]),
+                route("tasks.from-template", [
+                    teamId,
+                    boardId,
+                    columnId,
+                    selectedTemplate.id,
+                ]),
                 { title: data.title },
                 {
                     preserveScroll: true,
                     onSuccess: () => {
-                        reset('title');
+                        reset("title");
                         setSelectedTemplate(null);
                         inputRef.current?.focus();
                     },
                 },
             );
         } else {
-            post(route('tasks.store', [teamId, boardId, columnId]), {
+            post(route("tasks.store", [teamId, boardId, columnId]), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    reset('title');
+                    reset("title");
                     inputRef.current?.focus();
                 },
             });
@@ -57,17 +69,17 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
             setIsCreating(false);
             setSelectedTemplate(null);
-            reset('title');
+            reset("title");
         }
     };
 
     const handleSelectTemplate = (template: TaskTemplate) => {
         setAnchorEl(null);
         setSelectedTemplate(template);
-        setData('title', template.name);
+        setData("title", template.name);
         setIsCreating(true);
         setTimeout(() => {
             inputRef.current?.focus();
@@ -77,7 +89,7 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
 
     if (!isCreating) {
         return (
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Box sx={{ display: "flex", gap: 0.5 }}>
                 <Button
                     startIcon={<AddIcon />}
                     size="small"
@@ -89,23 +101,23 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                     }}
                     sx={{
                         flex: 1,
-                        justifyContent: 'flex-start',
-                        color: 'text.secondary',
-                        textTransform: 'none',
-                        '&:hover': { bgcolor: 'action.hover' },
+                        justifyContent: "flex-start",
+                        color: "text.secondary",
+                        textTransform: "none",
+                        "&:hover": { bgcolor: "action.hover" },
                     }}
                 >
-                    {disabled ? 'WIP limit reached' : 'Add task'}
+                    {disabled ? "WIP limit reached" : "Add task"}
                 </Button>
-                {templates.length > 0 && (
+                {templates.length > 0 && !disabled && (
                     <>
                         <Button
                             size="small"
                             onClick={(e) => setAnchorEl(e.currentTarget)}
                             sx={{
-                                minWidth: 'auto',
-                                color: 'text.secondary',
-                                '&:hover': { bgcolor: 'action.hover' },
+                                minWidth: "auto",
+                                color: "text.secondary",
+                                "&:hover": { bgcolor: "action.hover" },
                             }}
                             aria-label="Create from template"
                         >
@@ -117,12 +129,18 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                             onClose={() => setAnchorEl(null)}
                         >
                             <MenuItem disabled>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
                                     From template
                                 </Typography>
                             </MenuItem>
                             {templates.map((tpl) => (
-                                <MenuItem key={tpl.id} onClick={() => handleSelectTemplate(tpl)}>
+                                <MenuItem
+                                    key={tpl.id}
+                                    onClick={() => handleSelectTemplate(tpl)}
+                                >
                                     {tpl.name}
                                 </MenuItem>
                             ))}
@@ -140,29 +158,37 @@ export default function QuickCreateTask({ teamId, boardId, columnId, templates =
                 size="small"
                 fullWidth
                 autoFocus
-                placeholder={selectedTemplate ? `${selectedTemplate.name}...` : 'Task title...'}
-                inputProps={{ 'aria-label': 'Task title' }}
+                placeholder={
+                    selectedTemplate
+                        ? `${selectedTemplate.name}...`
+                        : "Task title..."
+                }
+                inputProps={{ "aria-label": "Task title" }}
                 value={data.title}
-                onChange={(e) => setData('title', e.target.value)}
+                onChange={(e) => setData("title", e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={() => {
                     if (!data.title.trim()) {
                         setIsCreating(false);
                         setSelectedTemplate(null);
-                        reset('title');
+                        reset("title");
                     }
                 }}
                 disabled={processing}
                 sx={{
-                    '& .MuiOutlinedInput-root': {
-                        bgcolor: 'background.paper',
+                    "& .MuiOutlinedInput-root": {
+                        bgcolor: "background.paper",
                         ...(selectedTemplate && {
-                            borderColor: 'primary.main',
-                            '& fieldset': { borderColor: 'primary.main' },
+                            borderColor: "primary.main",
+                            "& fieldset": { borderColor: "primary.main" },
                         }),
                     },
                 }}
-                helperText={selectedTemplate ? `Template: ${selectedTemplate.name}` : undefined}
+                helperText={
+                    selectedTemplate
+                        ? `Template: ${selectedTemplate.name}`
+                        : undefined
+                }
             />
         </Box>
     );

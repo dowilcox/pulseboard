@@ -12,7 +12,7 @@ export interface NotificationPreferences {
 }
 
 export interface UiPreferences {
-    activity_sort_order?: 'asc' | 'desc';
+    activity_sort_order?: "asc" | "desc";
     board_order?: Record<string, string[]>;
 }
 
@@ -21,12 +21,12 @@ export interface User {
     name: string;
     email: string;
     avatar_url?: string;
-    auth_provider: 'local' | 'saml2' | 'okta';
+    auth_provider: "local" | "saml2" | "okta";
     is_admin: boolean;
     is_bot: boolean;
     created_by_team_id?: string;
-    created_by_team?: Pick<Team, 'id' | 'name'>;
-    theme_preference: 'light' | 'dark' | 'system';
+    created_by_team?: Pick<Team, "id" | "name">;
+    theme_preference: "light" | "dark" | "system";
     email_notification_prefs?: NotificationPreferences;
     ui_preferences?: UiPreferences;
     deactivated_at?: string;
@@ -47,7 +47,7 @@ export interface TeamMemberPivot {
     id: string;
     user_id: string;
     team_id: string;
-    role: 'owner' | 'admin' | 'member';
+    role: "owner" | "admin" | "member";
     created_at: string;
     updated_at: string;
 }
@@ -64,7 +64,7 @@ export interface Team {
     settings: Record<string, unknown>;
     created_at: string;
     updated_at: string;
-    pivot?: { role: 'owner' | 'admin' | 'member' };
+    pivot?: { role: "owner" | "admin" | "member" };
     members?: UserWithTeamPivot[];
     boards?: Board[];
 }
@@ -73,7 +73,7 @@ export interface TeamMember {
     id: string;
     team_id: string;
     user_id: string;
-    role: 'owner' | 'admin' | 'member';
+    role: "owner" | "admin" | "member";
     created_at: string;
     user?: User;
 }
@@ -133,8 +133,14 @@ export interface Checklist {
     items: ChecklistItem[];
 }
 
+export interface TaskLink {
+    id: string;
+    url: string;
+    label: string;
+}
+
 export interface RecurrenceConfig {
-    frequency: 'daily' | 'weekly' | 'monthly' | 'custom';
+    frequency: "daily" | "weekly" | "monthly" | "custom";
     interval: number;
     days_of_week?: number[];
     day_of_month?: number;
@@ -153,7 +159,7 @@ export interface TaskTemplate {
     team_id: string;
     name: string;
     description_template?: string;
-    priority: 'urgent' | 'high' | 'medium' | 'low' | 'none';
+    priority: "urgent" | "high" | "medium" | "low" | "none";
     effort_estimate?: number;
     checklists?: Checklist[];
     label_ids?: string[];
@@ -171,13 +177,14 @@ export interface Task {
     parent_task_id?: string;
     title: string;
     description?: string;
-    priority: 'urgent' | 'high' | 'medium' | 'low' | 'none';
+    priority: "urgent" | "high" | "medium" | "low" | "none";
     sort_order: number;
     due_date?: string;
     effort_estimate?: number;
     custom_fields: Record<string, unknown>;
     completed_at?: string;
     checklists?: Checklist[];
+    links?: TaskLink[];
     recurrence_config?: RecurrenceConfig;
     recurrence_next_at?: string;
     created_by: string;
@@ -288,7 +295,7 @@ export interface TaskGitlabLink {
     id: string;
     task_id: string;
     gitlab_project_id: string;
-    link_type: 'issue' | 'merge_request' | 'branch';
+    link_type: "issue" | "merge_request" | "branch";
     gitlab_iid?: number;
     gitlab_ref?: string;
     title?: string;
@@ -355,7 +362,7 @@ export interface SsoConfiguration {
     updated_at: string;
 }
 
-export type BoardViewMode = 'kanban' | 'list' | 'timeline' | 'workload';
+export type BoardViewMode = "kanban" | "list" | "timeline" | "workload";
 
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
