@@ -1,6 +1,12 @@
-# PulseBoard
+<p align="center">
+  <img src="public/favicon.svg" width="80" alt="PulseBoard logo" />
+</p>
 
-A self-hosted Kanban project management application with GitLab integration, real-time collaboration, and enterprise SSO support.
+<h1 align="center">PulseBoard</h1>
+
+<p align="center">
+  A self-hosted Kanban project management application with GitLab integration, real-time collaboration, and enterprise SSO support.
+</p>
 
 ## Tech Stack
 
@@ -8,54 +14,84 @@ A self-hosted Kanban project management application with GitLab integration, rea
 - **Frontend:** React 18, TypeScript, Inertia.js v2, MUI v6
 - **Database:** MySQL 8.0
 - **Cache/Queue:** Redis 7
-- **Real-time:** Laravel Reverb (WebSocket server), Laravel Echo
+- **Real-time:** Laravel Reverb (WebSocket), Laravel Echo
+- **Server:** FrankenPHP via Laravel Octane
 - **Auth:** Laravel Breeze + SAML2 SSO (onelogin/php-saml)
 
 ## Features
 
+### Boards & Tasks
 - Kanban boards with drag-and-drop task management
 - 5 board views: Kanban, List, Calendar, Timeline, Workload
-- Team management with role-based access (owner/admin/member)
-- Real-time collaboration with WebSocket presence indicators
-- GitLab integration (branches, merge requests, webhooks, pipeline status)
-- Automation engine for workflow rules
-- Board templates for quick setup
-- SAML2 SSO with JIT user provisioning
+- Cross-board task moves within a team
+- Subtasks, checklists, and task dependencies (blocked-by / blocking)
+- Task recurrence (daily, weekly, monthly, custom)
+- Priority levels, due dates, effort estimates, and custom fields
+- File attachments with drag-and-drop upload
+- Rich text descriptions with inline image support
+
+### Templates & Automation
+- Task templates for quick creation with pre-configured defaults
+- Board templates to replicate board structures
+- Default task template per board (auto-applies on new tasks)
+- Saved filters per board with default filter auto-apply
+- Automation engine for workflow rules (trigger/action based)
+- Column WIP limits to enforce work-in-progress constraints
+
+### Collaboration
+- Real-time updates via WebSocket (task changes, comments, moves)
+- Presence indicators showing who's viewing a board
+- Comments and activity feed on tasks
 - In-app and email notifications with configurable preferences
-- Personal and team dashboards with analytics
-- Dark/light theme support
-- Admin panel for user, team, and organization management
+- Team management with role-based access (owner / admin / member)
 
-## Prerequisites
+### Integrations
+- GitLab integration: branches, merge requests, webhooks, pipeline status
+- Auto-linking GitLab MRs to tasks via branch naming convention
+- Background sync of GitLab link states
+- REST API with Sanctum token auth (v1)
 
-- PHP 8.2+
-- Composer
-- Node.js 18+ and npm
-- MySQL 8.0
-- Redis 7
+### Administration
+- Admin panel with dashboard, user management, and team oversight
+- SAML2 SSO with JIT (just-in-time) user provisioning
+- Bot user creation scoped to teams (for API integrations)
+- CSV export of team tasks
+- Dark / light / system theme support
 
 ## Quick Start
 
-### Using Docker (recommended)
+### Docker (recommended)
 
 ```bash
 git clone <repo-url> pulseboard
 cd pulseboard
 cp .env.example .env
-docker-compose up -d
-docker-compose exec app composer setup
+docker compose up -d
+docker compose exec app composer setup
 ```
 
-The app will be available at `http://localhost:8000`.
+The app is available at `http://localhost:8000`.
 
-### Local Development
+### Demo Data
+
+Seed the database with sample teams, boards, and tasks:
+
+```bash
+docker compose exec app php artisan db:seed --class=DemoSeeder
+```
+
+Default login: `alice@demo.test` / `password`
+
+### Local Development (without Docker)
 
 ```bash
 git clone <repo-url> pulseboard
 cd pulseboard
-composer setup       # Install deps, generate .env, run migrations, build frontend
-composer dev         # Start all dev services (Laravel, Vite HMR, queue, Reverb)
+composer setup       # Install deps, generate .env + app key, run migrations, build frontend
+composer dev         # Start Laravel, Vite HMR, queue worker, Reverb, and log tail
 ```
+
+Requires PHP 8.2+, Composer, Node.js 18+, MySQL 8.0, and Redis 7 running locally.
 
 ## Environment Variables
 
@@ -82,55 +118,59 @@ composer dev         # Start all dev services (Laravel, Vite HMR, queue, Reverb)
 ## Development Commands
 
 ```bash
-composer dev                    # Start all dev services
+composer dev                    # Start all dev services (Octane, Vite, queue, Reverb, logs)
 ./vendor/bin/pint               # PHP code formatting (PSR-12)
 npx tsc --noEmit                # TypeScript type checking
 npx vite build                  # Production frontend build
 ```
 
-## Testing
-
-Tests run inside a dedicated Docker container that provides the correct isolated environment (SQLite in-memory DB, array sessions, sync queue). **Do not** run tests directly via `composer test`, inside the `app` container, or on the host — the `.env` file sets `SESSION_DRIVER=redis` and `DB_CONNECTION=mysql`, which will cause CSRF (419) and connection errors.
-
-```bash
-# Run the full test suite
-docker compose --profile test run --rm test
-
-# Run a specific test class
-docker compose --profile test run --rm test --filter=TaskControllerTest
-
-# Run a specific test file
-docker compose --profile test run --rm test tests/Feature/Api/V1/ApiAuthTest.php
-
-# Run tests with verbose output
-docker compose --profile test run --rm test --verbose
-```
-
-The test container is defined in `docker-compose.yml` under the `test` profile and uses `docker/Dockerfile.dev` — a lightweight PHP 8.4 image with SQLite, MySQL, and Redis extensions. It sets `APP_ENV=testing`, `DB_CONNECTION=sqlite`, and `DB_DATABASE=:memory:` to match `phpunit.xml`.
-
-**Note:** After adding new routes or controllers, reload Octane workers so the running dev app picks up changes:
+After adding or changing routes/controllers, reload the Octane workers:
 
 ```bash
 docker compose exec app php artisan octane:reload
 ```
 
-## Architecture Overview
+## Testing
+
+Tests run inside a dedicated Docker container with an isolated environment (SQLite in-memory, array sessions, sync queue). **Do not** run tests directly on the host or in the `app` container — the `.env` overrides will cause CSRF (419) and connection errors.
+
+```bash
+# Full test suite
+docker compose --profile test run --rm test
+
+# Specific test class
+docker compose --profile test run --rm test --filter=TaskControllerTest
+
+# Specific test file
+docker compose --profile test run --rm test tests/Feature/Api/V1/ApiAuthTest.php
+
+# Verbose output
+docker compose --profile test run --rm test --verbose
+```
+
+## Architecture
 
 ### Backend
 
-- **Actions pattern:** Business logic in `app/Actions/`, controllers are thin wrappers
-- **Authorization:** Route middleware (`team.member`, `admin`) + Laravel Policies
-- **Models:** UUID primary keys, `$guarded = []` (validation in Form Requests)
-- **Broadcasting:** Laravel Reverb, events dispatched via `BoardChanged` event
-- **Notifications:** Database + mail channels, preferences stored as JSON on User model
+- **Actions pattern:** Business logic lives in `app/Actions/`, controllers are thin wrappers that validate, authorize, and delegate
+- **Authorization:** `team.member` route middleware + Laravel Policies (`TeamPolicy`, `BoardPolicy`) with owner/admin/member role checks
+- **Models:** UUID primary keys (`HasUuids` trait), `$guarded = []` with validation in Form Requests
+- **Broadcasting:** Single `BoardChanged` event on private channels, dispatched from `ActivityLogger` and action classes
+- **Notifications:** Database + mail channels, user preferences in `email_notification_prefs` JSON column
+- **Scheduled commands:** Due date reminders (hourly), overdue alerts (daily 9am), GitLab link sync (every 15min), recurring task processing (daily)
 
 ### Frontend
 
-- **Inertia.js** bridges Laravel routes to React page components (`resources/js/Pages/`)
-- **MUI v6** for all UI components, styled via `sx` prop
-- **Theme** context with light/dark/system mode support
-- **WebSocket** context provides Echo instance for real-time features
+- **Inertia.js** bridges Laravel routes to React page components in `resources/js/Pages/`
+- **MUI v6** for all UI — no Tailwind. Components styled via `sx` prop
+- **Theme** context with light/dark/system mode (`resources/js/Contexts/ThemeContext.tsx`)
+- **WebSocket** context provides Echo instance and connection status for real-time features
 - **TypeScript** interfaces for all backend models in `resources/js/types/index.d.ts`
+- **Path alias:** `@/*` maps to `resources/js/*`
+
+### API
+
+A REST API is available at `/api/v1/` authenticated via Sanctum personal access tokens. Endpoints cover teams, boards, tasks, and comments. Tokens can be created from the user profile or via the admin panel for bot users.
 
 ## Production Deployment
 
@@ -142,28 +182,12 @@ docker compose exec app php artisan octane:reload
 2. **Configure environment:**
    ```bash
    cp .env.example .env
-   # Edit .env with production values
+   # Edit .env with production values (DB, Redis, mail, Reverb, APP_URL)
    php artisan key:generate
    php artisan migrate --force
    ```
 
-3. **Run queue workers** (for notifications, GitLab sync, automation):
-   ```bash
-   php artisan queue:work redis --sleep=3 --tries=3
-   ```
-
-4. **Run WebSocket server** (for real-time features):
-   ```bash
-   php artisan reverb:start
-   ```
-
-5. **Schedule tasks** (for due date reminders, overdue alerts):
-   ```bash
-   # Add to crontab:
-   * * * * * cd /path/to/pulseboard && php artisan schedule:run >> /dev/null 2>&1
-   ```
-
-6. **Optimize for production:**
+3. **Optimize for production:**
    ```bash
    php artisan config:cache
    php artisan route:cache
@@ -171,14 +195,31 @@ docker compose exec app php artisan octane:reload
    php artisan event:cache
    ```
 
-## Docker Production
+4. **Run services:**
+   ```bash
+   # Queue worker (notifications, GitLab sync, automation)
+   php artisan queue:work redis --sleep=3 --tries=3
 
-The included `docker-compose.yml` runs the app with:
-- FrankenPHP via Laravel Octane (port 8000)
-- MySQL 8.0 (port 3306)
-- Redis 7 (port 6379)
-- Laravel Reverb (port 8080/9080)
-- Queue worker and scheduler via Supervisor
+   # WebSocket server (real-time collaboration)
+   php artisan reverb:start
+
+   # Scheduler (add to crontab)
+   * * * * * cd /path/to/pulseboard && php artisan schedule:run >> /dev/null 2>&1
+   ```
+
+### Docker Production
+
+The included `docker-compose.yml` runs everything in containers:
+
+| Service | Port | Description |
+|---------|------|-------------|
+| `app` | 8000 | FrankenPHP via Octane (web, queue worker, scheduler, Reverb) |
+| `mysql` | 3306 | MySQL 8.0 |
+| `redis` | 6379 | Redis 7 |
+
+Reverb WebSocket is exposed on port **9080** (mapped from container port 8080).
+
+The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, the queue worker, the scheduler, and the Reverb server as a single unit.
 
 ## License
 
