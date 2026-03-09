@@ -1,31 +1,54 @@
-import { useCallback, useRef } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { Markdown } from 'tiptap-markdown';
-import { createLowlight, common } from 'lowlight';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import { useTheme } from '@mui/material/styles';
-import FormatBold from '@mui/icons-material/FormatBold';
-import FormatItalic from '@mui/icons-material/FormatItalic';
-import FormatUnderlined from '@mui/icons-material/FormatUnderlined';
-import FormatStrikethrough from '@mui/icons-material/FormatStrikethrough';
-import Title from '@mui/icons-material/Title';
-import FormatListBulleted from '@mui/icons-material/FormatListBulleted';
-import FormatListNumbered from '@mui/icons-material/FormatListNumbered';
-import Checklist from '@mui/icons-material/Checklist';
-import CodeIcon from '@mui/icons-material/Code';
-import LinkIcon from '@mui/icons-material/Link';
-import ImageIcon from '@mui/icons-material/Image';
-import axios from 'axios';
+import { useCallback, useMemo, useRef } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { Markdown } from "tiptap-markdown";
+import { createLowlight, common } from "lowlight";
+import TurndownService from "turndown";
+import { gfm } from "turndown-plugin-gfm";
+import Box from "@mui/material/Box";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import { useTheme } from "@mui/material/styles";
+import FormatBold from "@mui/icons-material/FormatBold";
+import FormatItalic from "@mui/icons-material/FormatItalic";
+import FormatUnderlined from "@mui/icons-material/FormatUnderlined";
+import FormatStrikethrough from "@mui/icons-material/FormatStrikethrough";
+import Title from "@mui/icons-material/Title";
+import FormatListBulleted from "@mui/icons-material/FormatListBulleted";
+import FormatListNumbered from "@mui/icons-material/FormatListNumbered";
+import Checklist from "@mui/icons-material/Checklist";
+import CodeIcon from "@mui/icons-material/Code";
+import LinkIcon from "@mui/icons-material/Link";
+import ImageIcon from "@mui/icons-material/Image";
+import axios from "axios";
 
 const lowlight = createLowlight(common);
+
+function createTurndownService(): TurndownService {
+    const td = new TurndownService({
+        headingStyle: "atx",
+        codeBlockStyle: "fenced",
+        fence: "```",
+        bulletListMarker: "-",
+        emDelimiter: "*",
+        strongDelimiter: "**",
+    });
+    td.use(gfm);
+    // Remove empty links and images that produce noisy output
+    td.addRule("removeEmptyLinks", {
+        filter: (node) =>
+            node.nodeName === "A" &&
+            !node.textContent?.trim() &&
+            !node.querySelector("img"),
+        replacement: () => "",
+    });
+    return td;
+}
 
 interface RichTextEditorProps {
     content: string;
@@ -39,13 +62,14 @@ interface RichTextEditorProps {
 export default function RichTextEditor({
     content,
     onChange,
-    placeholder = 'Write something...',
+    placeholder = "Write something...",
     editable = true,
     uploadImageUrl,
     minHeight = 200,
 }: RichTextEditorProps) {
     const theme = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const turndown = useMemo(() => createTurndownService(), []);
 
     const editor = useEditor({
         extensions: [
@@ -69,7 +93,7 @@ export default function RichTextEditor({
             Markdown.configure({
                 html: true,
                 transformPastedText: true,
-                transformCopiedText: false,
+                transformCopiedText: true,
             }),
         ],
         content,
@@ -79,22 +103,48 @@ export default function RichTextEditor({
         },
         editorProps: {
             attributes: {
-                role: 'textbox',
-                'aria-multiline': 'true',
-                'aria-label': placeholder,
+                role: "textbox",
+                "aria-multiline": "true",
+                "aria-label": placeholder,
             },
             handlePaste: (_view, event) => {
-                const items = event.clipboardData?.items;
-                if (!items || !uploadImageUrl) return false;
+                const clipboard = event.clipboardData;
+                if (!clipboard) return false;
 
-                for (const item of items) {
-                    if (item.type.startsWith('image/')) {
+                // Handle image pastes
+                for (const item of clipboard.items) {
+                    if (item.type.startsWith("image/")) {
+                        if (!uploadImageUrl) return false;
                         event.preventDefault();
                         const file = item.getAsFile();
                         if (file) uploadImage(file);
                         return true;
                     }
                 }
+
+                // If clipboard has HTML (from web pages, GitLab, Notion, etc.),
+                // convert it to markdown first, then let tiptap-markdown parse it.
+                // This produces much cleaner results than letting TipTap parse
+                // the raw HTML directly.
+                const html = clipboard.getData("text/html");
+                const plainText = clipboard.getData("text/plain");
+                if (html && editor) {
+                    // Skip conversion if the HTML is trivially simple (just a
+                    // plain text wrapper with no real formatting). This avoids
+                    // interfering with plain markdown text pastes which
+                    // tiptap-markdown already handles well via transformPastedText.
+                    const hasRichContent =
+                        /<(h[1-6]|ul|ol|li|pre|code|table|blockquote|img|a\s|strong|em|del|s)\b/i.test(
+                            html,
+                        );
+                    if (hasRichContent) {
+                        event.preventDefault();
+                        const markdown = turndown.turndown(html);
+                        editor.commands.insertContent(markdown);
+                        return true;
+                    }
+                }
+
                 return false;
             },
             handleDrop: (_view, event, _slice, moved) => {
@@ -103,7 +153,9 @@ export default function RichTextEditor({
                 const files = event.dataTransfer?.files;
                 if (!files?.length) return false;
 
-                const images = Array.from(files).filter((f) => f.type.startsWith('image/'));
+                const images = Array.from(files).filter((f) =>
+                    f.type.startsWith("image/"),
+                );
                 if (!images.length) return false;
 
                 event.preventDefault();
@@ -118,18 +170,18 @@ export default function RichTextEditor({
             if (!uploadImageUrl || !editor) return;
 
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append("image", file);
 
             try {
                 const response = await axios.post(uploadImageUrl, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
+                    headers: { "Content-Type": "multipart/form-data" },
                 });
                 const url = response.data.url;
                 if (url) {
                     editor.chain().focus().setImage({ src: url }).run();
                 }
             } catch (error) {
-                console.error('Image upload failed:', error);
+                console.error("Image upload failed:", error);
             }
         },
         [uploadImageUrl, editor],
@@ -143,24 +195,29 @@ export default function RichTextEditor({
         const file = event.target.files?.[0];
         if (file) {
             uploadImage(file);
-            event.target.value = '';
+            event.target.value = "";
         }
     };
 
     const handleLinkClick = () => {
         if (!editor) return;
 
-        const previousUrl = editor.getAttributes('link').href;
-        const url = window.prompt('Enter URL:', previousUrl || 'https://');
+        const previousUrl = editor.getAttributes("link").href;
+        const url = window.prompt("Enter URL:", previousUrl || "https://");
 
         if (url === null) return;
 
-        if (url === '') {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run();
+        if (url === "") {
+            editor.chain().focus().extendMarkRange("link").unsetLink().run();
             return;
         }
 
-        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+        editor
+            .chain()
+            .focus()
+            .extendMarkRange("link")
+            .setLink({ href: url })
+            .run();
     };
 
     if (!editor) return null;
@@ -178,8 +235,8 @@ export default function RichTextEditor({
                 aria-label={label}
                 aria-pressed={isActive}
                 sx={{
-                    color: isActive ? 'primary.main' : 'text.secondary',
-                    bgcolor: isActive ? 'action.selected' : 'transparent',
+                    color: isActive ? "primary.main" : "text.secondary",
+                    bgcolor: isActive ? "action.selected" : "transparent",
                     borderRadius: 1,
                 }}
             >
@@ -192,41 +249,48 @@ export default function RichTextEditor({
         <Box
             sx={{
                 border: 1,
-                borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.16)' : 'divider',
+                borderColor:
+                    theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.16)"
+                        : "divider",
                 borderRadius: 1,
-                overflow: 'hidden',
-                bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : 'transparent',
-                '&:hover': {
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.30)' : 'text.primary',
+                overflow: "hidden",
+                bgcolor:
+                    theme.palette.mode === "dark" ? "#1f1f1f" : "transparent",
+                "&:hover": {
+                    borderColor:
+                        theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.30)"
+                            : "text.primary",
                 },
-                '&:focus-within': {
-                    borderColor: 'primary.main',
+                "&:focus-within": {
+                    borderColor: "primary.main",
                     boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,
                 },
-                '& .tiptap': {
+                "& .tiptap": {
                     p: 2,
                     minHeight,
-                    outline: 'none',
-                    '& p.is-editor-empty:first-of-type::before': {
-                        content: 'attr(data-placeholder)',
-                        color: 'text.disabled',
-                        float: 'left',
+                    outline: "none",
+                    "& p.is-editor-empty:first-of-type::before": {
+                        content: "attr(data-placeholder)",
+                        color: "text.disabled",
+                        float: "left",
                         height: 0,
-                        pointerEvents: 'none',
+                        pointerEvents: "none",
                     },
-                    '& h1': { ...theme.typography.h4, mt: 2, mb: 1 },
-                    '& h2': { ...theme.typography.h5, mt: 2, mb: 1 },
-                    '& h3': { ...theme.typography.h6, mt: 2, mb: 1 },
-                    '& p': { ...theme.typography.body1, my: 0.5 },
-                    '& ul, & ol': { pl: 3 },
+                    "& h1": { ...theme.typography.h4, mt: 2, mb: 1 },
+                    "& h2": { ...theme.typography.h5, mt: 2, mb: 1 },
+                    "& h3": { ...theme.typography.h6, mt: 2, mb: 1 },
+                    "& p": { ...theme.typography.body1, my: 0.5 },
+                    "& ul, & ol": { pl: 3 },
                     '& ul[data-type="taskList"]': {
-                        listStyle: 'none',
+                        listStyle: "none",
                         pl: 0,
-                        '& li': {
-                            display: 'flex',
-                            alignItems: 'flex-start',
+                        "& li": {
+                            display: "flex",
+                            alignItems: "flex-start",
                             gap: 1,
-                            '& label': {
+                            "& label": {
                                 mt: 0.25,
                             },
                             '& input[type="checkbox"]': {
@@ -237,43 +301,43 @@ export default function RichTextEditor({
                             },
                         },
                     },
-                    '& pre': {
-                        bgcolor: 'action.hover',
-                        fontFamily: 'monospace',
+                    "& pre": {
+                        bgcolor: "action.hover",
+                        fontFamily: "monospace",
                         p: 2,
                         borderRadius: 1,
-                        overflow: 'auto',
-                        '& code': {
-                            background: 'none',
+                        overflow: "auto",
+                        "& code": {
+                            background: "none",
                             p: 0,
-                            fontSize: '0.875rem',
+                            fontSize: "0.875rem",
                         },
                     },
-                    '& code': {
-                        bgcolor: 'action.hover',
+                    "& code": {
+                        bgcolor: "action.hover",
                         px: 0.5,
                         py: 0.25,
                         borderRadius: 0.5,
-                        fontFamily: 'monospace',
-                        fontSize: '0.875rem',
+                        fontFamily: "monospace",
+                        fontSize: "0.875rem",
                     },
-                    '& img': {
-                        maxWidth: '100%',
-                        borderRadius: '4px',
+                    "& img": {
+                        maxWidth: "100%",
+                        borderRadius: "4px",
                     },
-                    '& a': {
-                        color: 'primary.main',
-                        textDecoration: 'underline',
+                    "& a": {
+                        color: "primary.main",
+                        textDecoration: "underline",
                     },
-                    '& blockquote': {
+                    "& blockquote": {
                         borderLeft: 3,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                         pl: 2,
                         ml: 0,
-                        color: 'text.secondary',
+                        color: "text.secondary",
                     },
-                    '& hr': {
-                        borderColor: 'divider',
+                    "& hr": {
+                        borderColor: "divider",
                         my: 2,
                     },
                 },
@@ -284,28 +348,109 @@ export default function RichTextEditor({
                     role="toolbar"
                     aria-label="Text formatting"
                     sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
+                        display: "flex",
+                        flexWrap: "wrap",
                         gap: 0.25,
                         p: 0.5,
-                        bgcolor: 'background.default',
+                        bgcolor: "background.default",
                         borderBottom: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                     }}
                 >
-                    {toolbarButton('Bold', <FormatBold fontSize="small" />, () => editor.chain().focus().toggleBold().run(), editor.isActive('bold'))}
-                    {toolbarButton('Italic', <FormatItalic fontSize="small" />, () => editor.chain().focus().toggleItalic().run(), editor.isActive('italic'))}
-                    {toolbarButton('Underline', <FormatUnderlined fontSize="small" />, () => editor.chain().focus().toggleUnderline().run(), editor.isActive('underline'))}
-                    {toolbarButton('Strikethrough', <FormatStrikethrough fontSize="small" />, () => editor.chain().focus().toggleStrike().run(), editor.isActive('strike'))}
-                    {toolbarButton('Heading 1', <Title fontSize="small" />, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), editor.isActive('heading', { level: 1 }))}
-                    {toolbarButton('Heading 2', <Title fontSize="small" sx={{ fontSize: '1.1rem' }} />, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), editor.isActive('heading', { level: 2 }))}
-                    {toolbarButton('Heading 3', <Title fontSize="small" sx={{ fontSize: '0.95rem' }} />, () => editor.chain().focus().toggleHeading({ level: 3 }).run(), editor.isActive('heading', { level: 3 }))}
-                    {toolbarButton('Bullet List', <FormatListBulleted fontSize="small" />, () => editor.chain().focus().toggleBulletList().run(), editor.isActive('bulletList'))}
-                    {toolbarButton('Ordered List', <FormatListNumbered fontSize="small" />, () => editor.chain().focus().toggleOrderedList().run(), editor.isActive('orderedList'))}
-                    {toolbarButton('Task List', <Checklist fontSize="small" />, () => editor.chain().focus().toggleTaskList().run(), editor.isActive('taskList'))}
-                    {toolbarButton('Code Block', <CodeIcon fontSize="small" />, () => editor.chain().focus().toggleCodeBlock().run(), editor.isActive('codeBlock'))}
-                    {toolbarButton('Link', <LinkIcon fontSize="small" />, handleLinkClick, editor.isActive('link'))}
-                    {uploadImageUrl && toolbarButton('Image', <ImageIcon fontSize="small" />, handleImageButtonClick, false)}
+                    {toolbarButton(
+                        "Bold",
+                        <FormatBold fontSize="small" />,
+                        () => editor.chain().focus().toggleBold().run(),
+                        editor.isActive("bold"),
+                    )}
+                    {toolbarButton(
+                        "Italic",
+                        <FormatItalic fontSize="small" />,
+                        () => editor.chain().focus().toggleItalic().run(),
+                        editor.isActive("italic"),
+                    )}
+                    {toolbarButton(
+                        "Underline",
+                        <FormatUnderlined fontSize="small" />,
+                        () => editor.chain().focus().toggleUnderline().run(),
+                        editor.isActive("underline"),
+                    )}
+                    {toolbarButton(
+                        "Strikethrough",
+                        <FormatStrikethrough fontSize="small" />,
+                        () => editor.chain().focus().toggleStrike().run(),
+                        editor.isActive("strike"),
+                    )}
+                    {toolbarButton(
+                        "Heading 1",
+                        <Title fontSize="small" />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 1 })
+                                .run(),
+                        editor.isActive("heading", { level: 1 }),
+                    )}
+                    {toolbarButton(
+                        "Heading 2",
+                        <Title fontSize="small" sx={{ fontSize: "1.1rem" }} />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 2 })
+                                .run(),
+                        editor.isActive("heading", { level: 2 }),
+                    )}
+                    {toolbarButton(
+                        "Heading 3",
+                        <Title fontSize="small" sx={{ fontSize: "0.95rem" }} />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 3 })
+                                .run(),
+                        editor.isActive("heading", { level: 3 }),
+                    )}
+                    {toolbarButton(
+                        "Bullet List",
+                        <FormatListBulleted fontSize="small" />,
+                        () => editor.chain().focus().toggleBulletList().run(),
+                        editor.isActive("bulletList"),
+                    )}
+                    {toolbarButton(
+                        "Ordered List",
+                        <FormatListNumbered fontSize="small" />,
+                        () => editor.chain().focus().toggleOrderedList().run(),
+                        editor.isActive("orderedList"),
+                    )}
+                    {toolbarButton(
+                        "Task List",
+                        <Checklist fontSize="small" />,
+                        () => editor.chain().focus().toggleTaskList().run(),
+                        editor.isActive("taskList"),
+                    )}
+                    {toolbarButton(
+                        "Code Block",
+                        <CodeIcon fontSize="small" />,
+                        () => editor.chain().focus().toggleCodeBlock().run(),
+                        editor.isActive("codeBlock"),
+                    )}
+                    {toolbarButton(
+                        "Link",
+                        <LinkIcon fontSize="small" />,
+                        handleLinkClick,
+                        editor.isActive("link"),
+                    )}
+                    {uploadImageUrl &&
+                        toolbarButton(
+                            "Image",
+                            <ImageIcon fontSize="small" />,
+                            handleImageButtonClick,
+                            false,
+                        )}
                 </Box>
             )}
             <EditorContent editor={editor} />
@@ -314,7 +459,7 @@ export default function RichTextEditor({
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
             />
         </Box>
     );
