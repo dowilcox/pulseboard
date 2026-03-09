@@ -40,6 +40,7 @@ interface Props {
     labels: Label[];
     gitlabProjects: GitlabProject[];
     boardTasks: TaskSummary[];
+    teamBoards: Board[];
 }
 
 export default function TasksShow({
@@ -50,6 +51,7 @@ export default function TasksShow({
     labels,
     gitlabProjects,
     boardTasks,
+    teamBoards,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
 
@@ -285,6 +287,7 @@ export default function TasksShow({
                         members={members}
                         labels={labels}
                         boardTasks={boardTasks}
+                        teamBoards={teamBoards}
                     />
                 </Box>
             </Box>

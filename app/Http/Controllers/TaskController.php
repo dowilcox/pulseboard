@@ -96,6 +96,13 @@ class TaskController extends Controller
             ->select('id', 'task_number', 'title', 'column_id')
             ->get();
 
+        // Get all boards in this team for cross-board move
+        $teamBoards = $team->boards()
+            ->active()
+            ->with('columns')
+            ->orderBy('name')
+            ->get(['id', 'name', 'team_id']);
+
         return Inertia::render('Tasks/Show', [
             'team' => $team,
             'board' => $board,
@@ -103,6 +110,7 @@ class TaskController extends Controller
             'members' => $members,
             'labels' => $labels,
             'gitlabProjects' => $gitlabProjects,
+            'teamBoards' => $teamBoards,
             'boardTasks' => $boardTasks,
         ]);
     }
@@ -138,8 +146,23 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
-        $column = $board->columns()->findOrFail($request->validated('column_id'));
-        MoveTask::run($task, $column, $request->validated('sort_order'));
+        $targetBoardId = $request->validated('board_id');
+        $targetBoard = null;
+
+        if ($targetBoardId && $targetBoardId !== $board->id) {
+            // Cross-board move: validate target board belongs to same team
+            $targetBoard = $team->boards()->active()->findOrFail($targetBoardId);
+            $this->authorize('update', $targetBoard);
+            $column = $targetBoard->columns()->findOrFail($request->validated('column_id'));
+        } else {
+            $column = $board->columns()->findOrFail($request->validated('column_id'));
+        }
+
+        MoveTask::run($task, $column, $request->validated('sort_order'), $targetBoard);
+
+        if ($targetBoard) {
+            return Redirect::route('tasks.show', [$team->id, $targetBoard->id, $task->id]);
+        }
 
         return Redirect::back();
     }

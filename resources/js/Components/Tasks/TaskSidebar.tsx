@@ -15,6 +15,7 @@ import { router } from '@inertiajs/react';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import Box from '@mui/material/Box';
@@ -36,6 +37,7 @@ interface Props {
     members: User[];
     labels: Label[];
     boardTasks: TaskSummary[];
+    teamBoards: Board[];
 }
 
 function formatTimestamp(ts: string): string {
@@ -52,7 +54,7 @@ function formatTimestamp(ts: string): string {
     return date.toLocaleDateString();
 }
 
-export default function TaskSidebar({ task, team, board, members, labels, boardTasks }: Props) {
+export default function TaskSidebar({ task, team, board, members, labels, boardTasks, teamBoards }: Props) {
     const columns = board.columns ?? [];
     const isCompleted = task.completed_at !== null && task.completed_at !== undefined;
 
@@ -84,6 +86,19 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
         router.patch(
             route('tasks.move', [team.id, board.id, task.id]),
             { column_id: columnId, sort_order: 0 },
+            { preserveScroll: true },
+        );
+    };
+
+    const handleBoardChange = (newBoardId: string) => {
+        if (newBoardId === board.id) return;
+        const targetBoard = teamBoards.find((b) => b.id === newBoardId);
+        const firstColumn = targetBoard?.columns?.[0];
+        if (!firstColumn) return;
+
+        router.patch(
+            route('tasks.move', [team.id, board.id, task.id]),
+            { board_id: newBoardId, column_id: firstColumn.id, sort_order: 0 },
             { preserveScroll: true },
         );
     };
@@ -177,6 +192,34 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
             >
                 {isCompleted ? 'Completed' : 'Mark Complete'}
             </Button>
+
+            {/* Board selector */}
+            {teamBoards.length > 1 && (
+                <Select
+                    size="small"
+                    fullWidth
+                    value={board.id}
+                    onChange={(e) => handleBoardChange(e.target.value)}
+                    renderValue={(value) => {
+                        const b = teamBoards.find((tb) => tb.id === value);
+                        return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <DashboardIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                {b?.name ?? 'Unknown'}
+                            </Box>
+                        );
+                    }}
+                >
+                    {teamBoards.map((b) => (
+                        <MenuItem key={b.id} value={b.id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <DashboardIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                                {b.name}
+                            </Box>
+                        </MenuItem>
+                    ))}
+                </Select>
+            )}
 
             {/* Column selector */}
             <Select
