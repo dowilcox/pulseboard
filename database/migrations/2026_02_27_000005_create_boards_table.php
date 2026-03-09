@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('is_archived')->default(false);
             $table->uuid('default_task_template_id')->nullable();
             $table->integer('sort_order')->default(0);
+            $table->json('settings')->nullable();
             $table->timestamps();
         });
     }

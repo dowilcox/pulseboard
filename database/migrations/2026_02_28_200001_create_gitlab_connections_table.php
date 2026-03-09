@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('gitlab_connections', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('team_id')->constrained('teams')->cascadeOnDelete();
             $table->string('name');
             $table->string('base_url');
             $table->text('api_token');

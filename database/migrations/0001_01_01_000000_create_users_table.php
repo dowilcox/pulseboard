@@ -21,8 +21,12 @@ return new class extends Migration
             $table->string('auth_provider')->default('local');
             $table->string('auth_provider_id')->nullable();
             $table->boolean('is_admin')->default(false);
+            $table->boolean('is_bot')->default(false);
+            $table->uuid('created_by_team_id')->nullable();
             $table->json('email_notification_prefs')->nullable();
+            $table->json('ui_preferences')->nullable();
             $table->string('theme_preference')->default('system');
+            $table->timestamp('deactivated_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -19,6 +19,11 @@ return new class extends Migration
             $table->json('settings')->nullable();
             $table->timestamps();
         });
+
+        // Add FK constraint for users.created_by_team_id now that teams table exists
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('created_by_team_id')->references('id')->on('teams')->nullOnDelete();
+        });
     }
 
     /**
@@ -26,6 +31,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['created_by_team_id']);
+        });
         Schema::dropIfExists('teams');
     }
 };
