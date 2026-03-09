@@ -1,20 +1,12 @@
 import type { Task, TaskSummary } from '@/types';
 import { router } from '@inertiajs/react';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
+import CloseIcon from '@mui/icons-material/Close';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
 import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
@@ -33,7 +25,6 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
     const blockedBy = task.blocked_by ?? [];
     const dependencies = task.dependencies ?? [];
 
-    // Filter out already-linked tasks and self
     const availableForBlockedBy = boardTasks.filter(
         (t) => t.id !== task.id && !blockedBy.some((b) => b.id === t.id),
     );
@@ -80,151 +71,94 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
         return `${num} ${t.title}`.trim();
     };
 
+    const depRow = (
+        label: string,
+        items: Task[],
+        adding: boolean,
+        setAdding: (v: boolean) => void,
+        available: TaskSummary[],
+        onAdd: (t: TaskSummary) => void,
+        onRemove: (id: string) => void,
+        color: 'warning' | 'info',
+    ) => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                    {label}
+                </Typography>
+                {!adding && (
+                    <Button
+                        size="small"
+                        startIcon={<AddIcon sx={{ fontSize: '14px !important' }} />}
+                        onClick={() => setAdding(true)}
+                        sx={{
+                            textTransform: 'none',
+                            color: 'text.secondary',
+                            fontSize: '0.7rem',
+                            minWidth: 0,
+                            py: 0,
+                            px: 0.5,
+                            '&:hover': { color: 'text.primary' },
+                        }}
+                    >
+                        Add
+                    </Button>
+                )}
+            </Box>
+
+            {items.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {items.map((dep) => (
+                        <Chip
+                            key={dep.id}
+                            label={formatTaskLabel(dep)}
+                            size="small"
+                            color={color}
+                            variant="outlined"
+                            onDelete={() => onRemove(dep.id)}
+                            deleteIcon={<CloseIcon sx={{ fontSize: '14px !important' }} />}
+                            sx={{ maxWidth: '100%', height: 24, fontSize: '0.75rem' }}
+                            aria-label={`${label}: ${formatTaskLabel(dep)}`}
+                        />
+                    ))}
+                </Box>
+            ) : !adding ? (
+                <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                    None
+                </Typography>
+            ) : null}
+
+            {adding && (
+                <Autocomplete
+                    size="small"
+                    options={available}
+                    getOptionLabel={formatTaskLabel}
+                    value={selectedTask}
+                    onChange={(_, value) => {
+                        if (value) onAdd(value);
+                    }}
+                    onBlur={() => setAdding(false)}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            placeholder="Search tasks..."
+                            autoFocus
+                            inputProps={{ ...params.inputProps, 'aria-label': `Search for ${label.toLowerCase()} task` }}
+                        />
+                    )}
+                    noOptionsText="No available tasks"
+                    sx={{
+                        '& .MuiInputBase-root': { py: '2px' },
+                    }}
+                />
+            )}
+        </Box>
+    );
+
     return (
-        <Box>
-            {/* Blocked By */}
-            <Box sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                    <LockIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        Blocked By
-                    </Typography>
-                </Box>
-
-                {blockedBy.length > 0 ? (
-                    <List dense disablePadding>
-                        {blockedBy.map((dep) => (
-                            <ListItem
-                                key={dep.id}
-                                disablePadding
-                                secondaryAction={
-                                    <Tooltip title="Remove dependency">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleRemoveBlockedBy(dep.id)}
-                                            aria-label={`Remove blocked by ${formatTaskLabel(dep)}`}
-                                        >
-                                            <DeleteIcon sx={{ fontSize: 14 }} />
-                                        </IconButton>
-                                    </Tooltip>
-                                }
-                                sx={{ py: 0.25 }}
-                            >
-                                <ListItemText
-                                    primary={formatTaskLabel(dep)}
-                                    primaryTypographyProps={{ variant: 'body2' }}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                        None
-                    </Typography>
-                )}
-
-                {addingBlockedBy ? (
-                    <Box sx={{ mt: 0.5 }}>
-                        <Autocomplete
-                            size="small"
-                            options={availableForBlockedBy}
-                            getOptionLabel={formatTaskLabel}
-                            value={selectedTask}
-                            onChange={(_, value) => {
-                                if (value) handleAddBlockedBy(value);
-                            }}
-                            renderInput={(params) => (
-                                <TextField {...params} placeholder="Search tasks..." autoFocus inputProps={{ ...params.inputProps, 'aria-label': 'Search for blocking task' }} />
-                            )}
-                            noOptionsText="No available tasks"
-                        />
-                        <Button size="small" onClick={() => setAddingBlockedBy(false)} sx={{ mt: 0.5 }}>
-                            Cancel
-                        </Button>
-                    </Box>
-                ) : (
-                    <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => setAddingBlockedBy(true)}
-                        sx={{ textTransform: 'none', color: 'text.secondary', mt: 0.5 }}
-                    >
-                        Add blocker
-                    </Button>
-                )}
-            </Box>
-
-            {/* Blocking */}
-            <Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                    <LockOpenIcon sx={{ fontSize: 16, color: 'info.main' }} />
-                    <Typography variant="caption" fontWeight={600} color="text.secondary">
-                        Blocking
-                    </Typography>
-                </Box>
-
-                {dependencies.length > 0 ? (
-                    <List dense disablePadding>
-                        {dependencies.map((dep) => (
-                            <ListItem
-                                key={dep.id}
-                                disablePadding
-                                secondaryAction={
-                                    <Tooltip title="Remove dependency">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleRemoveBlocking(dep.id)}
-                                            aria-label={`Remove blocking ${formatTaskLabel(dep)}`}
-                                        >
-                                            <DeleteIcon sx={{ fontSize: 14 }} />
-                                        </IconButton>
-                                    </Tooltip>
-                                }
-                                sx={{ py: 0.25 }}
-                            >
-                                <ListItemText
-                                    primary={formatTaskLabel(dep)}
-                                    primaryTypographyProps={{ variant: 'body2' }}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                ) : (
-                    <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-                        None
-                    </Typography>
-                )}
-
-                {addingBlocking ? (
-                    <Box sx={{ mt: 0.5 }}>
-                        <Autocomplete
-                            size="small"
-                            options={availableForBlocking}
-                            getOptionLabel={formatTaskLabel}
-                            value={selectedTask}
-                            onChange={(_, value) => {
-                                if (value) handleAddBlocking(value);
-                            }}
-                            renderInput={(params) => (
-                                <TextField {...params} placeholder="Search tasks..." autoFocus inputProps={{ ...params.inputProps, 'aria-label': 'Search for blocked task' }} />
-                            )}
-                            noOptionsText="No available tasks"
-                        />
-                        <Button size="small" onClick={() => setAddingBlocking(false)} sx={{ mt: 0.5 }}>
-                            Cancel
-                        </Button>
-                    </Box>
-                ) : (
-                    <Button
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => setAddingBlocking(true)}
-                        sx={{ textTransform: 'none', color: 'text.secondary', mt: 0.5 }}
-                    >
-                        Add blocking
-                    </Button>
-                )}
-            </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {depRow('Blocked by', blockedBy, addingBlockedBy, setAddingBlockedBy, availableForBlockedBy, handleAddBlockedBy, handleRemoveBlockedBy, 'warning')}
+            {depRow('Blocking', dependencies, addingBlocking, setAddingBlocking, availableForBlocking, handleAddBlocking, handleRemoveBlocking, 'info')}
         </Box>
     );
 }

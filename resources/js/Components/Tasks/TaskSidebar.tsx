@@ -16,11 +16,9 @@ import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Collapse from '@mui/material/Collapse';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -68,11 +66,6 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
     const [templateName, setTemplateName] = useState('');
-
-    // Collapsible sections
-    const [detailsOpen, setDetailsOpen] = useState(true);
-    const [planningOpen, setPlanningOpen] = useState(false);
-    const [infoOpen, setInfoOpen] = useState(false);
 
     const effortTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const recurrenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,37 +137,17 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
         );
     };
 
-    const sectionHeader = (
-        label: string,
-        open: boolean,
-        toggle: () => void,
-    ) => (
-        <Box
-            onClick={toggle}
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                py: 0.5,
-                '&:hover': { bgcolor: 'action.hover' },
-                borderRadius: 0.5,
-                px: 0.5,
-                mx: -0.5,
-            }}
+    const sectionLabel = (label: string) => (
+        <Typography
+            variant="caption"
+            fontWeight={700}
+            color="text.secondary"
+            textTransform="uppercase"
+            letterSpacing={0.5}
+            sx={{ pt: 0.5 }}
         >
-            <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
-                {label}
-            </Typography>
-            <ExpandMoreIcon
-                sx={{
-                    fontSize: 16,
-                    color: 'text.disabled',
-                    transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.2s',
-                }}
-            />
-        </Box>
+            {label}
+        </Typography>
     );
 
     const fieldRow = (label: string, children: React.ReactNode) => (
@@ -247,103 +220,122 @@ export default function TaskSidebar({ task, team, board, members, labels, boardT
                 ))}
             </Select>
 
-            {/* Details — default expanded */}
-            {sectionHeader('Details', detailsOpen, () => setDetailsOpen((p) => !p))}
-            <Collapse in={detailsOpen}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pb: 1 }}>
-                    {fieldRow('Priority', (
-                        <PrioritySelector task={task} teamId={team.id} boardId={board.id} />
-                    ))}
-                    {fieldRow('Assignees', (
-                        <AssigneeSelector task={task} members={members} teamId={team.id} boardId={board.id} />
-                    ))}
-                    {fieldRow('Labels', (
-                        <LabelSelector task={task} labels={labels} teamId={team.id} boardId={board.id} />
-                    ))}
-                    {fieldRow('Due Date', (
-                        <TextField
-                            type="date"
-                            size="small"
-                            fullWidth
-                            value={dueDate}
-                            onChange={(e) => handleDueDateChange(e.target.value)}
-                            slotProps={{
-                                input: {
-                                    startAdornment: (
-                                        <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                                    ),
-                                },
-                                inputLabel: { shrink: true },
-                            }}
-                        />
-                    ))}
-                    {fieldRow('Effort', (
-                        <TextField
-                            type="number"
-                            size="small"
-                            fullWidth
-                            value={effortEstimate}
-                            onChange={(e) => handleEffortChange(e.target.value)}
-                            placeholder="Points"
-                            slotProps={{ htmlInput: { min: 0 } }}
-                        />
-                    ))}
-                </Box>
-            </Collapse>
+            {/* Details */}
+            {sectionLabel('Details')}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {fieldRow('Priority', (
+                    <PrioritySelector task={task} teamId={team.id} boardId={board.id} />
+                ))}
+                {fieldRow('Assignees', (
+                    <AssigneeSelector task={task} members={members} teamId={team.id} boardId={board.id} />
+                ))}
+                {fieldRow('Labels', (
+                    <LabelSelector task={task} labels={labels} teamId={team.id} boardId={board.id} />
+                ))}
+                {fieldRow('Due Date', (
+                    <TextField
+                        type="date"
+                        size="small"
+                        fullWidth
+                        value={dueDate}
+                        onChange={(e) => handleDueDateChange(e.target.value)}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                                ),
+                            },
+                            inputLabel: { shrink: true },
+                        }}
+                    />
+                ))}
+                {fieldRow('Effort', (
+                    <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        value={effortEstimate}
+                        onChange={(e) => handleEffortChange(e.target.value)}
+                        placeholder="Points"
+                        slotProps={{ htmlInput: { min: 0 } }}
+                    />
+                ))}
+            </Box>
 
-            {/* Planning — default collapsed */}
-            {sectionHeader('Planning', planningOpen, () => setPlanningOpen((p) => !p))}
-            <Collapse in={planningOpen}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pb: 1 }}>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                            Dependencies
-                        </Typography>
-                        <DependencySection task={task} boardTasks={boardTasks} teamId={team.id} boardId={board.id} />
-                    </Box>
-                    <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                            Recurrence
-                        </Typography>
-                        <RecurrenceConfig config={recurrenceConfig} onChange={handleRecurrenceChange} />
-                    </Box>
-                </Box>
-            </Collapse>
+            {/* Planning */}
+            {sectionLabel('Planning')}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <DependencySection task={task} boardTasks={boardTasks} teamId={team.id} boardId={board.id} />
 
-            {/* Info — default collapsed */}
-            {sectionHeader('Info', infoOpen, () => setInfoOpen((p) => !p))}
-            <Collapse in={infoOpen}>
-                <Box sx={{ pb: 1 }}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                        Created {formatTimestamp(task.created_at)}
+                {fieldRow('Recurrence', (
+                    <RecurrenceConfig config={recurrenceConfig} onChange={handleRecurrenceChange} />
+                ))}
+            </Box>
+
+            {/* Info */}
+            {sectionLabel('Info')}
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.25,
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="caption" color="text.disabled">Created</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {formatTimestamp(task.created_at)}
                         {task.creator && ` by ${task.creator.name}`}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                        Updated {formatTimestamp(task.updated_at)}
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="caption" color="text.disabled">Updated</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {formatTimestamp(task.updated_at)}
                     </Typography>
                 </Box>
-            </Collapse>
+            </Box>
 
-            {/* Actions — always visible */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, pt: 0.5 }}>
+            {/* Actions */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    gap: 1,
+                    pt: 0.5,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    mt: 0.5,
+                }}
+            >
                 <Button
-                    variant="outlined"
-                    startIcon={<BookmarkAddIcon />}
+                    variant="text"
+                    startIcon={<BookmarkAddIcon sx={{ fontSize: '16px !important' }} />}
                     onClick={() => setTemplateDialogOpen(true)}
-                    fullWidth
                     size="small"
+                    sx={{
+                        flex: 1,
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        fontSize: '0.75rem',
+                        '&:hover': { color: 'text.primary', bgcolor: 'action.hover' },
+                    }}
                 >
-                    Save as Template
+                    Template
                 </Button>
                 <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteIcon />}
+                    variant="text"
+                    startIcon={<DeleteIcon sx={{ fontSize: '16px !important' }} />}
                     onClick={() => setDeleteDialogOpen(true)}
-                    fullWidth
                     size="small"
+                    sx={{
+                        flex: 1,
+                        textTransform: 'none',
+                        color: 'text.secondary',
+                        fontSize: '0.75rem',
+                        '&:hover': { color: 'error.main', bgcolor: 'action.hover' },
+                    }}
                 >
-                    Delete Task
+                    Delete
                 </Button>
             </Box>
 

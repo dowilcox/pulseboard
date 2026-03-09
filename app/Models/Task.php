@@ -103,13 +103,19 @@ class Task extends Model
         return $query->where('priority', $priority);
     }
 
-    public function dependencies(): BelongsToMany
+    /**
+     * Tasks that this task depends on (i.e. tasks blocking this one).
+     */
+    public function blockedBy(): BelongsToMany
     {
         return $this->belongsToMany(Task::class, 'task_dependencies', 'task_id', 'depends_on_task_id')
             ->withPivot('created_by', 'created_at');
     }
 
-    public function blockedBy(): BelongsToMany
+    /**
+     * Tasks that depend on this task (i.e. tasks this one is blocking).
+     */
+    public function dependencies(): BelongsToMany
     {
         return $this->belongsToMany(Task::class, 'task_dependencies', 'depends_on_task_id', 'task_id')
             ->withPivot('created_by', 'created_at');
