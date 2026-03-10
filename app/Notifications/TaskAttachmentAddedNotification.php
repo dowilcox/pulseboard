@@ -2,49 +2,44 @@
 
 namespace App\Notifications;
 
-use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TaskMentionedNotification extends Notification
+class TaskAttachmentAddedNotification extends Notification
 {
     use Queueable;
 
     public function __construct(
         public Task $task,
-        public User $mentioner,
-        public Comment $comment,
+        public User $uploader,
+        public string $filename,
     ) {}
 
     public function via(object $notifiable): array
     {
         $channels = [];
 
-        if ($notifiable->wantsNotification('task_mentioned', 'in_app')) {
+        if ($notifiable->wantsNotification('task_attachment_added', 'in_app')) {
             $channels[] = 'database';
         }
-
-        // Email is handled by the digest command (notifications:send-emails)
 
         return $channels;
     }
 
     public function toDatabase(object $notifiable): array
     {
-        $preview = mb_strimwidth($this->comment->body, 0, 80, '...');
-
         return [
-            'type' => 'task_mentioned',
+            'type' => 'task_attachment_added',
             'task_id' => $this->task->id,
             'task_title' => $this->task->title,
             'board_id' => $this->task->board_id,
             'team_id' => $this->task->board->team_id,
-            'mentioner_name' => $this->mentioner->name,
-            'comment_preview' => $preview,
-            'message' => "{$this->mentioner->name} mentioned you in \"{$this->task->title}\": {$preview}",
+            'uploader_name' => $this->uploader->name,
+            'filename' => $this->filename,
+            'message' => "{$this->uploader->name} added \"{$this->filename}\" to \"{$this->task->title}\"",
         ];
     }
 
@@ -53,15 +48,13 @@ class TaskMentionedNotification extends Notification
         $url = url(
             "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
         );
-        $preview = mb_strimwidth($this->comment->body, 0, 200, '...');
 
         return (new MailMessage)
-            ->subject("You were mentioned in: {$this->task->title}")
+            ->subject("Attachment Added: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
             ->line(
-                "{$this->mentioner->name} mentioned you in \"{$this->task->title}\":",
+                "{$this->uploader->name} added \"{$this->filename}\" to \"{$this->task->title}\".",
             )
-            ->line("> {$preview}")
             ->action('View Task', $url)
             ->line('Thank you for using PulseBoard!');
     }

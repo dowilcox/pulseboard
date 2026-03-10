@@ -1,30 +1,34 @@
-import { useForm, usePage } from '@inertiajs/react';
-import type { NotificationPreferences, PageProps } from '@/types';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
+import { useForm, usePage } from "@inertiajs/react";
+import type { NotificationPreferences, PageProps } from "@/types";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Switch from "@mui/material/Switch";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 
 const NOTIFICATION_TYPES = [
-    { key: 'task_assigned', label: 'Task Assigned' },
-    { key: 'task_commented', label: 'Comment on Task' },
-    { key: 'task_mentioned', label: 'Mentioned in Comment' },
-    { key: 'task_due_soon', label: 'Task Due Soon' },
-    { key: 'task_overdue', label: 'Task Overdue' },
+    { key: "task_assigned", label: "Task Assigned" },
+    { key: "task_commented", label: "Comment on Task" },
+    { key: "task_mentioned", label: "Mentioned in Comment" },
+    { key: "task_completed", label: "Task Completed" },
+    { key: "task_attachment_added", label: "Attachment Added" },
+    { key: "task_due_soon", label: "Task Due Soon" },
+    { key: "task_overdue", label: "Task Overdue" },
 ] as const;
 
-type NotificationType = (typeof NOTIFICATION_TYPES)[number]['key'];
+type NotificationType = (typeof NOTIFICATION_TYPES)[number]["key"];
 
 const DEFAULT_PREFS: NotificationPreferences = {
     task_assigned: { in_app: true, email: true },
     task_commented: { in_app: true, email: false },
     task_mentioned: { in_app: true, email: true },
+    task_completed: { in_app: true, email: false },
+    task_attachment_added: { in_app: true, email: false },
     task_due_soon: { in_app: true, email: true },
     task_overdue: { in_app: true, email: true },
 };
@@ -33,12 +37,17 @@ export default function NotificationPreferencesForm() {
     const { auth } = usePage<PageProps>().props;
     const currentPrefs = auth.user.email_notification_prefs ?? DEFAULT_PREFS;
 
-    const { data, setData, patch, processing } = useForm<{ prefs: NotificationPreferences }>({
+    const { data, setData, patch, processing } = useForm<{
+        prefs: NotificationPreferences;
+    }>({
         prefs: { ...DEFAULT_PREFS, ...currentPrefs },
     });
 
-    const handleToggle = (type: NotificationType, channel: 'in_app' | 'email') => {
-        setData('prefs', {
+    const handleToggle = (
+        type: NotificationType,
+        channel: "in_app" | "email",
+    ) => {
+        setData("prefs", {
             ...data.prefs,
             [type]: {
                 ...data.prefs[type],
@@ -49,7 +58,7 @@ export default function NotificationPreferencesForm() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(route('profile.notifications.update'));
+        patch(route("profile.notifications.update"));
     };
 
     return (
@@ -77,18 +86,30 @@ export default function NotificationPreferencesForm() {
                                     <TableCell>{label}</TableCell>
                                     <TableCell align="center">
                                         <Switch
-                                            checked={data.prefs[key]?.in_app ?? true}
-                                            onChange={() => handleToggle(key, 'in_app')}
+                                            checked={
+                                                data.prefs[key]?.in_app ?? true
+                                            }
+                                            onChange={() =>
+                                                handleToggle(key, "in_app")
+                                            }
                                             size="small"
-                                            inputProps={{ 'aria-label': `${label} in-app notification` }}
+                                            inputProps={{
+                                                "aria-label": `${label} in-app notification`,
+                                            }}
                                         />
                                     </TableCell>
                                     <TableCell align="center">
                                         <Switch
-                                            checked={data.prefs[key]?.email ?? false}
-                                            onChange={() => handleToggle(key, 'email')}
+                                            checked={
+                                                data.prefs[key]?.email ?? false
+                                            }
+                                            onChange={() =>
+                                                handleToggle(key, "email")
+                                            }
                                             size="small"
-                                            inputProps={{ 'aria-label': `${label} email notification` }}
+                                            inputProps={{
+                                                "aria-label": `${label} email notification`,
+                                            }}
                                         />
                                     </TableCell>
                                 </TableRow>

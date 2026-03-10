@@ -12,10 +12,7 @@ class TaskAssignedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(
-        public Task $task,
-        public User $assigner,
-    ) {}
+    public function __construct(public Task $task, public User $assigner) {}
 
     public function via(object $notifiable): array
     {
@@ -25,9 +22,7 @@ class TaskAssignedNotification extends Notification
             $channels[] = 'database';
         }
 
-        if ($notifiable->wantsNotification('task_assigned', 'email')) {
-            $channels[] = 'mail';
-        }
+        // Email is handled by the digest command (notifications:send-emails)
 
         return $channels;
     }
@@ -47,12 +42,16 @@ class TaskAssignedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url("/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}");
+        $url = url(
+            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+        );
 
         return (new MailMessage)
             ->subject("Task Assigned: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("{$this->assigner->name} assigned you to \"{$this->task->title}\".")
+            ->line(
+                "{$this->assigner->name} assigned you to \"{$this->task->title}\".",
+            )
             ->action('View Task', $url)
             ->line('Thank you for using PulseBoard!');
     }

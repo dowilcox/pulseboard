@@ -11,9 +11,7 @@ class TaskDueSoonNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(
-        public Task $task,
-    ) {}
+    public function __construct(public Task $task) {}
 
     public function via(object $notifiable): array
     {
@@ -23,9 +21,7 @@ class TaskDueSoonNotification extends Notification
             $channels[] = 'database';
         }
 
-        if ($notifiable->wantsNotification('task_due_soon', 'email')) {
-            $channels[] = 'mail';
-        }
+        // Email is handled by the digest command (notifications:send-emails)
 
         return $channels;
     }
@@ -46,12 +42,16 @@ class TaskDueSoonNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url("/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}");
+        $url = url(
+            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+        );
 
         return (new MailMessage)
             ->subject("Due Soon: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("Your task \"{$this->task->title}\" is due on {$this->task->due_date}.")
+            ->line(
+                "Your task \"{$this->task->title}\" is due on {$this->task->due_date}.",
+            )
             ->line("Board: {$this->task->board->name}")
             ->action('View Task', $url)
             ->line('Thank you for using PulseBoard!');

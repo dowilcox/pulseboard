@@ -9,6 +9,8 @@ export interface NotificationPreferences {
     task_mentioned?: NotificationPreferenceChannels;
     task_due_soon?: NotificationPreferenceChannels;
     task_overdue?: NotificationPreferenceChannels;
+    task_completed?: NotificationPreferenceChannels;
+    task_attachment_added?: NotificationPreferenceChannels;
 }
 
 export interface UiPreferences {

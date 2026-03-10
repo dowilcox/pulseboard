@@ -27,9 +27,7 @@ class TaskCommentedNotification extends Notification
             $channels[] = 'database';
         }
 
-        if ($notifiable->wantsNotification('task_commented', 'email')) {
-            $channels[] = 'mail';
-        }
+        // Email is handled by the digest command (notifications:send-emails)
 
         return $channels;
     }
@@ -52,13 +50,17 @@ class TaskCommentedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = url("/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}");
+        $url = url(
+            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+        );
         $preview = mb_strimwidth($this->comment->body, 0, 200, '...');
 
         return (new MailMessage)
             ->subject("New Comment on: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
-            ->line("{$this->commenter->name} commented on \"{$this->task->title}\":")
+            ->line(
+                "{$this->commenter->name} commented on \"{$this->task->title}\":",
+            )
             ->line("> {$preview}")
             ->action('View Task', $url)
             ->line('Thank you for using PulseBoard!');

@@ -59,7 +59,15 @@ class ProfileController extends Controller
      */
     public function updateNotifications(Request $request): RedirectResponse
     {
-        $validTypes = ['task_assigned', 'task_commented', 'task_mentioned', 'task_due_soon', 'task_overdue'];
+        $validTypes = [
+            'task_assigned',
+            'task_commented',
+            'task_mentioned',
+            'task_due_soon',
+            'task_overdue',
+            'task_completed',
+            'task_attachment_added',
+        ];
         $validChannels = ['in_app', 'email'];
 
         $prefs = $request->validate([
@@ -73,7 +81,10 @@ class ProfileController extends Controller
         $filtered = [];
         foreach ($prefs['prefs'] as $type => $channels) {
             if (in_array($type, $validTypes)) {
-                $filtered[$type] = array_intersect_key($channels, array_flip($validChannels));
+                $filtered[$type] = array_intersect_key(
+                    $channels,
+                    array_flip($validChannels),
+                );
             }
         }
 
@@ -102,7 +113,10 @@ class ProfileController extends Controller
         // Deep-merge board_order so we don't overwrite other teams' orders
         if (isset($validated['board_order'])) {
             $existingBoardOrder = $prefs['board_order'] ?? [];
-            $prefs['board_order'] = array_merge($existingBoardOrder, $validated['board_order']);
+            $prefs['board_order'] = array_merge(
+                $existingBoardOrder,
+                $validated['board_order'],
+            );
             unset($validated['board_order']);
         }
 
