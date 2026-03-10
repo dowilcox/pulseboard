@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -31,7 +31,7 @@ import Checklist from "@mui/icons-material/Checklist";
 import CodeIcon from "@mui/icons-material/Code";
 import LinkIcon from "@mui/icons-material/Link";
 import ImageIcon from "@mui/icons-material/Image";
-import TableChartIcon from "@mui/icons-material/TableChart";
+import GridOnIcon from "@mui/icons-material/GridOn";
 import SourceIcon from "@mui/icons-material/IntegrationInstructions";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -85,6 +85,7 @@ export default function RichTextEditor({
     const [linkAnchor, setLinkAnchor] = useState<null | HTMLElement>(null);
     const [linkUrl, setLinkUrl] = useState("https://");
     const linkInputRef = useRef<HTMLInputElement>(null);
+    const [, setTick] = useState(0);
 
     const editor = useEditor({
         extensions: [
@@ -196,6 +197,16 @@ export default function RichTextEditor({
             },
         },
     });
+
+    // Force toolbar re-render on selection changes so active states stay in sync
+    useEffect(() => {
+        if (!editor) return;
+        const handler = () => setTick((t) => t + 1);
+        editor.on("selectionUpdate", handler);
+        return () => {
+            editor.off("selectionUpdate", handler);
+        };
+    }, [editor]);
 
     const uploadImage = useCallback(
         async (file: File) => {
@@ -494,7 +505,7 @@ export default function RichTextEditor({
                     )}
                     {toolbarButton(
                         "Table",
-                        <TableChartIcon fontSize="small" />,
+                        <GridOnIcon fontSize="small" />,
                         () =>
                             editor
                                 .chain()
@@ -580,6 +591,23 @@ export default function RichTextEditor({
                         >
                             Insert
                         </Button>
+                        {editor.isActive("link") && (
+                            <Button
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                    editor
+                                        .chain()
+                                        .focus()
+                                        .extendMarkRange("link")
+                                        .unsetLink()
+                                        .run();
+                                    setLinkAnchor(null);
+                                }}
+                            >
+                                Remove
+                            </Button>
+                        )}
                     </Popover>
                     {uploadImageUrl &&
                         toolbarButton(
