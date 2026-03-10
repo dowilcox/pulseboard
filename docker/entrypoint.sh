@@ -3,11 +3,16 @@ set -e
 
 # ---------------------------------------------------------------------------
 # PulseBoard Docker Entrypoint
+# Handles both development (APP_ENV=local) and production modes.
 # ---------------------------------------------------------------------------
 
 echo "============================================="
 echo " PulseBoard - Starting Environment"
+echo " Mode: ${APP_ENV:-production}"
 echo "============================================="
+
+# ---- Default Octane workers (can be overridden via OCTANE_WORKERS env) -----
+export OCTANE_WORKERS="${OCTANE_WORKERS:-4}"
 
 # ---- Ensure storage and cache directories exist and are writable -----------
 echo "[entrypoint] Setting directory permissions..."
@@ -23,22 +28,23 @@ mkdir -p /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage
 chmod -R 775 /var/www/html/bootstrap/cache
 
-# ---- Composer dependencies -------------------------------------------------
-if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
-    echo "[entrypoint] Installing Composer dependencies..."
-    composer install --no-interaction --prefer-dist --optimize-autoloader
-else
-    echo "[entrypoint] Composer dependencies already installed."
-fi
+# ---- Development-only: install dependencies and build frontend -------------
+if [ "${APP_ENV}" = "local" ] || [ "${APP_ENV}" = "development" ]; then
+    if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
+        echo "[entrypoint] Installing Composer dependencies..."
+        composer install --no-interaction --prefer-dist --optimize-autoloader
+    else
+        echo "[entrypoint] Composer dependencies already installed."
+    fi
 
-# ---- Node.js dependencies and frontend build --------------------------------
-if [ ! -d "/var/www/html/node_modules" ]; then
-    echo "[entrypoint] Installing npm dependencies..."
-    npm ci --no-audit --no-fund
-    echo "[entrypoint] Building frontend assets..."
-    npm run build
-else
-    echo "[entrypoint] Node modules already installed."
+    if [ ! -d "/var/www/html/node_modules" ]; then
+        echo "[entrypoint] Installing npm dependencies..."
+        npm ci --no-audit --no-fund
+        echo "[entrypoint] Building frontend assets..."
+        npm run build
+    else
+        echo "[entrypoint] Node modules already installed."
+    fi
 fi
 
 # ---- Generate application key if missing ------------------------------------
@@ -75,9 +81,17 @@ else
     echo "[entrypoint] Skipping migrations (database unavailable)."
 fi
 
-# ---- Cache configuration ----------------------------------------------------
-echo "[entrypoint] Caching configuration..."
-php artisan config:cache
+# ---- Optimize for production ------------------------------------------------
+if [ "${APP_ENV}" != "local" ] && [ "${APP_ENV}" != "development" ]; then
+    echo "[entrypoint] Caching configuration for production..."
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan event:cache
+else
+    echo "[entrypoint] Caching configuration..."
+    php artisan config:cache
+fi
 
 # ---- Create storage symlink if missing ---------------------------------------
 if [ ! -L "/var/www/html/public/storage" ]; then
@@ -87,6 +101,7 @@ fi
 
 echo "============================================="
 echo " PulseBoard - Environment Ready (FrankenPHP)"
+echo " Workers: ${OCTANE_WORKERS}"
 echo "============================================="
 
 # ---- Start supervisord (Octane + Reverb + Queue + Scheduler) -----------------

@@ -21,6 +21,7 @@
 ## Features
 
 ### Boards & Tasks
+
 - Kanban boards with drag-and-drop task management
 - 5 board views: Kanban, List, Calendar, Timeline, Workload
 - Cross-board task moves within a team
@@ -31,6 +32,7 @@
 - Rich text descriptions with inline image support
 
 ### Templates & Automation
+
 - Task templates for quick creation with pre-configured defaults
 - Board templates to replicate board structures
 - Default task template per board (auto-applies on new tasks)
@@ -39,6 +41,7 @@
 - Column WIP limits to enforce work-in-progress constraints
 
 ### Collaboration
+
 - Real-time updates via WebSocket (task changes, comments, moves)
 - Presence indicators showing who's viewing a board
 - Comments and activity feed on tasks
@@ -46,12 +49,15 @@
 - Team management with role-based access (owner / admin / member)
 
 ### Integrations
+
 - GitLab integration: branches, merge requests, webhooks, pipeline status
+- Figma integration: link designs to tasks with live previews
 - Auto-linking GitLab MRs to tasks via branch naming convention
 - Background sync of GitLab link states
 - REST API with Sanctum token auth (v1)
 
 ### Administration
+
 - Admin panel with dashboard, user management, and team oversight
 - SAML2 SSO with JIT (just-in-time) user provisioning
 - Bot user creation scoped to teams (for API integrations)
@@ -67,10 +73,9 @@ git clone <repo-url> pulseboard
 cd pulseboard
 cp .env.example .env
 docker compose up -d
-docker compose exec app composer setup
 ```
 
-The app is available at `http://localhost:8000`.
+The entrypoint automatically installs dependencies, runs migrations, and builds frontend assets on first start. The app is available at `http://localhost:8000`.
 
 ### Demo Data
 
@@ -95,25 +100,107 @@ Requires PHP 8.2+, Composer, Node.js 18+, MySQL 8.0, and Redis 7 running locally
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `APP_URL` | Application URL | `http://localhost:8000` |
-| `DB_CONNECTION` | Database driver | `mysql` |
-| `DB_HOST` | Database host | `127.0.0.1` |
-| `DB_PORT` | Database port | `3306` |
-| `DB_DATABASE` | Database name | `pulseboard` |
-| `DB_USERNAME` | Database user | `root` |
-| `DB_PASSWORD` | Database password | |
-| `REDIS_HOST` | Redis host | `127.0.0.1` |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REVERB_APP_ID` | Reverb WebSocket app ID | |
-| `REVERB_APP_KEY` | Reverb WebSocket app key | |
-| `REVERB_APP_SECRET` | Reverb WebSocket app secret | |
-| `REVERB_HOST` | Reverb host | `localhost` |
-| `REVERB_PORT` | Reverb port | `8080` |
-| `MAIL_MAILER` | Mail driver | `smtp` |
-| `MAIL_HOST` | SMTP host | |
-| `MAIL_PORT` | SMTP port | `587` |
+### Application
+
+| Variable    | Description                                           | Default                 |
+| ----------- | ----------------------------------------------------- | ----------------------- |
+| `APP_NAME`  | Application display name                              | `PulseBoard`            |
+| `APP_ENV`   | Environment (`local`, `production`, `staging`)        | `local`                 |
+| `APP_KEY`   | Encryption key (auto-generated)                       |                         |
+| `APP_DEBUG` | Enable debug mode (**must be `false` in production**) | `true`                  |
+| `APP_URL`   | Full public URL (e.g. `https://board.example.com`)    | `http://localhost:8000` |
+
+### Server (Octane)
+
+| Variable         | Description                       | Default      |
+| ---------------- | --------------------------------- | ------------ |
+| `OCTANE_SERVER`  | Octane server driver              | `frankenphp` |
+| `OCTANE_HTTPS`   | Force HTTPS URL generation        | `false`      |
+| `OCTANE_WORKERS` | Number of Octane worker processes | `4`          |
+
+### Database
+
+| Variable        | Description                       | Default      |
+| --------------- | --------------------------------- | ------------ |
+| `DB_CONNECTION` | Database driver                   | `mysql`      |
+| `DB_HOST`       | Database host (`mysql` in Docker) | `127.0.0.1`  |
+| `DB_PORT`       | Database port                     | `3306`       |
+| `DB_DATABASE`   | Database name                     | `pulseboard` |
+| `DB_USERNAME`   | Database user                     | `pulseboard` |
+| `DB_PASSWORD`   | Database password                 | `secret`     |
+
+### Redis
+
+| Variable         | Description                        | Default     |
+| ---------------- | ---------------------------------- | ----------- |
+| `REDIS_HOST`     | Redis host (`redis` in Docker)     | `127.0.0.1` |
+| `REDIS_PORT`     | Redis port                         | `6379`      |
+| `REDIS_PASSWORD` | Redis password (set in production) | `null`      |
+
+### Session
+
+| Variable                | Description                               | Default |
+| ----------------------- | ----------------------------------------- | ------- |
+| `SESSION_DRIVER`        | Session backend                           | `redis` |
+| `SESSION_LIFETIME`      | Session lifetime in minutes               | `120`   |
+| `SESSION_DOMAIN`        | Cookie domain (e.g. `.example.com`)       | `null`  |
+| `SESSION_SECURE_COOKIE` | Require HTTPS for cookies                 | `false` |
+| `SESSION_SAME_SITE`     | SameSite policy (`lax`, `strict`, `none`) | `lax`   |
+
+### Cache & Queue
+
+| Variable               | Description      | Default  |
+| ---------------------- | ---------------- | -------- |
+| `CACHE_STORE`          | Cache backend    | `redis`  |
+| `QUEUE_CONNECTION`     | Queue backend    | `redis`  |
+| `BROADCAST_CONNECTION` | Broadcast driver | `reverb` |
+
+### Mail
+
+| Variable            | Description                                    | Default                    |
+| ------------------- | ---------------------------------------------- | -------------------------- |
+| `MAIL_MAILER`       | Mail driver (`smtp`, `ses`, `postmark`, `log`) | `log`                      |
+| `MAIL_HOST`         | SMTP server hostname                           | `127.0.0.1`                |
+| `MAIL_PORT`         | SMTP port (587 TLS, 465 SSL)                   | `2525`                     |
+| `MAIL_USERNAME`     | SMTP username                                  | `null`                     |
+| `MAIL_PASSWORD`     | SMTP password                                  | `null`                     |
+| `MAIL_SCHEME`       | Encryption (`tls`, `ssl`)                      | `null`                     |
+| `MAIL_FROM_ADDRESS` | Default sender email                           | `noreply@pulseboard.local` |
+| `MAIL_FROM_NAME`    | Default sender name                            | `PulseBoard`               |
+
+### WebSocket (Laravel Reverb)
+
+| Variable            | Description                                          | Default             |
+| ------------------- | ---------------------------------------------------- | ------------------- |
+| `REVERB_APP_ID`     | Reverb application ID                                | `pulseboard`        |
+| `REVERB_APP_KEY`    | Reverb app key (random string for production)        | `pulseboard-key`    |
+| `REVERB_APP_SECRET` | Reverb app secret (random string for production)     | `pulseboard-secret` |
+| `REVERB_HOST`       | Public hostname clients connect to                   | `localhost`         |
+| `REVERB_PORT`       | Reverb port (internal 8080, external 9080 in Docker) | `8080`              |
+| `REVERB_SCHEME`     | Protocol (`http` or `https`)                         | `http`              |
+
+### Logging
+
+| Variable      | Description                                             | Default  |
+| ------------- | ------------------------------------------------------- | -------- |
+| `LOG_CHANNEL` | Log channel                                             | `stack`  |
+| `LOG_STACK`   | Stack channels (`single`, `daily`)                      | `single` |
+| `LOG_LEVEL`   | Minimum log level (`debug`, `info`, `warning`, `error`) | `debug`  |
+
+### Proxy / TLS
+
+| Variable          | Description                                         | Default |
+| ----------------- | --------------------------------------------------- | ------- |
+| `TRUSTED_PROXIES` | Trusted proxy IPs (comma-separated, or `*` for all) |         |
+
+### Docker Compose
+
+| Variable               | Description                                    | Default             |
+| ---------------------- | ---------------------------------------------- | ------------------- |
+| `APP_PORT`             | Host port for web server (prod compose only)   | `8000`              |
+| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)    | `9080`              |
+| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)     | `pulseboard:latest` |
+| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose) |                     |
 
 ## Development Commands
 
@@ -174,52 +261,177 @@ A REST API is available at `/api/v1/` authenticated via Sanctum personal access 
 
 ## Production Deployment
 
+### Option 1: Docker (recommended)
+
+The production compose file builds a self-contained image with all code and assets baked in.
+
+**1. Configure environment:**
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with production values — at minimum:
+
+```ini
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://board.example.com
+DB_PASSWORD=<strong-password>
+DB_ROOT_PASSWORD=<strong-root-password>
+REDIS_PASSWORD=<redis-password>
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_SCHEME=tls
+MAIL_USERNAME=<smtp-user>
+MAIL_PASSWORD=<smtp-password>
+MAIL_FROM_ADDRESS=noreply@example.com
+REVERB_APP_KEY=<random-32-char-string>
+REVERB_APP_SECRET=<random-32-char-string>
+REVERB_HOST=board.example.com
+REVERB_SCHEME=https
+SESSION_SECURE_COOKIE=true
+OCTANE_HTTPS=true
+LOG_LEVEL=info
+LOG_STACK=daily
+```
+
+**2. Start the stack:**
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
+
+The entrypoint automatically generates `APP_KEY` (if missing), runs migrations, and caches configs.
+
+**3. Create your first user:**
+
+```bash
+docker compose -f docker-compose.prod.yml exec app php artisan tinker
+# > User::create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('...'), 'is_admin' => true]);
+```
+
+### Option 2: Manual Deployment
+
 1. **Build frontend assets:**
-   ```bash
-   npm ci && npx vite build
-   ```
+
+    ```bash
+    npm ci && npx vite build
+    ```
 
 2. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with production values (DB, Redis, mail, Reverb, APP_URL)
-   php artisan key:generate
-   php artisan migrate --force
-   ```
+
+    ```bash
+    cp .env.example .env
+    # Edit .env with production values
+    php artisan key:generate
+    php artisan migrate --force
+    ```
 
 3. **Optimize for production:**
-   ```bash
-   php artisan config:cache
-   php artisan route:cache
-   php artisan view:cache
-   php artisan event:cache
-   ```
+
+    ```bash
+    php artisan config:cache
+    php artisan route:cache
+    php artisan view:cache
+    php artisan event:cache
+    ```
 
 4. **Run services:**
-   ```bash
-   # Queue worker (notifications, GitLab sync, automation)
-   php artisan queue:work redis --sleep=3 --tries=3
 
-   # WebSocket server (real-time collaboration)
-   php artisan reverb:start
+    ```bash
+    # Queue worker (notifications, GitLab sync, automation)
+    php artisan queue:work redis --sleep=3 --tries=3
 
-   # Scheduler (add to crontab)
-   * * * * * cd /path/to/pulseboard && php artisan schedule:run >> /dev/null 2>&1
-   ```
+    # WebSocket server (real-time collaboration)
+    php artisan reverb:start
 
-### Docker Production
+    # Scheduler (add to crontab)
+    * * * * * cd /path/to/pulseboard && php artisan schedule:run >> /dev/null 2>&1
+    ```
 
-The included `docker-compose.yml` runs everything in containers:
+### Reverse Proxy
 
-| Service | Port | Description |
-|---------|------|-------------|
-| `app` | 8000 | FrankenPHP via Octane (web, queue worker, scheduler, Reverb) |
-| `mysql` | 3306 | MySQL 8.0 |
-| `redis` | 6379 | Redis 7 |
+In production, place a reverse proxy (Nginx, Caddy, Traefik) in front of PulseBoard to handle TLS termination. The proxy should forward:
 
-Reverb WebSocket is exposed on port **9080** (mapped from container port 8080).
+- HTTP traffic to port `8000` (or `APP_PORT`)
+- WebSocket traffic (`/app/*`) to port `9080` (or `REVERB_EXTERNAL_PORT`)
+
+Set `TRUSTED_PROXIES=*` (or the proxy IP) and `OCTANE_HTTPS=true` when behind a TLS-terminating proxy.
+
+### Docker Services
+
+| Service | Internal Port | Default Host Port | Description                                         |
+| ------- | ------------- | ----------------- | --------------------------------------------------- |
+| `app`   | 8000, 8080    | 8000, 9080        | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
+| `mysql` | 3306          | — (prod)          | MySQL 8.0 (not exposed to host in production)       |
+| `redis` | 6379          | — (prod)          | Redis 7 (not exposed to host in production)         |
 
 The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, the queue worker, the scheduler, and the Reverb server as a single unit.
+
+## Building & Publishing Docker Images
+
+### Build the production image
+
+```bash
+# Build with the default tag
+docker build -f docker/Dockerfile --target production -t pulseboard:latest .
+
+# Build with a version tag
+docker build -f docker/Dockerfile --target production -t pulseboard:1.0.0 .
+```
+
+### Tag and push to Docker Hub
+
+```bash
+# Log in to Docker Hub
+docker login
+
+# Tag the image for your Docker Hub repository
+docker tag pulseboard:1.0.0 <dockerhub-username>/pulseboard:1.0.0
+docker tag pulseboard:1.0.0 <dockerhub-username>/pulseboard:latest
+
+# Push both tags
+docker push <dockerhub-username>/pulseboard:1.0.0
+docker push <dockerhub-username>/pulseboard:latest
+```
+
+### Release checklist
+
+1. Ensure all tests pass: `docker compose --profile test run --rm test`
+2. Run linting: `./vendor/bin/pint --test && npx tsc --noEmit`
+3. Update the version tag (if using semantic versioning)
+4. Build the production image: `docker build -f docker/Dockerfile --target production -t pulseboard:<version> .`
+5. Test the production image locally:
+    ```bash
+    # Update PULSEBOARD_IMAGE in .env
+    PULSEBOARD_IMAGE=pulseboard:<version>
+    docker compose -f docker-compose.prod.yml up -d
+    # Verify the app works at http://localhost:8000
+    ```
+6. Tag and push to Docker Hub (see above)
+7. Create a GitHub release / git tag: `git tag v<version> && git push origin v<version>`
+
+### Using a published image
+
+Users can pull and run PulseBoard without building from source:
+
+```bash
+# Pull the image
+docker pull <dockerhub-username>/pulseboard:latest
+
+# Create .env from the example
+curl -o .env https://raw.githubusercontent.com/<org>/pulseboard/main/.env.example
+# Edit .env with production values
+
+# Download the production compose file
+curl -o docker-compose.prod.yml https://raw.githubusercontent.com/<org>/pulseboard/main/docker-compose.prod.yml
+
+# Set the image and start
+export PULSEBOARD_IMAGE=<dockerhub-username>/pulseboard:latest
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ## License
 

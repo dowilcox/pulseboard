@@ -1,0 +1,56 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE / Editor
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# CI / Config
+.github
+.gitlab-ci.yml
+CLAUDE.md
+
+# Documentation
+*.md
+!README.md
+LICENSE
+
+# Development / Testing
+tests
+phpunit.xml
+.phpunit.cache
+docker/Dockerfile.dev
+
+# Node development
+node_modules
+
+# Composer development cache
+vendor
+
+# Environment (secrets - must not be baked into images)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Storage (runtime data, not for images)
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/*
+!storage/app/.gitignore
+!storage/framework/.gitignore
+!storage/logs/.gitignore
+
+# Build artifacts
+public/build
+public/hot

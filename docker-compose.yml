@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      target: development
     container_name: pulseboard-app
     restart: unless-stopped
     ports:
@@ -13,23 +14,26 @@ services:
       - /var/www/html/vendor
       - /var/www/html/node_modules
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - APP_ENV=${APP_ENV:-local}
-      - OCTANE_SERVER=frankenphp
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=pulseboard
-      - DB_USERNAME=pulseboard
-      - DB_PASSWORD=secret
+      - DB_DATABASE=${DB_DATABASE:-pulseboard}
+      - DB_USERNAME=${DB_USERNAME:-pulseboard}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QUEUE_CONNECTION=redis
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
       - BROADCAST_CONNECTION=reverb
-      - REVERB_APP_ID=pulseboard
-      - REVERB_APP_KEY=pulseboard-key
-      - REVERB_APP_SECRET=pulseboard-secret
+      - REVERB_APP_ID=${REVERB_APP_ID:-pulseboard}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:-pulseboard-key}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-pulseboard-secret}
       - REVERB_HOST=0.0.0.0
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
@@ -43,14 +47,14 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_DATABASE=pulseboard
-      - MYSQL_USER=pulseboard
-      - MYSQL_PASSWORD=secret
-      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=${DB_DATABASE:-pulseboard}
+      - MYSQL_USER=${DB_USERNAME:-pulseboard}
+      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-secret}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-psecret"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
