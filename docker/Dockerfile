@@ -110,6 +110,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 WORKDIR /var/www/html
 
 # Copy application source
+COPY composer.json composer.lock ./
 COPY artisan ./
 COPY bootstrap ./bootstrap
 COPY config ./config
