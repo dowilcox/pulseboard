@@ -1,61 +1,63 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Crepe, CrepeFeature } from "@milkdown/crepe";
-import { editorViewCtx } from "@milkdown/core";
-import { Milkdown, MilkdownProvider, useEditor, useInstance } from "@milkdown/react";
-import { callCommand, insert } from "@milkdown/kit/utils";
-import {
-    toggleStrongCommand,
-    toggleEmphasisCommand,
-    toggleInlineCodeCommand,
-    wrapInHeadingCommand,
-    wrapInBlockquoteCommand,
-    wrapInBulletListCommand,
-    wrapInOrderedListCommand,
-    createCodeBlockCommand,
-    turnIntoTextCommand,
-} from "@milkdown/kit/preset/commonmark";
-import {
-    toggleStrikethroughCommand,
-} from "@milkdown/kit/preset/gfm";
-import {
-    undoCommand,
-    redoCommand,
-} from "@milkdown/kit/plugin/history";
-import "@milkdown/crepe/theme/common/style.css";
-import "@milkdown/crepe/theme/frame.css";
-import "@milkdown/crepe/theme/frame-dark.css";
-import { useThemeMode } from "@/Contexts/ThemeContext";
-import { getCrepeThemeVars, crepeHeadingSx } from "./crepeTheme";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import Underline from "@tiptap/extension-underline";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { TableCell } from "@tiptap/extension-table-cell";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { Markdown } from "tiptap-markdown";
+import { createLowlight, common } from "lowlight";
+import TurndownService from "turndown";
+import { gfm } from "turndown-plugin-gfm";
 import Box from "@mui/material/Box";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import TextField from "@mui/material/TextField";
+import { useTheme } from "@mui/material/styles";
 import FormatBold from "@mui/icons-material/FormatBold";
 import FormatItalic from "@mui/icons-material/FormatItalic";
+import FormatUnderlined from "@mui/icons-material/FormatUnderlined";
 import FormatStrikethrough from "@mui/icons-material/FormatStrikethrough";
-import FormatQuote from "@mui/icons-material/FormatQuote";
-import CodeIcon from "@mui/icons-material/Code";
-import LinkIcon from "@mui/icons-material/Link";
+import Title from "@mui/icons-material/Title";
 import FormatListBulleted from "@mui/icons-material/FormatListBulleted";
 import FormatListNumbered from "@mui/icons-material/FormatListNumbered";
 import Checklist from "@mui/icons-material/Checklist";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import DataObject from "@mui/icons-material/DataObject";
+import CodeIcon from "@mui/icons-material/Code";
+import LinkIcon from "@mui/icons-material/Link";
+import ImageIcon from "@mui/icons-material/Image";
+import TableChartIcon from "@mui/icons-material/TableChart";
 import SourceIcon from "@mui/icons-material/IntegrationInstructions";
-import SvgIcon from "@mui/material/SvgIcon";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
-import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import axios from "axios";
 
-function HeadingIcon({ fontSize }: { fontSize?: "small" | "medium" | "inherit" }) {
-    return (
-        <SvgIcon fontSize={fontSize}>
-            <path d="M4 4v16h3v-6h6v6h3V4h-3v7H7V4z" />
-        </SvgIcon>
-    );
+const lowlight = createLowlight(common);
+
+function createTurndownService(): TurndownService {
+    const td = new TurndownService({
+        headingStyle: "atx",
+        codeBlockStyle: "fenced",
+        fence: "```",
+        bulletListMarker: "-",
+        emDelimiter: "*",
+        strongDelimiter: "**",
+    });
+    td.use(gfm);
+    td.addRule("removeEmptyLinks", {
+        filter: (node) =>
+            node.nodeName === "A" &&
+            !node.textContent?.trim() &&
+            !node.querySelector("img"),
+        replacement: () => "",
+    });
+    return td;
 }
 
 interface RichTextEditorProps {
@@ -67,528 +69,576 @@ interface RichTextEditorProps {
     minHeight?: number;
 }
 
-interface ToolbarState {
-    bold: boolean;
-    italic: boolean;
-    strike: boolean;
-    code: boolean;
-    blockquote: boolean;
-    bulletList: boolean;
-    orderedList: boolean;
-    heading: boolean;
-}
-
-const defaultToolbarState: ToolbarState = {
-    bold: false,
-    italic: false,
-    strike: false,
-    code: false,
-    blockquote: false,
-    bulletList: false,
-    orderedList: false,
-    heading: false,
-};
-
-function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>): ToolbarState {
-    if (!editor) return defaultToolbarState;
-
-    try {
-        return editor.action((ctx) => {
-            const view = ctx.get(editorViewCtx);
-            const { state } = view;
-            const { from, $from } = state.selection;
-
-            const storedMarks = state.storedMarks || $from.marks();
-            const hasMark = (name: string) => {
-                const markType = state.schema.marks[name];
-                if (!markType) return false;
-                return (
-                    storedMarks.some((m) => m.type.name === name) ||
-                    state.doc.rangeHasMark(from, state.selection.to, markType)
-                );
-            };
-
-            const parentNode = $from.parent;
-            const heading = parentNode.type.name === "heading";
-
-            let inBlockquote = false;
-            let inBulletList = false;
-            let inOrderedList = false;
-            for (let d = $from.depth; d > 0; d--) {
-                const node = $from.node(d);
-                if (node.type.name === "blockquote") inBlockquote = true;
-                if (node.type.name === "bullet_list") inBulletList = true;
-                if (node.type.name === "ordered_list") inOrderedList = true;
-            }
-
-            return {
-                bold: hasMark("strong"),
-                italic: hasMark("emphasis"),
-                strike: hasMark("strikethrough"),
-                code: hasMark("inlineCode"),
-                blockquote: inBlockquote,
-                bulletList: inBulletList,
-                orderedList: inOrderedList,
-                heading,
-            };
-        });
-    } catch {
-        return defaultToolbarState;
-    }
-}
-
-function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggleSource: () => void }) {
-    const [loading, getInstance] = useInstance();
-    const [activeState, setActiveState] = useState<ToolbarState>(defaultToolbarState);
+export default function RichTextEditor({
+    content,
+    onChange,
+    placeholder = "Write something...",
+    editable = true,
+    uploadImageUrl,
+    minHeight = 200,
+}: RichTextEditorProps) {
+    const theme = useTheme();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const turndown = useMemo(() => createTurndownService(), []);
+    const [sourceMode, setSourceMode] = useState(false);
+    const [sourceValue, setSourceValue] = useState("");
     const [linkAnchor, setLinkAnchor] = useState<null | HTMLElement>(null);
     const [linkUrl, setLinkUrl] = useState("https://");
     const linkInputRef = useRef<HTMLInputElement>(null);
 
-    const updateState = useCallback(() => {
-        const editor = getInstance();
-        if (!editor) return;
-        const next = getToolbarState(editor);
-        setActiveState((prev) => {
-            if (
-                prev.bold !== next.bold ||
-                prev.italic !== next.italic ||
-                prev.strike !== next.strike ||
-                prev.code !== next.code ||
-                prev.blockquote !== next.blockquote ||
-                prev.bulletList !== next.bulletList ||
-                prev.orderedList !== next.orderedList ||
-                prev.heading !== next.heading
-            ) {
-                return next;
-            }
-            return prev;
-        });
-    }, [getInstance]);
-
-    // Event-driven state updates instead of RAF polling
-    useEffect(() => {
-        if (loading || sourceMode) return;
-
-        document.addEventListener("selectionchange", updateState);
-        document.addEventListener("keyup", updateState);
-        updateState();
-
-        return () => {
-            document.removeEventListener("selectionchange", updateState);
-            document.removeEventListener("keyup", updateState);
-        };
-    }, [loading, updateState, sourceMode]);
-
-    const focusEditor = useCallback(() => {
-        const editor = getInstance();
-        if (!editor) return;
-        try {
-            editor.action((ctx) => ctx.get(editorViewCtx).focus());
-        } catch { /* editor may not be ready */ }
-    }, [getInstance]);
-
-    const run = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (cmd: any, payload?: any) => {
-            if (loading) return;
-            const editor = getInstance();
-            editor?.action(callCommand(cmd, payload));
-            requestAnimationFrame(updateState);
+    const editor = useEditor({
+        extensions: [
+            StarterKit.configure({
+                codeBlock: false,
+                link: { openOnClick: false },
+            }),
+            Image,
+            Placeholder.configure({ placeholder }),
+            TaskList,
+            TaskItem.configure({ nested: true }),
+            Underline,
+            Table.configure({ resizable: false }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            CodeBlockLowlight.configure({ lowlight }),
+            Markdown.configure({
+                html: true,
+                transformPastedText: true,
+                transformCopiedText: true,
+            }),
+        ],
+        content,
+        editable,
+        onUpdate: ({ editor: ed }) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const storage = ed.storage as any;
+            const md = storage.markdown?.getMarkdown?.() ?? ed.getHTML();
+            onChange(md);
         },
-        [loading, getInstance, updateState],
-    );
+        editorProps: {
+            attributes: {
+                role: "textbox",
+                "aria-multiline": "true",
+                "aria-label": placeholder,
+            },
+            handlePaste: (_view, event) => {
+                const clipboard = event.clipboardData;
+                if (!clipboard) return false;
 
-    const activeSx = {
-        color: "primary.main",
-        bgcolor: "action.selected",
-    };
-
-    const preventFocus = (e: React.MouseEvent) => e.preventDefault();
-
-    const btn = (
-        label: string,
-        icon: React.ReactNode,
-        action: (e: React.MouseEvent<HTMLButtonElement>) => void,
-        active = false,
-        disabled = false,
-    ) => (
-        <Tooltip title={label} key={label}>
-            <span>
-                <IconButton
-                    size="small"
-                    onMouseDown={preventFocus}
-                    onClick={action}
-                    aria-label={label}
-                    disabled={disabled}
-                    sx={{
-                        color: "text.secondary",
-                        borderRadius: 1,
-                        "&:hover": { color: "text.primary" },
-                        ...(active ? activeSx : {}),
-                    }}
-                >
-                    {icon}
-                </IconButton>
-            </span>
-        </Tooltip>
-    );
-
-    const sep = <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />;
-
-    const insertLink = useCallback(() => {
-        if (linkUrl && linkUrl !== "https://") {
-            const editor = getInstance();
-            if (editor) editor.action(insert(`[link](${linkUrl})`));
-        }
-        setLinkAnchor(null);
-        requestAnimationFrame(focusEditor);
-    }, [linkUrl, getInstance, focusEditor]);
-
-    return (
-        <Box
-            role="toolbar"
-            aria-label="Text formatting"
-            sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.25,
-                px: 0.5,
-                py: 0.25,
-            }}
-        >
-            {btn("Heading", <HeadingIcon fontSize="small" />, () => {
-                if (activeState.heading) {
-                    run(turnIntoTextCommand.key);
-                } else {
-                    run(wrapInHeadingCommand.key, 3);
+                // Handle image pastes
+                for (const item of clipboard.items) {
+                    if (item.type.startsWith("image/")) {
+                        if (!uploadImageUrl) return false;
+                        event.preventDefault();
+                        const file = item.getAsFile();
+                        if (file) uploadImage(file);
+                        return true;
+                    }
                 }
-            }, activeState.heading, sourceMode)}
-            {btn("Bold", <FormatBold fontSize="small" />, () =>
-                run(toggleStrongCommand.key), activeState.bold, sourceMode,
-            )}
-            {btn("Italic", <FormatItalic fontSize="small" />, () =>
-                run(toggleEmphasisCommand.key), activeState.italic, sourceMode,
-            )}
-            {btn("Strikethrough", <FormatStrikethrough fontSize="small" />, () =>
-                run(toggleStrikethroughCommand.key), activeState.strike, sourceMode,
-            )}
-            {btn("Inline Code", <CodeIcon fontSize="small" />, () =>
-                run(toggleInlineCodeCommand.key), activeState.code, sourceMode,
-            )}
-            {sep}
-            {btn("Quote", <FormatQuote fontSize="small" />, () =>
-                run(wrapInBlockquoteCommand.key), activeState.blockquote, sourceMode,
-            )}
-            {btn("Bullet List", <FormatListBulleted fontSize="small" />, () =>
-                run(wrapInBulletListCommand.key), activeState.bulletList, sourceMode,
-            )}
-            {btn("Numbered List", <FormatListNumbered fontSize="small" />, () =>
-                run(wrapInOrderedListCommand.key), activeState.orderedList, sourceMode,
-            )}
-            {btn("Task List", <Checklist fontSize="small" />, () => {
-                if (loading) return;
-                const editor = getInstance();
-                if (!editor) return;
-                editor.action(insert("- [ ] "));
-                requestAnimationFrame(updateState);
-            }, false, sourceMode)}
-            {sep}
-            {btn("Link", <LinkIcon fontSize="small" />, (e) => {
-                setLinkUrl("https://");
-                setLinkAnchor(e.currentTarget as HTMLElement);
-                setTimeout(() => linkInputRef.current?.select(), 50);
-            }, false, sourceMode)}
-            <Popover
-                open={Boolean(linkAnchor)}
-                anchorEl={linkAnchor}
-                onClose={() => {
-                    setLinkAnchor(null);
-                    requestAnimationFrame(focusEditor);
-                }}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                slotProps={{ paper: { sx: { p: 1.5, display: "flex", gap: 1, alignItems: "center" } } }}
-            >
-                <TextField
-                    inputRef={linkInputRef}
-                    size="small"
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            insertLink();
-                        } else if (e.key === "Escape") {
-                            setLinkAnchor(null);
-                            requestAnimationFrame(focusEditor);
-                        }
-                    }}
-                    placeholder="https://example.com"
-                    slotProps={{
-                        input: {
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <LinkIcon fontSize="small" sx={{ color: "text.secondary" }} />
-                                </InputAdornment>
-                            ),
-                            sx: { fontSize: 13 },
-                        },
-                    }}
-                    sx={{ width: 280 }}
-                    autoFocus
-                />
-                <Button
-                    size="small"
-                    variant="contained"
-                    disableElevation
-                    onClick={insertLink}
-                >
-                    Insert
-                </Button>
-            </Popover>
-            {btn("Code Block", <DataObject fontSize="small" />, () =>
-                run(createCodeBlockCommand.key), false, sourceMode,
-            )}
-            {sep}
-            {btn("Undo", <UndoIcon fontSize="small" />, () =>
-                run(undoCommand.key), false, sourceMode,
-            )}
-            {btn("Redo", <RedoIcon fontSize="small" />, () =>
-                run(redoCommand.key), false, sourceMode,
-            )}
-            <Box sx={{ flex: 1 }} />
-            {btn("Source", <SourceIcon fontSize="small" />, onToggleSource, sourceMode)}
-        </Box>
-    );
-}
 
-function CrepeEditor({
-    content,
-    onChange,
-    placeholder,
-    editable,
-    uploadImageUrl,
-}: Omit<RichTextEditorProps, "minHeight">) {
-    // Use ref for onChange so the Milkdown listener always calls the latest callback
-    const onChangeRef = useRef(onChange);
-    onChangeRef.current = onChange;
+                if (!editor) return false;
 
-    const [, getInstance] = useInstance();
+                // If clipboard has rich HTML (from web pages, GitLab, etc.),
+                // convert to markdown first via Turndown.
+                const html = clipboard.getData("text/html");
+                const text = clipboard.getData("text/plain");
+                let md: string | null = null;
 
-    const imageUploadHandler = useCallback(
-        async (file: File): Promise<string> => {
-            if (!uploadImageUrl) {
-                throw new Error("Image upload not configured");
-            }
+                if (html) {
+                    const hasRichContent =
+                        /<(h[1-6]|ul|ol|li|pre|code|table|blockquote|img|a\s|strong|em|del|s)\b/i.test(
+                            html,
+                        );
+                    if (hasRichContent) {
+                        md = turndown.turndown(html);
+                    }
+                }
+
+                // Use the plain text as markdown if no HTML conversion happened
+                if (!md && text) {
+                    // Check if the text looks like it contains markdown
+                    const hasMarkdown =
+                        /^(#{1,6}\s|[-*+]\s|\d+\.\s|```|>\s|\|.+\|)/m.test(
+                            text,
+                        );
+                    if (hasMarkdown) {
+                        md = text;
+                    }
+                }
+
+                if (md) {
+                    event.preventDefault();
+                    // Parse markdown to HTML via the storage parser,
+                    // then insert as HTML so TipTap creates proper nodes
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const storage = editor.storage as any;
+                    const parsed = storage.markdown?.parser?.parse?.(md);
+                    if (parsed) {
+                        editor.commands.insertContent(parsed);
+                    }
+                    return true;
+                }
+
+                return false;
+            },
+            handleDrop: (_view, event, _slice, moved) => {
+                if (moved || !uploadImageUrl) return false;
+                const files = event.dataTransfer?.files;
+                if (!files?.length) return false;
+                const images = Array.from(files).filter((f) =>
+                    f.type.startsWith("image/"),
+                );
+                if (!images.length) return false;
+                event.preventDefault();
+                images.forEach((file) => uploadImage(file));
+                return true;
+            },
+        },
+    });
+
+    const uploadImage = useCallback(
+        async (file: File) => {
+            if (!uploadImageUrl || !editor) return;
             const formData = new FormData();
             formData.append("image", file);
-            const response = await axios.post(uploadImageUrl, formData);
-            return response.data.url;
-        },
-        [uploadImageUrl],
-    );
-
-    const handleImageFiles = useCallback(
-        async (files: FileList) => {
-            if (!uploadImageUrl) return false;
-            const imageFiles = Array.from(files).filter((f) =>
-                f.type.startsWith("image/"),
-            );
-            if (imageFiles.length === 0) return false;
-
-            for (const file of imageFiles) {
-                try {
-                    const url = await imageUploadHandler(file);
-                    const editor = getInstance();
-                    if (editor) {
-                        editor.action(insert(`![${file.name}](${url})`));
-                    }
-                } catch (err) {
-                    console.error("Image upload failed:", err);
+            try {
+                const response = await axios.post(uploadImageUrl, formData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+                const url = response.data.url;
+                if (url) {
+                    editor.chain().focus().setImage({ src: url }).run();
                 }
+            } catch (error) {
+                console.error("Image upload failed:", error);
             }
-            return true;
         },
-        [uploadImageUrl, imageUploadHandler, getInstance],
+        [uploadImageUrl, editor],
     );
 
-    const hasImageFiles = (files: FileList) =>
-        uploadImageUrl && Array.from(files).some((f) => f.type.startsWith("image/"));
-
-    const handleDrop = useCallback(
-        (e: React.DragEvent) => {
-            if (!e.dataTransfer?.files.length || !hasImageFiles(e.dataTransfer.files)) return;
-            e.preventDefault();
-            e.stopPropagation();
-            handleImageFiles(e.dataTransfer.files);
+    const handleLinkClick = useCallback(
+        (e: React.MouseEvent<HTMLButtonElement>) => {
+            if (!editor) return;
+            const existing = editor.getAttributes("link").href;
+            setLinkUrl(existing || "https://");
+            setLinkAnchor(e.currentTarget);
+            setTimeout(() => linkInputRef.current?.select(), 50);
         },
-        [handleImageFiles, hasImageFiles],
+        [editor],
     );
 
-    const handlePaste = useCallback(
-        (e: React.ClipboardEvent) => {
-            if (!e.clipboardData?.files.length || !hasImageFiles(e.clipboardData.files)) return;
-            e.preventDefault();
-            e.stopPropagation();
-            handleImageFiles(e.clipboardData.files);
-        },
-        [handleImageFiles, hasImageFiles],
-    );
-
-    useEditor((root) => {
-        const crepe = new Crepe({
-            root,
-            defaultValue: content,
-            features: {
-                [CrepeFeature.Latex]: false,
-                [CrepeFeature.Toolbar]: false,
-            },
-            featureConfigs: {
-                [CrepeFeature.Placeholder]: {
-                    text: placeholder,
-                },
-                [CrepeFeature.ImageBlock]: uploadImageUrl
-                    ? { onUpload: imageUploadHandler }
-                    : undefined,
-            },
-        });
-
-        if (!editable) {
-            crepe.setReadonly(true);
+    const insertLink = useCallback(() => {
+        if (!editor) return;
+        if (linkUrl && linkUrl !== "https://") {
+            const { empty } = editor.state.selection;
+            if (empty) {
+                editor
+                    .chain()
+                    .focus()
+                    .insertContent(`[link](${linkUrl})`)
+                    .run();
+            } else {
+                editor
+                    .chain()
+                    .focus()
+                    .extendMarkRange("link")
+                    .setLink({ href: linkUrl })
+                    .run();
+            }
         }
-
-        crepe.on((listener) => {
-            listener.markdownUpdated((_ctx, markdown) => {
-                onChangeRef.current(markdown);
-            });
-        });
-
-        return crepe;
-    }, []);
-
-    return (
-        <div onDrop={handleDrop} onPaste={handlePaste}>
-            <Milkdown />
-        </div>
-    );
-}
-
-export default function RichTextEditor(props: RichTextEditorProps) {
-    const {
-        placeholder = "Write something...",
-        editable = true,
-        minHeight = 200,
-    } = props;
-    const { resolvedMode } = useThemeMode();
-    const isDark = resolvedMode === "dark";
-    const [sourceMode, setSourceMode] = useState(false);
-    const [sourceValue, setSourceValue] = useState("");
-    const editorKey = useRef(0);
-    const pendingContent = useRef(props.content);
-
-    // Keep pendingContent in sync with props when not in source mode
-    useEffect(() => {
-        if (!sourceMode) {
-            pendingContent.current = props.content;
-        }
-    }, [props.content, sourceMode]);
+        setLinkAnchor(null);
+        editor.commands.focus();
+    }, [linkUrl, editor]);
 
     const handleToggleSource = useCallback(() => {
         if (!sourceMode) {
-            setSourceValue(props.content);
-        } else {
-            props.onChange(sourceValue);
-            pendingContent.current = sourceValue;
-            editorKey.current += 1;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const storage = editor?.storage as any;
+            const md =
+                storage?.markdown?.getMarkdown?.() ?? editor?.getHTML() ?? "";
+            setSourceValue(md);
+        } else if (editor) {
+            editor.commands.setContent(sourceValue);
+            onChange(sourceValue);
         }
         setSourceMode((prev) => !prev);
-    }, [sourceMode, sourceValue, props.content, props.onChange]);
+    }, [sourceMode, sourceValue, editor, onChange]);
+
+    if (!editor && !sourceMode) return null;
+
+    const toolbarButton = (
+        label: string,
+        icon: React.ReactNode,
+        action: (e: React.MouseEvent<HTMLButtonElement>) => void,
+        isActive: boolean,
+    ) => (
+        <Tooltip title={label} key={label}>
+            <IconButton
+                size="small"
+                onClick={action}
+                aria-label={label}
+                aria-pressed={isActive}
+                sx={{
+                    color: isActive ? "primary.main" : "text.secondary",
+                    bgcolor: isActive ? "action.selected" : "transparent",
+                    borderRadius: 1,
+                }}
+            >
+                {icon}
+            </IconButton>
+        </Tooltip>
+    );
 
     return (
         <Box
-            className={isDark ? "dark" : ""}
             sx={{
-                borderRadius: "10px",
-                border: "1px solid",
-                borderColor: isDark
-                    ? "rgba(255,255,255,0.16)"
-                    : "rgba(0,0,0,0.23)",
+                border: 1,
+                borderColor:
+                    theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.16)"
+                        : "divider",
+                borderRadius: 1,
                 overflow: "hidden",
+                bgcolor:
+                    theme.palette.mode === "dark" ? "#1f1f1f" : "transparent",
                 "&:hover": {
-                    borderColor: isDark
-                        ? "rgba(255,255,255,0.30)"
-                        : "rgba(0,0,0,0.40)",
+                    borderColor:
+                        theme.palette.mode === "dark"
+                            ? "rgba(255,255,255,0.30)"
+                            : "text.primary",
                 },
                 "&:focus-within": {
-                    borderColor: isDark ? "#818cf8" : "#6366f1",
-                    boxShadow: isDark
-                        ? "0 0 0 1px #818cf8"
-                        : "0 0 0 1px #6366f1",
+                    borderColor: "primary.main",
+                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,
                 },
-                "& .milkdown": {
-                    ...getCrepeThemeVars(isDark),
-                    border: "none",
-                    borderRadius: 0,
-                    overflow: "visible",
-                },
-                "& .milkdown .editor": {
+                "& .tiptap": {
+                    p: 2,
                     minHeight,
-                    padding: "16px",
+                    outline: "none",
+                    "& p.is-editor-empty:first-of-type::before": {
+                        content: "attr(data-placeholder)",
+                        color: "text.disabled",
+                        float: "left",
+                        height: 0,
+                        pointerEvents: "none",
+                    },
+                    "& h1": { ...theme.typography.h4, mt: 2, mb: 1 },
+                    "& h2": { ...theme.typography.h5, mt: 2, mb: 1 },
+                    "& h3": { ...theme.typography.h6, mt: 2, mb: 1 },
+                    "& p": { ...theme.typography.body1, my: 0.5 },
+                    "& ul, & ol": { pl: 3 },
+                    '& ul[data-type="taskList"]': {
+                        listStyle: "none",
+                        pl: 0,
+                        "& li": {
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 1,
+                            "& label": { mt: 0.25 },
+                            '& input[type="checkbox"]': {
+                                accentColor: theme.palette.primary.main,
+                                width: 16,
+                                height: 16,
+                                mt: 0.5,
+                            },
+                        },
+                    },
+                    "& pre": {
+                        bgcolor: "action.hover",
+                        fontFamily: "monospace",
+                        p: 2,
+                        borderRadius: 1,
+                        overflow: "auto",
+                        "& code": {
+                            background: "none",
+                            p: 0,
+                            fontSize: "0.875rem",
+                        },
+                    },
+                    "& code": {
+                        bgcolor: "action.hover",
+                        px: 0.5,
+                        py: 0.25,
+                        borderRadius: 0.5,
+                        fontFamily: "monospace",
+                        fontSize: "0.875rem",
+                    },
+                    "& img": { maxWidth: "100%", borderRadius: "4px" },
+                    "& a": {
+                        color: "primary.main",
+                        textDecoration: "underline",
+                    },
+                    "& blockquote": {
+                        borderLeft: 3,
+                        borderColor: "divider",
+                        pl: 2,
+                        ml: 0,
+                        color: "text.secondary",
+                    },
+                    "& hr": { borderColor: "divider", my: 2 },
+                    "& table": {
+                        borderCollapse: "collapse",
+                        width: "100%",
+                        my: 1,
+                        "& th, & td": {
+                            border: 1,
+                            borderColor: "divider",
+                            px: 1.5,
+                            py: 0.75,
+                            textAlign: "left",
+                            verticalAlign: "top",
+                        },
+                        "& th": {
+                            fontWeight: 600,
+                            bgcolor: "action.hover",
+                        },
+                    },
                 },
-                "& .milkdown .editor h1, & .milkdown .editor h2, & .milkdown .editor h3, & .milkdown .editor h4, & .milkdown .editor h5, & .milkdown .editor h6":
-                    crepeHeadingSx,
             }}
         >
-            <MilkdownProvider>
-                {editable && (
-                    <Box
-                        sx={{
-                            bgcolor: isDark ? "#1a1a1a" : "#fafafa",
-                            borderBottom: 1,
-                            borderColor: isDark
-                                ? "rgba(255,255,255,0.10)"
-                                : "rgba(0,0,0,0.12)",
+            {editable && (
+                <Box
+                    role="toolbar"
+                    aria-label="Text formatting"
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.25,
+                        p: 0.5,
+                        bgcolor: "background.default",
+                        borderBottom: 1,
+                        borderColor: "divider",
+                    }}
+                >
+                    {toolbarButton(
+                        "Bold",
+                        <FormatBold fontSize="small" />,
+                        () => editor.chain().focus().toggleBold().run(),
+                        editor.isActive("bold"),
+                    )}
+                    {toolbarButton(
+                        "Italic",
+                        <FormatItalic fontSize="small" />,
+                        () => editor.chain().focus().toggleItalic().run(),
+                        editor.isActive("italic"),
+                    )}
+                    {toolbarButton(
+                        "Underline",
+                        <FormatUnderlined fontSize="small" />,
+                        () => editor.chain().focus().toggleUnderline().run(),
+                        editor.isActive("underline"),
+                    )}
+                    {toolbarButton(
+                        "Strikethrough",
+                        <FormatStrikethrough fontSize="small" />,
+                        () => editor.chain().focus().toggleStrike().run(),
+                        editor.isActive("strike"),
+                    )}
+                    {toolbarButton(
+                        "Heading 1",
+                        <Title fontSize="small" />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 1 })
+                                .run(),
+                        editor.isActive("heading", { level: 1 }),
+                    )}
+                    {toolbarButton(
+                        "Heading 2",
+                        <Title fontSize="small" sx={{ fontSize: "1.1rem" }} />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 2 })
+                                .run(),
+                        editor.isActive("heading", { level: 2 }),
+                    )}
+                    {toolbarButton(
+                        "Heading 3",
+                        <Title fontSize="small" sx={{ fontSize: "0.95rem" }} />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .toggleHeading({ level: 3 })
+                                .run(),
+                        editor.isActive("heading", { level: 3 }),
+                    )}
+                    {toolbarButton(
+                        "Bullet List",
+                        <FormatListBulleted fontSize="small" />,
+                        () => editor.chain().focus().toggleBulletList().run(),
+                        editor.isActive("bulletList"),
+                    )}
+                    {toolbarButton(
+                        "Ordered List",
+                        <FormatListNumbered fontSize="small" />,
+                        () => editor.chain().focus().toggleOrderedList().run(),
+                        editor.isActive("orderedList"),
+                    )}
+                    {toolbarButton(
+                        "Task List",
+                        <Checklist fontSize="small" />,
+                        () => editor.chain().focus().toggleTaskList().run(),
+                        editor.isActive("taskList"),
+                    )}
+                    {toolbarButton(
+                        "Code Block",
+                        <CodeIcon fontSize="small" />,
+                        () => editor.chain().focus().toggleCodeBlock().run(),
+                        editor.isActive("codeBlock"),
+                    )}
+                    {toolbarButton(
+                        "Table",
+                        <TableChartIcon fontSize="small" />,
+                        () =>
+                            editor
+                                .chain()
+                                .focus()
+                                .insertTable({
+                                    rows: 3,
+                                    cols: 3,
+                                    withHeaderRow: true,
+                                })
+                                .run(),
+                        editor.isActive("table"),
+                    )}
+                    {toolbarButton(
+                        "Link",
+                        <LinkIcon fontSize="small" />,
+                        handleLinkClick,
+                        editor.isActive("link"),
+                    )}
+                    <Popover
+                        open={Boolean(linkAnchor)}
+                        anchorEl={linkAnchor}
+                        onClose={() => {
+                            setLinkAnchor(null);
+                            editor.commands.focus();
                         }}
-                    >
-                        <Toolbar
-                            sourceMode={sourceMode}
-                            onToggleSource={handleToggleSource}
-                        />
-                    </Box>
-                )}
-                {sourceMode ? (
-                    <TextField
-                        multiline
-                        fullWidth
-                        value={sourceValue}
-                        onChange={(e) => setSourceValue(e.target.value)}
-                        placeholder={placeholder}
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "left",
+                        }}
+                        transformOrigin={{
+                            vertical: "top",
+                            horizontal: "left",
+                        }}
                         slotProps={{
-                            input: {
+                            paper: {
                                 sx: {
-                                    fontFamily: '"Fira Code", "JetBrains Mono", monospace',
-                                    fontSize: 13,
-                                    lineHeight: 1.6,
-                                    minHeight,
-                                    alignItems: "flex-start",
-                                    p: 2,
+                                    p: 1.5,
+                                    display: "flex",
+                                    gap: 1,
+                                    alignItems: "center",
                                 },
                             },
                         }}
-                        sx={{
-                            "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-                        }}
-                    />
-                ) : (
-                    <CrepeEditor
-                        key={editorKey.current}
-                        {...props}
-                        content={pendingContent.current}
-                        placeholder={placeholder}
-                        editable={editable}
-                    />
-                )}
-            </MilkdownProvider>
+                    >
+                        <TextField
+                            inputRef={linkInputRef}
+                            size="small"
+                            value={linkUrl}
+                            onChange={(e) => setLinkUrl(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    insertLink();
+                                } else if (e.key === "Escape") {
+                                    setLinkAnchor(null);
+                                    editor.commands.focus();
+                                }
+                            }}
+                            placeholder="https://example.com"
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <LinkIcon
+                                                fontSize="small"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                }}
+                                            />
+                                        </InputAdornment>
+                                    ),
+                                    sx: { fontSize: 13 },
+                                },
+                            }}
+                            sx={{ width: 280 }}
+                            autoFocus
+                        />
+                        <Button
+                            size="small"
+                            variant="contained"
+                            disableElevation
+                            onClick={insertLink}
+                        >
+                            Insert
+                        </Button>
+                    </Popover>
+                    {uploadImageUrl &&
+                        toolbarButton(
+                            "Image",
+                            <ImageIcon fontSize="small" />,
+                            () => fileInputRef.current?.click(),
+                            false,
+                        )}
+                    <Box sx={{ flex: 1 }} />
+                    {toolbarButton(
+                        "View Source",
+                        <SourceIcon fontSize="small" />,
+                        handleToggleSource,
+                        sourceMode,
+                    )}
+                </Box>
+            )}
+            {sourceMode ? (
+                <TextField
+                    multiline
+                    fullWidth
+                    value={sourceValue}
+                    onChange={(e) => setSourceValue(e.target.value)}
+                    placeholder={placeholder}
+                    slotProps={{
+                        input: {
+                            sx: {
+                                fontFamily:
+                                    '"Fira Code", "JetBrains Mono", monospace',
+                                fontSize: 13,
+                                lineHeight: 1.6,
+                                minHeight,
+                                alignItems: "flex-start",
+                                p: 2,
+                            },
+                        },
+                    }}
+                    sx={{
+                        "& .MuiOutlinedInput-notchedOutline": {
+                            border: "none",
+                        },
+                    }}
+                />
+            ) : (
+                <EditorContent editor={editor} />
+            )}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                        uploadImage(file);
+                        e.target.value = "";
+                    }
+                }}
+                style={{ display: "none" }}
+            />
         </Box>
     );
 }
