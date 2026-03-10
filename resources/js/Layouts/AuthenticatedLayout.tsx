@@ -1,27 +1,34 @@
-import { Link, usePage, router } from '@inertiajs/react';
-import { type PropsWithChildren, type ReactNode, useEffect, useRef, useState } from 'react';
-import type { PageProps, Team } from '@/types';
-import { SidebarProvider, useSidebar } from '@/Contexts/SidebarContext';
-import { useThemeMode } from '@/Contexts/ThemeContext';
-import Sidebar from '@/Components/Layout/Sidebar';
-import AppBar from '@mui/material/AppBar';
-import LinearProgress from '@mui/material/LinearProgress';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import LogoutIcon from '@mui/icons-material/Logout';
-import MenuIcon from '@mui/icons-material/Menu';
-import PersonIcon from '@mui/icons-material/Person';
-import ConnectionStatus from '@/Components/Layout/ConnectionStatus';
-import NotificationBell from '@/Components/Layout/NotificationBell';
+import { Link, usePage, router } from "@inertiajs/react";
+import {
+    type PropsWithChildren,
+    type ReactNode,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
+import type { PageProps, Team } from "@/types";
+import { SidebarProvider, useSidebar } from "@/Contexts/SidebarContext";
+import { useThemeMode } from "@/Contexts/ThemeContext";
+import Sidebar from "@/Components/Layout/Sidebar";
+import AppBar from "@mui/material/AppBar";
+import LinearProgress from "@mui/material/LinearProgress";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import PersonIcon from "@mui/icons-material/Person";
+import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
+import NotificationBell from "@/Components/Layout/NotificationBell";
+import { WebSocketProvider } from "@/Contexts/WebSocketContext";
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 64;
@@ -32,14 +39,18 @@ interface AuthenticatedLayoutProps {
     activeBoardId?: string;
 }
 
-export default function AuthenticatedLayout(props: PropsWithChildren<AuthenticatedLayoutProps>) {
+export default function AuthenticatedLayout(
+    props: PropsWithChildren<AuthenticatedLayoutProps>,
+) {
     return (
-        <SidebarProvider
-            currentTeamOverride={props.currentTeam}
-            activeBoardId={props.activeBoardId}
-        >
-            <AuthenticatedLayoutInner {...props} />
-        </SidebarProvider>
+        <WebSocketProvider>
+            <SidebarProvider
+                currentTeamOverride={props.currentTeam}
+                activeBoardId={props.activeBoardId}
+            >
+                <AuthenticatedLayoutInner {...props} />
+            </SidebarProvider>
+        </WebSocketProvider>
     );
 }
 
@@ -64,7 +75,7 @@ function AuthenticatedLayoutInner({
     // Sync server-side theme preference to ThemeContext on first load
     useEffect(() => {
         if (!themeSynced.current && user.theme_preference) {
-            const stored = localStorage.getItem('pulseboard-theme');
+            const stored = localStorage.getItem("pulseboard-theme");
             if (!stored) {
                 setMode(user.theme_preference);
             }
@@ -73,8 +84,8 @@ function AuthenticatedLayoutInner({
     }, [user.theme_preference, setMode]);
 
     useEffect(() => {
-        const removeStart = router.on('start', () => setNavigating(true));
-        const removeFinish = router.on('finish', () => setNavigating(false));
+        const removeStart = router.on("start", () => setNavigating(true));
+        const removeFinish = router.on("finish", () => setNavigating(false));
 
         return () => {
             removeStart();
@@ -94,12 +105,12 @@ function AuthenticatedLayoutInner({
 
     const handleLogout = () => {
         handleMenuClose();
-        router.post(route('logout'));
+        router.post(route("logout"));
     };
 
     const handleProfile = () => {
         handleMenuClose();
-        router.get(route('profile.edit'));
+        router.get(route("profile.edit"));
     };
 
     const handleDrawerToggle = () => {
@@ -107,35 +118,35 @@ function AuthenticatedLayoutInner({
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box sx={{ display: "flex", minHeight: "100vh" }}>
             {/* Skip navigation link */}
             <Box
                 component="a"
                 href="#main-content"
                 sx={{
-                    position: 'absolute',
-                    left: '-9999px',
-                    top: 'auto',
-                    width: '1px',
-                    height: '1px',
-                    overflow: 'hidden',
-                    '&:focus': {
-                        position: 'fixed',
+                    position: "absolute",
+                    left: "-9999px",
+                    top: "auto",
+                    width: "1px",
+                    height: "1px",
+                    overflow: "hidden",
+                    "&:focus": {
+                        position: "fixed",
                         top: 8,
                         left: 8,
-                        width: 'auto',
-                        height: 'auto',
-                        overflow: 'visible',
+                        width: "auto",
+                        height: "auto",
+                        overflow: "visible",
                         zIndex: 9999,
-                        bgcolor: 'background.paper',
-                        color: 'primary.main',
+                        bgcolor: "background.paper",
+                        color: "primary.main",
                         px: 2,
                         py: 1,
                         borderRadius: 1,
                         boxShadow: 3,
                         fontWeight: 600,
-                        textDecoration: 'none',
-                        fontSize: '0.875rem',
+                        textDecoration: "none",
+                        fontSize: "0.875rem",
                     },
                 }}
             >
@@ -148,7 +159,7 @@ function AuthenticatedLayoutInner({
                 sx={{
                     width: { md: drawerWidth },
                     flexShrink: { md: 0 },
-                    transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
+                    transition: "width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
                 }}
             >
                 {/* Mobile drawer — always full-width, unaffected by collapse */}
@@ -158,9 +169,9 @@ function AuthenticatedLayoutInner({
                     onClose={handleDrawerToggle}
                     ModalProps={{ keepMounted: true }}
                     sx={{
-                        display: { xs: 'block', md: 'none' },
-                        '& .MuiDrawer-paper': {
-                            boxSizing: 'border-box',
+                        display: { xs: "block", md: "none" },
+                        "& .MuiDrawer-paper": {
+                            boxSizing: "border-box",
                             width: DRAWER_WIDTH,
                         },
                     }}
@@ -172,14 +183,15 @@ function AuthenticatedLayoutInner({
                 <Drawer
                     variant="permanent"
                     sx={{
-                        display: { xs: 'none', md: 'block' },
-                        '& .MuiDrawer-paper': {
-                            boxSizing: 'border-box',
+                        display: { xs: "none", md: "block" },
+                        "& .MuiDrawer-paper": {
+                            boxSizing: "border-box",
                             width: drawerWidth,
                             borderRight: 1,
-                            borderColor: 'divider',
-                            transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
-                            overflowX: 'hidden',
+                            borderColor: "divider",
+                            transition:
+                                "width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
+                            overflowX: "hidden",
                         },
                     }}
                     open
@@ -192,10 +204,10 @@ function AuthenticatedLayoutInner({
             <Box
                 sx={{
                     flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
+                    display: "flex",
+                    flexDirection: "column",
                     width: { md: `calc(100% - ${drawerWidth}px)` },
-                    transition: 'width 225ms cubic-bezier(0.4, 0, 0.6, 1)',
+                    transition: "width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
                 }}
             >
                 {/* Top AppBar */}
@@ -205,9 +217,9 @@ function AuthenticatedLayoutInner({
                     color="default"
                     elevation={0}
                     sx={{
-                        bgcolor: 'background.paper',
+                        bgcolor: "background.paper",
                         borderBottom: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                     }}
                 >
                     <Box role="status" aria-live="polite">
@@ -215,7 +227,7 @@ function AuthenticatedLayoutInner({
                             <LinearProgress
                                 aria-label="Page loading"
                                 sx={{
-                                    position: 'absolute',
+                                    position: "absolute",
                                     top: 0,
                                     left: 0,
                                     right: 0,
@@ -225,7 +237,9 @@ function AuthenticatedLayoutInner({
                             />
                         )}
                         {navigating && (
-                            <Typography sx={{ position: 'absolute', left: '-9999px' }}>
+                            <Typography
+                                sx={{ position: "absolute", left: "-9999px" }}
+                            >
                                 Loading page
                             </Typography>
                         )}
@@ -235,26 +249,22 @@ function AuthenticatedLayoutInner({
                             color="inherit"
                             edge="start"
                             onClick={handleDrawerToggle}
-                            sx={{ mr: 2, display: { md: 'none' } }}
+                            sx={{ mr: 2, display: { md: "none" } }}
                             aria-label="Open navigation menu"
                         >
                             <MenuIcon />
                         </IconButton>
 
                         {/* Page header */}
-                        {header && (
-                            <Box sx={{ flexGrow: 1 }}>
-                                {header}
-                            </Box>
-                        )}
+                        {header && <Box sx={{ flexGrow: 1 }}>{header}</Box>}
 
                         {!header && <Box sx={{ flexGrow: 1 }} />}
 
                         {/* Connection status + User menu */}
                         <Box
                             sx={{
-                                display: 'flex',
-                                alignItems: 'center',
+                                display: "flex",
+                                alignItems: "center",
                                 gap: 1.5,
                             }}
                         >
@@ -263,8 +273,8 @@ function AuthenticatedLayoutInner({
                             <Typography
                                 variant="body2"
                                 sx={{
-                                    display: { xs: 'none', sm: 'block' },
-                                    color: 'text.secondary',
+                                    display: { xs: "none", sm: "block" },
+                                    color: "text.secondary",
                                 }}
                             >
                                 {user.name}
@@ -272,9 +282,11 @@ function AuthenticatedLayoutInner({
                             <IconButton
                                 onClick={handleMenuOpen}
                                 size="small"
-                                aria-controls={menuOpen ? 'user-menu' : undefined}
+                                aria-controls={
+                                    menuOpen ? "user-menu" : undefined
+                                }
                                 aria-haspopup="true"
-                                aria-expanded={menuOpen ? 'true' : undefined}
+                                aria-expanded={menuOpen ? "true" : undefined}
                             >
                                 <Avatar
                                     src={user.avatar_url}
@@ -292,12 +304,12 @@ function AuthenticatedLayoutInner({
                             open={menuOpen}
                             onClose={handleMenuClose}
                             anchorOrigin={{
-                                vertical: 'bottom',
-                                horizontal: 'right',
+                                vertical: "bottom",
+                                horizontal: "right",
                             }}
                             transformOrigin={{
-                                vertical: 'top',
-                                horizontal: 'right',
+                                vertical: "top",
+                                horizontal: "right",
                             }}
                             slotProps={{
                                 paper: {
@@ -330,7 +342,7 @@ function AuthenticatedLayoutInner({
                     id="main-content"
                     sx={{
                         flexGrow: 1,
-                        bgcolor: 'background.default',
+                        bgcolor: "background.default",
                         p: 3,
                     }}
                 >
