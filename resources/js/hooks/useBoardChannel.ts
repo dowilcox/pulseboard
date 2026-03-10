@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useWebSocket } from '@/Contexts/WebSocketContext';
+import { useEffect } from "react";
+import { useWebSocket } from "@/Contexts/WebSocketContext";
 
 export interface BoardEvent {
     action: string;
@@ -13,13 +13,18 @@ export interface BoardEvent {
     user_id: string;
 }
 
-export function useBoardChannel(boardId: string, onEvent: (event: BoardEvent) => void) {
+export function useBoardChannel(
+    boardId: string,
+    onEvent: (event: BoardEvent) => void,
+) {
     const { echo } = useWebSocket();
 
     useEffect(() => {
+        if (!echo) return;
+
         const channel = echo.private(`board.${boardId}`);
 
-        channel.listen('.board.changed', (event: BoardEvent) => {
+        channel.listen(".board.changed", (event: BoardEvent) => {
             onEvent(event);
         });
 

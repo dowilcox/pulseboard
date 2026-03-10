@@ -406,4 +406,10 @@ export type PageProps<
         error?: string | null;
         token?: string | null;
     };
+    reverb?: {
+        key: string;
+        host: string;
+        port: number;
+        scheme: string;
+    };
 };

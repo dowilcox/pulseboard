@@ -54,6 +54,18 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'token' => fn () => $request->session()->get('token'),
             ],
+            'reverb' => [
+                'key' => config('broadcasting.connections.reverb.key'),
+                'host' => config(
+                    'broadcasting.connections.reverb.options.host',
+                ),
+                'port' => config(
+                    'broadcasting.connections.reverb.options.port',
+                ),
+                'scheme' => config(
+                    'broadcasting.connections.reverb.options.scheme',
+                ),
+            ],
         ];
     }
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useWebSocket } from '@/Contexts/WebSocketContext';
+import { useEffect, useState } from "react";
+import { useWebSocket } from "@/Contexts/WebSocketContext";
 
 export interface PresenceUser {
     id: string;
@@ -12,6 +12,8 @@ export function usePresence(boardId: string) {
     const [users, setUsers] = useState<PresenceUser[]>([]);
 
     useEffect(() => {
+        if (!echo) return;
+
         const channel = echo.join(`presence-board.${boardId}`);
 
         channel

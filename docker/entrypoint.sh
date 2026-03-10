@@ -47,8 +47,17 @@ if [ "${APP_ENV}" = "local" ] || [ "${APP_ENV}" = "development" ]; then
     fi
 fi
 
+# ---- Ensure .env file exists -------------------------------------------------
+# Laravel requires a .env file for key generation and config caching.
+# If no .env is mounted, create one from the current environment variables.
+if [ ! -f "/var/www/html/.env" ]; then
+    echo "[entrypoint] No .env file found, creating from environment..."
+    env | grep -E '^(APP_|DB_|REDIS_|MAIL_|QUEUE_|CACHE_|SESSION_|BROADCAST_|LOG_|REVERB_|VITE_|OCTANE_|FILESYSTEM_|BCRYPT_|TRUSTED_)' \
+        | sort > /var/www/html/.env
+fi
+
 # ---- Generate application key if missing ------------------------------------
-if [ -f "/var/www/html/.env" ] && ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
+if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
     echo "[entrypoint] Generating application key..."
     php artisan key:generate --force
 fi
@@ -85,6 +94,12 @@ fi
 if [ ! -f "/var/www/html/public/frankenphp-worker.php" ]; then
     echo "[entrypoint] Publishing FrankenPHP worker..."
     php artisan octane:install --server=frankenphp --no-interaction
+fi
+
+# ---- Verify APP_KEY is set before caching ------------------------------------
+if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
+    echo "[entrypoint] ERROR: APP_KEY is still not set after key generation. Aborting."
+    exit 1
 fi
 
 # ---- Optimize for production ------------------------------------------------

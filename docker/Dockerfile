@@ -42,21 +42,11 @@ COPY routes ./routes
 COPY app ./app
 COPY database ./database
 
-# Build args for VITE_* variables baked into the JS bundle.
-# These default to empty strings so the bundle works with runtime Reverb config.
-# Override at build time: docker build --build-arg VITE_REVERB_HOST=ws.example.com ...
+# Minimal .env for Vite build (only APP_NAME needed; Reverb config is runtime via Inertia)
 ARG VITE_APP_NAME=PulseBoard
-ARG VITE_REVERB_APP_KEY=
-ARG VITE_REVERB_HOST=
-ARG VITE_REVERB_PORT=
-ARG VITE_REVERB_SCHEME=
 
 RUN echo "APP_NAME=${VITE_APP_NAME}" > .env \
-    && echo "VITE_APP_NAME=${VITE_APP_NAME}" >> .env \
-    && echo "VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY}" >> .env \
-    && echo "VITE_REVERB_HOST=${VITE_REVERB_HOST}" >> .env \
-    && echo "VITE_REVERB_PORT=${VITE_REVERB_PORT}" >> .env \
-    && echo "VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}" >> .env
+    && echo "VITE_APP_NAME=${VITE_APP_NAME}" >> .env
 
 RUN npx tsc --noEmit && npx vite build
 

@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { usePage } from '@inertiajs/react';
-import { useWebSocket } from '@/Contexts/WebSocketContext';
-import type { AppNotification, PageProps } from '@/types';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { usePage } from "@inertiajs/react";
+import { useWebSocket } from "@/Contexts/WebSocketContext";
+import type { AppNotification, PageProps } from "@/types";
 
 interface NotificationEvent {
     id: string;
@@ -12,7 +12,9 @@ interface NotificationEvent {
 export function useNotifications() {
     const { auth, unreadNotificationsCount } = usePage<PageProps>().props;
     const { echo } = useWebSocket();
-    const [unreadCount, setUnreadCount] = useState(unreadNotificationsCount ?? 0);
+    const [unreadCount, setUnreadCount] = useState(
+        unreadNotificationsCount ?? 0,
+    );
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loaded, setLoaded] = useState(false);
 
@@ -23,8 +25,8 @@ export function useNotifications() {
 
     const fetchNotifications = useCallback(async () => {
         try {
-            const res = await fetch(route('notifications.index'), {
-                headers: { Accept: 'application/json' },
+            const res = await fetch(route("notifications.index"), {
+                headers: { Accept: "application/json" },
             });
             const data = await res.json();
             setNotifications(data.data ?? []);
@@ -40,11 +42,11 @@ export function useNotifications() {
 
     // Listen for real-time notification events
     useEffect(() => {
-        if (!auth.user) return;
+        if (!auth.user || !echo) return;
 
         const channel = echo.private(`user.${auth.user.id}`);
 
-        channel.listen('.notification.created', (_event: NotificationEvent) => {
+        channel.listen(".notification.created", (_event: NotificationEvent) => {
             setUnreadCount((prev) => prev + 1);
             // Refresh notifications list if already loaded
             if (loadedRef.current) {
@@ -59,16 +61,23 @@ export function useNotifications() {
 
     const markRead = useCallback(async (id: string) => {
         try {
-            await fetch(route('notifications.read', id), {
-                method: 'PATCH',
+            await fetch(route("notifications.read", id), {
+                method: "PATCH",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN":
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? "",
                 },
             });
             setNotifications((prev) =>
-                prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+                prev.map((n) =>
+                    n.id === id
+                        ? { ...n, read_at: new Date().toISOString() }
+                        : n,
+                ),
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch {
@@ -78,16 +87,22 @@ export function useNotifications() {
 
     const markAllRead = useCallback(async () => {
         try {
-            await fetch(route('notifications.read-all'), {
-                method: 'POST',
+            await fetch(route("notifications.read-all"), {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '',
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN":
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? "",
                 },
             });
             setNotifications((prev) =>
-                prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() }))
+                prev.map((n) => ({
+                    ...n,
+                    read_at: n.read_at ?? new Date().toISOString(),
+                })),
             );
             setUnreadCount(0);
         } catch {
@@ -95,5 +110,12 @@ export function useNotifications() {
         }
     }, []);
 
-    return { unreadCount, notifications, fetchNotifications, markRead, markAllRead, loaded };
+    return {
+        unreadCount,
+        notifications,
+        fetchNotifications,
+        markRead,
+        markAllRead,
+        loaded,
+    };
 }
