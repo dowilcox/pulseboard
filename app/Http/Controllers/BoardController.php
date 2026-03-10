@@ -25,74 +25,93 @@ class BoardController extends Controller
 
     public function show(Team $team, Board $board): Response
     {
-        $this->authorize('view', $board);
+        $this->authorize("view", $board);
 
-        $board->load(['columns' => function ($query) {
-            $query->withCount('tasks');
-        }]);
+        $board->load([
+            "columns" => function ($query) {
+                $query->withCount("tasks");
+            },
+        ]);
 
         // Load a limited number of tasks per column for the initial render
         $board->columns->each(function ($column) {
             $column->setRelation(
-                'tasks',
-                $column->tasks()
-                    ->with(['assignees', 'labels', 'gitlabLinks', 'blockedBy:id'])
+                "tasks",
+                $column
+                    ->tasks()
+                    ->with([
+                        "assignees",
+                        "labels",
+                        "gitlabLinks",
+                        "blockedBy:id",
+                    ])
                     ->withCount([
-                        'comments',
-                        'subtasks',
-                        'subtasks as completed_subtasks_count' => function ($query) {
-                            $query->whereNotNull('completed_at');
+                        "comments",
+                        "subtasks",
+                        "subtasks as completed_subtasks_count" => function (
+                            $query,
+                        ) {
+                            $query->whereNotNull("completed_at");
                         },
                     ])
-                    ->orderBy('sort_order')
+                    ->orderBy("sort_order")
                     ->limit(self::INITIAL_TASKS_PER_COLUMN)
-                    ->get()
+                    ->get(),
             );
         });
 
-        $members = $team->members()->whereNull('deactivated_at')->get();
+        $members = $team->members()->whereNull("deactivated_at")->get();
 
-        $gitlabProjects = $team->gitlabProjects()
-            ->with('connection')
+        $gitlabProjects = $team->gitlabProjects()->with("connection")->get();
+
+        $figmaConnections = $team
+            ->figmaConnections()
+            ->where("is_active", true)
             ->get();
 
-        $taskTemplates = TaskTemplate::where('team_id', $team->id)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $taskTemplates = TaskTemplate::where("team_id", $team->id)
+            ->orderBy("name")
+            ->get(["id", "name"]);
 
-        return Inertia::render('Boards/Show', [
-            'team' => $team,
-            'board' => $board,
-            'columns' => $board->columns,
-            'members' => $members,
-            'gitlabProjects' => $gitlabProjects,
-            'taskTemplates' => $taskTemplates,
-            'initialTasksPerColumn' => self::INITIAL_TASKS_PER_COLUMN,
+        return Inertia::render("Boards/Show", [
+            "team" => $team,
+            "board" => $board,
+            "columns" => $board->columns,
+            "members" => $members,
+            "gitlabProjects" => $gitlabProjects,
+            "figmaConnections" => $figmaConnections,
+            "taskTemplates" => $taskTemplates,
+            "initialTasksPerColumn" => self::INITIAL_TASKS_PER_COLUMN,
         ]);
     }
 
     /**
      * Store a newly created board for the team.
      */
-    public function store(StoreBoardRequest $request, Team $team): RedirectResponse
-    {
-        $this->authorize('create', [Board::class, $team]);
+    public function store(
+        StoreBoardRequest $request,
+        Team $team,
+    ): RedirectResponse {
+        $this->authorize("create", [Board::class, $team]);
 
         $board = CreateBoard::run($team, $request->validated());
 
-        return Redirect::route('teams.boards.show', [$team, $board]);
+        return Redirect::route("teams.boards.show", [$team, $board]);
     }
 
     /**
      * Update the specified board.
      */
-    public function update(UpdateBoardRequest $request, Team $team, Board $board): RedirectResponse
-    {
-        $this->authorize('update', $board);
+    public function update(
+        UpdateBoardRequest $request,
+        Team $team,
+        Board $board,
+    ): RedirectResponse {
+        $this->authorize("update", $board);
 
         UpdateBoard::run($board, $request->validated());
 
-        return Redirect::route('teams.boards.show', [$team, $board]);
+        return Redirect::route("teams.boards.show", [$team, $board]);
     }
 
     /**
@@ -100,11 +119,11 @@ class BoardController extends Controller
      */
     public function archive(Team $team, Board $board): RedirectResponse
     {
-        $this->authorize('delete', $board);
+        $this->authorize("delete", $board);
 
         ArchiveBoard::run($board);
 
-        return Redirect::route('teams.show', $team);
+        return Redirect::route("teams.show", $team);
     }
 
     /**
@@ -112,17 +131,17 @@ class BoardController extends Controller
      */
     public function settings(Team $team, Board $board): Response
     {
-        $this->authorize('update', $board);
+        $this->authorize("update", $board);
 
-        $board->load('columns');
+        $board->load("columns");
 
-        $members = $team->members()->whereNull('deactivated_at')->get();
+        $members = $team->members()->whereNull("deactivated_at")->get();
 
-        return Inertia::render('Boards/Settings', [
-            'team' => $team,
-            'board' => $board,
-            'columns' => $board->columns,
-            'members' => $members,
+        return Inertia::render("Boards/Settings", [
+            "team" => $team,
+            "board" => $board,
+            "columns" => $board->columns,
+            "members" => $members,
         ]);
     }
 }

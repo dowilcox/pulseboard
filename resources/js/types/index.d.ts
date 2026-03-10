@@ -198,6 +198,7 @@ export interface Task {
     dependencies?: Task[];
     blocked_by?: Task[];
     gitlab_links?: TaskGitlabLink[];
+    figma_links?: TaskFigmaLink[];
     comments?: Comment[];
     activities?: Activity[];
     attachments?: Attachment[];
@@ -308,6 +309,31 @@ export interface TaskGitlabLink {
     created_at: string;
     updated_at: string;
     gitlab_project?: GitlabProject;
+}
+
+export interface FigmaConnection {
+    id: string;
+    name: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TaskFigmaLink {
+    id: string;
+    task_id: string;
+    figma_connection_id: string;
+    file_key: string;
+    node_id?: string;
+    name: string;
+    url: string;
+    thumbnail_url?: string;
+    last_modified_at?: string;
+    meta: Record<string, unknown>;
+    last_synced_at: string;
+    created_at: string;
+    updated_at: string;
+    figma_connection?: FigmaConnection;
 }
 
 export interface SavedFilter {

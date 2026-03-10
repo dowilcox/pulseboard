@@ -15,7 +15,7 @@ class Team extends Model
     /**
      * The primary key type.
      */
-    protected $keyType = 'string';
+    protected $keyType = "string";
 
     /**
      * Indicates if the IDs are auto-incrementing.
@@ -37,15 +37,15 @@ class Team extends Model
     protected function casts(): array
     {
         return [
-            'settings' => 'array',
+            "settings" => "array",
         ];
     }
 
     public function members(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'team_members')
+        return $this->belongsToMany(User::class, "team_members")
             ->using(TeamMember::class)
-            ->withPivot('id', 'role')
+            ->withPivot("id", "role")
             ->withTimestamps();
     }
 
@@ -75,16 +75,24 @@ class Team extends Model
         return $this->hasMany(GitlabConnection::class);
     }
 
+    public function figmaConnections(): HasMany
+    {
+        return $this->hasMany(FigmaConnection::class);
+    }
+
     /**
      * Determine if the given user is a member of this team.
      */
     public function bots(): HasMany
     {
-        return $this->hasMany(User::class, 'created_by_team_id')->where('is_bot', true);
+        return $this->hasMany(User::class, "created_by_team_id")->where(
+            "is_bot",
+            true,
+        );
     }
 
     public function hasUser(User $user): bool
     {
-        return $this->members()->where('users.id', $user->id)->exists();
+        return $this->members()->where("users.id", $user->id)->exists();
     }
 }

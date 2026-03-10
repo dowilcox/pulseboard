@@ -1,38 +1,45 @@
-import PageHeader from '@/Components/Layout/PageHeader';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useState } from 'react';
-import type { Board, BoardTemplate, PageProps, Team, UserWithTeamPivot } from '@/types';
-import AddIcon from '@mui/icons-material/Add';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DownloadIcon from '@mui/icons-material/Download';
-import GitlabIcon from '@mui/icons-material/AccountTree';
-import SettingsIcon from '@mui/icons-material/Settings';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import Avatar from '@mui/material/Avatar';
-import AvatarGroup from '@mui/material/AvatarGroup';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Grid from '@mui/material/Grid2';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import PageHeader from "@/Components/Layout/PageHeader";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
+import { useCallback, useEffect, useState } from "react";
+import type {
+    Board,
+    BoardTemplate,
+    PageProps,
+    Team,
+    UserWithTeamPivot,
+} from "@/types";
+import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import DownloadIcon from "@mui/icons-material/Download";
+import BrushIcon from "@mui/icons-material/Brush";
+import GitlabIcon from "@mui/icons-material/AccountTree";
+import SettingsIcon from "@mui/icons-material/Settings";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import Avatar from "@mui/material/Avatar";
+import AvatarGroup from "@mui/material/AvatarGroup";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardActionArea from "@mui/material/CardActionArea";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Grid from "@mui/material/Grid2";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
 interface ColumnStat {
     column_name: string;
@@ -65,28 +72,29 @@ interface Props {
 export default function TeamsShow({ team, members, boards }: Props) {
     const { teams: sharedTeams } = usePage<PageProps>().props;
     const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
-    const canManage = userRole === 'owner' || userRole === 'admin';
+    const canManage = userRole === "owner" || userRole === "admin";
 
     const [createOpen, setCreateOpen] = useState(false);
     const [createTab, setCreateTab] = useState(0);
     const [templates, setTemplates] = useState<BoardTemplate[]>([]);
     const [templatesLoading, setTemplatesLoading] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate | null>(null);
+    const [selectedTemplate, setSelectedTemplate] =
+        useState<BoardTemplate | null>(null);
     const [stats, setStats] = useState<Stats | null>(null);
     const [statsLoading, setStatsLoading] = useState(true);
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
-        description: '',
+        name: "",
+        description: "",
     });
 
     const fetchTemplates = useCallback(() => {
         setTemplatesLoading(true);
-        fetch(route('templates.index'), {
-            headers: { Accept: 'application/json' },
+        fetch(route("templates.index"), {
+            headers: { Accept: "application/json" },
         })
             .then((res) => {
-                if (!res.ok) throw new Error('Failed to fetch templates');
+                if (!res.ok) throw new Error("Failed to fetch templates");
                 return res.json();
             })
             .then((data: BoardTemplate[]) => {
@@ -97,11 +105,12 @@ export default function TeamsShow({ team, members, boards }: Props) {
     }, []);
 
     useEffect(() => {
-        fetch(route('teams.dashboard.stats', team.id), {
-            headers: { Accept: 'application/json' },
+        fetch(route("teams.dashboard.stats", team.id), {
+            headers: { Accept: "application/json" },
         })
             .then((res) => {
-                if (!res.ok) throw new Error(`Stats request failed: ${res.status}`);
+                if (!res.ok)
+                    throw new Error(`Stats request failed: ${res.status}`);
                 return res.json();
             })
             .then((data: Stats) => {
@@ -118,14 +127,19 @@ export default function TeamsShow({ team, members, boards }: Props) {
     }));
 
     const totalTasks = columnData.reduce((s, c) => s + c.count, 0);
-    const completedTasks = columnData.filter((c) => c.isDone).reduce((s, c) => s + c.count, 0);
+    const completedTasks = columnData
+        .filter((c) => c.isDone)
+        .reduce((s, c) => s + c.count, 0);
     const overdueTasks = stats?.overdue_tasks ?? [];
 
     const handleCreateBoard = (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedTemplate) {
             router.post(
-                route('teams.templates.create-board', [team.id, selectedTemplate.id]),
+                route("teams.templates.create-board", [
+                    team.id,
+                    selectedTemplate.id,
+                ]),
                 { name: data.name, description: data.description },
                 {
                     onSuccess: () => {
@@ -137,7 +151,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                 },
             );
         } else {
-            post(route('teams.boards.store', team.id), {
+            post(route("teams.boards.store", team.id), {
                 onSuccess: () => {
                     setCreateOpen(false);
                     reset();
@@ -162,7 +176,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
         setSelectedTemplate(template);
         setData({
             name: template.name,
-            description: template.description ?? '',
+            description: template.description ?? "",
         });
     };
 
@@ -173,7 +187,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                 <PageHeader
                     title={team.name}
                     breadcrumbs={[
-                        { label: 'Teams', href: route('teams.index') },
+                        { label: "Teams", href: route("teams.index") },
                     ]}
                     actions={
                         <>
@@ -181,7 +195,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                 variant="outlined"
                                 startIcon={<DownloadIcon />}
                                 size="small"
-                                href={route('teams.export.csv', team.id)}
+                                href={route("teams.export.csv", team.id)}
                             >
                                 Export CSV
                             </Button>
@@ -190,7 +204,14 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     variant="outlined"
                                     startIcon={<GitlabIcon />}
                                     size="small"
-                                    onClick={() => router.get(route('teams.gitlab-projects.index', team.id))}
+                                    onClick={() =>
+                                        router.get(
+                                            route(
+                                                "teams.gitlab-projects.index",
+                                                team.id,
+                                            ),
+                                        )
+                                    }
                                 >
                                     GitLab
                                 </Button>
@@ -198,9 +219,27 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             {canManage && (
                                 <Button
                                     variant="outlined"
+                                    startIcon={<BrushIcon />}
+                                    size="small"
+                                    onClick={() =>
+                                        router.get(
+                                            route("teams.figma.index", team.id),
+                                        )
+                                    }
+                                >
+                                    Figma
+                                </Button>
+                            )}
+                            {canManage && (
+                                <Button
+                                    variant="outlined"
                                     startIcon={<SettingsIcon />}
                                     size="small"
-                                    onClick={() => router.get(route('teams.settings', team.id))}
+                                    onClick={() =>
+                                        router.get(
+                                            route("teams.settings", team.id),
+                                        )
+                                    }
                                 >
                                     Settings
                                 </Button>
@@ -223,68 +262,112 @@ export default function TeamsShow({ team, members, boards }: Props) {
             <Head title={team.name} />
 
             {/* Team info */}
-            <Paper elevation={0} sx={{ p: 2.5, mb: 3, bgcolor: 'action.hover' }}>
+            <Paper
+                elevation={0}
+                sx={{ p: 2.5, mb: 3, bgcolor: "action.hover" }}
+            >
                 {team.description && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 1.5 }}
+                    >
                         {team.description}
                     </Typography>
                 )}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <AvatarGroup
                         max={5}
                         sx={{
-                            '& .MuiAvatar-root': { width: 28, height: 28, fontSize: '0.75rem', fontWeight: 600 },
+                            "& .MuiAvatar-root": {
+                                width: 28,
+                                height: 28,
+                                fontSize: "0.75rem",
+                                fontWeight: 600,
+                            },
                         }}
                     >
                         {members.map((member) => (
                             <Tooltip key={member.id} title={member.name}>
-                                <Avatar src={member.avatar_url} alt={member.name}>{member.name.charAt(0).toUpperCase()}</Avatar>
+                                <Avatar
+                                    src={member.avatar_url}
+                                    alt={member.name}
+                                >
+                                    {member.name.charAt(0).toUpperCase()}
+                                </Avatar>
                             </Tooltip>
                         ))}
                     </AvatarGroup>
                     <Typography variant="body2" color="text.secondary">
-                        {members.length} member{members.length !== 1 ? 's' : ''}
+                        {members.length} member{members.length !== 1 ? "s" : ""}
                     </Typography>
                 </Box>
             </Paper>
 
             {/* Summary stats */}
             {statsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                     <CircularProgress size={28} />
                 </Box>
             ) : stats ? (
                 <Grid container spacing={2} sx={{ mb: 4 }}>
                     <Grid size={{ xs: 6, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={600}
+                            >
                                 Total Tasks
                             </Typography>
-                            <Typography variant="h4" component="p" fontWeight={700} sx={{ mt: 0.5 }}>
+                            <Typography
+                                variant="h4"
+                                component="p"
+                                fontWeight={700}
+                                sx={{ mt: 0.5 }}
+                            >
                                 {totalTasks}
                             </Typography>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={600}
+                            >
                                 Completed
                             </Typography>
-                            <Typography variant="h4" component="p" fontWeight={700} color="success.main" sx={{ mt: 0.5 }}>
+                            <Typography
+                                variant="h4"
+                                component="p"
+                                fontWeight={700}
+                                color="success.main"
+                                sx={{ mt: 0.5 }}
+                            >
                                 {completedTasks}
                             </Typography>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={600}
+                            >
                                 Overdue
                             </Typography>
                             <Typography
                                 variant="h4"
                                 component="p"
                                 fontWeight={700}
-                                color={overdueTasks.length > 0 ? 'error.main' : 'text.primary'}
+                                color={
+                                    overdueTasks.length > 0
+                                        ? "error.main"
+                                        : "text.primary"
+                                }
                                 sx={{ mt: 0.5 }}
                             >
                                 {overdueTasks.length}
@@ -293,19 +376,38 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     </Grid>
                     <Grid size={{ xs: 6, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                fontWeight={600}
+                            >
                                 Avg Cycle Time
                             </Typography>
-                            <Typography variant="h4" component="p" fontWeight={700} sx={{ mt: 0.5 }}>
+                            <Typography
+                                variant="h4"
+                                component="p"
+                                fontWeight={700}
+                                sx={{ mt: 0.5 }}
+                            >
                                 {stats.cycle_time > 0 ? (
                                     <>
                                         {stats.cycle_time}
-                                        <Typography component="span" variant="body2" color="text.secondary">
-                                            {' '}days
+                                        <Typography
+                                            component="span"
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            {" "}
+                                            days
                                         </Typography>
                                     </>
                                 ) : (
-                                    <Box component="span" sx={{ color: 'text.secondary' }}>—</Box>
+                                    <Box
+                                        component="span"
+                                        sx={{ color: "text.secondary" }}
+                                    >
+                                        —
+                                    </Box>
                                 )}
                             </Typography>
                         </Paper>
@@ -315,7 +417,12 @@ export default function TeamsShow({ team, members, boards }: Props) {
 
             {/* Boards */}
             {boards.length > 0 && (
-                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ display: 'block', mb: 1.5, letterSpacing: '0.02em' }}>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight={600}
+                    sx={{ display: "block", mb: 1.5, letterSpacing: "0.02em" }}
+                >
                     Boards
                 </Typography>
             )}
@@ -323,18 +430,28 @@ export default function TeamsShow({ team, members, boards }: Props) {
             {boards.length === 0 ? (
                 <Box
                     sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                         py: 8,
                     }}
                 >
-                    <DashboardIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
-                    <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                    <DashboardIcon
+                        sx={{ fontSize: 48, color: "text.disabled", mb: 2 }}
+                    />
+                    <Typography
+                        variant="subtitle1"
+                        fontWeight={600}
+                        gutterBottom
+                    >
                         No boards yet
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 3 }}>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 0.5, mb: 3 }}
+                    >
                         Create your first board to start organizing tasks.
                     </Typography>
                     <Button
@@ -352,20 +469,42 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             <Card
                                 variant="outlined"
                                 sx={{
-                                    transition: 'border-color 150ms ease, background-color 150ms ease',
-                                    '&:hover': { borderColor: 'action.selected' },
+                                    transition:
+                                        "border-color 150ms ease, background-color 150ms ease",
+                                    "&:hover": {
+                                        borderColor: "action.selected",
+                                    },
                                 }}
                             >
                                 <CardActionArea
                                     onClick={() =>
-                                        router.get(route('teams.boards.show', [team.id, board.id]))
+                                        router.get(
+                                            route("teams.boards.show", [
+                                                team.id,
+                                                board.id,
+                                            ]),
+                                        )
                                     }
                                 >
-                                    <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <CardContent
+                                        sx={{
+                                            p: 2.5,
+                                            "&:last-child": { pb: 2.5 },
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                mb: 1,
+                                            }}
+                                        >
                                             <DashboardIcon
                                                 fontSize="small"
-                                                sx={{ color: 'primary.main', mr: 1 }}
+                                                sx={{
+                                                    color: "primary.main",
+                                                    mr: 1,
+                                                }}
                                             />
                                             <Typography
                                                 variant="subtitle1"
@@ -384,21 +523,40 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                                 color="text.secondary"
                                                 sx={{
                                                     mb: 1.5,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    display: '-webkit-box',
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    display: "-webkit-box",
                                                     WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: 'vertical',
+                                                    WebkitBoxOrient: "vertical",
                                                 }}
                                             >
                                                 {board.description}
                                             </Typography>
                                         )}
 
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                            <ViewColumnIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-                                            <Typography variant="caption" color="text.secondary">
-                                                {board.columns?.length ?? 0} column{(board.columns?.length ?? 0) !== 1 ? 's' : ''}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 0.75,
+                                            }}
+                                        >
+                                            <ViewColumnIcon
+                                                sx={{
+                                                    fontSize: 16,
+                                                    color: "text.disabled",
+                                                }}
+                                            />
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {board.columns?.length ?? 0}{" "}
+                                                column
+                                                {(board.columns?.length ??
+                                                    0) !== 1
+                                                    ? "s"
+                                                    : ""}
                                             </Typography>
                                         </Box>
                                     </CardContent>
@@ -410,10 +568,18 @@ export default function TeamsShow({ team, members, boards }: Props) {
             )}
 
             {/* Create Board Dialog */}
-            <Dialog open={createOpen} onClose={handleClose} maxWidth="sm" fullWidth aria-labelledby="create-board-dialog-title">
+            <Dialog
+                open={createOpen}
+                onClose={handleClose}
+                maxWidth="sm"
+                fullWidth
+                aria-labelledby="create-board-dialog-title"
+            >
                 <form onSubmit={handleCreateBoard}>
                     <DialogTitle id="create-board-dialog-title" sx={{ pb: 0 }}>
-                        <Typography variant="subtitle1" fontWeight={600}>Create Board</Typography>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                            Create Board
+                        </Typography>
                         <Tabs
                             value={createTab}
                             onChange={(_, v) => {
@@ -429,34 +595,70 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             <Tab label="From Template" />
                         </Tabs>
                     </DialogTitle>
-                    <DialogContent sx={{ pt: '16px !important' }}>
+                    <DialogContent sx={{ pt: "16px !important" }}>
                         {createTab === 1 && (
                             <Box sx={{ mb: 2 }}>
                                 {templatesLoading ? (
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            py: 3,
+                                        }}
+                                    >
                                         <CircularProgress size={24} />
                                     </Box>
                                 ) : templates.length === 0 ? (
-                                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                                        No templates available. Save a board as a template from its settings page.
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        sx={{ py: 2, textAlign: "center" }}
+                                    >
+                                        No templates available. Save a board as
+                                        a template from its settings page.
                                     </Typography>
                                 ) : (
-                                    <Paper variant="outlined" sx={{ maxHeight: 200, overflow: 'auto' }}>
+                                    <Paper
+                                        variant="outlined"
+                                        sx={{
+                                            maxHeight: 200,
+                                            overflow: "auto",
+                                        }}
+                                    >
                                         <List disablePadding>
                                             {templates.map((template) => (
                                                 <ListItemButton
                                                     key={template.id}
-                                                    selected={selectedTemplate?.id === template.id}
-                                                    onClick={() => handleSelectTemplate(template)}
+                                                    selected={
+                                                        selectedTemplate?.id ===
+                                                        template.id
+                                                    }
+                                                    onClick={() =>
+                                                        handleSelectTemplate(
+                                                            template,
+                                                        )
+                                                    }
                                                 >
                                                     <ListItemText
                                                         primary={template.name}
-                                                        secondary={template.description}
-                                                        primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
-                                                        secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                                                        secondary={
+                                                            template.description
+                                                        }
+                                                        primaryTypographyProps={{
+                                                            variant: "body2",
+                                                            fontWeight: 500,
+                                                        }}
+                                                        secondaryTypographyProps={{
+                                                            variant: "caption",
+                                                            noWrap: true,
+                                                        }}
                                                     />
-                                                    {selectedTemplate?.id === template.id && (
-                                                        <CheckCircleOutlineIcon color="primary" fontSize="small" />
+                                                    {selectedTemplate?.id ===
+                                                        template.id && (
+                                                        <CheckCircleOutlineIcon
+                                                            color="primary"
+                                                            fontSize="small"
+                                                        />
                                                     )}
                                                 </ListItemButton>
                                             ))}
@@ -471,7 +673,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             fullWidth
                             required
                             value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
+                            onChange={(e) => setData("name", e.target.value)}
                             error={!!errors.name}
                             helperText={errors.name}
                             sx={{ mb: 2 }}
@@ -482,19 +684,28 @@ export default function TeamsShow({ team, members, boards }: Props) {
                             multiline
                             rows={3}
                             value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
+                            onChange={(e) =>
+                                setData("description", e.target.value)
+                            }
                             error={!!errors.description}
                             helperText={errors.description}
                         />
                     </DialogContent>
                     <DialogActions sx={{ px: 3, py: 2 }}>
-                        <Button variant="text" onClick={handleClose}>Cancel</Button>
+                        <Button variant="text" onClick={handleClose}>
+                            Cancel
+                        </Button>
                         <Button
                             type="submit"
                             variant="contained"
-                            disabled={processing || (createTab === 1 && !selectedTemplate)}
+                            disabled={
+                                processing ||
+                                (createTab === 1 && !selectedTemplate)
+                            }
                         >
-                            {selectedTemplate ? 'Create from Template' : 'Create'}
+                            {selectedTemplate
+                                ? "Create from Template"
+                                : "Create"}
                         </Button>
                     </DialogActions>
                 </form>

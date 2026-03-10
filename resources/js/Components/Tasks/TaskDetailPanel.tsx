@@ -1,25 +1,37 @@
-import GitlabSection from '@/Components/Gitlab/GitlabSection';
-import ActivityFeed from '@/Components/Tasks/ActivityFeed';
-import AssigneeSelector from '@/Components/Tasks/AssigneeSelector';
-import AttachmentList from '@/Components/Tasks/AttachmentList';
-import LabelSelector from '@/Components/Tasks/LabelSelector';
-import PrioritySelector from '@/Components/Tasks/PrioritySelector';
-import SubtaskList from '@/Components/Tasks/SubtaskList';
-import type { BoardEvent } from '@/hooks/useBoardChannel';
-import type { Activity, Attachment, Comment, GitlabProject, Label, Task, TaskGitlabLink, User } from '@/types';
-import { router, usePage } from '@inertiajs/react';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Drawer from '@mui/material/Drawer';
-import IconButton from '@mui/material/IconButton';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import FigmaSection from "@/Components/Figma/FigmaSection";
+import GitlabSection from "@/Components/Gitlab/GitlabSection";
+import ActivityFeed from "@/Components/Tasks/ActivityFeed";
+import AssigneeSelector from "@/Components/Tasks/AssigneeSelector";
+import AttachmentList from "@/Components/Tasks/AttachmentList";
+import LabelSelector from "@/Components/Tasks/LabelSelector";
+import PrioritySelector from "@/Components/Tasks/PrioritySelector";
+import SubtaskList from "@/Components/Tasks/SubtaskList";
+import type { BoardEvent } from "@/hooks/useBoardChannel";
+import type {
+    Activity,
+    Attachment,
+    Comment,
+    FigmaConnection,
+    GitlabProject,
+    Label,
+    Task,
+    TaskFigmaLink,
+    TaskGitlabLink,
+    User,
+} from "@/types";
+import { router, usePage } from "@inertiajs/react";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
     task: Task | null;
@@ -30,6 +42,7 @@ interface Props {
     members: User[];
     labels: Label[];
     gitlabProjects?: GitlabProject[];
+    figmaConnections?: FigmaConnection[];
     lastBoardEvent?: BoardEvent | null;
 }
 
@@ -49,13 +62,14 @@ export default function TaskDetailPanel({
     members,
     labels,
     gitlabProjects = [],
+    figmaConnections = [],
     lastBoardEvent,
 }: Props) {
     const { auth } = usePage().props as { auth: { user: User } };
     const [detail, setDetail] = useState<TaskDetail | null>(null);
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [dueDate, setDueDate] = useState('');
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [dueDate, setDueDate] = useState("");
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,24 +89,24 @@ export default function TaskDetailPanel({
         }
 
         setTitle(task.title);
-        setDescription(task.description ?? '');
-        setDueDate(task.due_date ?? '');
+        setDescription(task.description ?? "");
+        setDueDate(task.due_date ?? "");
 
         const controller = new AbortController();
 
-        fetch(route('tasks.show', [teamId, boardId, task.id]), {
-            headers: { Accept: 'application/json' },
+        fetch(route("tasks.show", [teamId, boardId, task.id]), {
+            headers: { Accept: "application/json" },
             signal: controller.signal,
         })
             .then((res) => res.json())
             .then((data: TaskDetail) => {
                 setDetail(data);
                 setTitle(data.title);
-                setDescription(data.description ?? '');
-                setDueDate(data.due_date ?? '');
+                setDescription(data.description ?? "");
+                setDueDate(data.due_date ?? "");
             })
             .catch((err) => {
-                if (err.name === 'AbortError') return;
+                if (err.name === "AbortError") return;
                 // Fall back to the task data we have
                 setDetail(task as TaskDetail);
             });
@@ -107,28 +121,37 @@ export default function TaskDetailPanel({
         if (eventTaskId && eventTaskId !== task.id) return;
 
         const relevantActions = [
-            'field_changed', 'assigned', 'unassigned', 'labels_changed',
-            'commented', 'comment.updated', 'comment.deleted',
-            'attachment_added', 'attachment_removed',
-            'gitlab_branch_created', 'gitlab_mr_created', 'gitlab_mr_merged', 'gitlab_mr_closed',
+            "field_changed",
+            "assigned",
+            "unassigned",
+            "labels_changed",
+            "commented",
+            "comment.updated",
+            "comment.deleted",
+            "attachment_added",
+            "attachment_removed",
+            "gitlab_branch_created",
+            "gitlab_mr_created",
+            "gitlab_mr_merged",
+            "gitlab_mr_closed",
         ];
         if (!relevantActions.includes(lastBoardEvent.action)) return;
 
         const controller = new AbortController();
 
-        fetch(route('tasks.show', [teamId, boardId, task.id]), {
-            headers: { Accept: 'application/json' },
+        fetch(route("tasks.show", [teamId, boardId, task.id]), {
+            headers: { Accept: "application/json" },
             signal: controller.signal,
         })
             .then((res) => res.json())
             .then((data: TaskDetail) => {
                 setDetail(data);
                 setTitle(data.title);
-                setDescription(data.description ?? '');
-                setDueDate(data.due_date ?? '');
+                setDescription(data.description ?? "");
+                setDueDate(data.due_date ?? "");
             })
             .catch((err) => {
-                if (err.name === 'AbortError') return;
+                if (err.name === "AbortError") return;
             });
 
         return () => controller.abort();
@@ -140,13 +163,13 @@ export default function TaskDetailPanel({
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
             titleTimeoutRef.current = setTimeout(() => {
                 router.put(
-                    route('tasks.update', [teamId, boardId, task.id]),
+                    route("tasks.update", [teamId, boardId, task.id]),
                     { title: newTitle },
-                    { preserveScroll: true }
+                    { preserveScroll: true },
                 );
             }, 600);
         },
-        [task?.id, teamId, boardId]
+        [task?.id, teamId, boardId],
     );
 
     const saveDescription = useCallback(
@@ -155,27 +178,27 @@ export default function TaskDetailPanel({
             if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             descTimeoutRef.current = setTimeout(() => {
                 router.put(
-                    route('tasks.update', [teamId, boardId, task.id]),
+                    route("tasks.update", [teamId, boardId, task.id]),
                     { description: newDesc || null },
-                    { preserveScroll: true }
+                    { preserveScroll: true },
                 );
             }, 800);
         },
-        [task?.id, teamId, boardId]
+        [task?.id, teamId, boardId],
     );
 
     const saveDueDate = (newDate: string) => {
         if (!task) return;
         router.put(
-            route('tasks.update', [teamId, boardId, task.id]),
+            route("tasks.update", [teamId, boardId, task.id]),
             { due_date: newDate || null },
-            { preserveScroll: true }
+            { preserveScroll: true },
         );
     };
 
     const handleDelete = () => {
         if (!task) return;
-        router.delete(route('tasks.destroy', [teamId, boardId, task.id]), {
+        router.delete(route("tasks.destroy", [teamId, boardId, task.id]), {
             preserveScroll: true,
             onSuccess: () => onClose(),
         });
@@ -190,12 +213,22 @@ export default function TaskDetailPanel({
             open={open}
             onClose={onClose}
             PaperProps={{
-                sx: { width: { xs: '100%', sm: '50%', md: '40%' }, maxWidth: 600 },
+                sx: {
+                    width: { xs: "100%", sm: "50%", md: "40%" },
+                    maxWidth: 600,
+                },
             }}
         >
-            <Box sx={{ p: 3, height: '100%', overflowY: 'auto' }}>
+            <Box sx={{ p: 3, height: "100%", overflowY: "auto" }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb: 2,
+                    }}
+                >
                     <Box sx={{ flex: 1, mr: 1 }}>
                         <TextField
                             fullWidth
@@ -207,20 +240,30 @@ export default function TaskDetailPanel({
                             }}
                             slotProps={{
                                 input: {
-                                    sx: { fontSize: '1.25rem', fontWeight: 600 },
+                                    sx: {
+                                        fontSize: "1.25rem",
+                                        fontWeight: 600,
+                                    },
                                     disableUnderline: true,
                                 },
                             }}
                         />
                         {displayTask.creator && (
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
                                 Created by {displayTask.creator.name}
                             </Typography>
                         )}
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
                         <Tooltip title="Delete task">
-                            <IconButton size="small" onClick={handleDelete} color="error">
+                            <IconButton
+                                size="small"
+                                onClick={handleDelete}
+                                color="error"
+                            >
                                 <DeleteIcon fontSize="small" />
                             </IconButton>
                         </Tooltip>
@@ -233,18 +276,37 @@ export default function TaskDetailPanel({
                 <Divider sx={{ mb: 2 }} />
 
                 {/* Sidebar fields */}
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        mb: 3,
+                    }}
+                >
                     {/* Priority */}
                     <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                        >
                             Priority
                         </Typography>
-                        <PrioritySelector task={displayTask} teamId={teamId} boardId={boardId} />
+                        <PrioritySelector
+                            task={displayTask}
+                            teamId={teamId}
+                            boardId={boardId}
+                        />
                     </Box>
 
                     {/* Due date */}
                     <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                        >
                             Due Date
                         </Typography>
                         <TextField
@@ -258,7 +320,15 @@ export default function TaskDetailPanel({
                             }}
                             slotProps={{
                                 input: {
-                                    startAdornment: <CalendarTodayIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />,
+                                    startAdornment: (
+                                        <CalendarTodayIcon
+                                            sx={{
+                                                fontSize: 16,
+                                                mr: 1,
+                                                color: "text.secondary",
+                                            }}
+                                        />
+                                    ),
                                 },
                                 inputLabel: { shrink: true },
                             }}
@@ -267,7 +337,11 @@ export default function TaskDetailPanel({
 
                     {/* Assignees */}
                     <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                        >
                             Assignees
                         </Typography>
                         <AssigneeSelector
@@ -280,7 +354,11 @@ export default function TaskDetailPanel({
 
                     {/* Labels */}
                     <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontWeight={600}
+                        >
                             Labels
                         </Typography>
                         <LabelSelector
@@ -296,7 +374,11 @@ export default function TaskDetailPanel({
 
                 {/* Description */}
                 <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{ mb: 1 }}
+                    >
                         Description
                     </Typography>
                     <TextField
@@ -315,7 +397,11 @@ export default function TaskDetailPanel({
 
                 {/* Subtasks */}
                 <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{ mb: 1 }}
+                    >
                         Subtasks
                     </Typography>
                     <SubtaskList
@@ -326,9 +412,46 @@ export default function TaskDetailPanel({
                     />
                 </Box>
 
+                {/* Figma */}
+                {figmaConnections.length > 0 && (
+                    <Box sx={{ mb: 3 }}>
+                        <FigmaSection
+                            task={displayTask}
+                            teamId={teamId}
+                            boardId={boardId}
+                            figmaConnections={figmaConnections}
+                            onLinkCreated={(link: TaskFigmaLink) => {
+                                if (detail) {
+                                    setDetail({
+                                        ...detail,
+                                        figma_links: [
+                                            ...(detail.figma_links ?? []),
+                                            link,
+                                        ],
+                                    });
+                                }
+                            }}
+                            onLinkRemoved={(linkId: string) => {
+                                if (detail) {
+                                    setDetail({
+                                        ...detail,
+                                        figma_links: (
+                                            detail.figma_links ?? []
+                                        ).filter((l) => l.id !== linkId),
+                                    });
+                                }
+                            }}
+                        />
+                    </Box>
+                )}
+
                 {/* Attachments */}
                 <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{ mb: 1 }}
+                    >
                         Attachments
                     </Typography>
                     <AttachmentList
@@ -351,7 +474,10 @@ export default function TaskDetailPanel({
                                 if (detail) {
                                     setDetail({
                                         ...detail,
-                                        gitlab_links: [...(detail.gitlab_links ?? []), link],
+                                        gitlab_links: [
+                                            ...(detail.gitlab_links ?? []),
+                                            link,
+                                        ],
                                     });
                                 }
                             }}
@@ -359,9 +485,9 @@ export default function TaskDetailPanel({
                                 if (detail) {
                                     setDetail({
                                         ...detail,
-                                        gitlab_links: (detail.gitlab_links ?? []).filter(
-                                            (l) => l.id !== linkId,
-                                        ),
+                                        gitlab_links: (
+                                            detail.gitlab_links ?? []
+                                        ).filter((l) => l.id !== linkId),
                                     });
                                 }
                             }}
@@ -373,7 +499,11 @@ export default function TaskDetailPanel({
 
                 {/* Activity + Comments */}
                 <Box>
-                    <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                    <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{ mb: 1 }}
+                    >
                         Activity
                     </Typography>
                     {detail ? (

@@ -1,4 +1,5 @@
 import RichTextEditor from "@/Components/Common/RichTextEditor";
+import FigmaSection from "@/Components/Figma/FigmaSection";
 import GitlabSection from "@/Components/Gitlab/GitlabSection";
 import ActivityFeed from "@/Components/Tasks/ActivityFeed";
 import AttachmentList from "@/Components/Tasks/AttachmentList";
@@ -12,6 +13,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type {
     Board,
     Checklist,
+    FigmaConnection,
     GitlabProject,
     Label,
     PageProps,
@@ -41,6 +43,7 @@ interface Props {
     members: User[];
     labels: Label[];
     gitlabProjects: GitlabProject[];
+    figmaConnections: FigmaConnection[];
     boardTasks: TaskSummary[];
     teamBoards: Board[];
 }
@@ -52,6 +55,7 @@ export default function TasksShow({
     members,
     labels,
     gitlabProjects,
+    figmaConnections,
     boardTasks,
     teamBoards,
 }: Props) {
@@ -321,6 +325,18 @@ export default function TasksShow({
                             onSubtaskClick={handleSubtaskClick}
                         />
                     </Box>
+
+                    {/* Figma */}
+                    {figmaConnections.length > 0 && (
+                        <Box sx={{ mb: 3 }}>
+                            <FigmaSection
+                                task={task}
+                                teamId={team.id}
+                                boardId={board.id}
+                                figmaConnections={figmaConnections}
+                            />
+                        </Box>
+                    )}
 
                     {/* Attachments */}
                     <Box sx={{ mb: 3 }}>

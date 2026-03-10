@@ -30,21 +30,28 @@ class TaskController extends Controller
     /**
      * Store a newly created task in the column.
      */
-    public function store(StoreTaskRequest $request, Team $team, Board $board, Column $column): RedirectResponse
-    {
-        $this->authorize('create', [Task::class, $board]);
+    public function store(
+        StoreTaskRequest $request,
+        Team $team,
+        Board $board,
+        Column $column,
+    ): RedirectResponse {
+        $this->authorize("create", [Task::class, $board]);
 
         $data = $request->validated();
 
         // Apply default task template if set and no template was explicitly used
         if ($board->default_task_template_id && $board->defaultTaskTemplate) {
             $template = $board->defaultTaskTemplate;
-            $data = array_merge([
-                'description' => $template->description_template,
-                'priority' => $template->priority,
-                'effort_estimate' => $template->effort_estimate,
-                'label_ids' => $template->label_ids ?? [],
-            ], $data);
+            $data = array_merge(
+                [
+                    "description" => $template->description_template,
+                    "priority" => $template->priority,
+                    "effort_estimate" => $template->effort_estimate,
+                    "label_ids" => $template->label_ids ?? [],
+                ],
+                $data,
+            );
         }
 
         CreateTask::run($board, $column, $data, $request->user());
@@ -52,30 +59,34 @@ class TaskController extends Controller
         return Redirect::back();
     }
 
-    public function show(Team $team, Board $board, Task $task): JsonResponse|Response
-    {
-        $this->authorize('view', $task);
+    public function show(
+        Team $team,
+        Board $board,
+        Task $task,
+    ): JsonResponse|Response {
+        $this->authorize("view", $task);
 
         $task->load([
-            'assignees',
-            'labels',
-            'creator',
-            'column',
-            'comments.user',
-            'activities.user',
-            'attachments.user',
-            'subtasks.assignees',
-            'subtasks.labels',
-            'gitlabLinks.gitlabProject',
-            'dependencies',
-            'blockedBy',
-            'parentTask',
+            "assignees",
+            "labels",
+            "creator",
+            "column",
+            "comments.user",
+            "activities.user",
+            "attachments.user",
+            "subtasks.assignees",
+            "subtasks.labels",
+            "gitlabLinks.gitlabProject",
+            "figmaLinks.figmaConnection",
+            "dependencies",
+            "blockedBy",
+            "parentTask",
         ]);
         $task->loadCount([
-            'comments',
-            'subtasks',
-            'subtasks as completed_subtasks_count' => function ($query) {
-                $query->whereNotNull('completed_at');
+            "comments",
+            "subtasks",
+            "subtasks as completed_subtasks_count" => function ($query) {
+                $query->whereNotNull("completed_at");
             },
         ]);
 
@@ -83,44 +94,53 @@ class TaskController extends Controller
             return response()->json($task);
         }
 
-        $board->load('columns');
-        $members = $team->members()->whereNull('deactivated_at')->get();
-        $labels = Label::where('team_id', $team->id)->get();
+        $board->load("columns");
+        $members = $team->members()->whereNull("deactivated_at")->get();
+        $labels = Label::where("team_id", $team->id)->get();
 
-        $gitlabProjects = $team->gitlabProjects()
-            ->with('connection')
+        $gitlabProjects = $team->gitlabProjects()->with("connection")->get();
+
+        $figmaConnections = $team
+            ->figmaConnections()
+            ->where("is_active", true)
             ->get();
 
         // Get all tasks in this board for dependency autocomplete
-        $boardTasks = Task::where('board_id', $board->id)
-            ->select('id', 'task_number', 'title', 'column_id')
+        $boardTasks = Task::where("board_id", $board->id)
+            ->select("id", "task_number", "title", "column_id")
             ->get();
 
         // Get all boards in this team for cross-board move
-        $teamBoards = $team->boards()
+        $teamBoards = $team
+            ->boards()
             ->active()
-            ->with('columns')
-            ->orderBy('name')
-            ->get(['id', 'name', 'team_id']);
+            ->with("columns")
+            ->orderBy("name")
+            ->get(["id", "name", "team_id"]);
 
-        return Inertia::render('Tasks/Show', [
-            'team' => $team,
-            'board' => $board,
-            'task' => $task,
-            'members' => $members,
-            'labels' => $labels,
-            'gitlabProjects' => $gitlabProjects,
-            'teamBoards' => $teamBoards,
-            'boardTasks' => $boardTasks,
+        return Inertia::render("Tasks/Show", [
+            "team" => $team,
+            "board" => $board,
+            "task" => $task,
+            "members" => $members,
+            "labels" => $labels,
+            "gitlabProjects" => $gitlabProjects,
+            "figmaConnections" => $figmaConnections,
+            "teamBoards" => $teamBoards,
+            "boardTasks" => $boardTasks,
         ]);
     }
 
     /**
      * Update the specified task.
      */
-    public function update(UpdateTaskRequest $request, Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('update', $task);
+    public function update(
+        UpdateTaskRequest $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("update", $task);
 
         UpdateTask::run($task, $request->validated());
 
@@ -130,9 +150,12 @@ class TaskController extends Controller
     /**
      * Delete the specified task.
      */
-    public function destroy(Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('delete', $task);
+    public function destroy(
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("delete", $task);
 
         DeleteTask::run($task);
 
@@ -142,26 +165,46 @@ class TaskController extends Controller
     /**
      * Move a task to a different column or reorder within a column.
      */
-    public function move(MoveTaskRequest $request, Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('update', $task);
+    public function move(
+        MoveTaskRequest $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("update", $task);
 
-        $targetBoardId = $request->validated('board_id');
+        $targetBoardId = $request->validated("board_id");
         $targetBoard = null;
 
         if ($targetBoardId && $targetBoardId !== $board->id) {
             // Cross-board move: validate target board belongs to same team
-            $targetBoard = $team->boards()->active()->findOrFail($targetBoardId);
-            $this->authorize('update', $targetBoard);
-            $column = $targetBoard->columns()->findOrFail($request->validated('column_id'));
+            $targetBoard = $team
+                ->boards()
+                ->active()
+                ->findOrFail($targetBoardId);
+            $this->authorize("update", $targetBoard);
+            $column = $targetBoard
+                ->columns()
+                ->findOrFail($request->validated("column_id"));
         } else {
-            $column = $board->columns()->findOrFail($request->validated('column_id'));
+            $column = $board
+                ->columns()
+                ->findOrFail($request->validated("column_id"));
         }
 
-        MoveTask::run($task, $column, $request->validated('sort_order'), $targetBoard);
+        MoveTask::run(
+            $task,
+            $column,
+            $request->validated("sort_order"),
+            $targetBoard,
+        );
 
         if ($targetBoard) {
-            return Redirect::route('tasks.show', [$team->id, $targetBoard->id, $task->id]);
+            return Redirect::route("tasks.show", [
+                $team->id,
+                $targetBoard->id,
+                $task->id,
+            ]);
         }
 
         return Redirect::back();
@@ -170,16 +213,20 @@ class TaskController extends Controller
     /**
      * Update task assignees.
      */
-    public function updateAssignees(Request $request, Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('assign', $task);
+    public function updateAssignees(
+        Request $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("assign", $task);
 
         $validated = $request->validate([
-            'user_ids' => ['present', 'array'],
-            'user_ids.*' => ['uuid', 'exists:users,id'],
+            "user_ids" => ["present", "array"],
+            "user_ids.*" => ["uuid", "exists:users,id"],
         ]);
 
-        AssignTask::run($task, $validated['user_ids'], $request->user());
+        AssignTask::run($task, $validated["user_ids"], $request->user());
 
         return Redirect::back();
     }
@@ -187,16 +234,23 @@ class TaskController extends Controller
     /**
      * Update task labels.
      */
-    public function updateLabels(Request $request, Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('update', $task);
+    public function updateLabels(
+        Request $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("update", $task);
 
         $validated = $request->validate([
-            'label_ids' => ['present', 'array'],
-            'label_ids.*' => ['uuid', 'exists:labels,id'],
+            "label_ids" => ["present", "array"],
+            "label_ids.*" => ["uuid", "exists:labels,id"],
         ]);
 
-        $validLabelIds = Label::where('team_id', $team->id)->whereIn('id', $validated['label_ids'])->pluck('id')->toArray();
+        $validLabelIds = Label::where("team_id", $team->id)
+            ->whereIn("id", $validated["label_ids"])
+            ->pluck("id")
+            ->toArray();
 
         SyncTaskLabels::run($task, $validLabelIds);
 
@@ -206,9 +260,13 @@ class TaskController extends Controller
     /**
      * Toggle task completion status.
      */
-    public function toggleComplete(Request $request, Team $team, Board $board, Task $task): RedirectResponse
-    {
-        $this->authorize('update', $task);
+    public function toggleComplete(
+        Request $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize("update", $task);
 
         ToggleTaskCompletion::run($task, $request->user());
 
@@ -218,16 +276,20 @@ class TaskController extends Controller
     /**
      * Upload an image for the task (e.g. for rich text editor).
      */
-    public function uploadImage(Request $request, Team $team, Board $board, Task $task): JsonResponse
-    {
-        $this->authorize('update', $task);
+    public function uploadImage(
+        Request $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): JsonResponse {
+        $this->authorize("update", $task);
 
         $request->validate([
-            'image' => ['required', 'image', 'max:5120'],
+            "image" => ["required", "image", "max:5120"],
         ]);
 
-        $url = UploadTaskImage::run($task, $request->file('image'));
+        $url = UploadTaskImage::run($task, $request->file("image"));
 
-        return response()->json(['url' => $url]);
+        return response()->json(["url" => $url]);
     }
 }
