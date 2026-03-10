@@ -33,6 +33,8 @@ class AttachmentController extends Controller
     {
         $this->authorize('view', $task);
 
+        abort_unless(Storage::disk('local')->exists($attachment->file_path), 404, 'File not found.');
+
         return Storage::disk('local')->download($attachment->file_path, $attachment->filename);
     }
 

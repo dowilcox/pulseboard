@@ -25,6 +25,7 @@ import "@milkdown/crepe/theme/common/style.css";
 import "@milkdown/crepe/theme/frame.css";
 import "@milkdown/crepe/theme/frame-dark.css";
 import { useThemeMode } from "@/Contexts/ThemeContext";
+import { getCrepeThemeVars, crepeHeadingSx } from "./crepeTheme";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -74,7 +75,7 @@ interface ToolbarState {
     blockquote: boolean;
     bulletList: boolean;
     orderedList: boolean;
-    blockType: string; // "paragraph" | "heading-1" .. "heading-6" | "code_block" etc.
+    heading: boolean;
 }
 
 const defaultToolbarState: ToolbarState = {
@@ -85,7 +86,7 @@ const defaultToolbarState: ToolbarState = {
     blockquote: false,
     bulletList: false,
     orderedList: false,
-    blockType: "paragraph",
+    heading: false,
 };
 
 function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>): ToolbarState {
@@ -97,22 +98,19 @@ function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>):
             const { state } = view;
             const { from, $from } = state.selection;
 
-            // Check active marks
-            const storedMarks = state.storedMarks || state.selection.$from.marks();
-            const hasMark = (name: string) =>
-                storedMarks.some((m) => m.type.name === name) ||
-                state.doc.rangeHasMark(from, state.selection.to, state.schema.marks[name]!);
+            const storedMarks = state.storedMarks || $from.marks();
+            const hasMark = (name: string) => {
+                const markType = state.schema.marks[name];
+                if (!markType) return false;
+                return (
+                    storedMarks.some((m) => m.type.name === name) ||
+                    state.doc.rangeHasMark(from, state.selection.to, markType)
+                );
+            };
 
-            // Determine block type
             const parentNode = $from.parent;
-            let blockType = "paragraph";
-            if (parentNode.type.name === "heading") {
-                blockType = `heading-${parentNode.attrs.level as number}`;
-            } else if (parentNode.type.name === "code_block") {
-                blockType = "code_block";
-            }
+            const heading = parentNode.type.name === "heading";
 
-            // Check if inside blockquote or list
             let inBlockquote = false;
             let inBulletList = false;
             let inOrderedList = false;
@@ -131,7 +129,7 @@ function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>):
                 blockquote: inBlockquote,
                 bulletList: inBulletList,
                 orderedList: inOrderedList,
-                blockType,
+                heading,
             };
         });
     } catch {
@@ -142,46 +140,52 @@ function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>):
 function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggleSource: () => void }) {
     const [loading, getInstance] = useInstance();
     const [activeState, setActiveState] = useState<ToolbarState>(defaultToolbarState);
-    const rafRef = useRef<number>(0);
     const [linkAnchor, setLinkAnchor] = useState<null | HTMLElement>(null);
     const [linkUrl, setLinkUrl] = useState("https://");
     const linkInputRef = useRef<HTMLInputElement>(null);
 
-    // Poll editor state on animation frames to track selection changes
+    const updateState = useCallback(() => {
+        const editor = getInstance();
+        if (!editor) return;
+        const next = getToolbarState(editor);
+        setActiveState((prev) => {
+            if (
+                prev.bold !== next.bold ||
+                prev.italic !== next.italic ||
+                prev.strike !== next.strike ||
+                prev.code !== next.code ||
+                prev.blockquote !== next.blockquote ||
+                prev.bulletList !== next.bulletList ||
+                prev.orderedList !== next.orderedList ||
+                prev.heading !== next.heading
+            ) {
+                return next;
+            }
+            return prev;
+        });
+    }, [getInstance]);
+
+    // Event-driven state updates instead of RAF polling
     useEffect(() => {
         if (loading || sourceMode) return;
 
-        let mounted = true;
-        const poll = () => {
-            if (!mounted) return;
-            const editor = getInstance();
-            if (editor) {
-                const next = getToolbarState(editor);
-                setActiveState((prev) => {
-                    if (
-                        prev.bold !== next.bold ||
-                        prev.italic !== next.italic ||
-                        prev.strike !== next.strike ||
-                        prev.code !== next.code ||
-                        prev.blockquote !== next.blockquote ||
-                        prev.bulletList !== next.bulletList ||
-                        prev.orderedList !== next.orderedList ||
-                        prev.blockType !== next.blockType
-                    ) {
-                        return next;
-                    }
-                    return prev;
-                });
-            }
-            rafRef.current = requestAnimationFrame(poll);
-        };
-        rafRef.current = requestAnimationFrame(poll);
+        document.addEventListener("selectionchange", updateState);
+        document.addEventListener("keyup", updateState);
+        updateState();
 
         return () => {
-            mounted = false;
-            cancelAnimationFrame(rafRef.current);
+            document.removeEventListener("selectionchange", updateState);
+            document.removeEventListener("keyup", updateState);
         };
-    }, [loading, getInstance, sourceMode]);
+    }, [loading, updateState, sourceMode]);
+
+    const focusEditor = useCallback(() => {
+        const editor = getInstance();
+        if (!editor) return;
+        try {
+            editor.action((ctx) => ctx.get(editorViewCtx).focus());
+        } catch { /* editor may not be ready */ }
+    }, [getInstance]);
 
     const run = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,8 +193,9 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
             if (loading) return;
             const editor = getInstance();
             editor?.action(callCommand(cmd, payload));
+            requestAnimationFrame(updateState);
         },
-        [loading, getInstance],
+        [loading, getInstance, updateState],
     );
 
     const activeSx = {
@@ -230,7 +235,14 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
 
     const sep = <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />;
 
-    const isHeading = activeState.blockType.startsWith("heading-");
+    const insertLink = useCallback(() => {
+        if (linkUrl && linkUrl !== "https://") {
+            const editor = getInstance();
+            if (editor) editor.action(insert(`[link](${linkUrl})`));
+        }
+        setLinkAnchor(null);
+        requestAnimationFrame(focusEditor);
+    }, [linkUrl, getInstance, focusEditor]);
 
     return (
         <Box
@@ -245,12 +257,12 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
             }}
         >
             {btn("Heading", <HeadingIcon fontSize="small" />, () => {
-                if (isHeading) {
+                if (activeState.heading) {
                     run(turnIntoTextCommand.key);
                 } else {
                     run(wrapInHeadingCommand.key, 3);
                 }
-            }, isHeading, sourceMode)}
+            }, activeState.heading, sourceMode)}
             {btn("Bold", <FormatBold fontSize="small" />, () =>
                 run(toggleStrongCommand.key), activeState.bold, sourceMode,
             )}
@@ -278,6 +290,7 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
                 const editor = getInstance();
                 if (!editor) return;
                 editor.action(insert("- [ ] "));
+                requestAnimationFrame(updateState);
             }, false, sourceMode)}
             {sep}
             {btn("Link", <LinkIcon fontSize="small" />, (e) => {
@@ -288,7 +301,10 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
             <Popover
                 open={Boolean(linkAnchor)}
                 anchorEl={linkAnchor}
-                onClose={() => setLinkAnchor(null)}
+                onClose={() => {
+                    setLinkAnchor(null);
+                    requestAnimationFrame(focusEditor);
+                }}
                 anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                 transformOrigin={{ vertical: "top", horizontal: "left" }}
                 slotProps={{ paper: { sx: { p: 1.5, display: "flex", gap: 1, alignItems: "center" } } }}
@@ -301,13 +317,10 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
                     onKeyDown={(e) => {
                         if (e.key === "Enter") {
                             e.preventDefault();
-                            if (linkUrl && linkUrl !== "https://") {
-                                const editor = getInstance();
-                                if (editor) editor.action(insert(`[link](${linkUrl})`));
-                            }
-                            setLinkAnchor(null);
+                            insertLink();
                         } else if (e.key === "Escape") {
                             setLinkAnchor(null);
+                            requestAnimationFrame(focusEditor);
                         }
                     }}
                     placeholder="https://example.com"
@@ -328,13 +341,7 @@ function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggle
                     size="small"
                     variant="contained"
                     disableElevation
-                    onClick={() => {
-                        if (linkUrl && linkUrl !== "https://") {
-                            const editor = getInstance();
-                            if (editor) editor.action(insert(`[link](${linkUrl})`));
-                        }
-                        setLinkAnchor(null);
-                    }}
+                    onClick={insertLink}
                 >
                     Insert
                 </Button>
@@ -362,6 +369,12 @@ function CrepeEditor({
     editable,
     uploadImageUrl,
 }: Omit<RichTextEditorProps, "minHeight">) {
+    // Use ref for onChange so the Milkdown listener always calls the latest callback
+    const onChangeRef = useRef(onChange);
+    onChangeRef.current = onChange;
+
+    const [, getInstance] = useInstance();
+
     const imageUploadHandler = useCallback(
         async (file: File): Promise<string> => {
             if (!uploadImageUrl) {
@@ -369,12 +382,57 @@ function CrepeEditor({
             }
             const formData = new FormData();
             formData.append("image", file);
-            const response = await axios.post(uploadImageUrl, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
+            const response = await axios.post(uploadImageUrl, formData);
             return response.data.url;
         },
         [uploadImageUrl],
+    );
+
+    const handleImageFiles = useCallback(
+        async (files: FileList) => {
+            if (!uploadImageUrl) return false;
+            const imageFiles = Array.from(files).filter((f) =>
+                f.type.startsWith("image/"),
+            );
+            if (imageFiles.length === 0) return false;
+
+            for (const file of imageFiles) {
+                try {
+                    const url = await imageUploadHandler(file);
+                    const editor = getInstance();
+                    if (editor) {
+                        editor.action(insert(`![${file.name}](${url})`));
+                    }
+                } catch (err) {
+                    console.error("Image upload failed:", err);
+                }
+            }
+            return true;
+        },
+        [uploadImageUrl, imageUploadHandler, getInstance],
+    );
+
+    const hasImageFiles = (files: FileList) =>
+        uploadImageUrl && Array.from(files).some((f) => f.type.startsWith("image/"));
+
+    const handleDrop = useCallback(
+        (e: React.DragEvent) => {
+            if (!e.dataTransfer?.files.length || !hasImageFiles(e.dataTransfer.files)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            handleImageFiles(e.dataTransfer.files);
+        },
+        [handleImageFiles, hasImageFiles],
+    );
+
+    const handlePaste = useCallback(
+        (e: React.ClipboardEvent) => {
+            if (!e.clipboardData?.files.length || !hasImageFiles(e.clipboardData.files)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            handleImageFiles(e.clipboardData.files);
+        },
+        [handleImageFiles, hasImageFiles],
     );
 
     useEditor((root) => {
@@ -401,14 +459,18 @@ function CrepeEditor({
 
         crepe.on((listener) => {
             listener.markdownUpdated((_ctx, markdown) => {
-                onChange(markdown);
+                onChangeRef.current(markdown);
             });
         });
 
         return crepe;
     }, []);
 
-    return <Milkdown />;
+    return (
+        <div onDrop={handleDrop} onPaste={handlePaste}>
+            <Milkdown />
+        </div>
+    );
 }
 
 export default function RichTextEditor(props: RichTextEditorProps) {
@@ -422,18 +484,25 @@ export default function RichTextEditor(props: RichTextEditorProps) {
     const [sourceMode, setSourceMode] = useState(false);
     const [sourceValue, setSourceValue] = useState("");
     const editorKey = useRef(0);
+    const pendingContent = useRef(props.content);
+
+    // Keep pendingContent in sync with props when not in source mode
+    useEffect(() => {
+        if (!sourceMode) {
+            pendingContent.current = props.content;
+        }
+    }, [props.content, sourceMode]);
 
     const handleToggleSource = useCallback(() => {
         if (!sourceMode) {
-            // Entering source mode — snapshot current markdown
             setSourceValue(props.content);
         } else {
-            // Leaving source mode — push edits back & remount editor
             props.onChange(sourceValue);
+            pendingContent.current = sourceValue;
             editorKey.current += 1;
         }
         setSourceMode((prev) => !prev);
-    }, [sourceMode, sourceValue, props]);
+    }, [sourceMode, sourceValue, props.content, props.onChange]);
 
     return (
         <Box
@@ -457,53 +526,7 @@ export default function RichTextEditor(props: RichTextEditorProps) {
                         : "0 0 0 1px #6366f1",
                 },
                 "& .milkdown": {
-                    "--crepe-color-background": isDark
-                        ? "#1f1f1f"
-                        : "#ffffff",
-                    "--crepe-color-on-background": isDark
-                        ? "rgba(255,255,255,0.87)"
-                        : "rgba(0,0,0,0.87)",
-                    "--crepe-color-surface": isDark ? "#262626" : "#f5f5f5",
-                    "--crepe-color-surface-low": isDark
-                        ? "#1a1a1a"
-                        : "#fafafa",
-                    "--crepe-color-on-surface": isDark
-                        ? "rgba(255,255,255,0.70)"
-                        : "rgba(0,0,0,0.70)",
-                    "--crepe-color-on-surface-variant": isDark
-                        ? "rgba(255,255,255,0.55)"
-                        : "rgba(0,0,0,0.55)",
-                    "--crepe-color-outline": isDark
-                        ? "rgba(255,255,255,0.16)"
-                        : "rgba(0,0,0,0.23)",
-                    "--crepe-color-primary": isDark ? "#818cf8" : "#6366f1",
-                    "--crepe-color-secondary": isDark
-                        ? "rgba(129,140,248,0.15)"
-                        : "rgba(99,102,241,0.10)",
-                    "--crepe-color-on-secondary": isDark
-                        ? "#a5b4fc"
-                        : "#4f46e5",
-                    "--crepe-color-inverse": isDark ? "#e5e5e5" : "#1a1a1a",
-                    "--crepe-color-on-inverse": isDark
-                        ? "#1a1a1a"
-                        : "#e5e5e5",
-                    "--crepe-color-inline-code": isDark
-                        ? "#a5b4fc"
-                        : "#6366f1",
-                    "--crepe-color-error": isDark ? "#f87171" : "#dc2626",
-                    "--crepe-color-hover": isDark ? "#2e2e2e" : "#f0f0f0",
-                    "--crepe-color-selected": isDark
-                        ? "rgba(129,140,248,0.18)"
-                        : "rgba(99,102,241,0.12)",
-                    "--crepe-color-inline-area": isDark
-                        ? "#2b2b2b"
-                        : "#e8e8e8",
-                    "--crepe-font-title":
-                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
-                    "--crepe-font-default":
-                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
-                    "--crepe-font-code":
-                        '"Fira Code", "JetBrains Mono", monospace',
+                    ...getCrepeThemeVars(isDark),
                     border: "none",
                     borderRadius: 0,
                     overflow: "visible",
@@ -513,10 +536,7 @@ export default function RichTextEditor(props: RichTextEditorProps) {
                     padding: "16px",
                 },
                 "& .milkdown .editor h1, & .milkdown .editor h2, & .milkdown .editor h3, & .milkdown .editor h4, & .milkdown .editor h5, & .milkdown .editor h6":
-                    {
-                        "&:first-child": { marginTop: 0 },
-                        marginTop: "12px",
-                    },
+                    crepeHeadingSx,
             }}
         >
             <MilkdownProvider>
@@ -563,6 +583,7 @@ export default function RichTextEditor(props: RichTextEditorProps) {
                     <CrepeEditor
                         key={editorKey.current}
                         {...props}
+                        content={pendingContent.current}
                         placeholder={placeholder}
                         editable={editable}
                     />
