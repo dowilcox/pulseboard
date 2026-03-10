@@ -160,15 +160,33 @@ export default function TasksShow({
         task.completed_at !== null && task.completed_at !== undefined;
     const taskNumber = task.task_number ? `#${task.task_number}` : "";
 
+    // Extract unique GitLab projects linked to this task
+    const linkedGitlabProjects = (task.gitlab_links ?? []).reduce(
+        (acc, link) => {
+            if (
+                link.gitlab_project &&
+                !acc.some((p) => p.id === link.gitlab_project!.id)
+            ) {
+                acc.push(link.gitlab_project);
+            }
+            return acc;
+        },
+        [] as GitlabProject[],
+    );
+    const gitlabPrefix =
+        linkedGitlabProjects.length > 0
+            ? `[${linkedGitlabProjects.map((p) => p.path_with_namespace).join(", ")}]`
+            : "";
+
     return (
         <AuthenticatedLayout
             currentTeam={team as Team}
             activeBoardId={board.id}
             header={
                 <PageHeader
-                    title={
-                        taskNumber ? `${taskNumber} ${task.title}` : task.title
-                    }
+                    title={[gitlabPrefix, taskNumber, task.title]
+                        .filter(Boolean)
+                        .join(" ")}
                     breadcrumbs={[
                         { label: "Teams", href: route("teams.index") },
                         {
@@ -186,7 +204,9 @@ export default function TasksShow({
                 />
             }
         >
-            <Head title={`${taskNumber} ${task.title} - ${board.name}`} />
+            <Head
+                title={`${[gitlabPrefix, taskNumber, task.title].filter(Boolean).join(" ")} - ${board.name}`}
+            />
 
             <Box
                 sx={{
@@ -199,12 +219,14 @@ export default function TasksShow({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     {/* Task number + title */}
                     <Box sx={{ mb: 2 }}>
-                        {taskNumber && (
+                        {(taskNumber || gitlabPrefix) && (
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
                                 fontWeight={600}
                             >
+                                {gitlabPrefix}
+                                {gitlabPrefix && taskNumber ? " " : ""}
                                 {taskNumber}
                             </Typography>
                         )}
@@ -227,6 +249,32 @@ export default function TasksShow({
                             }}
                             aria-label="Task title"
                         />
+
+                        {/* GitLab project links */}
+                        {linkedGitlabProjects.length > 0 && (
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 0.5,
+                                    mt: 0.5,
+                                }}
+                            >
+                                {linkedGitlabProjects.map((project) => (
+                                    <Link
+                                        key={project.id}
+                                        href={project.web_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        variant="body2"
+                                        underline="hover"
+                                        color="text.secondary"
+                                    >
+                                        {project.path_with_namespace}
+                                    </Link>
+                                ))}
+                            </Box>
+                        )}
 
                         {/* Parent task breadcrumb */}
                         {task.parent_task && (
