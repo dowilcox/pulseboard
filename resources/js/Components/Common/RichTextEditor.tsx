@@ -1,466 +1,573 @@
-import { useCallback, useMemo, useRef } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
-import Placeholder from "@tiptap/extension-placeholder";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { Markdown } from "tiptap-markdown";
-import { createLowlight, common } from "lowlight";
-import TurndownService from "turndown";
-import { gfm } from "turndown-plugin-gfm";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Crepe, CrepeFeature } from "@milkdown/crepe";
+import { editorViewCtx } from "@milkdown/core";
+import { Milkdown, MilkdownProvider, useEditor, useInstance } from "@milkdown/react";
+import { callCommand, insert } from "@milkdown/kit/utils";
+import {
+    toggleStrongCommand,
+    toggleEmphasisCommand,
+    toggleInlineCodeCommand,
+    wrapInHeadingCommand,
+    wrapInBlockquoteCommand,
+    wrapInBulletListCommand,
+    wrapInOrderedListCommand,
+    createCodeBlockCommand,
+    turnIntoTextCommand,
+} from "@milkdown/kit/preset/commonmark";
+import {
+    toggleStrikethroughCommand,
+} from "@milkdown/kit/preset/gfm";
+import {
+    undoCommand,
+    redoCommand,
+} from "@milkdown/kit/plugin/history";
+import "@milkdown/crepe/theme/common/style.css";
+import "@milkdown/crepe/theme/frame.css";
+import "@milkdown/crepe/theme/frame-dark.css";
+import { useThemeMode } from "@/Contexts/ThemeContext";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { useTheme } from "@mui/material/styles";
 import FormatBold from "@mui/icons-material/FormatBold";
 import FormatItalic from "@mui/icons-material/FormatItalic";
-import FormatUnderlined from "@mui/icons-material/FormatUnderlined";
 import FormatStrikethrough from "@mui/icons-material/FormatStrikethrough";
-import Title from "@mui/icons-material/Title";
+import FormatQuote from "@mui/icons-material/FormatQuote";
+import CodeIcon from "@mui/icons-material/Code";
+import LinkIcon from "@mui/icons-material/Link";
 import FormatListBulleted from "@mui/icons-material/FormatListBulleted";
 import FormatListNumbered from "@mui/icons-material/FormatListNumbered";
 import Checklist from "@mui/icons-material/Checklist";
-import CodeIcon from "@mui/icons-material/Code";
-import LinkIcon from "@mui/icons-material/Link";
-import ImageIcon from "@mui/icons-material/Image";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
+import DataObject from "@mui/icons-material/DataObject";
+import SourceIcon from "@mui/icons-material/IntegrationInstructions";
+import SvgIcon from "@mui/material/SvgIcon";
+import Popover from "@mui/material/Popover";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
 import axios from "axios";
 
-const lowlight = createLowlight(common);
-
-function createTurndownService(): TurndownService {
-    const td = new TurndownService({
-        headingStyle: "atx",
-        codeBlockStyle: "fenced",
-        fence: "```",
-        bulletListMarker: "-",
-        emDelimiter: "*",
-        strongDelimiter: "**",
-    });
-    td.use(gfm);
-    // Remove empty links and images that produce noisy output
-    td.addRule("removeEmptyLinks", {
-        filter: (node) =>
-            node.nodeName === "A" &&
-            !node.textContent?.trim() &&
-            !node.querySelector("img"),
-        replacement: () => "",
-    });
-    return td;
+function HeadingIcon({ fontSize }: { fontSize?: "small" | "medium" | "inherit" }) {
+    return (
+        <SvgIcon fontSize={fontSize}>
+            <path d="M4 4v16h3v-6h6v6h3V4h-3v7H7V4z" />
+        </SvgIcon>
+    );
 }
 
 interface RichTextEditorProps {
     content: string;
-    onChange: (html: string) => void;
+    onChange: (markdown: string) => void;
     placeholder?: string;
     editable?: boolean;
     uploadImageUrl?: string;
     minHeight?: number;
 }
 
-export default function RichTextEditor({
-    content,
-    onChange,
-    placeholder = "Write something...",
-    editable = true,
-    uploadImageUrl,
-    minHeight = 200,
-}: RichTextEditorProps) {
-    const theme = useTheme();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const turndown = useMemo(() => createTurndownService(), []);
+interface ToolbarState {
+    bold: boolean;
+    italic: boolean;
+    strike: boolean;
+    code: boolean;
+    blockquote: boolean;
+    bulletList: boolean;
+    orderedList: boolean;
+    blockType: string; // "paragraph" | "heading-1" .. "heading-6" | "code_block" etc.
+}
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                codeBlock: false,
-                link: {
-                    openOnClick: false,
-                },
-            }),
-            Image,
-            Placeholder.configure({
-                placeholder,
-            }),
-            TaskList,
-            TaskItem.configure({
-                nested: true,
-            }),
-            CodeBlockLowlight.configure({
-                lowlight,
-            }),
-            Markdown.configure({
-                html: true,
-                transformPastedText: true,
-                transformCopiedText: true,
-            }),
-        ],
-        content,
-        editable,
-        onUpdate: ({ editor: ed }) => {
-            onChange(ed.getHTML());
-        },
-        editorProps: {
-            attributes: {
-                role: "textbox",
-                "aria-multiline": "true",
-                "aria-label": placeholder,
-            },
-            handlePaste: (_view, event) => {
-                const clipboard = event.clipboardData;
-                if (!clipboard) return false;
+const defaultToolbarState: ToolbarState = {
+    bold: false,
+    italic: false,
+    strike: false,
+    code: false,
+    blockquote: false,
+    bulletList: false,
+    orderedList: false,
+    blockType: "paragraph",
+};
 
-                // Handle image pastes
-                for (const item of clipboard.items) {
-                    if (item.type.startsWith("image/")) {
-                        if (!uploadImageUrl) return false;
-                        event.preventDefault();
-                        const file = item.getAsFile();
-                        if (file) uploadImage(file);
-                        return true;
-                    }
-                }
+function getToolbarState(editor: ReturnType<ReturnType<typeof useInstance>[1]>): ToolbarState {
+    if (!editor) return defaultToolbarState;
 
-                // If clipboard has HTML (from web pages, GitLab, Notion, etc.),
-                // convert it to markdown first, then let tiptap-markdown parse it.
-                // This produces much cleaner results than letting TipTap parse
-                // the raw HTML directly.
-                const html = clipboard.getData("text/html");
-                const plainText = clipboard.getData("text/plain");
-                if (html && editor) {
-                    // Skip conversion if the HTML is trivially simple (just a
-                    // plain text wrapper with no real formatting). This avoids
-                    // interfering with plain markdown text pastes which
-                    // tiptap-markdown already handles well via transformPastedText.
-                    const hasRichContent =
-                        /<(h[1-6]|ul|ol|li|pre|code|table|blockquote|img|a\s|strong|em|del|s)\b/i.test(
-                            html,
-                        );
-                    if (hasRichContent) {
-                        event.preventDefault();
-                        const markdown = turndown.turndown(html);
-                        editor.commands.insertContent(markdown);
-                        return true;
-                    }
-                }
+    try {
+        return editor.action((ctx) => {
+            const view = ctx.get(editorViewCtx);
+            const { state } = view;
+            const { from, $from } = state.selection;
 
-                return false;
-            },
-            handleDrop: (_view, event, _slice, moved) => {
-                if (moved || !uploadImageUrl) return false;
+            // Check active marks
+            const storedMarks = state.storedMarks || state.selection.$from.marks();
+            const hasMark = (name: string) =>
+                storedMarks.some((m) => m.type.name === name) ||
+                state.doc.rangeHasMark(from, state.selection.to, state.schema.marks[name]!);
 
-                const files = event.dataTransfer?.files;
-                if (!files?.length) return false;
-
-                const images = Array.from(files).filter((f) =>
-                    f.type.startsWith("image/"),
-                );
-                if (!images.length) return false;
-
-                event.preventDefault();
-                images.forEach((file) => uploadImage(file));
-                return true;
-            },
-        },
-    });
-
-    const uploadImage = useCallback(
-        async (file: File) => {
-            if (!uploadImageUrl || !editor) return;
-
-            const formData = new FormData();
-            formData.append("image", file);
-
-            try {
-                const response = await axios.post(uploadImageUrl, formData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
-                const url = response.data.url;
-                if (url) {
-                    editor.chain().focus().setImage({ src: url }).run();
-                }
-            } catch (error) {
-                console.error("Image upload failed:", error);
+            // Determine block type
+            const parentNode = $from.parent;
+            let blockType = "paragraph";
+            if (parentNode.type.name === "heading") {
+                blockType = `heading-${parentNode.attrs.level as number}`;
+            } else if (parentNode.type.name === "code_block") {
+                blockType = "code_block";
             }
+
+            // Check if inside blockquote or list
+            let inBlockquote = false;
+            let inBulletList = false;
+            let inOrderedList = false;
+            for (let d = $from.depth; d > 0; d--) {
+                const node = $from.node(d);
+                if (node.type.name === "blockquote") inBlockquote = true;
+                if (node.type.name === "bullet_list") inBulletList = true;
+                if (node.type.name === "ordered_list") inOrderedList = true;
+            }
+
+            return {
+                bold: hasMark("strong"),
+                italic: hasMark("emphasis"),
+                strike: hasMark("strikethrough"),
+                code: hasMark("inlineCode"),
+                blockquote: inBlockquote,
+                bulletList: inBulletList,
+                orderedList: inOrderedList,
+                blockType,
+            };
+        });
+    } catch {
+        return defaultToolbarState;
+    }
+}
+
+function Toolbar({ sourceMode, onToggleSource }: { sourceMode: boolean; onToggleSource: () => void }) {
+    const [loading, getInstance] = useInstance();
+    const [activeState, setActiveState] = useState<ToolbarState>(defaultToolbarState);
+    const rafRef = useRef<number>(0);
+    const [linkAnchor, setLinkAnchor] = useState<null | HTMLElement>(null);
+    const [linkUrl, setLinkUrl] = useState("https://");
+    const linkInputRef = useRef<HTMLInputElement>(null);
+
+    // Poll editor state on animation frames to track selection changes
+    useEffect(() => {
+        if (loading || sourceMode) return;
+
+        let mounted = true;
+        const poll = () => {
+            if (!mounted) return;
+            const editor = getInstance();
+            if (editor) {
+                const next = getToolbarState(editor);
+                setActiveState((prev) => {
+                    if (
+                        prev.bold !== next.bold ||
+                        prev.italic !== next.italic ||
+                        prev.strike !== next.strike ||
+                        prev.code !== next.code ||
+                        prev.blockquote !== next.blockquote ||
+                        prev.bulletList !== next.bulletList ||
+                        prev.orderedList !== next.orderedList ||
+                        prev.blockType !== next.blockType
+                    ) {
+                        return next;
+                    }
+                    return prev;
+                });
+            }
+            rafRef.current = requestAnimationFrame(poll);
+        };
+        rafRef.current = requestAnimationFrame(poll);
+
+        return () => {
+            mounted = false;
+            cancelAnimationFrame(rafRef.current);
+        };
+    }, [loading, getInstance, sourceMode]);
+
+    const run = useCallback(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (cmd: any, payload?: any) => {
+            if (loading) return;
+            const editor = getInstance();
+            editor?.action(callCommand(cmd, payload));
         },
-        [uploadImageUrl, editor],
+        [loading, getInstance],
     );
 
-    const handleImageButtonClick = () => {
-        fileInputRef.current?.click();
+    const activeSx = {
+        color: "primary.main",
+        bgcolor: "action.selected",
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            uploadImage(file);
-            event.target.value = "";
-        }
-    };
+    const preventFocus = (e: React.MouseEvent) => e.preventDefault();
 
-    const handleLinkClick = () => {
-        if (!editor) return;
-
-        const previousUrl = editor.getAttributes("link").href;
-        const url = window.prompt("Enter URL:", previousUrl || "https://");
-
-        if (url === null) return;
-
-        if (url === "") {
-            editor.chain().focus().extendMarkRange("link").unsetLink().run();
-            return;
-        }
-
-        editor
-            .chain()
-            .focus()
-            .extendMarkRange("link")
-            .setLink({ href: url })
-            .run();
-    };
-
-    if (!editor) return null;
-
-    const toolbarButton = (
+    const btn = (
         label: string,
         icon: React.ReactNode,
-        action: () => void,
-        isActive: boolean,
+        action: (e: React.MouseEvent<HTMLButtonElement>) => void,
+        active = false,
+        disabled = false,
     ) => (
         <Tooltip title={label} key={label}>
-            <IconButton
-                size="small"
-                onClick={action}
-                aria-label={label}
-                aria-pressed={isActive}
-                sx={{
-                    color: isActive ? "primary.main" : "text.secondary",
-                    bgcolor: isActive ? "action.selected" : "transparent",
-                    borderRadius: 1,
-                }}
-            >
-                {icon}
-            </IconButton>
+            <span>
+                <IconButton
+                    size="small"
+                    onMouseDown={preventFocus}
+                    onClick={action}
+                    aria-label={label}
+                    disabled={disabled}
+                    sx={{
+                        color: "text.secondary",
+                        borderRadius: 1,
+                        "&:hover": { color: "text.primary" },
+                        ...(active ? activeSx : {}),
+                    }}
+                >
+                    {icon}
+                </IconButton>
+            </span>
         </Tooltip>
     );
 
+    const sep = <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />;
+
+    const isHeading = activeState.blockType.startsWith("heading-");
+
     return (
         <Box
+            role="toolbar"
+            aria-label="Text formatting"
             sx={{
-                border: 1,
-                borderColor:
-                    theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.16)"
-                        : "divider",
-                borderRadius: 1,
-                overflow: "hidden",
-                bgcolor:
-                    theme.palette.mode === "dark" ? "#1f1f1f" : "transparent",
-                "&:hover": {
-                    borderColor:
-                        theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.30)"
-                            : "text.primary",
-                },
-                "&:focus-within": {
-                    borderColor: "primary.main",
-                    boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,
-                },
-                "& .tiptap": {
-                    p: 2,
-                    minHeight,
-                    outline: "none",
-                    "& p.is-editor-empty:first-of-type::before": {
-                        content: "attr(data-placeholder)",
-                        color: "text.disabled",
-                        float: "left",
-                        height: 0,
-                        pointerEvents: "none",
-                    },
-                    "& h1": { ...theme.typography.h4, mt: 2, mb: 1 },
-                    "& h2": { ...theme.typography.h5, mt: 2, mb: 1 },
-                    "& h3": { ...theme.typography.h6, mt: 2, mb: 1 },
-                    "& p": { ...theme.typography.body1, my: 0.5 },
-                    "& ul, & ol": { pl: 3 },
-                    '& ul[data-type="taskList"]': {
-                        listStyle: "none",
-                        pl: 0,
-                        "& li": {
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 1,
-                            "& label": {
-                                mt: 0.25,
-                            },
-                            '& input[type="checkbox"]': {
-                                accentColor: theme.palette.primary.main,
-                                width: 16,
-                                height: 16,
-                                mt: 0.5,
-                            },
-                        },
-                    },
-                    "& pre": {
-                        bgcolor: "action.hover",
-                        fontFamily: "monospace",
-                        p: 2,
-                        borderRadius: 1,
-                        overflow: "auto",
-                        "& code": {
-                            background: "none",
-                            p: 0,
-                            fontSize: "0.875rem",
-                        },
-                    },
-                    "& code": {
-                        bgcolor: "action.hover",
-                        px: 0.5,
-                        py: 0.25,
-                        borderRadius: 0.5,
-                        fontFamily: "monospace",
-                        fontSize: "0.875rem",
-                    },
-                    "& img": {
-                        maxWidth: "100%",
-                        borderRadius: "4px",
-                    },
-                    "& a": {
-                        color: "primary.main",
-                        textDecoration: "underline",
-                    },
-                    "& blockquote": {
-                        borderLeft: 3,
-                        borderColor: "divider",
-                        pl: 2,
-                        ml: 0,
-                        color: "text.secondary",
-                    },
-                    "& hr": {
-                        borderColor: "divider",
-                        my: 2,
-                    },
-                },
+                display: "flex",
+                alignItems: "center",
+                gap: 0.25,
+                px: 0.5,
+                py: 0.25,
             }}
         >
-            {editable && (
-                <Box
-                    role="toolbar"
-                    aria-label="Text formatting"
-                    sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 0.25,
-                        p: 0.5,
-                        bgcolor: "background.default",
-                        borderBottom: 1,
-                        borderColor: "divider",
+            {btn("Heading", <HeadingIcon fontSize="small" />, () => {
+                if (isHeading) {
+                    run(turnIntoTextCommand.key);
+                } else {
+                    run(wrapInHeadingCommand.key, 3);
+                }
+            }, isHeading, sourceMode)}
+            {btn("Bold", <FormatBold fontSize="small" />, () =>
+                run(toggleStrongCommand.key), activeState.bold, sourceMode,
+            )}
+            {btn("Italic", <FormatItalic fontSize="small" />, () =>
+                run(toggleEmphasisCommand.key), activeState.italic, sourceMode,
+            )}
+            {btn("Strikethrough", <FormatStrikethrough fontSize="small" />, () =>
+                run(toggleStrikethroughCommand.key), activeState.strike, sourceMode,
+            )}
+            {btn("Inline Code", <CodeIcon fontSize="small" />, () =>
+                run(toggleInlineCodeCommand.key), activeState.code, sourceMode,
+            )}
+            {sep}
+            {btn("Quote", <FormatQuote fontSize="small" />, () =>
+                run(wrapInBlockquoteCommand.key), activeState.blockquote, sourceMode,
+            )}
+            {btn("Bullet List", <FormatListBulleted fontSize="small" />, () =>
+                run(wrapInBulletListCommand.key), activeState.bulletList, sourceMode,
+            )}
+            {btn("Numbered List", <FormatListNumbered fontSize="small" />, () =>
+                run(wrapInOrderedListCommand.key), activeState.orderedList, sourceMode,
+            )}
+            {btn("Task List", <Checklist fontSize="small" />, () => {
+                if (loading) return;
+                const editor = getInstance();
+                if (!editor) return;
+                editor.action(insert("- [ ] "));
+            }, false, sourceMode)}
+            {sep}
+            {btn("Link", <LinkIcon fontSize="small" />, (e) => {
+                setLinkUrl("https://");
+                setLinkAnchor(e.currentTarget as HTMLElement);
+                setTimeout(() => linkInputRef.current?.select(), 50);
+            }, false, sourceMode)}
+            <Popover
+                open={Boolean(linkAnchor)}
+                anchorEl={linkAnchor}
+                onClose={() => setLinkAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                slotProps={{ paper: { sx: { p: 1.5, display: "flex", gap: 1, alignItems: "center" } } }}
+            >
+                <TextField
+                    inputRef={linkInputRef}
+                    size="small"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (linkUrl && linkUrl !== "https://") {
+                                const editor = getInstance();
+                                if (editor) editor.action(insert(`[link](${linkUrl})`));
+                            }
+                            setLinkAnchor(null);
+                        } else if (e.key === "Escape") {
+                            setLinkAnchor(null);
+                        }
+                    }}
+                    placeholder="https://example.com"
+                    slotProps={{
+                        input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <LinkIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                                </InputAdornment>
+                            ),
+                            sx: { fontSize: 13 },
+                        },
+                    }}
+                    sx={{ width: 280 }}
+                    autoFocus
+                />
+                <Button
+                    size="small"
+                    variant="contained"
+                    disableElevation
+                    onClick={() => {
+                        if (linkUrl && linkUrl !== "https://") {
+                            const editor = getInstance();
+                            if (editor) editor.action(insert(`[link](${linkUrl})`));
+                        }
+                        setLinkAnchor(null);
                     }}
                 >
-                    {toolbarButton(
-                        "Bold",
-                        <FormatBold fontSize="small" />,
-                        () => editor.chain().focus().toggleBold().run(),
-                        editor.isActive("bold"),
-                    )}
-                    {toolbarButton(
-                        "Italic",
-                        <FormatItalic fontSize="small" />,
-                        () => editor.chain().focus().toggleItalic().run(),
-                        editor.isActive("italic"),
-                    )}
-                    {toolbarButton(
-                        "Underline",
-                        <FormatUnderlined fontSize="small" />,
-                        () => editor.chain().focus().toggleUnderline().run(),
-                        editor.isActive("underline"),
-                    )}
-                    {toolbarButton(
-                        "Strikethrough",
-                        <FormatStrikethrough fontSize="small" />,
-                        () => editor.chain().focus().toggleStrike().run(),
-                        editor.isActive("strike"),
-                    )}
-                    {toolbarButton(
-                        "Heading 1",
-                        <Title fontSize="small" />,
-                        () =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleHeading({ level: 1 })
-                                .run(),
-                        editor.isActive("heading", { level: 1 }),
-                    )}
-                    {toolbarButton(
-                        "Heading 2",
-                        <Title fontSize="small" sx={{ fontSize: "1.1rem" }} />,
-                        () =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleHeading({ level: 2 })
-                                .run(),
-                        editor.isActive("heading", { level: 2 }),
-                    )}
-                    {toolbarButton(
-                        "Heading 3",
-                        <Title fontSize="small" sx={{ fontSize: "0.95rem" }} />,
-                        () =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleHeading({ level: 3 })
-                                .run(),
-                        editor.isActive("heading", { level: 3 }),
-                    )}
-                    {toolbarButton(
-                        "Bullet List",
-                        <FormatListBulleted fontSize="small" />,
-                        () => editor.chain().focus().toggleBulletList().run(),
-                        editor.isActive("bulletList"),
-                    )}
-                    {toolbarButton(
-                        "Ordered List",
-                        <FormatListNumbered fontSize="small" />,
-                        () => editor.chain().focus().toggleOrderedList().run(),
-                        editor.isActive("orderedList"),
-                    )}
-                    {toolbarButton(
-                        "Task List",
-                        <Checklist fontSize="small" />,
-                        () => editor.chain().focus().toggleTaskList().run(),
-                        editor.isActive("taskList"),
-                    )}
-                    {toolbarButton(
-                        "Code Block",
-                        <CodeIcon fontSize="small" />,
-                        () => editor.chain().focus().toggleCodeBlock().run(),
-                        editor.isActive("codeBlock"),
-                    )}
-                    {toolbarButton(
-                        "Link",
-                        <LinkIcon fontSize="small" />,
-                        handleLinkClick,
-                        editor.isActive("link"),
-                    )}
-                    {uploadImageUrl &&
-                        toolbarButton(
-                            "Image",
-                            <ImageIcon fontSize="small" />,
-                            handleImageButtonClick,
-                            false,
-                        )}
-                </Box>
+                    Insert
+                </Button>
+            </Popover>
+            {btn("Code Block", <DataObject fontSize="small" />, () =>
+                run(createCodeBlockCommand.key), false, sourceMode,
             )}
-            <EditorContent editor={editor} />
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ display: "none" }}
-            />
+            {sep}
+            {btn("Undo", <UndoIcon fontSize="small" />, () =>
+                run(undoCommand.key), false, sourceMode,
+            )}
+            {btn("Redo", <RedoIcon fontSize="small" />, () =>
+                run(redoCommand.key), false, sourceMode,
+            )}
+            <Box sx={{ flex: 1 }} />
+            {btn("Source", <SourceIcon fontSize="small" />, onToggleSource, sourceMode)}
+        </Box>
+    );
+}
+
+function CrepeEditor({
+    content,
+    onChange,
+    placeholder,
+    editable,
+    uploadImageUrl,
+}: Omit<RichTextEditorProps, "minHeight">) {
+    const imageUploadHandler = useCallback(
+        async (file: File): Promise<string> => {
+            if (!uploadImageUrl) {
+                throw new Error("Image upload not configured");
+            }
+            const formData = new FormData();
+            formData.append("image", file);
+            const response = await axios.post(uploadImageUrl, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            return response.data.url;
+        },
+        [uploadImageUrl],
+    );
+
+    useEditor((root) => {
+        const crepe = new Crepe({
+            root,
+            defaultValue: content,
+            features: {
+                [CrepeFeature.Latex]: false,
+                [CrepeFeature.Toolbar]: false,
+            },
+            featureConfigs: {
+                [CrepeFeature.Placeholder]: {
+                    text: placeholder,
+                },
+                [CrepeFeature.ImageBlock]: uploadImageUrl
+                    ? { onUpload: imageUploadHandler }
+                    : undefined,
+            },
+        });
+
+        if (!editable) {
+            crepe.setReadonly(true);
+        }
+
+        crepe.on((listener) => {
+            listener.markdownUpdated((_ctx, markdown) => {
+                onChange(markdown);
+            });
+        });
+
+        return crepe;
+    }, []);
+
+    return <Milkdown />;
+}
+
+export default function RichTextEditor(props: RichTextEditorProps) {
+    const {
+        placeholder = "Write something...",
+        editable = true,
+        minHeight = 200,
+    } = props;
+    const { resolvedMode } = useThemeMode();
+    const isDark = resolvedMode === "dark";
+    const [sourceMode, setSourceMode] = useState(false);
+    const [sourceValue, setSourceValue] = useState("");
+    const editorKey = useRef(0);
+
+    const handleToggleSource = useCallback(() => {
+        if (!sourceMode) {
+            // Entering source mode — snapshot current markdown
+            setSourceValue(props.content);
+        } else {
+            // Leaving source mode — push edits back & remount editor
+            props.onChange(sourceValue);
+            editorKey.current += 1;
+        }
+        setSourceMode((prev) => !prev);
+    }, [sourceMode, sourceValue, props]);
+
+    return (
+        <Box
+            className={isDark ? "dark" : ""}
+            sx={{
+                borderRadius: "10px",
+                border: "1px solid",
+                borderColor: isDark
+                    ? "rgba(255,255,255,0.16)"
+                    : "rgba(0,0,0,0.23)",
+                overflow: "hidden",
+                "&:hover": {
+                    borderColor: isDark
+                        ? "rgba(255,255,255,0.30)"
+                        : "rgba(0,0,0,0.40)",
+                },
+                "&:focus-within": {
+                    borderColor: isDark ? "#818cf8" : "#6366f1",
+                    boxShadow: isDark
+                        ? "0 0 0 1px #818cf8"
+                        : "0 0 0 1px #6366f1",
+                },
+                "& .milkdown": {
+                    "--crepe-color-background": isDark
+                        ? "#1f1f1f"
+                        : "#ffffff",
+                    "--crepe-color-on-background": isDark
+                        ? "rgba(255,255,255,0.87)"
+                        : "rgba(0,0,0,0.87)",
+                    "--crepe-color-surface": isDark ? "#262626" : "#f5f5f5",
+                    "--crepe-color-surface-low": isDark
+                        ? "#1a1a1a"
+                        : "#fafafa",
+                    "--crepe-color-on-surface": isDark
+                        ? "rgba(255,255,255,0.70)"
+                        : "rgba(0,0,0,0.70)",
+                    "--crepe-color-on-surface-variant": isDark
+                        ? "rgba(255,255,255,0.55)"
+                        : "rgba(0,0,0,0.55)",
+                    "--crepe-color-outline": isDark
+                        ? "rgba(255,255,255,0.16)"
+                        : "rgba(0,0,0,0.23)",
+                    "--crepe-color-primary": isDark ? "#818cf8" : "#6366f1",
+                    "--crepe-color-secondary": isDark
+                        ? "rgba(129,140,248,0.15)"
+                        : "rgba(99,102,241,0.10)",
+                    "--crepe-color-on-secondary": isDark
+                        ? "#a5b4fc"
+                        : "#4f46e5",
+                    "--crepe-color-inverse": isDark ? "#e5e5e5" : "#1a1a1a",
+                    "--crepe-color-on-inverse": isDark
+                        ? "#1a1a1a"
+                        : "#e5e5e5",
+                    "--crepe-color-inline-code": isDark
+                        ? "#a5b4fc"
+                        : "#6366f1",
+                    "--crepe-color-error": isDark ? "#f87171" : "#dc2626",
+                    "--crepe-color-hover": isDark ? "#2e2e2e" : "#f0f0f0",
+                    "--crepe-color-selected": isDark
+                        ? "rgba(129,140,248,0.18)"
+                        : "rgba(99,102,241,0.12)",
+                    "--crepe-color-inline-area": isDark
+                        ? "#2b2b2b"
+                        : "#e8e8e8",
+                    "--crepe-font-title":
+                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
+                    "--crepe-font-default":
+                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
+                    "--crepe-font-code":
+                        '"Fira Code", "JetBrains Mono", monospace',
+                    border: "none",
+                    borderRadius: 0,
+                    overflow: "visible",
+                },
+                "& .milkdown .editor": {
+                    minHeight,
+                    padding: "16px",
+                },
+                "& .milkdown .editor h1, & .milkdown .editor h2, & .milkdown .editor h3, & .milkdown .editor h4, & .milkdown .editor h5, & .milkdown .editor h6":
+                    {
+                        "&:first-child": { marginTop: 0 },
+                        marginTop: "12px",
+                    },
+            }}
+        >
+            <MilkdownProvider>
+                {editable && (
+                    <Box
+                        sx={{
+                            bgcolor: isDark ? "#1a1a1a" : "#fafafa",
+                            borderBottom: 1,
+                            borderColor: isDark
+                                ? "rgba(255,255,255,0.10)"
+                                : "rgba(0,0,0,0.12)",
+                        }}
+                    >
+                        <Toolbar
+                            sourceMode={sourceMode}
+                            onToggleSource={handleToggleSource}
+                        />
+                    </Box>
+                )}
+                {sourceMode ? (
+                    <TextField
+                        multiline
+                        fullWidth
+                        value={sourceValue}
+                        onChange={(e) => setSourceValue(e.target.value)}
+                        placeholder={placeholder}
+                        slotProps={{
+                            input: {
+                                sx: {
+                                    fontFamily: '"Fira Code", "JetBrains Mono", monospace',
+                                    fontSize: 13,
+                                    lineHeight: 1.6,
+                                    minHeight,
+                                    alignItems: "flex-start",
+                                    p: 2,
+                                },
+                            },
+                        }}
+                        sx={{
+                            "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                        }}
+                    />
+                ) : (
+                    <CrepeEditor
+                        key={editorKey.current}
+                        {...props}
+                        placeholder={placeholder}
+                        editable={editable}
+                    />
+                )}
+            </MilkdownProvider>
         </Box>
     );
 }

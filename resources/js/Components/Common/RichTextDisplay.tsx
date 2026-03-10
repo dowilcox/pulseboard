@@ -1,116 +1,84 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { createLowlight, common } from 'lowlight';
-import Box from '@mui/material/Box';
-import { useTheme } from '@mui/material/styles';
-
-const lowlight = createLowlight(common);
+import { Crepe, CrepeFeature } from "@milkdown/crepe";
+import { Milkdown, MilkdownProvider, useEditor } from "@milkdown/react";
+import "@milkdown/crepe/theme/common/style.css";
+import "@milkdown/crepe/theme/frame.css";
+import "@milkdown/crepe/theme/frame-dark.css";
+import { useThemeMode } from "@/Contexts/ThemeContext";
+import Box from "@mui/material/Box";
 
 interface RichTextDisplayProps {
     content: string;
 }
 
+function CrepeDisplay({ content }: RichTextDisplayProps) {
+    useEditor((root) => {
+        const crepe = new Crepe({
+            root,
+            defaultValue: content,
+            features: {
+                [CrepeFeature.Latex]: false,
+                [CrepeFeature.Toolbar]: false,
+                [CrepeFeature.BlockEdit]: false,
+                [CrepeFeature.Placeholder]: false,
+                [CrepeFeature.ImageBlock]: false,
+            },
+        });
+
+        crepe.setReadonly(true);
+
+        return crepe;
+    }, []);
+
+    return <Milkdown />;
+}
+
 export default function RichTextDisplay({ content }: RichTextDisplayProps) {
-    const theme = useTheme();
+    const { resolvedMode } = useThemeMode();
+    const isDark = resolvedMode === "dark";
 
-    const editor = useEditor({
-        extensions: [
-            StarterKit.configure({
-                codeBlock: false,
-                link: {
-                    openOnClick: true,
-                },
-            }),
-            Image,
-            TaskList,
-            TaskItem.configure({
-                nested: true,
-            }),
-            CodeBlockLowlight.configure({
-                lowlight,
-            }),
-        ],
-        content,
-        editable: false,
-    });
-
-    if (!content || !editor) return null;
+    if (!content) return null;
 
     return (
         <Box
+            className={isDark ? "dark" : ""}
             sx={{
-                '& .tiptap': {
-                    outline: 'none',
-                    '& h1': { ...theme.typography.h4, mt: 2, mb: 1 },
-                    '& h2': { ...theme.typography.h5, mt: 2, mb: 1 },
-                    '& h3': { ...theme.typography.h6, mt: 2, mb: 1 },
-                    '& p': { ...theme.typography.body1, my: 0.5 },
-                    '& ul, & ol': { pl: 3 },
-                    '& ul[data-type="taskList"]': {
-                        listStyle: 'none',
-                        pl: 0,
-                        '& li': {
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 1,
-                            '& label': {
-                                mt: 0.25,
-                            },
-                            '& input[type="checkbox"]': {
-                                accentColor: theme.palette.primary.main,
-                                width: 16,
-                                height: 16,
-                                mt: 0.5,
-                            },
-                        },
-                    },
-                    '& pre': {
-                        bgcolor: 'action.hover',
-                        fontFamily: 'monospace',
-                        p: 2,
-                        borderRadius: 1,
-                        overflow: 'auto',
-                        '& code': {
-                            background: 'none',
-                            p: 0,
-                            fontSize: '0.875rem',
-                        },
-                    },
-                    '& code': {
-                        bgcolor: 'action.hover',
-                        px: 0.5,
-                        py: 0.25,
-                        borderRadius: 0.5,
-                        fontFamily: 'monospace',
-                        fontSize: '0.875rem',
-                    },
-                    '& img': {
-                        maxWidth: '100%',
-                        borderRadius: '4px',
-                    },
-                    '& a': {
-                        color: 'primary.main',
-                        textDecoration: 'underline',
-                    },
-                    '& blockquote': {
-                        borderLeft: 3,
-                        borderColor: 'divider',
-                        pl: 2,
-                        ml: 0,
-                        color: 'text.secondary',
-                    },
-                    '& hr': {
-                        borderColor: 'divider',
-                        my: 2,
-                    },
+                "& .milkdown": {
+                    "--crepe-color-background": "transparent",
+                    "--crepe-color-on-background": isDark
+                        ? "rgba(255,255,255,0.87)"
+                        : "rgba(0,0,0,0.87)",
+                    "--crepe-color-surface": isDark ? "#262626" : "#f5f5f5",
+                    "--crepe-color-on-surface": isDark
+                        ? "rgba(255,255,255,0.70)"
+                        : "rgba(0,0,0,0.70)",
+                    "--crepe-color-outline": isDark
+                        ? "rgba(255,255,255,0.10)"
+                        : "rgba(0,0,0,0.12)",
+                    "--crepe-color-primary": isDark ? "#818cf8" : "#6366f1",
+                    "--crepe-color-inline-code": isDark
+                        ? "#a5b4fc"
+                        : "#6366f1",
+                    "--crepe-color-inline-area": isDark
+                        ? "#2b2b2b"
+                        : "#e8e8e8",
+                    "--crepe-font-title":
+                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
+                    "--crepe-font-default":
+                        '"Inter", "Helvetica Neue", "Arial", sans-serif',
+                    "--crepe-font-code":
+                        '"Fira Code", "JetBrains Mono", monospace',
+                    border: "none",
                 },
+                "& .milkdown .editor h1, & .milkdown .editor h2, & .milkdown .editor h3, & .milkdown .editor h4, & .milkdown .editor h5, & .milkdown .editor h6":
+                    {
+                        "&:first-child": { marginTop: 0 },
+                        marginTop: "12px",
+                    },
             }}
         >
-            <EditorContent editor={editor} />
+            <MilkdownProvider>
+                <CrepeDisplay content={content} />
+            </MilkdownProvider>
         </Box>
     );
 }
