@@ -195,12 +195,12 @@ Requires PHP 8.2+, Composer, Node.js 18+, MySQL 8.0, and Redis 7 running locally
 
 ### Docker Compose
 
-| Variable               | Description                                    | Default             |
-| ---------------------- | ---------------------------------------------- | ------------------- |
-| `APP_PORT`             | Host port for web server (prod compose only)   | `8000`              |
-| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)    | `9080`              |
-| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)     | `pulseboard:latest` |
-| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose) |                     |
+| Variable               | Description                                    | Default                              |
+| ---------------------- | ---------------------------------------------- | ------------------------------------ |
+| `APP_PORT`             | Host port for web server (prod compose only)   | `8000`                               |
+| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)    | `9080`                               |
+| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)     | `ghcr.io/dowilcox/pulseboard:latest` |
+| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose) |                                      |
 
 ## Development Commands
 
@@ -372,64 +372,53 @@ The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, 
 
 ## Building & Publishing Docker Images
 
-### Build the production image
+Images are published to [GitHub Container Registry](https://ghcr.io/dowilcox/pulseboard) automatically when you push a version tag.
+
+### Automated releases (recommended)
+
+A GitHub Actions workflow builds and pushes the image on every version tag:
 
 ```bash
-# Build with the default tag
-docker build -f docker/Dockerfile --target production -t pulseboard:latest .
-
-# Build with a version tag
-docker build -f docker/Dockerfile --target production -t pulseboard:1.0.0 .
+# Tag a release and push — CI handles the rest
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-### Tag and push to Docker Hub
+This produces image tags: `ghcr.io/dowilcox/pulseboard:1.0.0` and `ghcr.io/dowilcox/pulseboard:latest`.
+
+### Manual build and push
 
 ```bash
-# Log in to Docker Hub
-docker login
+# Build the production image
+docker build -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:1.0.0 .
 
-# Tag the image for your Docker Hub repository
-docker tag pulseboard:1.0.0 <dockerhub-username>/pulseboard:1.0.0
-docker tag pulseboard:1.0.0 <dockerhub-username>/pulseboard:latest
+# Log in to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
-# Push both tags
-docker push <dockerhub-username>/pulseboard:1.0.0
-docker push <dockerhub-username>/pulseboard:latest
+# Push
+docker push ghcr.io/dowilcox/pulseboard:1.0.0
 ```
 
 ### Release checklist
 
 1. Ensure all tests pass: `docker compose --profile test run --rm test`
 2. Run linting: `./vendor/bin/pint --test && npx tsc --noEmit`
-3. Update the version tag (if using semantic versioning)
-4. Build the production image: `docker build -f docker/Dockerfile --target production -t pulseboard:<version> .`
-5. Test the production image locally:
-    ```bash
-    # Update PULSEBOARD_IMAGE in .env
-    PULSEBOARD_IMAGE=pulseboard:<version>
-    docker compose -f docker-compose.prod.yml up -d
-    # Verify the app works at http://localhost:8000
-    ```
-6. Tag and push to Docker Hub (see above)
-7. Create a GitHub release / git tag: `git tag v<version> && git push origin v<version>`
+3. Tag the release: `git tag v<version> && git push origin v<version>`
+4. GitHub Actions builds, pushes the image, and creates a draft release
+5. Edit the release notes on GitHub and publish
 
 ### Using a published image
 
 Users can pull and run PulseBoard without building from source:
 
 ```bash
-# Pull the image
-docker pull <dockerhub-username>/pulseboard:latest
+# Download the production compose file and env template
+curl -o docker-compose.prod.yml https://raw.githubusercontent.com/dowilcox/pulseboard/main/docker-compose.prod.yml
+curl -o .env https://raw.githubusercontent.com/dowilcox/pulseboard/main/.env.example
 
-# Create .env from the example
-curl -o .env https://raw.githubusercontent.com/<org>/pulseboard/main/.env.example
-# Edit .env with production values
+# Edit .env with production values (see Environment Variables section above)
 
-# Download the production compose file
-curl -o docker-compose.prod.yml https://raw.githubusercontent.com/<org>/pulseboard/main/docker-compose.prod.yml
-
-# Set the image and start
-export PULSEBOARD_IMAGE=<dockerhub-username>/pulseboard:latest
+# Start the stack
 docker compose -f docker-compose.prod.yml up -d
 ```
 

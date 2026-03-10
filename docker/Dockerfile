@@ -68,7 +68,7 @@ FROM docker.io/dunglas/frankenphp:1-php8.4 AS production
 LABEL maintainer="PulseBoard" \
       org.opencontainers.image.title="PulseBoard" \
       org.opencontainers.image.description="Self-hosted Kanban project management with GitLab integration" \
-      org.opencontainers.image.source="https://github.com/your-org/pulseboard" \
+      org.opencontainers.image.source="https://github.com/dowilcox/pulseboard" \
       org.opencontainers.image.licenses="GPL-3.0"
 
 # ---- System dependencies ---------------------------------------------------

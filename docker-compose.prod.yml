@@ -10,7 +10,7 @@
 
 services:
   app:
-    image: ${PULSEBOARD_IMAGE:-pulseboard:latest}
+    image: ${PULSEBOARD_IMAGE:-ghcr.io/dowilcox/pulseboard:latest}
     build:
       context: .
       dockerfile: docker/Dockerfile
