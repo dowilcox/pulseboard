@@ -36,16 +36,23 @@ class TaskDependencyTest extends TestCase
             'role' => 'owner',
         ]);
         $this->board = Board::factory()->create(['team_id' => $this->team->id]);
-        $this->column = Column::factory()->create(['board_id' => $this->board->id]);
+        $this->column = Column::factory()->create([
+            'board_id' => $this->board->id,
+        ]);
     }
 
     private function createTask(array $attrs = []): Task
     {
-        return Task::factory()->create(array_merge([
-            'board_id' => $this->board->id,
-            'column_id' => $this->column->id,
-            'created_by' => $this->user->id,
-        ], $attrs));
+        return Task::factory()->create(
+            array_merge(
+                [
+                    'board_id' => $this->board->id,
+                    'column_id' => $this->column->id,
+                    'created_by' => $this->user->id,
+                ],
+                $attrs,
+            ),
+        );
     }
 
     public function test_can_add_dependency(): void
@@ -54,8 +61,12 @@ class TaskDependencyTest extends TestCase
         $taskB = $this->createTask(['title' => 'Task B']);
 
         $response = $this->actingAs($this->user)->post(
-            route('tasks.dependencies.store', [$this->team, $this->board, $taskA]),
-            ['depends_on_task_id' => $taskB->id]
+            route('tasks.dependencies.store', [
+                $this->team,
+                $this->board,
+                $taskA,
+            ]),
+            ['depends_on_task_id' => $taskB->id],
         );
 
         $response->assertRedirect();
@@ -77,7 +88,12 @@ class TaskDependencyTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)->delete(
-            route('tasks.dependencies.destroy', [$this->team, $this->board, $taskA, $taskB])
+            route('tasks.dependencies.destroy', [
+                $this->team,
+                $this->board,
+                $taskA,
+                $taskB,
+            ]),
         );
 
         $response->assertRedirect();
@@ -101,8 +117,12 @@ class TaskDependencyTest extends TestCase
 
         // Try to add B depends on A (circular)
         $response = $this->actingAs($this->user)->post(
-            route('tasks.dependencies.store', [$this->team, $this->board, $taskB]),
-            ['depends_on_task_id' => $taskA->id]
+            route('tasks.dependencies.store', [
+                $this->team,
+                $this->board,
+                $taskB,
+            ]),
+            ['depends_on_task_id' => $taskA->id],
         );
 
         $response->assertSessionHasErrors('depends_on_task_id');
@@ -128,8 +148,12 @@ class TaskDependencyTest extends TestCase
 
         // Try C depends on A (transitive circular)
         $response = $this->actingAs($this->user)->post(
-            route('tasks.dependencies.store', [$this->team, $this->board, $taskC]),
-            ['depends_on_task_id' => $taskA->id]
+            route('tasks.dependencies.store', [
+                $this->team,
+                $this->board,
+                $taskC,
+            ]),
+            ['depends_on_task_id' => $taskA->id],
         );
 
         $response->assertSessionHasErrors('depends_on_task_id');
@@ -149,13 +173,13 @@ class TaskDependencyTest extends TestCase
         $taskA->load(['dependencies', 'blockedBy']);
         $taskB->load(['dependencies', 'blockedBy']);
 
-        // A depends on B, so A's dependencies include B
-        $this->assertCount(1, $taskA->dependencies);
-        $this->assertEquals($taskB->id, $taskA->dependencies->first()->id);
+        // A depends on B, so A's blockedBy includes B
+        $this->assertCount(1, $taskA->blockedBy);
+        $this->assertEquals($taskB->id, $taskA->blockedBy->first()->id);
 
-        // B is depended on by A, so B's blockedBy includes A
-        $this->assertCount(1, $taskB->blockedBy);
-        $this->assertEquals($taskA->id, $taskB->blockedBy->first()->id);
+        // B is blocking A, so B's dependencies (tasks that depend on B) includes A
+        $this->assertCount(1, $taskB->dependencies);
+        $this->assertEquals($taskA->id, $taskB->dependencies->first()->id);
     }
 
     public function test_prevents_duplicate_dependency(): void
@@ -170,8 +194,12 @@ class TaskDependencyTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)->post(
-            route('tasks.dependencies.store', [$this->team, $this->board, $taskA]),
-            ['depends_on_task_id' => $taskB->id]
+            route('tasks.dependencies.store', [
+                $this->team,
+                $this->board,
+                $taskA,
+            ]),
+            ['depends_on_task_id' => $taskB->id],
         );
 
         // Should fail with unique constraint or validation
