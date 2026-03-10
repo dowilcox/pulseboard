@@ -81,6 +81,12 @@ else
     echo "[entrypoint] Skipping migrations (database unavailable)."
 fi
 
+# ---- Publish FrankenPHP worker if missing ------------------------------------
+if [ ! -f "/var/www/html/public/frankenphp-worker.php" ]; then
+    echo "[entrypoint] Publishing FrankenPHP worker..."
+    php artisan octane:install --server=frankenphp --no-interaction
+fi
+
 # ---- Optimize for production ------------------------------------------------
 if [ "${APP_ENV}" != "local" ] && [ "${APP_ENV}" != "development" ]; then
     echo "[entrypoint] Caching configuration for production..."
