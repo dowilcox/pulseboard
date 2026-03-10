@@ -13,10 +13,10 @@ class CreateFigmaConnection
     public function handle(Team $team, array $data): FigmaConnection
     {
         return FigmaConnection::create([
-            "team_id" => $team->id,
-            "name" => $data["name"],
-            "api_token" => $data["api_token"],
-            "is_active" => $data["is_active"] ?? true,
+            'team_id' => $team->id,
+            'name' => $data['name'],
+            'api_token' => $data['api_token'],
+            'is_active' => $data['is_active'] ?? true,
         ]);
     }
 }

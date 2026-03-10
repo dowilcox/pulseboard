@@ -12,7 +12,7 @@ class FigmaConnection extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $keyType = "string";
+    protected $keyType = 'string';
 
     public $incrementing = false;
 
@@ -21,8 +21,8 @@ class FigmaConnection extends Model
     protected function casts(): array
     {
         return [
-            "api_token" => "encrypted",
-            "is_active" => "boolean",
+            'api_token' => 'encrypted',
+            'is_active' => 'boolean',
         ];
     }
 

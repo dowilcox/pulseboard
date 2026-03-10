@@ -178,7 +178,7 @@ class TeamManagementTest extends TestCase
         $searchable = User::factory()->create(['name' => 'Findable Person']);
 
         $response = $this->actingAs($this->user)->getJson(
-            route('teams.members.search', $this->team) . '?q=Findable'
+            route('teams.members.search', $this->team).'?q=Findable'
         );
 
         $response->assertOk();

@@ -28,10 +28,10 @@ class FigmaApiException extends Exception
     public static function fromResponse(
         int $statusCode,
         array $body,
-        string $context = "",
+        string $context = '',
     ): self {
         $message =
-            $body["message"] ?? ($body["err"] ?? "Unknown Figma API error");
+            $body['message'] ?? ($body['err'] ?? 'Unknown Figma API error');
 
         if ($context) {
             $message = "{$context}: {$message}";

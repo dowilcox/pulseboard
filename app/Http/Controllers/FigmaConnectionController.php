@@ -20,31 +20,31 @@ class FigmaConnectionController extends Controller
 {
     public function index(Team $team): Response
     {
-        $this->authorize("update", $team);
+        $this->authorize('update', $team);
 
-        $connections = $team->figmaConnections()->orderBy("name")->get();
+        $connections = $team->figmaConnections()->orderBy('name')->get();
 
-        return Inertia::render("Teams/Settings/FigmaIntegration", [
-            "team" => $team,
-            "connections" => $connections,
+        return Inertia::render('Teams/Settings/FigmaIntegration', [
+            'team' => $team,
+            'connections' => $connections,
         ]);
     }
 
     public function store(Request $request, Team $team): RedirectResponse
     {
-        $this->authorize("update", $team);
+        $this->authorize('update', $team);
 
         $validated = $request->validate([
-            "name" => ["required", "string", "max:255"],
-            "api_token" => ["required", "string"],
-            "is_active" => ["boolean"],
+            'name' => ['required', 'string', 'max:255'],
+            'api_token' => ['required', 'string'],
+            'is_active' => ['boolean'],
         ]);
 
         CreateFigmaConnection::run($team, $validated);
 
-        return Redirect::route("teams.figma.index", $team)->with(
-            "success",
-            "Figma connection created successfully.",
+        return Redirect::route('teams.figma.index', $team)->with(
+            'success',
+            'Figma connection created successfully.',
         );
     }
 
@@ -53,19 +53,19 @@ class FigmaConnectionController extends Controller
         Team $team,
         FigmaConnection $figmaConnection,
     ): RedirectResponse {
-        $this->authorize("update", $team);
+        $this->authorize('update', $team);
 
         $validated = $request->validate([
-            "name" => ["required", "string", "max:255"],
-            "api_token" => ["nullable", "string"],
-            "is_active" => ["boolean"],
+            'name' => ['required', 'string', 'max:255'],
+            'api_token' => ['nullable', 'string'],
+            'is_active' => ['boolean'],
         ]);
 
         UpdateFigmaConnection::run($figmaConnection, $validated);
 
-        return Redirect::route("teams.figma.index", $team)->with(
-            "success",
-            "Figma connection updated successfully.",
+        return Redirect::route('teams.figma.index', $team)->with(
+            'success',
+            'Figma connection updated successfully.',
         );
     }
 
@@ -73,13 +73,13 @@ class FigmaConnectionController extends Controller
         Team $team,
         FigmaConnection $figmaConnection,
     ): RedirectResponse {
-        $this->authorize("update", $team);
+        $this->authorize('update', $team);
 
         DeleteFigmaConnection::run($figmaConnection);
 
-        return Redirect::route("teams.figma.index", $team)->with(
-            "success",
-            "Figma connection deleted successfully.",
+        return Redirect::route('teams.figma.index', $team)->with(
+            'success',
+            'Figma connection deleted successfully.',
         );
     }
 
@@ -87,21 +87,21 @@ class FigmaConnectionController extends Controller
         Team $team,
         FigmaConnection $figmaConnection,
     ): JsonResponse {
-        $this->authorize("update", $team);
+        $this->authorize('update', $team);
 
         try {
             $api = FigmaApiService::for($figmaConnection);
             $user = $api->testConnection();
 
             return response()->json([
-                "success" => true,
-                "message" => "Connected as {$user["handle"]} ({$user["email"]})",
+                'success' => true,
+                'message' => "Connected as {$user['handle']} ({$user['email']})",
             ]);
         } catch (FigmaApiException $e) {
             return response()->json(
                 [
-                    "success" => false,
-                    "message" => $e->getMessage(),
+                    'success' => false,
+                    'message' => $e->getMessage(),
                 ],
                 422,
             );

@@ -15,9 +15,9 @@ class FigmaApiService
     public function __construct(protected FigmaConnection $connection)
     {
         $this->http = Http::withHeaders([
-            "X-Figma-Token" => $connection->api_token,
+            'X-Figma-Token' => $connection->api_token,
         ])
-            ->baseUrl(config("figma.api_base_url", "https://api.figma.com"))
+            ->baseUrl(config('figma.api_base_url', 'https://api.figma.com'))
             ->acceptJson()
             ->retry(3, 500, throw: false);
     }
@@ -29,18 +29,18 @@ class FigmaApiService
 
     public function testConnection(): array
     {
-        $response = $this->http->get("/v1/me");
+        $response = $this->http->get('/v1/me');
 
-        return $this->handleResponse($response, "Test connection");
+        return $this->handleResponse($response, 'Test connection');
     }
 
     public function getFileMetadata(string $fileKey): array
     {
         $response = $this->http->get("/v1/files/{$fileKey}/meta");
 
-        $data = $this->handleResponse($response, "Get file metadata");
+        $data = $this->handleResponse($response, 'Get file metadata');
 
-        return $data["file"] ?? $data;
+        return $data['file'] ?? $data;
     }
 
     /**
@@ -51,18 +51,18 @@ class FigmaApiService
     public function getNodeImages(
         string $fileKey,
         array $nodeIds,
-        string $format = "png",
+        string $format = 'png',
         int $scale = 2,
     ): array {
         $response = $this->http->get("/v1/images/{$fileKey}", [
-            "ids" => implode(",", $nodeIds),
-            "format" => $format,
-            "scale" => $scale,
+            'ids' => implode(',', $nodeIds),
+            'format' => $format,
+            'scale' => $scale,
         ]);
 
-        $data = $this->handleResponse($response, "Get node images");
+        $data = $this->handleResponse($response, 'Get node images');
 
-        return $data["images"] ?? [];
+        return $data['images'] ?? [];
     }
 
     /**
@@ -76,18 +76,18 @@ class FigmaApiService
         int $depth = 0,
     ): array {
         $response = $this->http->get("/v1/files/{$fileKey}/nodes", [
-            "ids" => implode(",", $nodeIds),
-            "depth" => $depth,
+            'ids' => implode(',', $nodeIds),
+            'depth' => $depth,
         ]);
 
-        $data = $this->handleResponse($response, "Get file nodes");
+        $data = $this->handleResponse($response, 'Get file nodes');
 
-        return $data["nodes"] ?? [];
+        return $data['nodes'] ?? [];
     }
 
     protected function handleResponse(
         Response $response,
-        string $context = "",
+        string $context = '',
     ): array {
         if ($response->successful()) {
             return $response->json() ?? [];

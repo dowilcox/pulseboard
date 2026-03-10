@@ -26,48 +26,48 @@ class BoardTaskController extends Controller
         Team $team,
         Board $board,
     ): JsonResponse {
-        $this->authorize("view", $board);
+        $this->authorize('view', $board);
 
         $validated = $request->validate([
-            "column_id" => ["sometimes", "uuid", "exists:columns,id"],
-            "per_page" => ["sometimes", "integer", "min:1", "max:100"],
-            "page" => ["sometimes", "integer", "min:1"],
-            "sort" => [
-                "sometimes",
-                "string",
-                "in:sort_order,task_number,title,priority,due_date,created_at",
+            'column_id' => ['sometimes', 'uuid', 'exists:columns,id'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'sort' => [
+                'sometimes',
+                'string',
+                'in:sort_order,task_number,title,priority,due_date,created_at',
             ],
-            "direction" => ["sometimes", "string", "in:asc,desc"],
+            'direction' => ['sometimes', 'string', 'in:asc,desc'],
         ]);
 
-        $perPage = $validated["per_page"] ?? 50;
-        $sort = $validated["sort"] ?? "sort_order";
-        $direction = $validated["direction"] ?? "asc";
+        $perPage = $validated['per_page'] ?? 50;
+        $sort = $validated['sort'] ?? 'sort_order';
+        $direction = $validated['direction'] ?? 'asc';
 
-        $query = Task::where("board_id", $board->id)
+        $query = Task::where('board_id', $board->id)
             ->with([
-                "assignees",
-                "labels",
-                "gitlabLinks.gitlabProject",
-                "blockedBy:id",
+                'assignees',
+                'labels',
+                'gitlabLinks.gitlabProject',
+                'blockedBy:id',
             ])
             ->withCount([
-                "comments",
-                "subtasks",
-                "subtasks as completed_subtasks_count" => function ($q) {
-                    $q->whereNotNull("completed_at");
+                'comments',
+                'subtasks',
+                'subtasks as completed_subtasks_count' => function ($q) {
+                    $q->whereNotNull('completed_at');
                 },
             ]);
 
-        if (isset($validated["column_id"])) {
-            $query->where("column_id", $validated["column_id"]);
+        if (isset($validated['column_id'])) {
+            $query->where('column_id', $validated['column_id']);
         }
 
         // Handle priority sorting with custom ordering (compatible with MySQL and SQLite)
-        if ($sort === "priority") {
+        if ($sort === 'priority') {
             $query->orderByRaw(
-                "CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END " .
-                    ($direction === "desc" ? "DESC" : "ASC"),
+                "CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END ".
+                    ($direction === 'desc' ? 'DESC' : 'ASC'),
             );
         } else {
             $query->orderBy($sort, $direction);

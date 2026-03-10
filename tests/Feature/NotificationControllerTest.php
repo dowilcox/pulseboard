@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;

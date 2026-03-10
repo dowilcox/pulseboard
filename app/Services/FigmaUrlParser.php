@@ -13,7 +13,7 @@ class FigmaUrlParser
     {
         $pattern = "#figma\.com/(design|file|board)/([a-zA-Z0-9]+)#";
 
-        if (!preg_match($pattern, $url, $matches)) {
+        if (! preg_match($pattern, $url, $matches)) {
             return null;
         }
 
@@ -21,13 +21,13 @@ class FigmaUrlParser
 
         // Extract node-id from query string (uses hyphens in URLs, colons in API)
         $nodeId = null;
-        if (preg_match("/[?&]node-id=([0-9]+-[0-9]+)/", $url, $nodeMatches)) {
-            $nodeId = str_replace("-", ":", $nodeMatches[1]);
+        if (preg_match('/[?&]node-id=([0-9]+-[0-9]+)/', $url, $nodeMatches)) {
+            $nodeId = str_replace('-', ':', $nodeMatches[1]);
         }
 
         return [
-            "file_key" => $fileKey,
-            "node_id" => $nodeId,
+            'file_key' => $fileKey,
+            'node_id' => $nodeId,
         ];
     }
 

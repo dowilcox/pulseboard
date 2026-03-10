@@ -11,7 +11,7 @@ class TaskFigmaLink extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $keyType = "string";
+    protected $keyType = 'string';
 
     public $incrementing = false;
 
@@ -20,9 +20,9 @@ class TaskFigmaLink extends Model
     protected function casts(): array
     {
         return [
-            "meta" => "array",
-            "last_synced_at" => "datetime",
-            "last_modified_at" => "datetime",
+            'meta' => 'array',
+            'last_synced_at' => 'datetime',
+            'last_modified_at' => 'datetime',
         ];
     }
 

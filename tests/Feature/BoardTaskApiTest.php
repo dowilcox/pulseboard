@@ -51,7 +51,7 @@ class BoardTaskApiTest extends TestCase
         }
 
         $response = $this->actingAs($this->user)
-            ->getJson(route('boards.tasks.index', [$this->team, $this->board]) . '?per_page=2');
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?per_page=2');
 
         $response->assertOk();
         $response->assertJsonCount(2, 'data');
@@ -76,7 +76,7 @@ class BoardTaskApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)
-            ->getJson(route('boards.tasks.index', [$this->team, $this->board]) . '?column_id=' . $this->column->id);
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?column_id='.$this->column->id);
 
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
@@ -115,7 +115,7 @@ class BoardTaskApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->user)
-            ->getJson(route('boards.tasks.index', [$this->team, $this->board]) . '?sort=task_number&direction=asc');
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?sort=task_number&direction=asc');
 
         $response->assertOk();
         $data = $response->json('data');

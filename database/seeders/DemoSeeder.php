@@ -18,7 +18,6 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -662,35 +661,35 @@ class DemoSeeder extends Seeder
         // ── Comments ───────────────────────────────────────────
         $commentData = [
             [$sprintTasks['Optimize database queries for dashboard'], [
-                [$admin, "Profiled the dashboard - we have 47 queries on load. Main culprits are the task counts per column and the recent activity feed."],
-                [$bob, "Have you tried eager loading the column relationships? That alone should cut it in half."],
-                [$admin, "Good call. Eager loading + a single raw query for counts dropped it to 12 queries. Working on caching next."],
+                [$admin, 'Profiled the dashboard - we have 47 queries on load. Main culprits are the task counts per column and the recent activity feed.'],
+                [$bob, 'Have you tried eager loading the column relationships? That alone should cut it in half.'],
+                [$admin, 'Good call. Eager loading + a single raw query for counts dropped it to 12 queries. Working on caching next.'],
                 [$carol, "Can we add a Redis cache layer for the counts? They don't need to be real-time."],
                 [$admin, "Yes, that's the plan. Going with a 60-second TTL. Will invalidate on task create/move/delete."],
             ]],
             [$sprintTasks['Implement API v2 pagination'], [
                 [$bob, "Cursor pagination is implemented. Using the task's `created_at` + `id` as the cursor to avoid issues with duplicate timestamps."],
-                [$dave, "Looks good! One thing - should we support both cursor and offset pagination? Some clients might prefer offset."],
+                [$dave, 'Looks good! One thing - should we support both cursor and offset pagination? Some clients might prefer offset.'],
                 [$bob, "Let's stick with cursor only for v2. Offset pagination doesn't scale well with large datasets."],
-                [$admin, "Agreed. @dave can you test this with the mobile client?"],
+                [$admin, 'Agreed. @dave can you test this with the mobile client?'],
             ]],
             [$sprintTasks['Add WebSocket reconnection logic'], [
-                [$dave, "Implemented exponential backoff: 1s, 2s, 4s, 8s, max 30s. Also shows a connection status indicator."],
-                [$admin, "Nice. Does it resync missed events after reconnect?"],
+                [$dave, 'Implemented exponential backoff: 1s, 2s, 4s, 8s, max 30s. Also shows a connection status indicator.'],
+                [$admin, 'Nice. Does it resync missed events after reconnect?'],
                 [$dave, "Not yet - that's the tricky part. We'd need server-side event buffering or a last-event-id mechanism."],
             ]],
             [$sprintTasks['Add search functionality to task list'], [
-                [$admin, "Planning to use Laravel Scout with the database driver for now. We can switch to Meilisearch later if needed."],
-                [$eve, "Should search include comments and attachment filenames too?"],
+                [$admin, 'Planning to use Laravel Scout with the database driver for now. We can switch to Meilisearch later if needed.'],
+                [$eve, 'Should search include comments and attachment filenames too?'],
                 [$admin, "Good point - let's start with title + description, then expand in a follow-up."],
             ]],
             [$bugTasks[0], [
                 [$carol, "Found the issue - we're using `htmlspecialchars()` on the password before hashing. The HTML entities get hashed instead of the actual password."],
-                [$bob, "Fixing now. This was introduced in the XSS prevention pass - we accidentally included the password field."],
+                [$bob, 'Fixing now. This was introduced in the XSS prevention pass - we accidentally included the password field.'],
                 [$admin, "Let's add a regression test for this. Special chars in passwords should be a standard test case."],
             ]],
             [$bugTasks[1], [
-                [$eve, "dnd-kit has a `TouchSensor` that needs to be explicitly configured. Currently only `PointerSensor` is set up."],
+                [$eve, 'dnd-kit has a `TouchSensor` that needs to be explicitly configured. Currently only `PointerSensor` is set up.'],
                 [$carol, "I'll add the touch sensor config. Also need to handle the long-press gesture to distinguish from scrolling."],
             ]],
         ];

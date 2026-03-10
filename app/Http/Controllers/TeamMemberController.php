@@ -53,7 +53,7 @@ class TeamMemberController extends Controller
 
         $users = User::where(function ($q) use ($query) {
             $q->where('name', 'like', "%{$query}%")
-              ->orWhere('email', 'like', "%{$query}%");
+                ->orWhere('email', 'like', "%{$query}%");
         })
             ->whereNotIn('id', $existingMemberIds)
             ->where('deactivated_at', null)
