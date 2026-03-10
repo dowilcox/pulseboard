@@ -1,6 +1,14 @@
-import { router, usePage } from '@inertiajs/react';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Board, PageProps, Team } from '@/types';
+import { router, usePage } from "@inertiajs/react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from "react";
+import type { Board, PageProps, Team } from "@/types";
 
 interface SidebarContextValue {
     selectedTeamId: string | null;
@@ -26,8 +34,8 @@ export function useSidebar() {
     return useContext(SidebarContext);
 }
 
-const TEAM_KEY = 'pulseboard-selected-team';
-const COLLAPSED_KEY = 'pulseboard-sidebar-collapsed';
+const TEAM_KEY = "pulseboard-selected-team";
+const COLLAPSED_KEY = "pulseboard-sidebar-collapsed";
 
 interface SidebarProviderProps {
     children: ReactNode;
@@ -35,20 +43,26 @@ interface SidebarProviderProps {
     activeBoardId?: string;
 }
 
-export function SidebarProvider({ children, currentTeamOverride, activeBoardId }: SidebarProviderProps) {
+export function SidebarProvider({
+    children,
+    currentTeamOverride,
+    activeBoardId,
+}: SidebarProviderProps) {
     const { teams: sharedTeams } = usePage<PageProps>().props;
     const teams = sharedTeams ?? [];
 
-    const [selectedTeamId, setSelectedTeamIdRaw] = useState<string | null>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem(TEAM_KEY);
-        }
-        return null;
-    });
+    const [selectedTeamId, setSelectedTeamIdRaw] = useState<string | null>(
+        () => {
+            if (typeof window !== "undefined") {
+                return localStorage.getItem(TEAM_KEY);
+            }
+            return null;
+        },
+    );
 
     const [collapsed, setCollapsedRaw] = useState<boolean>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem(COLLAPSED_KEY) === 'true';
+        if (typeof window !== "undefined") {
+            return localStorage.getItem(COLLAPSED_KEY) === "true";
         }
         return false;
     });
@@ -63,7 +77,11 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
 
     // Clear stored team if it no longer exists in the teams array
     useEffect(() => {
-        if (selectedTeamId && teams.length > 0 && !teams.some((t) => t.id === selectedTeamId)) {
+        if (
+            selectedTeamId &&
+            teams.length > 0 &&
+            !teams.some((t) => t.id === selectedTeamId)
+        ) {
             setSelectedTeamIdRaw(null);
             localStorage.removeItem(TEAM_KEY);
         }
@@ -93,7 +111,9 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
     const serverBoardOrder = auth.user?.ui_preferences?.board_order;
 
     // Optimistic local board order — keyed by team ID
-    const [localBoardOrder, setLocalBoardOrder] = useState<Record<string, string[]>>({});
+    const [localBoardOrder, setLocalBoardOrder] = useState<
+        Record<string, string[]>
+    >({});
 
     // Sync local state when server props update (e.g. on full page navigation)
     useEffect(() => {
@@ -103,7 +123,9 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
     const boards = useMemo(() => {
         const rawBoards = currentTeam?.boards ?? [];
         if (!currentTeam) return rawBoards;
-        const order = localBoardOrder[currentTeam.id] ?? serverBoardOrder?.[currentTeam.id];
+        const order =
+            localBoardOrder[currentTeam.id] ??
+            serverBoardOrder?.[currentTeam.id];
         if (!order) return rawBoards;
         const boardMap = new Map(rawBoards.map((b) => [b.id, b]));
         const ordered: Board[] = [];
@@ -125,9 +147,12 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
     const reorderBoards = useCallback(
         (teamId: string, orderedBoardIds: string[]) => {
             // Optimistically update local state so UI doesn't snap back
-            setLocalBoardOrder((prev) => ({ ...prev, [teamId]: orderedBoardIds }));
+            setLocalBoardOrder((prev) => ({
+                ...prev,
+                [teamId]: orderedBoardIds,
+            }));
             router.patch(
-                route('profile.ui-preferences.update'),
+                route("profile.ui-preferences.update"),
                 { board_order: { [teamId]: orderedBoardIds } },
                 { preserveScroll: true, preserveState: true },
             );
@@ -148,5 +173,9 @@ export function SidebarProvider({ children, currentTeamOverride, activeBoardId }
         [selectedTeamId, collapsed, currentTeam, boards, reorderBoards],
     );
 
-    return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
+    return (
+        <SidebarContext.Provider value={value}>
+            {children}
+        </SidebarContext.Provider>
+    );
 }

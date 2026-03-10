@@ -1,9 +1,9 @@
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material/styles";
 
 interface LogoProps {
-    size?: 'small' | 'medium' | 'large';
+    size?: "small" | "medium" | "large";
     showText?: boolean;
 }
 
@@ -14,12 +14,12 @@ const sizeMap = {
 };
 
 const textVariantMap = {
-    small: 'h6',
-    medium: 'h5',
-    large: 'h3',
+    small: "h6",
+    medium: "h5",
+    large: "h3",
 } as const;
 
-export default function Logo({ size = 'medium', showText = false }: LogoProps) {
+export default function Logo({ size = "medium", showText = false }: LogoProps) {
     const theme = useTheme();
     const iconSize = sizeMap[size];
     const primaryColor = theme.palette.primary.main;
@@ -27,9 +27,9 @@ export default function Logo({ size = 'medium', showText = false }: LogoProps) {
     return (
         <Box
             sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: size === 'large' ? 1.5 : 1,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: size === "large" ? 1.5 : 1,
             }}
         >
             <svg
@@ -64,9 +64,9 @@ export default function Logo({ size = 'medium', showText = false }: LogoProps) {
                     variant={textVariantMap[size]}
                     component="span"
                     sx={{
-                        color: 'primary.main',
+                        color: "primary.main",
                         fontWeight: 700,
-                        letterSpacing: '-0.02em',
+                        letterSpacing: "-0.02em",
                         lineHeight: 1,
                     }}
                 >

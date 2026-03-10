@@ -1,16 +1,16 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { createTheme, type ThemeOptions } from "@mui/material/styles";
 
 const commonOptions: ThemeOptions = {
     typography: {
         fontFamily: '"Inter", "Helvetica Neue", "Arial", sans-serif',
         h4: {
-            letterSpacing: '-0.03em',
+            letterSpacing: "-0.03em",
         },
         h5: {
-            letterSpacing: '-0.02em',
+            letterSpacing: "-0.02em",
         },
         h6: {
-            letterSpacing: '-0.01em',
+            letterSpacing: "-0.01em",
         },
     },
     shape: {
@@ -23,7 +23,7 @@ const commonOptions: ThemeOptions = {
             },
             styleOverrides: {
                 root: {
-                    textTransform: 'none',
+                    textTransform: "none",
                 },
             },
         },
@@ -58,17 +58,17 @@ const commonOptions: ThemeOptions = {
         MuiToggleButton: {
             styleOverrides: {
                 sizeSmall: {
-                    padding: '4px 10px',
+                    padding: "4px 10px",
                 },
             },
         },
         MuiTableHead: {
             styleOverrides: {
                 root: {
-                    '& .MuiTableCell-head': {
+                    "& .MuiTableCell-head": {
                         fontWeight: 600,
-                        fontSize: '0.75rem',
-                        letterSpacing: '0.02em',
+                        fontSize: "0.75rem",
+                        letterSpacing: "0.02em",
                     },
                 },
             },
@@ -79,16 +79,16 @@ const commonOptions: ThemeOptions = {
 export const lightTheme = createTheme({
     ...commonOptions,
     palette: {
-        mode: 'light',
+        mode: "light",
         primary: {
-            main: '#6366f1',
+            main: "#6366f1",
         },
         secondary: {
-            main: '#ec4899',
+            main: "#ec4899",
         },
         background: {
-            default: '#fafafa',
-            paper: '#ffffff',
+            default: "#fafafa",
+            paper: "#ffffff",
         },
     },
 });
@@ -96,22 +96,22 @@ export const lightTheme = createTheme({
 export const darkTheme = createTheme({
     ...commonOptions,
     palette: {
-        mode: 'dark',
+        mode: "dark",
         primary: {
-            main: '#818cf8',
+            main: "#818cf8",
         },
         secondary: {
-            main: '#f472b6',
+            main: "#f472b6",
         },
         background: {
-            default: '#191919',
-            paper: '#262626',
+            default: "#191919",
+            paper: "#262626",
         },
         text: {
-            primary: 'rgba(255,255,255,0.87)',
-            secondary: 'rgba(255,255,255,0.55)',
+            primary: "rgba(255,255,255,0.87)",
+            secondary: "rgba(255,255,255,0.55)",
         },
-        divider: 'rgba(255,255,255,0.10)',
+        divider: "rgba(255,255,255,0.10)",
     },
     components: {
         ...commonOptions.components,
@@ -120,19 +120,19 @@ export const darkTheme = createTheme({
             styleOverrides: {
                 ...commonOptions.components?.MuiPaper?.styleOverrides,
                 root: {
-                    backgroundImage: 'none',
+                    backgroundImage: "none",
                 },
             },
         },
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    backgroundColor: '#1f1f1f',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(255,255,255,0.16)',
+                    backgroundColor: "#1f1f1f",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "rgba(255,255,255,0.16)",
                     },
-                    '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: 'rgba(255,255,255,0.30)',
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "rgba(255,255,255,0.30)",
                     },
                 },
             },

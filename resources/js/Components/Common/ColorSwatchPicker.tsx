@@ -1,5 +1,5 @@
-import { LABEL_COLORS } from '@/constants/labelColors';
-import Box from '@mui/material/Box';
+import { LABEL_COLORS } from "@/constants/labelColors";
+import Box from "@mui/material/Box";
 
 interface ColorSwatchPickerProps {
     value: string;
@@ -13,7 +13,7 @@ export default function ColorSwatchPicker({
     colors = LABEL_COLORS,
 }: ColorSwatchPickerProps) {
     return (
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
             {colors.map((color) => (
                 <Box
                     key={color}
@@ -25,24 +25,26 @@ export default function ColorSwatchPicker({
                     sx={{
                         width: 28,
                         height: 28,
-                        borderRadius: '50%',
+                        borderRadius: "50%",
                         bgcolor: color,
-                        border: 'none',
-                        cursor: 'pointer',
+                        border: "none",
+                        cursor: "pointer",
                         p: 0,
-                        outline: value.toLowerCase() === color.toLowerCase()
-                            ? '2px solid'
-                            : '2px solid transparent',
-                        outlineColor: value.toLowerCase() === color.toLowerCase()
-                            ? 'primary.main'
-                            : 'transparent',
+                        outline:
+                            value.toLowerCase() === color.toLowerCase()
+                                ? "2px solid"
+                                : "2px solid transparent",
+                        outlineColor:
+                            value.toLowerCase() === color.toLowerCase()
+                                ? "primary.main"
+                                : "transparent",
                         outlineOffset: 2,
-                        transition: 'outline-color 0.15s',
-                        '&:hover': {
-                            outlineColor: 'text.secondary',
+                        transition: "outline-color 0.15s",
+                        "&:hover": {
+                            outlineColor: "text.secondary",
                         },
-                        '&:focus-visible': {
-                            outlineColor: 'primary.main',
+                        "&:focus-visible": {
+                            outlineColor: "primary.main",
                         },
                     }}
                 />

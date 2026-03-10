@@ -1,14 +1,14 @@
-import { usePage } from '@inertiajs/react';
-import type { PageProps } from '@/types';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import Typography from '@mui/material/Typography';
+import { usePage } from "@inertiajs/react";
+import type { PageProps } from "@/types";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import Typography from "@mui/material/Typography";
 
 const providerLabels: Record<string, string> = {
-    local: 'Local',
-    saml2: 'SAML2',
-    okta: 'Okta',
+    local: "Local",
+    saml2: "SAML2",
+    okta: "Okta",
 };
 
 export default function AuthProviderInfo() {
@@ -24,11 +24,11 @@ export default function AuthProviderInfo() {
                 Your account details and authentication method.
             </Typography>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <Avatar
                     src={user.avatar_url}
                     alt={user.name}
-                    sx={{ width: 64, height: 64, fontSize: '1.5rem' }}
+                    sx={{ width: 64, height: 64, fontSize: "1.5rem" }}
                 >
                     {user.name.charAt(0).toUpperCase()}
                 </Avatar>

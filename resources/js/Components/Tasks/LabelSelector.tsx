@@ -1,10 +1,10 @@
-import type { Label, Task } from '@/types';
-import { getContrastText } from '@/utils/colorContrast';
-import { router } from '@inertiajs/react';
-import Autocomplete from '@mui/material/Autocomplete';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
+import type { Label, Task } from "@/types";
+import { getContrastText } from "@/utils/colorContrast";
+import { router } from "@inertiajs/react";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
 
 interface Props {
     task: Task;
@@ -13,14 +13,19 @@ interface Props {
     boardId: string;
 }
 
-export default function LabelSelector({ task, labels, teamId, boardId }: Props) {
+export default function LabelSelector({
+    task,
+    labels,
+    teamId,
+    boardId,
+}: Props) {
     const currentLabels = task.labels ?? [];
 
     const handleChange = (_: unknown, newValue: Label[]) => {
         router.put(
-            route('tasks.labels.update', [teamId, boardId, task.id]),
+            route("tasks.labels.update", [teamId, boardId, task.id]),
             { label_ids: newValue.map((l) => l.id) },
-            { preserveScroll: true }
+            { preserveScroll: true },
         );
     };
 
@@ -33,15 +38,28 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
             renderInput={(params) => (
-                <TextField {...params} size="small" placeholder="Add labels..." inputProps={{ ...params.inputProps, 'aria-label': 'Add labels' }} />
+                <TextField
+                    {...params}
+                    size="small"
+                    placeholder="Add labels..."
+                    inputProps={{
+                        ...params.inputProps,
+                        "aria-label": "Add labels",
+                    }}
+                />
             )}
             renderOption={(props, option) => (
-                <Box component="li" {...props} key={option.id} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                    component="li"
+                    {...props}
+                    key={option.id}
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                >
                     <Box
                         sx={{
                             width: 14,
                             height: 14,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             bgcolor: option.color,
                             flexShrink: 0,
                         }}
@@ -62,10 +80,13 @@ export default function LabelSelector({ task, labels, teamId, boardId }: Props) 
                                 fontWeight: 600,
                                 bgcolor: label.color,
                                 color: getContrastText(label.color),
-                                '& .MuiChip-deleteIcon': {
+                                "& .MuiChip-deleteIcon": {
                                     color: getContrastText(label.color),
                                     opacity: 0.7,
-                                    '&:hover': { opacity: 1, color: getContrastText(label.color) },
+                                    "&:hover": {
+                                        opacity: 1,
+                                        color: getContrastText(label.color),
+                                    },
                                 },
                             }}
                         />

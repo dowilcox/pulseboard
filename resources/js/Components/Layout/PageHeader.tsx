@@ -1,11 +1,11 @@
-import { Link as InertiaLink } from '@inertiajs/react';
-import MuiBreadcrumbs from '@mui/material/Breadcrumbs';
-import Link from '@mui/material/Link';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import HomeIcon from '@mui/icons-material/Home';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import type { ReactNode } from 'react';
+import { Link as InertiaLink } from "@inertiajs/react";
+import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
+import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+import HomeIcon from "@mui/icons-material/Home";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import type { ReactNode } from "react";
 
 export interface BreadcrumbItem {
     label: string;
@@ -21,9 +21,20 @@ interface PageHeaderProps {
     actions?: ReactNode;
 }
 
-export default function PageHeader({ title, breadcrumbs = [], actions }: PageHeaderProps) {
+export default function PageHeader({
+    title,
+    breadcrumbs = [],
+    actions,
+}: PageHeaderProps) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Box
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+            }}
+        >
             <Box sx={{ minWidth: 0 }}>
                 <MuiBreadcrumbs
                     separator={<NavigateNextIcon sx={{ fontSize: 14 }} />}
@@ -32,11 +43,11 @@ export default function PageHeader({ title, breadcrumbs = [], actions }: PageHea
                 >
                     <Link
                         component={InertiaLink}
-                        href={route('dashboard')}
+                        href={route("dashboard")}
                         underline="hover"
                         color="text.secondary"
                         variant="body2"
-                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                     >
                         <HomeIcon sx={{ fontSize: 14 }} />
                         Home
@@ -54,12 +65,20 @@ export default function PageHeader({ title, breadcrumbs = [], actions }: PageHea
                                 {crumb.label}
                             </Link>
                         ) : (
-                            <Typography key={crumb.label} variant="body2" color="text.secondary">
+                            <Typography
+                                key={crumb.label}
+                                variant="body2"
+                                color="text.secondary"
+                            >
                                 {crumb.label}
                             </Typography>
                         ),
                     )}
-                    <Typography variant="body2" color="text.primary" fontWeight={500}>
+                    <Typography
+                        variant="body2"
+                        color="text.primary"
+                        fontWeight={500}
+                    >
                         {title}
                     </Typography>
                 </MuiBreadcrumbs>
@@ -68,7 +87,15 @@ export default function PageHeader({ title, breadcrumbs = [], actions }: PageHea
                 </Typography>
             </Box>
             {actions && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2, flexShrink: 0 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        ml: 2,
+                        flexShrink: 0,
+                    }}
+                >
                     {actions}
                 </Box>
             )}

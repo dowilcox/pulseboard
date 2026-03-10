@@ -1,15 +1,15 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
-import LockIcon from '@mui/icons-material/Lock';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import MuiLink from '@mui/material/Link';
-import TextField from '@mui/material/TextField';
+import GuestLayout from "@/Layouts/GuestLayout";
+import { Head, Link, useForm } from "@inertiajs/react";
+import { type FormEvent } from "react";
+import LockIcon from "@mui/icons-material/Lock";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Divider from "@mui/material/Divider";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import MuiLink from "@mui/material/Link";
+import TextField from "@mui/material/TextField";
 
 interface LoginProps {
     status?: string;
@@ -17,17 +17,21 @@ interface LoginProps {
     ssoEnabled?: boolean;
 }
 
-export default function Login({ status, canResetPassword, ssoEnabled }: LoginProps) {
+export default function Login({
+    status,
+    canResetPassword,
+    ssoEnabled,
+}: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
-        password: '',
+        email: "",
+        password: "",
         remember: false,
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('login'), {
-            onFinish: () => reset('password'),
+        post(route("login"), {
+            onFinish: () => reset("password"),
         });
     };
 
@@ -36,7 +40,12 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
             <Head title="Log In" />
 
             {status && (
-                <Alert severity="success" role="status" aria-live="polite" sx={{ mb: 2 }}>
+                <Alert
+                    severity="success"
+                    role="status"
+                    aria-live="polite"
+                    sx={{ mb: 2 }}
+                >
                     {status}
                 </Alert>
             )}
@@ -48,7 +57,7 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
                     type="email"
                     name="email"
                     value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
+                    onChange={(e) => setData("email", e.target.value)}
                     error={!!errors.email}
                     helperText={errors.email}
                     autoComplete="username"
@@ -63,7 +72,7 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
                     type="password"
                     name="password"
                     value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
+                    onChange={(e) => setData("password", e.target.value)}
                     error={!!errors.password}
                     helperText={errors.password}
                     autoComplete="current-password"
@@ -76,7 +85,9 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
                         <Checkbox
                             name="remember"
                             checked={data.remember}
-                            onChange={(e) => setData('remember', e.target.checked)}
+                            onChange={(e) =>
+                                setData("remember", e.target.checked)
+                            }
                             color="primary"
                         />
                     }
@@ -86,9 +97,9 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
 
                 <Box
                     sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-end',
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
                         mt: 2,
                         gap: 2,
                     }}
@@ -96,7 +107,7 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
                     {canResetPassword && (
                         <MuiLink
                             component={Link}
-                            href={route('password.request')}
+                            href={route("password.request")}
                             variant="body2"
                             underline="hover"
                         >
@@ -120,7 +131,7 @@ export default function Login({ status, canResetPassword, ssoEnabled }: LoginPro
 
                     <Button
                         component="a"
-                        href={route('saml.login')}
+                        href={route("saml.login")}
                         variant="outlined"
                         fullWidth
                         startIcon={<LockIcon />}

@@ -1,5 +1,5 @@
-import type { PaginatedResponse, Task } from '@/types';
-import { useCallback, useRef, useState } from 'react';
+import type { PaginatedResponse, Task } from "@/types";
+import { useCallback, useRef, useState } from "react";
 
 interface UseLoadMoreTasksOptions {
     teamId: string;
@@ -17,8 +17,14 @@ interface ColumnLoadState {
  * Hook for lazily loading more tasks for a board, either by column or globally.
  * Uses the boards.tasks.index route endpoint.
  */
-export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreTasksOptions) {
-    const [columnLoadStates, setColumnLoadStates] = useState<Record<string, ColumnLoadState>>({});
+export function useLoadMoreTasks({
+    teamId,
+    boardId,
+    perPage = 50,
+}: UseLoadMoreTasksOptions) {
+    const [columnLoadStates, setColumnLoadStates] = useState<
+        Record<string, ColumnLoadState>
+    >({});
     const [globalLoadState, setGlobalLoadState] = useState<ColumnLoadState>({
         page: 1,
         hasMore: true,
@@ -29,30 +35,36 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
     /**
      * Initialize load state for a column based on its initial task count vs total.
      */
-    const initColumnState = useCallback((columnId: string, loadedCount: number, totalCount: number) => {
-        setColumnLoadStates((prev) => {
-            if (prev[columnId]) return prev;
-            return {
-                ...prev,
-                [columnId]: {
-                    page: 1,
-                    hasMore: loadedCount < totalCount,
-                    loading: false,
-                },
-            };
-        });
-    }, []);
+    const initColumnState = useCallback(
+        (columnId: string, loadedCount: number, totalCount: number) => {
+            setColumnLoadStates((prev) => {
+                if (prev[columnId]) return prev;
+                return {
+                    ...prev,
+                    [columnId]: {
+                        page: 1,
+                        hasMore: loadedCount < totalCount,
+                        loading: false,
+                    },
+                };
+            });
+        },
+        [],
+    );
 
     /**
      * Initialize global load state for list view based on total loaded vs total available.
      */
-    const initGlobalState = useCallback((loadedCount: number, totalCount: number) => {
-        setGlobalLoadState({
-            page: 1,
-            hasMore: loadedCount < totalCount,
-            loading: false,
-        });
-    }, []);
+    const initGlobalState = useCallback(
+        (loadedCount: number, totalCount: number) => {
+            setGlobalLoadState({
+                page: 1,
+                hasMore: loadedCount < totalCount,
+                loading: false,
+            });
+        },
+        [],
+    );
 
     /**
      * Fetch the next page of tasks for a specific column.
@@ -80,19 +92,19 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
                     column_id: columnId,
                     page: String(nextPage),
                     per_page: String(perPage),
-                    sort: 'sort_order',
-                    direction: 'asc',
+                    sort: "sort_order",
+                    direction: "asc",
                 });
 
                 const response = await fetch(
-                    `${route('boards.tasks.index', [teamId, boardId])}?${params}`,
+                    `${route("boards.tasks.index", [teamId, boardId])}?${params}`,
                     {
-                        headers: { Accept: 'application/json' },
+                        headers: { Accept: "application/json" },
                         signal: controller.signal,
-                    }
+                    },
                 );
 
-                if (!response.ok) throw new Error('Failed to load tasks');
+                if (!response.ok) throw new Error("Failed to load tasks");
 
                 const data: PaginatedResponse<Task> = await response.json();
 
@@ -107,7 +119,7 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
 
                 return data.data;
             } catch (error) {
-                if ((error as Error).name === 'AbortError') return [];
+                if ((error as Error).name === "AbortError") return [];
 
                 setColumnLoadStates((prev) => ({
                     ...prev,
@@ -116,7 +128,7 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
                 return [];
             }
         },
-        [columnLoadStates, teamId, boardId, perPage]
+        [columnLoadStates, teamId, boardId, perPage],
     );
 
     /**
@@ -124,10 +136,10 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
      * Supports sorting.
      */
     const loadMoreGlobal = useCallback(
-        async (sort = 'sort_order', direction = 'asc'): Promise<Task[]> => {
+        async (sort = "sort_order", direction = "asc"): Promise<Task[]> => {
             if (!globalLoadState.hasMore || globalLoadState.loading) return [];
 
-            const key = 'global';
+            const key = "global";
             abortControllers.current[key]?.abort();
             const controller = new AbortController();
             abortControllers.current[key] = controller;
@@ -144,14 +156,14 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
                 });
 
                 const response = await fetch(
-                    `${route('boards.tasks.index', [teamId, boardId])}?${params}`,
+                    `${route("boards.tasks.index", [teamId, boardId])}?${params}`,
                     {
-                        headers: { Accept: 'application/json' },
+                        headers: { Accept: "application/json" },
                         signal: controller.signal,
-                    }
+                    },
                 );
 
-                if (!response.ok) throw new Error('Failed to load tasks');
+                if (!response.ok) throw new Error("Failed to load tasks");
 
                 const data: PaginatedResponse<Task> = await response.json();
 
@@ -163,19 +175,23 @@ export function useLoadMoreTasks({ teamId, boardId, perPage = 50 }: UseLoadMoreT
 
                 return data.data;
             } catch (error) {
-                if ((error as Error).name === 'AbortError') return [];
+                if ((error as Error).name === "AbortError") return [];
 
                 setGlobalLoadState((prev) => ({ ...prev, loading: false }));
                 return [];
             }
         },
-        [globalLoadState, teamId, boardId, perPage]
+        [globalLoadState, teamId, boardId, perPage],
     );
 
     const getColumnState = useCallback(
         (columnId: string): ColumnLoadState =>
-            columnLoadStates[columnId] ?? { page: 1, hasMore: false, loading: false },
-        [columnLoadStates]
+            columnLoadStates[columnId] ?? {
+                page: 1,
+                hasMore: false,
+                loading: false,
+            },
+        [columnLoadStates],
     );
 
     return {

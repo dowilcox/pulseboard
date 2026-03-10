@@ -1,21 +1,21 @@
-import type { Task } from '@/types';
-import { router, useForm } from '@inertiajs/react';
-import AddIcon from '@mui/icons-material/Add';
-import Avatar from '@mui/material/Avatar';
-import AvatarGroup from '@mui/material/AvatarGroup';
-import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
-import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { type FormEvent, useRef, useState } from 'react';
+import type { Task } from "@/types";
+import { router, useForm } from "@inertiajs/react";
+import AddIcon from "@mui/icons-material/Add";
+import Avatar from "@mui/material/Avatar";
+import AvatarGroup from "@mui/material/AvatarGroup";
+import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { type FormEvent, useRef, useState } from "react";
 
 interface Props {
     task: Task;
@@ -25,17 +25,25 @@ interface Props {
     onSubtaskClick?: (subtask: Task) => void;
 }
 
-export default function SubtaskList({ task, teamId, boardId, columnId, onSubtaskClick }: Props) {
+export default function SubtaskList({
+    task,
+    teamId,
+    boardId,
+    columnId,
+    onSubtaskClick,
+}: Props) {
     const subtasks = task.subtasks ?? [];
     const total = subtasks.length;
-    const completed = subtasks.filter((s) => s.completed_at !== null && s.completed_at !== undefined).length;
+    const completed = subtasks.filter(
+        (s) => s.completed_at !== null && s.completed_at !== undefined,
+    ).length;
     const progress = total > 0 ? (completed / total) * 100 : 0;
 
     const [showForm, setShowForm] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, reset } = useForm({
-        title: '',
+        title: "",
         parent_task_id: task.id,
     });
 
@@ -43,10 +51,10 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
         e.preventDefault();
         if (!data.title.trim()) return;
 
-        post(route('tasks.store', [teamId, boardId, columnId]), {
+        post(route("tasks.store", [teamId, boardId, columnId]), {
             preserveScroll: true,
             onSuccess: () => {
-                reset('title');
+                reset("title");
                 inputRef.current?.focus();
             },
         });
@@ -55,7 +63,7 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
     const handleToggleComplete = (subtask: Task, e: React.MouseEvent) => {
         e.stopPropagation();
         router.patch(
-            route('tasks.toggle-complete', [teamId, boardId, subtask.id]),
+            route("tasks.toggle-complete", [teamId, boardId, subtask.id]),
             {},
             { preserveScroll: true },
         );
@@ -64,7 +72,14 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
     return (
         <Box>
             {total > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1,
+                    }}
+                >
                     <LinearProgress
                         variant="determinate"
                         value={progress}
@@ -78,7 +93,9 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
 
             <List dense disablePadding>
                 {subtasks.map((subtask) => {
-                    const isCompleted = subtask.completed_at !== null && subtask.completed_at !== undefined;
+                    const isCompleted =
+                        subtask.completed_at !== null &&
+                        subtask.completed_at !== undefined;
                     const assignees = subtask.assignees ?? [];
                     return (
                         <ListItem key={subtask.id} disablePadding>
@@ -91,18 +108,24 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
                                         edge="start"
                                         size="small"
                                         checked={isCompleted}
-                                        onClick={(e) => handleToggleComplete(subtask, e)}
+                                        onClick={(e) =>
+                                            handleToggleComplete(subtask, e)
+                                        }
                                         tabIndex={-1}
-                                        aria-label={`Mark ${subtask.title} as ${isCompleted ? 'incomplete' : 'complete'}`}
+                                        aria-label={`Mark ${subtask.title} as ${isCompleted ? "incomplete" : "complete"}`}
                                     />
                                 </ListItemIcon>
                                 <ListItemText
                                     primary={subtask.title}
                                     primaryTypographyProps={{
-                                        variant: 'body2',
+                                        variant: "body2",
                                         sx: {
-                                            textDecoration: isCompleted ? 'line-through' : 'none',
-                                            color: isCompleted ? 'text.disabled' : 'text.primary',
+                                            textDecoration: isCompleted
+                                                ? "line-through"
+                                                : "none",
+                                            color: isCompleted
+                                                ? "text.disabled"
+                                                : "text.primary",
                                         },
                                     }}
                                 />
@@ -111,13 +134,22 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
                                         max={3}
                                         sx={{
                                             ml: 1,
-                                            '& .MuiAvatar-root': { width: 22, height: 22, fontSize: '0.65rem' },
+                                            "& .MuiAvatar-root": {
+                                                width: 22,
+                                                height: 22,
+                                                fontSize: "0.65rem",
+                                            },
                                         }}
                                     >
                                         {assignees.map((user) => (
-                                            <Tooltip key={user.id} title={user.name}>
+                                            <Tooltip
+                                                key={user.id}
+                                                title={user.name}
+                                            >
                                                 <Avatar src={user.avatar_url}>
-                                                    {user.name?.charAt(0).toUpperCase()}
+                                                    {user.name
+                                                        ?.charAt(0)
+                                                        .toUpperCase()}
                                                 </Avatar>
                                             </Tooltip>
                                         ))}
@@ -138,17 +170,17 @@ export default function SubtaskList({ task, teamId, boardId, columnId, onSubtask
                         autoFocus
                         placeholder="Subtask title..."
                         value={data.title}
-                        onChange={(e) => setData('title', e.target.value)}
+                        onChange={(e) => setData("title", e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
+                            if (e.key === "Escape") {
                                 setShowForm(false);
-                                reset('title');
+                                reset("title");
                             }
                         }}
                         onBlur={() => {
                             if (!data.title.trim()) {
                                 setShowForm(false);
-                                reset('title');
+                                reset("title");
                             }
                         }}
                         disabled={processing}

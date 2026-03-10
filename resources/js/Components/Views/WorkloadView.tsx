@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
-import { PRIORITY_COLORS } from '@/constants/priorities';
-import type { Column, Task, User } from '@/types';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import LinearProgress from '@mui/material/LinearProgress';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import { useMemo } from "react";
+import { PRIORITY_COLORS } from "@/constants/priorities";
+import type { Column, Task, User } from "@/types";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import LinearProgress from "@mui/material/LinearProgress";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 
 interface Props {
     columns: Column[];
@@ -22,7 +22,12 @@ interface MemberWorkload {
     byPriority: Record<string, number>;
 }
 
-export default function WorkloadView({ columns, members, filterFn, onTaskClick }: Props) {
+export default function WorkloadView({
+    columns,
+    members,
+    filterFn,
+    onTaskClick,
+}: Props) {
     const allTasks = useMemo(() => {
         const tasks: Task[] = [];
         for (const col of columns) {
@@ -78,7 +83,8 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
                 }
                 wl.tasks.push(task);
                 wl.totalEffort += task.effort_estimate ?? 1;
-                wl.byPriority[task.priority] = (wl.byPriority[task.priority] ?? 0) + 1;
+                wl.byPriority[task.priority] =
+                    (wl.byPriority[task.priority] ?? 0) + 1;
             }
         }
 
@@ -89,19 +95,36 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
         return { workloads: result, unassigned };
     }, [allTasks, members, doneColumnIds]);
 
-    const maxTasks = Math.max(...workloads.workloads.map((w) => w.tasks.length), 1);
+    const maxTasks = Math.max(
+        ...workloads.workloads.map((w) => w.tasks.length),
+        1,
+    );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {workloads.workloads.length === 0 && workloads.unassigned.length === 0 ? (
-                <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <Typography color="text.secondary">No active tasks</Typography>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {workloads.workloads.length === 0 &&
+            workloads.unassigned.length === 0 ? (
+                <Box sx={{ py: 6, textAlign: "center" }}>
+                    <Typography color="text.secondary">
+                        No active tasks
+                    </Typography>
                 </Box>
             ) : (
                 <>
                     {workloads.workloads.map((wl) => (
-                        <Paper key={wl.user.id} variant="outlined" sx={{ p: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+                        <Paper
+                            key={wl.user.id}
+                            variant="outlined"
+                            sx={{ p: 2 }}
+                        >
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 2,
+                                    mb: 1.5,
+                                }}
+                            >
                                 <Avatar
                                     alt={wl.user.name}
                                     src={wl.user.avatar_url}
@@ -110,27 +133,40 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
                                     {wl.user.name.charAt(0)}
                                 </Avatar>
                                 <Box sx={{ flex: 1 }}>
-                                    <Typography variant="subtitle2" fontWeight={600}>
+                                    <Typography
+                                        variant="subtitle2"
+                                        fontWeight={600}
+                                    >
                                         {wl.user.name}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                        {wl.tasks.length} task{wl.tasks.length !== 1 ? 's' : ''} &middot; {wl.totalEffort} effort points
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        {wl.tasks.length} task
+                                        {wl.tasks.length !== 1 ? "s" : ""}{" "}
+                                        &middot; {wl.totalEffort} effort points
                                     </Typography>
                                 </Box>
-                                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                    {Object.entries(wl.byPriority).map(([priority, count]) => (
-                                        <Chip
-                                            key={priority}
-                                            label={`${count} ${priority}`}
-                                            size="small"
-                                            sx={{
-                                                height: 20,
-                                                fontSize: '0.6rem',
-                                                borderLeft: 3,
-                                                borderColor: PRIORITY_COLORS[priority] ?? '#e5e7eb',
-                                            }}
-                                        />
-                                    ))}
+                                <Box sx={{ display: "flex", gap: 0.5 }}>
+                                    {Object.entries(wl.byPriority).map(
+                                        ([priority, count]) => (
+                                            <Chip
+                                                key={priority}
+                                                label={`${count} ${priority}`}
+                                                size="small"
+                                                sx={{
+                                                    height: 20,
+                                                    fontSize: "0.6rem",
+                                                    borderLeft: 3,
+                                                    borderColor:
+                                                        PRIORITY_COLORS[
+                                                            priority
+                                                        ] ?? "#e5e7eb",
+                                                }}
+                                            />
+                                        ),
+                                    )}
                                 </Box>
                             </Box>
                             <LinearProgress
@@ -138,17 +174,26 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
                                 value={(wl.tasks.length / maxTasks) * 100}
                                 sx={{ height: 6, borderRadius: 3, mb: 1.5 }}
                             />
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 1,
+                                    flexWrap: "wrap",
+                                }}
+                            >
                                 {wl.tasks.slice(0, 10).map((task) => (
                                     <Chip
                                         key={task.id}
-                                        label={`${task.task_number ? `#${task.task_number}` : ''} ${task.title}`}
+                                        label={`${task.task_number ? `#${task.task_number}` : ""} ${task.title}`}
                                         size="small"
                                         onClick={() => onTaskClick(task)}
                                         sx={{
-                                            cursor: 'pointer',
+                                            cursor: "pointer",
                                             borderLeft: 3,
-                                            borderColor: PRIORITY_COLORS[task.priority] ?? '#e5e7eb',
+                                            borderColor:
+                                                PRIORITY_COLORS[
+                                                    task.priority
+                                                ] ?? "#e5e7eb",
                                             maxWidth: 200,
                                         }}
                                     />
@@ -166,25 +211,43 @@ export default function WorkloadView({ columns, members, filterFn, onTaskClick }
 
                     {/* Unassigned tasks */}
                     {workloads.unassigned.length > 0 && (
-                        <Paper variant="outlined" sx={{ p: 2, bgcolor: 'action.hover' }}>
-                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{ p: 2, bgcolor: "action.hover" }}
+                        >
+                            <Typography
+                                variant="subtitle2"
+                                fontWeight={600}
+                                sx={{ mb: 1 }}
+                            >
                                 Unassigned ({workloads.unassigned.length})
                             </Typography>
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {workloads.unassigned.slice(0, 10).map((task) => (
-                                    <Chip
-                                        key={task.id}
-                                        label={`${task.task_number ? `#${task.task_number}` : ''} ${task.title}`}
-                                        size="small"
-                                        onClick={() => onTaskClick(task)}
-                                        sx={{
-                                            cursor: 'pointer',
-                                            borderLeft: 3,
-                                            borderColor: PRIORITY_COLORS[task.priority] ?? '#e5e7eb',
-                                            maxWidth: 200,
-                                        }}
-                                    />
-                                ))}
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 1,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                {workloads.unassigned
+                                    .slice(0, 10)
+                                    .map((task) => (
+                                        <Chip
+                                            key={task.id}
+                                            label={`${task.task_number ? `#${task.task_number}` : ""} ${task.title}`}
+                                            size="small"
+                                            onClick={() => onTaskClick(task)}
+                                            sx={{
+                                                cursor: "pointer",
+                                                borderLeft: 3,
+                                                borderColor:
+                                                    PRIORITY_COLORS[
+                                                        task.priority
+                                                    ] ?? "#e5e7eb",
+                                                maxWidth: 200,
+                                            }}
+                                        />
+                                    ))}
                                 {workloads.unassigned.length > 10 && (
                                     <Chip
                                         label={`+${workloads.unassigned.length - 10} more`}

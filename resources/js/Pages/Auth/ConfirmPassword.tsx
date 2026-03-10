@@ -1,20 +1,20 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import GuestLayout from "@/Layouts/GuestLayout";
+import { Head, useForm } from "@inertiajs/react";
+import { type FormEvent } from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 export default function ConfirmPassword() {
     const { data, setData, post, processing, errors, reset } = useForm({
-        password: '',
+        password: "",
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('password.confirm'), {
-            onFinish: () => reset('password'),
+        post(route("password.confirm"), {
+            onFinish: () => reset("password"),
         });
     };
 
@@ -34,7 +34,7 @@ export default function ConfirmPassword() {
                     type="password"
                     name="password"
                     value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
+                    onChange={(e) => setData("password", e.target.value)}
                     error={!!errors.password}
                     helperText={errors.password}
                     autoFocus
@@ -44,8 +44,8 @@ export default function ConfirmPassword() {
 
                 <Box
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
+                        display: "flex",
+                        justifyContent: "flex-end",
                         mt: 2,
                     }}
                 >

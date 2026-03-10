@@ -1,22 +1,38 @@
-import type { BoardViewMode } from '@/types';
-import TableRowsIcon from '@mui/icons-material/TableRows';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
-import WorkIcon from '@mui/icons-material/Work';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import Tooltip from '@mui/material/Tooltip';
+import type { BoardViewMode } from "@/types";
+import TableRowsIcon from "@mui/icons-material/TableRows";
+import TimelineIcon from "@mui/icons-material/Timeline";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import WorkIcon from "@mui/icons-material/Work";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Tooltip from "@mui/material/Tooltip";
 
 interface Props {
     value: BoardViewMode;
     onChange: (mode: BoardViewMode) => void;
 }
 
-const views: { value: BoardViewMode; label: string; icon: React.ReactElement }[] = [
-    { value: 'kanban', label: 'Kanban', icon: <ViewColumnIcon fontSize="small" /> },
-    { value: 'list', label: 'List', icon: <TableRowsIcon fontSize="small" /> },
-    { value: 'timeline', label: 'Timeline', icon: <TimelineIcon fontSize="small" /> },
-    { value: 'workload', label: 'Workload', icon: <WorkIcon fontSize="small" /> },
+const views: {
+    value: BoardViewMode;
+    label: string;
+    icon: React.ReactElement;
+}[] = [
+    {
+        value: "kanban",
+        label: "Kanban",
+        icon: <ViewColumnIcon fontSize="small" />,
+    },
+    { value: "list", label: "List", icon: <TableRowsIcon fontSize="small" /> },
+    {
+        value: "timeline",
+        label: "Timeline",
+        icon: <TimelineIcon fontSize="small" />,
+    },
+    {
+        value: "workload",
+        label: "Workload",
+        icon: <WorkIcon fontSize="small" />,
+    },
 ];
 
 export default function ViewSwitcher({ value, onChange }: Props) {

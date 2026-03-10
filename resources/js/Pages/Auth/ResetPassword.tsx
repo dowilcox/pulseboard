@@ -1,9 +1,9 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
+import GuestLayout from "@/Layouts/GuestLayout";
+import { Head, useForm } from "@inertiajs/react";
+import { type FormEvent } from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 
 interface ResetPasswordProps {
     token: string;
@@ -14,14 +14,14 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token,
         email,
-        password: '',
-        password_confirmation: '',
+        password: "",
+        password_confirmation: "",
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('password.store'), {
-            onFinish: () => reset('password', 'password_confirmation'),
+        post(route("password.store"), {
+            onFinish: () => reset("password", "password_confirmation"),
         });
     };
 
@@ -36,7 +36,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     type="email"
                     name="email"
                     value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
+                    onChange={(e) => setData("email", e.target.value)}
                     error={!!errors.email}
                     helperText={errors.email}
                     autoComplete="username"
@@ -50,7 +50,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     type="password"
                     name="password"
                     value={data.password}
-                    onChange={(e) => setData('password', e.target.value)}
+                    onChange={(e) => setData("password", e.target.value)}
                     error={!!errors.password}
                     helperText={errors.password}
                     autoComplete="new-password"
@@ -65,7 +65,9 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     type="password"
                     name="password_confirmation"
                     value={data.password_confirmation}
-                    onChange={(e) => setData('password_confirmation', e.target.value)}
+                    onChange={(e) =>
+                        setData("password_confirmation", e.target.value)
+                    }
                     error={!!errors.password_confirmation}
                     helperText={errors.password_confirmation}
                     autoComplete="new-password"
@@ -75,8 +77,8 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
 
                 <Box
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
+                        display: "flex",
+                        justifyContent: "flex-end",
                         mt: 2,
                     }}
                 >

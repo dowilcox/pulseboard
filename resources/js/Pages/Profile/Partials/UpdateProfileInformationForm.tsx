@@ -1,11 +1,11 @@
-import { Link, useForm, usePage } from '@inertiajs/react';
-import type { PageProps } from '@/types';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { FormEventHandler } from 'react';
+import { Link, useForm, usePage } from "@inertiajs/react";
+import type { PageProps } from "@/types";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { FormEventHandler } from "react";
 
 export default function UpdateProfileInformationForm({
     mustVerifyEmail,
@@ -27,7 +27,7 @@ export default function UpdateProfileInformationForm({
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('profile.update'));
+        patch(route("profile.update"));
     };
 
     return (
@@ -39,12 +39,16 @@ export default function UpdateProfileInformationForm({
                 Update your account's profile information and email address.
             </Typography>
 
-            <Box component="form" onSubmit={submit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box
+                component="form"
+                onSubmit={submit}
+                sx={{ display: "flex", flexDirection: "column", gap: 3 }}
+            >
                 <TextField
                     id="name"
                     label="Name"
                     value={data.name}
-                    onChange={(e) => setData('name', e.target.value)}
+                    onChange={(e) => setData("name", e.target.value)}
                     error={!!errors.name}
                     helperText={errors.name}
                     required
@@ -59,7 +63,7 @@ export default function UpdateProfileInformationForm({
                     label="Email"
                     type="email"
                     value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
+                    onChange={(e) => setData("email", e.target.value)}
                     error={!!errors.email}
                     helperText={errors.email}
                     required
@@ -71,34 +75,40 @@ export default function UpdateProfileInformationForm({
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <Box>
                         <Typography variant="body2" color="text.primary">
-                            Your email address is unverified.{' '}
+                            Your email address is unverified.{" "}
                             <Link
-                                href={route('verification.send')}
+                                href={route("verification.send")}
                                 method="post"
                                 as="button"
                                 style={{
-                                    background: 'none',
-                                    border: 'none',
+                                    background: "none",
+                                    border: "none",
                                     padding: 0,
-                                    cursor: 'pointer',
-                                    textDecoration: 'underline',
-                                    font: 'inherit',
-                                    color: 'inherit',
+                                    cursor: "pointer",
+                                    textDecoration: "underline",
+                                    font: "inherit",
+                                    color: "inherit",
                                 }}
                             >
                                 Click here to re-send the verification email.
                             </Link>
                         </Typography>
 
-                        {status === 'verification-link-sent' && (
-                            <Alert severity="success" role="status" aria-live="polite" sx={{ mt: 2 }}>
-                                A new verification link has been sent to your email address.
+                        {status === "verification-link-sent" && (
+                            <Alert
+                                severity="success"
+                                role="status"
+                                aria-live="polite"
+                                sx={{ mt: 2 }}
+                            >
+                                A new verification link has been sent to your
+                                email address.
                             </Alert>
                         )}
                     </Box>
                 )}
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <Button
                         type="submit"
                         variant="contained"
@@ -108,7 +118,12 @@ export default function UpdateProfileInformationForm({
                     </Button>
 
                     {recentlySuccessful && (
-                        <Typography variant="body2" color="text.secondary" role="status" aria-live="polite">
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            role="status"
+                            aria-live="polite"
+                        >
                             Saved.
                         </Typography>
                     )}

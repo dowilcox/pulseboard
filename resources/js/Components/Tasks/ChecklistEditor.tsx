@@ -1,15 +1,15 @@
-import type { Checklist, ChecklistItem } from '@/types';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { useRef, useState } from 'react';
+import type { Checklist, ChecklistItem } from "@/types";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useRef, useState } from "react";
 
 interface Props {
     checklists: Checklist[];
@@ -17,10 +17,10 @@ interface Props {
 }
 
 export default function ChecklistEditor({ checklists, onChange }: Props) {
-    const [newChecklistTitle, setNewChecklistTitle] = useState('');
+    const [newChecklistTitle, setNewChecklistTitle] = useState("");
     const [addingChecklist, setAddingChecklist] = useState(false);
     const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
-    const [newItemText, setNewItemText] = useState('');
+    const [newItemText, setNewItemText] = useState("");
     const newItemRef = useRef<HTMLInputElement>(null);
     const newChecklistRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +32,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
             items: [],
         };
         onChange([...checklists, newChecklist]);
-        setNewChecklistTitle('');
+        setNewChecklistTitle("");
         setAddingChecklist(false);
     };
 
@@ -47,7 +47,9 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                     ? {
                           ...c,
                           items: c.items.map((item) =>
-                              item.id === itemId ? { ...item, completed: !item.completed } : item,
+                              item.id === itemId
+                                  ? { ...item, completed: !item.completed }
+                                  : item,
                           ),
                       }
                     : c,
@@ -64,10 +66,12 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
         };
         onChange(
             checklists.map((c) =>
-                c.id === checklistId ? { ...c, items: [...c.items, newItem] } : c,
+                c.id === checklistId
+                    ? { ...c, items: [...c.items, newItem] }
+                    : c,
             ),
         );
-        setNewItemText('');
+        setNewItemText("");
         setTimeout(() => newItemRef.current?.focus(), 0);
     };
 
@@ -75,13 +79,20 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
         onChange(
             checklists.map((c) =>
                 c.id === checklistId
-                    ? { ...c, items: c.items.filter((item) => item.id !== itemId) }
+                    ? {
+                          ...c,
+                          items: c.items.filter((item) => item.id !== itemId),
+                      }
                     : c,
             ),
         );
     };
 
-    const handleEditItem = (checklistId: string, itemId: string, text: string) => {
+    const handleEditItem = (
+        checklistId: string,
+        itemId: string,
+        text: string,
+    ) => {
         onChange(
             checklists.map((c) =>
                 c.id === checklistId
@@ -100,20 +111,31 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
         <Box>
             {checklists.map((checklist) => {
                 const total = checklist.items.length;
-                const completed = checklist.items.filter((i) => i.completed).length;
+                const completed = checklist.items.filter(
+                    (i) => i.completed,
+                ).length;
                 const progress = total > 0 ? (completed / total) * 100 : 0;
 
                 return (
                     <Box key={checklist.id} sx={{ mb: 2 }}>
                         {/* Checklist header */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 0.5,
+                            }}
+                        >
                             <Typography variant="body2" fontWeight={600}>
                                 {checklist.title}
                             </Typography>
                             <Tooltip title="Remove checklist">
                                 <IconButton
                                     size="small"
-                                    onClick={() => handleRemoveChecklist(checklist.id)}
+                                    onClick={() =>
+                                        handleRemoveChecklist(checklist.id)
+                                    }
                                     aria-label={`Remove checklist ${checklist.title}`}
                                 >
                                     <DeleteIcon fontSize="small" />
@@ -123,13 +145,23 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
 
                         {/* Progress */}
                         {total > 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mb: 1,
+                                }}
+                            >
                                 <LinearProgress
                                     variant="determinate"
                                     value={progress}
                                     sx={{ flex: 1, height: 6, borderRadius: 3 }}
                                 />
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
                                     {completed}/{total}
                                 </Typography>
                             </Box>
@@ -139,12 +171,19 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                         {checklist.items.map((item) => (
                             <Box
                                 key={item.id}
-                                sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: -1 }}
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    ml: -1,
+                                }}
                             >
                                 <Checkbox
                                     size="small"
                                     checked={item.completed}
-                                    onChange={() => handleToggleItem(checklist.id, item.id)}
+                                    onChange={() =>
+                                        handleToggleItem(checklist.id, item.id)
+                                    }
                                     aria-label={`Toggle ${item.text}`}
                                 />
                                 <TextField
@@ -152,14 +191,24 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                     size="small"
                                     fullWidth
                                     value={item.text}
-                                    onChange={(e) => handleEditItem(checklist.id, item.id, e.target.value)}
+                                    onChange={(e) =>
+                                        handleEditItem(
+                                            checklist.id,
+                                            item.id,
+                                            e.target.value,
+                                        )
+                                    }
                                     slotProps={{
                                         input: {
                                             disableUnderline: true,
                                             sx: {
-                                                fontSize: '0.875rem',
-                                                textDecoration: item.completed ? 'line-through' : 'none',
-                                                color: item.completed ? 'text.disabled' : 'text.primary',
+                                                fontSize: "0.875rem",
+                                                textDecoration: item.completed
+                                                    ? "line-through"
+                                                    : "none",
+                                                color: item.completed
+                                                    ? "text.disabled"
+                                                    : "text.primary",
                                             },
                                         },
                                     }}
@@ -167,9 +216,17 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 <Tooltip title="Remove item">
                                     <IconButton
                                         size="small"
-                                        onClick={() => handleRemoveItem(checklist.id, item.id)}
+                                        onClick={() =>
+                                            handleRemoveItem(
+                                                checklist.id,
+                                                item.id,
+                                            )
+                                        }
                                         aria-label={`Remove item ${item.text}`}
-                                        sx={{ opacity: 0.5, '&:hover': { opacity: 1 } }}
+                                        sx={{
+                                            opacity: 0.5,
+                                            "&:hover": { opacity: 1 },
+                                        }}
                                     >
                                         <DeleteIcon sx={{ fontSize: 14 }} />
                                     </IconButton>
@@ -179,24 +236,37 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
 
                         {/* Add item */}
                         {addingItemTo === checklist.id ? (
-                            <Box sx={{ display: 'flex', gap: 1, mt: 0.5, ml: 3.5 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 1,
+                                    mt: 0.5,
+                                    ml: 3.5,
+                                }}
+                            >
                                 <TextField
                                     inputRef={newItemRef}
                                     size="small"
                                     fullWidth
                                     autoFocus
                                     placeholder="Item text..."
-                                    slotProps={{ htmlInput: { 'aria-label': 'New checklist item' } }}
+                                    slotProps={{
+                                        htmlInput: {
+                                            "aria-label": "New checklist item",
+                                        },
+                                    }}
                                     value={newItemText}
-                                    onChange={(e) => setNewItemText(e.target.value)}
+                                    onChange={(e) =>
+                                        setNewItemText(e.target.value)
+                                    }
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
+                                        if (e.key === "Enter") {
                                             e.preventDefault();
                                             handleAddItem(checklist.id);
                                         }
-                                        if (e.key === 'Escape') {
+                                        if (e.key === "Escape") {
                                             setAddingItemTo(null);
-                                            setNewItemText('');
+                                            setNewItemText("");
                                         }
                                     }}
                                 />
@@ -212,7 +282,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                     size="small"
                                     onClick={() => {
                                         setAddingItemTo(null);
-                                        setNewItemText('');
+                                        setNewItemText("");
                                     }}
                                 >
                                     Cancel
@@ -224,10 +294,18 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 startIcon={<AddIcon />}
                                 onClick={() => {
                                     setAddingItemTo(checklist.id);
-                                    setNewItemText('');
-                                    setTimeout(() => newItemRef.current?.focus(), 0);
+                                    setNewItemText("");
+                                    setTimeout(
+                                        () => newItemRef.current?.focus(),
+                                        0,
+                                    );
                                 }}
-                                sx={{ ml: 3, mt: 0.5, textTransform: 'none', color: 'text.secondary' }}
+                                sx={{
+                                    ml: 3,
+                                    mt: 0.5,
+                                    textTransform: "none",
+                                    color: "text.secondary",
+                                }}
                             >
                                 Add item
                             </Button>
@@ -238,24 +316,26 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
 
             {/* Add checklist */}
             {addingChecklist ? (
-                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
                     <TextField
                         inputRef={newChecklistRef}
                         size="small"
                         fullWidth
                         autoFocus
                         placeholder="Checklist title..."
-                        slotProps={{ htmlInput: { 'aria-label': 'New checklist title' } }}
+                        slotProps={{
+                            htmlInput: { "aria-label": "New checklist title" },
+                        }}
                         value={newChecklistTitle}
                         onChange={(e) => setNewChecklistTitle(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === "Enter") {
                                 e.preventDefault();
                                 handleAddChecklist();
                             }
-                            if (e.key === 'Escape') {
+                            if (e.key === "Escape") {
                                 setAddingChecklist(false);
-                                setNewChecklistTitle('');
+                                setNewChecklistTitle("");
                             }
                         }}
                     />
@@ -271,7 +351,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                         size="small"
                         onClick={() => {
                             setAddingChecklist(false);
-                            setNewChecklistTitle('');
+                            setNewChecklistTitle("");
                         }}
                     >
                         Cancel
@@ -285,7 +365,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                         setAddingChecklist(true);
                         setTimeout(() => newChecklistRef.current?.focus(), 0);
                     }}
-                    sx={{ mt: 1, textTransform: 'none' }}
+                    sx={{ mt: 1, textTransform: "none" }}
                 >
                     Add checklist
                 </Button>

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import type { ReactNode } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 
 interface EmptyStateProps {
     icon?: ReactNode;
@@ -9,21 +9,32 @@ interface EmptyStateProps {
     action?: ReactNode;
 }
 
-export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+export default function EmptyState({
+    icon,
+    title,
+    description,
+    action,
+}: EmptyStateProps) {
     return (
         <Box
             sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
                 py: 8,
                 px: 4,
-                textAlign: 'center',
+                textAlign: "center",
             }}
         >
             {icon && (
-                <Box sx={{ color: 'text.disabled', mb: 2, '& .MuiSvgIcon-root': { fontSize: 48 } }}>
+                <Box
+                    sx={{
+                        color: "text.disabled",
+                        mb: 2,
+                        "& .MuiSvgIcon-root": { fontSize: 48 },
+                    }}
+                >
                     {icon}
                 </Box>
             )}
@@ -31,7 +42,11 @@ export default function EmptyState({ icon, title, description, action }: EmptySt
                 {title}
             </Typography>
             {description && (
-                <Typography variant="body2" color="text.disabled" sx={{ maxWidth: 400, mb: action ? 3 : 0 }}>
+                <Typography
+                    variant="body2"
+                    color="text.disabled"
+                    sx={{ maxWidth: 400, mb: action ? 3 : 0 }}
+                >
                     {description}
                 </Typography>
             )}

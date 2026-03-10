@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
-import Autocomplete from '@mui/material/Autocomplete';
-import CircularProgress from '@mui/material/CircularProgress';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import { useState, useCallback, useRef } from "react";
+import Autocomplete from "@mui/material/Autocomplete";
+import CircularProgress from "@mui/material/CircularProgress";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 interface GitlabSearchResult {
     id: number;
@@ -18,10 +18,14 @@ interface Props {
     onSelect: (project: GitlabSearchResult) => void;
 }
 
-export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: Props) {
+export default function GitlabProjectSearch({
+    connectionId,
+    teamId,
+    onSelect,
+}: Props) {
     const [options, setOptions] = useState<GitlabSearchResult[]>([]);
     const [loading, setLoading] = useState(false);
-    const [inputValue, setInputValue] = useState('');
+    const [inputValue, setInputValue] = useState("");
 
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -42,11 +46,13 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
                         q: query,
                     });
                     const response = await fetch(
-                        route('teams.gitlab-projects.search', teamId) + '?' + params.toString(),
+                        route("teams.gitlab-projects.search", teamId) +
+                            "?" +
+                            params.toString(),
                         {
                             headers: {
-                                Accept: 'application/json',
-                                'X-Requested-With': 'XMLHttpRequest',
+                                Accept: "application/json",
+                                "X-Requested-With": "XMLHttpRequest",
                             },
                         },
                     );
@@ -76,7 +82,7 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
             onChange={(_e, value) => {
                 if (value) {
                     onSelect(value);
-                    setInputValue('');
+                    setInputValue("");
                     setOptions([]);
                 }
             }}
@@ -103,7 +109,12 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
                             ...params.InputProps,
                             endAdornment: (
                                 <>
-                                    {loading && <CircularProgress size={20} aria-label="Searching projects" />}
+                                    {loading && (
+                                        <CircularProgress
+                                            size={20}
+                                            aria-label="Searching projects"
+                                        />
+                                    )}
                                     {params.InputProps.endAdornment}
                                 </>
                             ),
@@ -111,7 +122,11 @@ export default function GitlabProjectSearch({ connectionId, teamId, onSelect }: 
                     }}
                 />
             )}
-            noOptionsText={inputValue.length < 2 ? 'Type at least 2 characters' : 'No projects found'}
+            noOptionsText={
+                inputValue.length < 2
+                    ? "Type at least 2 characters"
+                    : "No projects found"
+            }
             isOptionEqualToValue={(option, value) => option.id === value.id}
             filterOptions={(x) => x}
         />

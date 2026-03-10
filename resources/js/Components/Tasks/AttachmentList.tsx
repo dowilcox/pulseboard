@@ -1,31 +1,31 @@
-import type { Attachment } from '@/types';
-import { router } from '@inertiajs/react';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import axios from 'axios';
-import { useCallback, useRef, useState } from 'react';
-import Lightbox from 'yet-another-react-lightbox';
-import Zoom from 'yet-another-react-lightbox/plugins/zoom';
-import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails';
-import 'yet-another-react-lightbox/styles.css';
-import 'yet-another-react-lightbox/plugins/thumbnails.css';
+import type { Attachment } from "@/types";
+import { router } from "@inertiajs/react";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import LinearProgress from "@mui/material/LinearProgress";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import axios from "axios";
+import { useCallback, useRef, useState } from "react";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
+import "yet-another-react-lightbox/styles.css";
+import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 interface Props {
     attachments: Attachment[];
@@ -41,10 +41,15 @@ function formatFileSize(bytes: number): string {
 }
 
 function isImage(mimeType: string): boolean {
-    return mimeType.startsWith('image/');
+    return mimeType.startsWith("image/");
 }
 
-export default function AttachmentList({ attachments, teamId, boardId, taskId }: Props) {
+export default function AttachmentList({
+    attachments,
+    teamId,
+    boardId,
+    taskId,
+}: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -56,7 +61,7 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
     const fileAttachments = attachments.filter((a) => !isImage(a.mime_type));
 
     const lightboxSlides = imageAttachments.map((a) => ({
-        src: route('attachments.download', [teamId, boardId, taskId, a.id]),
+        src: route("attachments.download", [teamId, boardId, taskId, a.id]),
         alt: a.filename,
         title: a.filename,
     }));
@@ -71,18 +76,23 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
 
             for (const file of fileArray) {
                 const formData = new FormData();
-                formData.append('file', file);
+                formData.append("file", file);
 
                 try {
                     await axios.post(
-                        route('attachments.store', [teamId, boardId, taskId]),
+                        route("attachments.store", [teamId, boardId, taskId]),
                         formData,
                         {
-                            headers: { 'Content-Type': 'multipart/form-data' },
+                            headers: { "Content-Type": "multipart/form-data" },
                             onUploadProgress: (progressEvent) => {
                                 const fileProgress =
-                                    progressEvent.loaded / (progressEvent.total ?? progressEvent.loaded);
-                                const overall = ((completedFiles + fileProgress) / totalFiles) * 100;
+                                    progressEvent.loaded /
+                                    (progressEvent.total ??
+                                        progressEvent.loaded);
+                                const overall =
+                                    ((completedFiles + fileProgress) /
+                                        totalFiles) *
+                                    100;
                                 setUploadProgress(Math.round(overall));
                             },
                         },
@@ -103,7 +113,7 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) uploadFiles(files);
-        e.target.value = '';
+        e.target.value = "";
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -115,15 +125,25 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
 
     const handleDownload = (attachment: Attachment) => {
         window.open(
-            route('attachments.download', [teamId, boardId, taskId, attachment.id]),
-            '_blank',
+            route("attachments.download", [
+                teamId,
+                boardId,
+                taskId,
+                attachment.id,
+            ]),
+            "_blank",
         );
     };
 
     const handleDeleteConfirm = () => {
         if (!deleteTarget) return;
         router.delete(
-            route('attachments.destroy', [teamId, boardId, taskId, deleteTarget.id]),
+            route("attachments.destroy", [
+                teamId,
+                boardId,
+                taskId,
+                deleteTarget.id,
+            ]),
             { preserveScroll: true },
         );
         setDeleteTarget(null);
@@ -141,22 +161,24 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 sx={{
-                    border: '2px dashed',
-                    borderColor: dragOver ? 'primary.main' : 'divider',
+                    border: "2px dashed",
+                    borderColor: dragOver ? "primary.main" : "divider",
                     borderRadius: 1,
                     p: 2,
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    bgcolor: dragOver ? 'action.hover' : 'transparent',
-                    transition: 'all 0.2s',
+                    textAlign: "center",
+                    cursor: "pointer",
+                    bgcolor: dragOver ? "action.hover" : "transparent",
+                    transition: "all 0.2s",
                     mb: 1,
-                    '&:hover': {
-                        borderColor: 'primary.light',
-                        bgcolor: 'action.hover',
+                    "&:hover": {
+                        borderColor: "primary.light",
+                        bgcolor: "action.hover",
                     },
                 }}
             >
-                <CloudUploadIcon sx={{ fontSize: 28, color: 'text.secondary', mb: 0.5 }} />
+                <CloudUploadIcon
+                    sx={{ fontSize: 28, color: "text.secondary", mb: 0.5 }}
+                />
                 <Typography variant="body2" color="text.secondary">
                     Drop files here or click to upload
                 </Typography>
@@ -173,19 +195,29 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             </Box>
 
             {uploading && (
-                <LinearProgress variant="determinate" value={uploadProgress} sx={{ mb: 1 }} />
+                <LinearProgress
+                    variant="determinate"
+                    value={uploadProgress}
+                    sx={{ mb: 1 }}
+                />
             )}
 
             {/* Image gallery */}
             {imageAttachments.length > 0 && (
                 <Box sx={{ mb: 2 }}>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 1, display: 'block' }}>
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight={600}
+                        sx={{ mb: 1, display: "block" }}
+                    >
                         Images ({imageAttachments.length})
                     </Typography>
                     <Box
                         sx={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
+                            display: "grid",
+                            gridTemplateColumns:
+                                "repeat(auto-fill, minmax(120px, 1fr))",
                             gap: 1,
                         }}
                     >
@@ -193,49 +225,59 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                             <Box
                                 key={attachment.id}
                                 sx={{
-                                    position: 'relative',
-                                    aspectRatio: '1',
+                                    position: "relative",
+                                    aspectRatio: "1",
                                     borderRadius: 1,
-                                    overflow: 'hidden',
-                                    cursor: 'pointer',
-                                    '&:hover .overlay': { opacity: 1 },
+                                    overflow: "hidden",
+                                    cursor: "pointer",
+                                    "&:hover .overlay": { opacity: 1 },
                                 }}
                                 onClick={() => setLightboxIndex(index)}
                             >
                                 <Box
                                     component="img"
-                                    src={route('attachments.download', [teamId, boardId, taskId, attachment.id])}
+                                    src={route("attachments.download", [
+                                        teamId,
+                                        boardId,
+                                        taskId,
+                                        attachment.id,
+                                    ])}
                                     alt={attachment.filename}
                                     sx={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover',
-                                        display: 'block',
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        display: "block",
                                     }}
                                 />
                                 <Box
                                     className="overlay"
                                     sx={{
-                                        position: 'absolute',
+                                        position: "absolute",
                                         inset: 0,
-                                        bgcolor: 'rgba(0,0,0,0.5)',
+                                        bgcolor: "rgba(0,0,0,0.5)",
                                         opacity: 0,
-                                        transition: 'opacity 0.2s',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
+                                        transition: "opacity 0.2s",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
                                         gap: 0.5,
                                     }}
                                 >
-                                    <Typography variant="caption" color="white" noWrap sx={{ px: 1, maxWidth: '100%' }}>
+                                    <Typography
+                                        variant="caption"
+                                        color="white"
+                                        noWrap
+                                        sx={{ px: 1, maxWidth: "100%" }}
+                                    >
                                         {attachment.filename}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                    <Box sx={{ display: "flex", gap: 0.5 }}>
                                         <Tooltip title="Download">
                                             <IconButton
                                                 size="small"
-                                                sx={{ color: 'white' }}
+                                                sx={{ color: "white" }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDownload(attachment);
@@ -247,7 +289,7 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                                         <Tooltip title="Delete">
                                             <IconButton
                                                 size="small"
-                                                sx={{ color: 'white' }}
+                                                sx={{ color: "white" }}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setDeleteTarget(attachment);
@@ -276,7 +318,12 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             {/* File list (non-images) */}
             {fileAttachments.length > 0 && (
                 <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ mb: 0.5, display: 'block' }}>
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        fontWeight={600}
+                        sx={{ mb: 0.5, display: "block" }}
+                    >
                         Files ({fileAttachments.length})
                     </Typography>
                     <List dense disablePadding>
@@ -284,12 +331,14 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                             <ListItem
                                 key={attachment.id}
                                 secondaryAction={
-                                    <Box sx={{ display: 'flex', gap: 0.25 }}>
+                                    <Box sx={{ display: "flex", gap: 0.25 }}>
                                         <Tooltip title="Download">
                                             <IconButton
                                                 edge="end"
                                                 size="small"
-                                                onClick={() => handleDownload(attachment)}
+                                                onClick={() =>
+                                                    handleDownload(attachment)
+                                                }
                                                 aria-label={`Download ${attachment.filename}`}
                                             >
                                                 <DownloadIcon fontSize="small" />
@@ -299,7 +348,9 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                                             <IconButton
                                                 edge="end"
                                                 size="small"
-                                                onClick={() => setDeleteTarget(attachment)}
+                                                onClick={() =>
+                                                    setDeleteTarget(attachment)
+                                                }
                                                 color="error"
                                                 aria-label={`Delete ${attachment.filename}`}
                                             >
@@ -311,13 +362,20 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
                                 sx={{ px: 0 }}
                             >
                                 <ListItemIcon sx={{ minWidth: 36 }}>
-                                    <InsertDriveFileIcon sx={{ color: 'text.secondary' }} />
+                                    <InsertDriveFileIcon
+                                        sx={{ color: "text.secondary" }}
+                                    />
                                 </ListItemIcon>
                                 <ListItemText
                                     primary={attachment.filename}
-                                    secondary={`${formatFileSize(attachment.file_size)} ${attachment.user ? `by ${attachment.user.name}` : ''}`}
-                                    primaryTypographyProps={{ variant: 'body2', noWrap: true }}
-                                    secondaryTypographyProps={{ variant: 'caption' }}
+                                    secondary={`${formatFileSize(attachment.file_size)} ${attachment.user ? `by ${attachment.user.name}` : ""}`}
+                                    primaryTypographyProps={{
+                                        variant: "body2",
+                                        noWrap: true,
+                                    }}
+                                    secondaryTypographyProps={{
+                                        variant: "caption",
+                                    }}
                                 />
                             </ListItem>
                         ))}
@@ -326,23 +384,39 @@ export default function AttachmentList({ attachments, teamId, boardId, taskId }:
             )}
 
             {attachments.length === 0 && !uploading && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                >
                     No attachments yet.
                 </Typography>
             )}
 
             {/* Delete confirmation dialog */}
-            <Dialog open={deleteTarget !== null} onClose={() => setDeleteTarget(null)} aria-labelledby="delete-attachment-dialog-title">
-                <DialogTitle id="delete-attachment-dialog-title">Delete Attachment</DialogTitle>
+            <Dialog
+                open={deleteTarget !== null}
+                onClose={() => setDeleteTarget(null)}
+                aria-labelledby="delete-attachment-dialog-title"
+            >
+                <DialogTitle id="delete-attachment-dialog-title">
+                    Delete Attachment
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete "{deleteTarget?.filename}"? This action cannot be
-                        undone.
+                        Are you sure you want to delete "
+                        {deleteTarget?.filename}"? This action cannot be undone.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setDeleteTarget(null)}>Cancel</Button>
-                    <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+                    <Button onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleDeleteConfirm}
+                        color="error"
+                        variant="contained"
+                    >
                         Delete
                     </Button>
                 </DialogActions>

@@ -1,14 +1,14 @@
-import { router, usePage } from '@inertiajs/react';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Select, { type SelectChangeEvent } from '@mui/material/Select';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import type { PageProps } from '@/types';
-import { useSidebar } from '@/Contexts/SidebarContext';
+import { router, usePage } from "@inertiajs/react";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import type { PageProps } from "@/types";
+import { useSidebar } from "@/Contexts/SidebarContext";
 
 interface TeamSelectorProps {
     collapsed?: boolean;
@@ -23,13 +23,13 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
         const teamId = event.target.value;
         if (teamId && teamId !== currentTeam?.id) {
             setSelectedTeamId(teamId);
-            router.get(route('teams.show', teamId));
+            router.get(route("teams.show", teamId));
         }
     };
 
     const handleCollapsedClick = () => {
         if (currentTeam) {
-            router.get(route('teams.show', currentTeam.id));
+            router.get(route("teams.show", currentTeam.id));
         }
     };
 
@@ -46,19 +46,22 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
     }
 
     if (collapsed) {
-        const initial = currentTeam?.name?.charAt(0).toUpperCase() ?? '?';
+        const initial = currentTeam?.name?.charAt(0).toUpperCase() ?? "?";
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 0.5 }}>
-                <Tooltip title={currentTeam?.name ?? 'Select a team'} placement="right">
+            <Box sx={{ display: "flex", justifyContent: "center", py: 0.5 }}>
+                <Tooltip
+                    title={currentTeam?.name ?? "Select a team"}
+                    placement="right"
+                >
                     <Avatar
                         sx={{
                             width: 32,
                             height: 32,
-                            fontSize: '0.875rem',
+                            fontSize: "0.875rem",
                             fontWeight: 600,
-                            bgcolor: 'primary.main',
-                            color: 'primary.contrastText',
-                            cursor: 'pointer',
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            cursor: "pointer",
                         }}
                         onClick={handleCollapsedClick}
                     >
@@ -72,16 +75,16 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
     return (
         <Box sx={{ px: 2 }}>
             <Select
-                value={currentTeam?.id ?? ''}
+                value={currentTeam?.id ?? ""}
                 onChange={handleChange}
                 displayEmpty
                 fullWidth
                 size="small"
                 sx={{
-                    '& .MuiSelect-select': {
+                    "& .MuiSelect-select": {
                         py: 1,
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                     },
                 }}
                 renderValue={(selected) => {
@@ -95,7 +98,7 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                     const team = teams.find((t) => t.id === selected);
                     return (
                         <Typography variant="body2" fontWeight={600} noWrap>
-                            {team?.name ?? 'Unknown team'}
+                            {team?.name ?? "Unknown team"}
                         </Typography>
                     );
                 }}
@@ -107,7 +110,7 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                         <MenuItem key={team.id} value={team.id}>
                             <ListItemText
                                 primary={team.name}
-                                primaryTypographyProps={{ variant: 'body2' }}
+                                primaryTypographyProps={{ variant: "body2" }}
                             />
                             {role && (
                                 <Chip
@@ -115,13 +118,17 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                                     size="small"
                                     variant="outlined"
                                     color={
-                                        role === 'owner'
-                                            ? 'primary'
-                                            : role === 'admin'
-                                              ? 'secondary'
-                                              : 'default'
+                                        role === "owner"
+                                            ? "primary"
+                                            : role === "admin"
+                                              ? "secondary"
+                                              : "default"
                                     }
-                                    sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                    sx={{
+                                        ml: 1,
+                                        height: 20,
+                                        fontSize: "0.7rem",
+                                    }}
                                 />
                             )}
                         </MenuItem>

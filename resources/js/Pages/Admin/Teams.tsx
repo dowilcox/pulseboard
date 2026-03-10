@@ -1,29 +1,29 @@
-import { Head } from '@inertiajs/react';
-import { useState } from 'react';
-import PageHeader from '@/Components/Layout/PageHeader';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import AdminNav from '@/Components/Admin/AdminNav';
-import type { Board, PageProps, Team, UserWithTeamPivot } from '@/types';
-import GroupsIcon from '@mui/icons-material/Groups';
-import ViewKanbanIcon from '@mui/icons-material/ViewKanban';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import Paper from '@mui/material/Paper';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
+import { Head } from "@inertiajs/react";
+import { useState } from "react";
+import PageHeader from "@/Components/Layout/PageHeader";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import AdminNav from "@/Components/Admin/AdminNav";
+import type { Board, PageProps, Team, UserWithTeamPivot } from "@/types";
+import GroupsIcon from "@mui/icons-material/Groups";
+import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
+import Paper from "@mui/material/Paper";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 
 interface TeamWithCounts extends Team {
     members_count: number;
@@ -50,8 +50,8 @@ export default function Teams({ adminTeams: teams }: Props) {
         setTeamDetail(null);
 
         try {
-            const response = await fetch(route('admin.teams.show', team.id), {
-                headers: { Accept: 'application/json' },
+            const response = await fetch(route("admin.teams.show", team.id), {
+                headers: { Accept: "application/json" },
             });
             const data = await response.json();
             setTeamDetail(data);
@@ -65,18 +65,23 @@ export default function Teams({ adminTeams: teams }: Props) {
             header={
                 <PageHeader
                     title="Team Oversight"
-                    breadcrumbs={[{ label: 'Admin', href: route('admin.dashboard') }]}
+                    breadcrumbs={[
+                        { label: "Admin", href: route("admin.dashboard") },
+                    ]}
                 />
             }
         >
             <Head title="Team Oversight" />
 
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: "flex" }}>
                 <AdminNav />
 
                 <Box sx={{ flex: 1 }}>
                     {teams.length === 0 ? (
-                        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
+                        <Paper
+                            variant="outlined"
+                            sx={{ p: 4, textAlign: "center" }}
+                        >
                             <Typography color="text.secondary">
                                 No teams have been created yet.
                             </Typography>
@@ -98,15 +103,30 @@ export default function Teams({ adminTeams: teams }: Props) {
                                             key={team.id}
                                             hover
                                             tabIndex={0}
-                                            sx={{ cursor: 'pointer' }}
+                                            sx={{ cursor: "pointer" }}
                                             onClick={() => handleRowClick(team)}
-                                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(team); } }}
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    e.key === "Enter" ||
+                                                    e.key === " "
+                                                ) {
+                                                    e.preventDefault();
+                                                    handleRowClick(team);
+                                                }
+                                            }}
                                             aria-label={`View details for team ${team.name}`}
                                         >
                                             <TableCell>
-                                                <Typography fontWeight={500}>{team.name}</Typography>
+                                                <Typography fontWeight={500}>
+                                                    {team.name}
+                                                </Typography>
                                                 {team.description && (
-                                                    <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 300 }}>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        noWrap
+                                                        sx={{ maxWidth: 300 }}
+                                                    >
                                                         {team.description}
                                                     </Typography>
                                                 )}
@@ -128,8 +148,13 @@ export default function Teams({ adminTeams: teams }: Props) {
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {new Date(team.created_at).toLocaleDateString()}
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                >
+                                                    {new Date(
+                                                        team.created_at,
+                                                    ).toLocaleDateString()}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
@@ -142,16 +167,36 @@ export default function Teams({ adminTeams: teams }: Props) {
             </Box>
 
             {/* Team Detail Dialog */}
-            <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="sm" fullWidth aria-labelledby="team-detail-dialog-title">
-                <DialogTitle id="team-detail-dialog-title">{teamDetail?.name ?? 'Team Details'}</DialogTitle>
+            <Dialog
+                open={detailOpen}
+                onClose={() => setDetailOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                aria-labelledby="team-detail-dialog-title"
+            >
+                <DialogTitle id="team-detail-dialog-title">
+                    {teamDetail?.name ?? "Team Details"}
+                </DialogTitle>
                 <DialogContent>
                     {loading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }} role="status" aria-live="polite">
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                py: 4,
+                            }}
+                            role="status"
+                            aria-live="polite"
+                        >
                             <CircularProgress aria-label="Loading team details" />
                         </Box>
                     ) : teamDetail ? (
                         <Box>
-                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 1 }}>
+                            <Typography
+                                variant="subtitle2"
+                                gutterBottom
+                                sx={{ mt: 1 }}
+                            >
                                 Members ({teamDetail.members.length})
                             </Typography>
                             <List dense disablePadding>
@@ -166,11 +211,12 @@ export default function Teams({ adminTeams: teams }: Props) {
                                             size="small"
                                             variant="outlined"
                                             color={
-                                                member.pivot.role === 'owner'
-                                                    ? 'primary'
-                                                    : member.pivot.role === 'admin'
-                                                      ? 'secondary'
-                                                      : 'default'
+                                                member.pivot.role === "owner"
+                                                    ? "primary"
+                                                    : member.pivot.role ===
+                                                        "admin"
+                                                      ? "secondary"
+                                                      : "default"
                                             }
                                         />
                                     </ListItem>
@@ -190,12 +236,19 @@ export default function Teams({ adminTeams: teams }: Props) {
                                             secondary={`Created ${new Date(board.created_at).toLocaleDateString()}`}
                                         />
                                         {board.is_archived && (
-                                            <Chip label="Archived" size="small" color="default" />
+                                            <Chip
+                                                label="Archived"
+                                                size="small"
+                                                color="default"
+                                            />
                                         )}
                                     </ListItem>
                                 ))}
                                 {teamDetail.boards.length === 0 && (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
                                         No boards yet.
                                     </Typography>
                                 )}

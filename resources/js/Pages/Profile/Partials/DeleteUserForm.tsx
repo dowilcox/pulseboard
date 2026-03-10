@@ -1,19 +1,15 @@
-import { useForm } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { FormEventHandler, useRef, useState } from 'react';
+import { useForm } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { FormEventHandler, useRef, useState } from "react";
 
-export default function DeleteUserForm({
-    className,
-}: {
-    className?: string;
-}) {
+export default function DeleteUserForm({ className }: { className?: string }) {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const passwordInput = useRef<HTMLInputElement>(null);
 
@@ -26,7 +22,7 @@ export default function DeleteUserForm({
         errors,
         clearErrors,
     } = useForm({
-        password: '',
+        password: "",
     });
 
     const confirmUserDeletion = () => {
@@ -36,7 +32,7 @@ export default function DeleteUserForm({
     const deleteUser: FormEventHandler = (e) => {
         e.preventDefault();
 
-        destroy(route('profile.destroy'), {
+        destroy(route("profile.destroy"), {
             preserveScroll: true,
             onSuccess: () => closeModal(),
             onError: () => passwordInput.current?.focus(),
@@ -56,9 +52,9 @@ export default function DeleteUserForm({
                 Delete Account
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Once your account is deleted, all of its resources and data will be
-                permanently deleted. Before deleting your account, please download any
-                data or information that you wish to retain.
+                Once your account is deleted, all of its resources and data will
+                be permanently deleted. Before deleting your account, please
+                download any data or information that you wish to retain.
             </Typography>
 
             <Button
@@ -82,10 +78,15 @@ export default function DeleteUserForm({
                     </DialogTitle>
 
                     <DialogContent>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Once your account is deleted, all of its resources and data
-                            will be permanently deleted. Please enter your password to
-                            confirm you would like to permanently delete your account.
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 3 }}
+                        >
+                            Once your account is deleted, all of its resources
+                            and data will be permanently deleted. Please enter
+                            your password to confirm you would like to
+                            permanently delete your account.
                         </Typography>
 
                         <TextField
@@ -94,7 +95,9 @@ export default function DeleteUserForm({
                             type="password"
                             name="password"
                             value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
+                            onChange={(e) =>
+                                setData("password", e.target.value)
+                            }
                             inputRef={passwordInput}
                             error={!!errors.password}
                             helperText={errors.password}
@@ -106,9 +109,7 @@ export default function DeleteUserForm({
                     </DialogContent>
 
                     <DialogActions sx={{ px: 3, py: 2 }}>
-                        <Button onClick={closeModal}>
-                            Cancel
-                        </Button>
+                        <Button onClick={closeModal}>Cancel</Button>
                         <Button
                             type="submit"
                             variant="contained"

@@ -1,11 +1,11 @@
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, useForm } from '@inertiajs/react';
-import { type FormEvent } from 'react';
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import GuestLayout from "@/Layouts/GuestLayout";
+import { Head, useForm } from "@inertiajs/react";
+import { type FormEvent } from "react";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 interface ForgotPasswordProps {
     status?: string;
@@ -13,12 +13,12 @@ interface ForgotPasswordProps {
 
 export default function ForgotPassword({ status }: ForgotPasswordProps) {
     const { data, setData, post, processing, errors } = useForm({
-        email: '',
+        email: "",
     });
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('password.email'));
+        post(route("password.email"));
     };
 
     return (
@@ -32,7 +32,12 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
             </Typography>
 
             {status && (
-                <Alert severity="success" role="status" aria-live="polite" sx={{ mb: 2 }}>
+                <Alert
+                    severity="success"
+                    role="status"
+                    aria-live="polite"
+                    sx={{ mb: 2 }}
+                >
                     {status}
                 </Alert>
             )}
@@ -44,7 +49,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                     type="email"
                     name="email"
                     value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
+                    onChange={(e) => setData("email", e.target.value)}
                     error={!!errors.email}
                     helperText={errors.email}
                     autoComplete="email"
@@ -55,8 +60,8 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
 
                 <Box
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
+                        display: "flex",
+                        justifyContent: "flex-end",
                         mt: 2,
                     }}
                 >

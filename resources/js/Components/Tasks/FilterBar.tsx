@@ -1,33 +1,33 @@
-import { PRIORITY_OPTIONS } from '@/constants/priorities';
-import type { Label, SavedFilter, Task, User } from '@/types';
-import { getContrastText } from '@/utils/colorContrast';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import BookmarkBorderIcon from '@mui/icons-material/BookmarkBorder';
-import ClearIcon from '@mui/icons-material/Clear';
-import CloseIcon from '@mui/icons-material/Close';
-import FilterListIcon from '@mui/icons-material/FilterList';
-import SaveIcon from '@mui/icons-material/Save';
-import SearchIcon from '@mui/icons-material/Search';
-import StarIcon from '@mui/icons-material/Star';
-import Autocomplete from '@mui/material/Autocomplete';
-import Badge from '@mui/material/Badge';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import Chip from '@mui/material/Chip';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Popover from '@mui/material/Popover';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { PRIORITY_OPTIONS } from "@/constants/priorities";
+import type { Label, SavedFilter, Task, User } from "@/types";
+import { getContrastText } from "@/utils/colorContrast";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import BookmarkBorderIcon from "@mui/icons-material/BookmarkBorder";
+import ClearIcon from "@mui/icons-material/Clear";
+import CloseIcon from "@mui/icons-material/Close";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import SaveIcon from "@mui/icons-material/Save";
+import SearchIcon from "@mui/icons-material/Search";
+import StarIcon from "@mui/icons-material/Star";
+import Autocomplete from "@mui/material/Autocomplete";
+import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
+import Chip from "@mui/material/Chip";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import Popover from "@mui/material/Popover";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Filters {
     search: string;
@@ -39,16 +39,19 @@ interface Filters {
 }
 
 const EMPTY_FILTERS: Filters = {
-    search: '',
+    search: "",
     assignees: [],
     labels: [],
     priorities: [],
-    dueDateFrom: '',
-    dueDateTo: '',
+    dueDateFrom: "",
+    dueDateTo: "",
 };
 
 function getCsrfToken(): string {
-    return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? '';
+    return (
+        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
+            ?.content ?? ""
+    );
 }
 
 interface Props {
@@ -59,12 +62,20 @@ interface Props {
     onFilterChange: (filterFn: (task: Task) => boolean) => void;
 }
 
-export default function FilterBar({ members, labels, teamId, boardId, onFilterChange }: Props) {
+export default function FilterBar({
+    members,
+    labels,
+    teamId,
+    boardId,
+    onFilterChange,
+}: Props) {
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
     const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
-    const [savedFiltersMenuAnchor, setSavedFiltersMenuAnchor] = useState<HTMLElement | null>(null);
-    const [savePopoverAnchor, setSavePopoverAnchor] = useState<HTMLElement | null>(null);
-    const [saveFilterName, setSaveFilterName] = useState('');
+    const [savedFiltersMenuAnchor, setSavedFiltersMenuAnchor] =
+        useState<HTMLElement | null>(null);
+    const [savePopoverAnchor, setSavePopoverAnchor] =
+        useState<HTMLElement | null>(null);
+    const [saveFilterName, setSaveFilterName] = useState("");
     const [saveFilterDefault, setSaveFilterDefault] = useState(false);
     const defaultAppliedRef = useRef(false);
 
@@ -106,8 +117,14 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
 
                 // Filter by assignees
                 if (newFilters.assignees.length > 0) {
-                    const taskAssigneeIds = (task.assignees ?? []).map((a) => a.id);
-                    if (!newFilters.assignees.some((id) => taskAssigneeIds.includes(id))) {
+                    const taskAssigneeIds = (task.assignees ?? []).map(
+                        (a) => a.id,
+                    );
+                    if (
+                        !newFilters.assignees.some((id) =>
+                            taskAssigneeIds.includes(id),
+                        )
+                    ) {
                         return false;
                     }
                 }
@@ -115,7 +132,11 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 // Filter by labels
                 if (newFilters.labels.length > 0) {
                     const taskLabelIds = (task.labels ?? []).map((l) => l.id);
-                    if (!newFilters.labels.some((id) => taskLabelIds.includes(id))) {
+                    if (
+                        !newFilters.labels.some((id) =>
+                            taskLabelIds.includes(id),
+                        )
+                    ) {
                         return false;
                     }
                 }
@@ -131,17 +152,25 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 if (newFilters.dueDateFrom || newFilters.dueDateTo) {
                     if (!task.due_date) return false;
                     const taskDate = task.due_date;
-                    if (newFilters.dueDateFrom && taskDate < newFilters.dueDateFrom) return false;
-                    if (newFilters.dueDateTo && taskDate > newFilters.dueDateTo) return false;
+                    if (
+                        newFilters.dueDateFrom &&
+                        taskDate < newFilters.dueDateFrom
+                    )
+                        return false;
+                    if (newFilters.dueDateTo && taskDate > newFilters.dueDateTo)
+                        return false;
                 }
 
                 return true;
             });
         },
-        [onFilterChange]
+        [onFilterChange],
     );
 
-    const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
+    const updateFilter = <K extends keyof Filters>(
+        key: K,
+        value: Filters[K],
+    ) => {
         const newFilters = { ...filters, [key]: value };
         applyFilters(newFilters);
     };
@@ -153,8 +182,8 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
     // Load saved filters on mount
     const fetchSavedFilters = useCallback(() => {
         const controller = new AbortController();
-        fetch(route('boards.filters.index', [teamId, boardId]), {
-            headers: { Accept: 'application/json' },
+        fetch(route("boards.filters.index", [teamId, boardId]), {
+            headers: { Accept: "application/json" },
             signal: controller.signal,
         })
             .then((res) => res.json())
@@ -181,12 +210,12 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
 
     const handleSaveFilter = () => {
         if (!saveFilterName.trim()) return;
-        fetch(route('boards.filters.store', [teamId, boardId]), {
-            method: 'POST',
+        fetch(route("boards.filters.store", [teamId, boardId]), {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                "Content-Type": "application/json",
+                Accept: "application/json",
+                "X-CSRF-TOKEN": getCsrfToken(),
             },
             body: JSON.stringify({
                 name: saveFilterName.trim(),
@@ -198,22 +227,24 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
             .then(() => {
                 fetchSavedFilters();
                 setSavePopoverAnchor(null);
-                setSaveFilterName('');
+                setSaveFilterName("");
                 setSaveFilterDefault(false);
             })
             .catch(() => {});
     };
 
     const handleDeleteFilter = (filterId: string) => {
-        fetch(route('boards.filters.destroy', [teamId, boardId, filterId]), {
-            method: 'DELETE',
+        fetch(route("boards.filters.destroy", [teamId, boardId, filterId]), {
+            method: "DELETE",
             headers: {
-                Accept: 'application/json',
-                'X-CSRF-TOKEN': getCsrfToken(),
+                Accept: "application/json",
+                "X-CSRF-TOKEN": getCsrfToken(),
             },
         })
             .then(() => {
-                setSavedFilters((prev) => prev.filter((f) => f.id !== filterId));
+                setSavedFilters((prev) =>
+                    prev.filter((f) => f.id !== filterId),
+                );
             })
             .catch(() => {});
     };
@@ -227,16 +258,20 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
     return (
         <Box
             sx={{
-                display: 'flex',
+                display: "flex",
                 gap: 2,
-                alignItems: 'center',
-                flexWrap: 'wrap',
+                alignItems: "center",
+                flexWrap: "wrap",
                 mb: 2.5,
                 px: 0,
             }}
         >
-            <Badge badgeContent={activeFilterCount} color="primary" sx={{ '& .MuiBadge-badge': { fontSize: '0.6rem' } }}>
-                <FilterListIcon sx={{ color: 'text.secondary' }} />
+            <Badge
+                badgeContent={activeFilterCount}
+                color="primary"
+                sx={{ "& .MuiBadge-badge": { fontSize: "0.6rem" } }}
+            >
+                <FilterListIcon sx={{ color: "text.secondary" }} />
             </Badge>
 
             {/* Saved Filters dropdown */}
@@ -274,13 +309,20 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                         >
                             {sf.is_default && (
                                 <ListItemIcon sx={{ minWidth: 28 }}>
-                                    <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                                    <StarIcon
+                                        sx={{
+                                            fontSize: 16,
+                                            color: "warning.main",
+                                        }}
+                                    />
                                 </ListItemIcon>
                             )}
                             <ListItemText
                                 inset={!sf.is_default}
                                 primary={sf.name}
-                                slotProps={{ primary: { sx: { fontSize: '0.875rem' } } }}
+                                slotProps={{
+                                    primary: { sx: { fontSize: "0.875rem" } },
+                                }}
                             />
                             <IconButton
                                 size="small"
@@ -304,7 +346,9 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                     <Tooltip title="Save current filter">
                         <IconButton
                             size="small"
-                            onClick={(e) => setSavePopoverAnchor(e.currentTarget)}
+                            onClick={(e) =>
+                                setSavePopoverAnchor(e.currentTarget)
+                            }
                             aria-label="Save current filter"
                         >
                             <SaveIcon fontSize="small" />
@@ -315,21 +359,36 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                         anchorEl={savePopoverAnchor}
                         onClose={() => {
                             setSavePopoverAnchor(null);
-                            setSaveFilterName('');
+                            setSaveFilterName("");
                             setSaveFilterDefault(false);
                         }}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "left",
+                        }}
                     >
-                        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 250 }}>
-                            <Typography variant="subtitle2">Save Filter</Typography>
+                        <Box
+                            sx={{
+                                p: 2,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1.5,
+                                minWidth: 250,
+                            }}
+                        >
+                            <Typography variant="subtitle2">
+                                Save Filter
+                            </Typography>
                             <TextField
                                 size="small"
                                 label="Filter name"
                                 value={saveFilterName}
-                                onChange={(e) => setSaveFilterName(e.target.value)}
+                                onChange={(e) =>
+                                    setSaveFilterName(e.target.value)
+                                }
                                 autoFocus
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveFilter();
+                                    if (e.key === "Enter") handleSaveFilter();
                                 }}
                             />
                             <FormControlLabel
@@ -337,10 +396,18 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                                     <Checkbox
                                         size="small"
                                         checked={saveFilterDefault}
-                                        onChange={(e) => setSaveFilterDefault(e.target.checked)}
+                                        onChange={(e) =>
+                                            setSaveFilterDefault(
+                                                e.target.checked,
+                                            )
+                                        }
                                     />
                                 }
-                                label={<Typography variant="body2">Set as default</Typography>}
+                                label={
+                                    <Typography variant="body2">
+                                        Set as default
+                                    </Typography>
+                                }
                             />
                             <Button
                                 variant="contained"
@@ -360,13 +427,18 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 size="small"
                 placeholder="Search tasks..."
                 value={filters.search}
-                onChange={(e) => updateFilter('search', e.target.value)}
+                onChange={(e) => updateFilter("search", e.target.value)}
                 sx={{ minWidth: 200 }}
                 slotProps={{
                     input: {
                         startAdornment: (
                             <InputAdornment position="start">
-                                <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                                <SearchIcon
+                                    sx={{
+                                        fontSize: 18,
+                                        color: "text.secondary",
+                                    }}
+                                />
                             </InputAdornment>
                         ),
                     },
@@ -380,11 +452,23 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 options={members}
                 getOptionLabel={(opt) => opt.name}
                 value={members.filter((m) => filters.assignees.includes(m.id))}
-                onChange={(_, value) => updateFilter('assignees', value.map((v) => v.id))}
-                renderInput={(params) => <TextField {...params} placeholder="Assignees" />}
+                onChange={(_, value) =>
+                    updateFilter(
+                        "assignees",
+                        value.map((v) => v.id),
+                    )
+                }
+                renderInput={(params) => (
+                    <TextField {...params} placeholder="Assignees" />
+                )}
                 renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
-                        <Chip {...getTagProps({ index })} key={option.id} label={option.name} size="small" />
+                        <Chip
+                            {...getTagProps({ index })}
+                            key={option.id}
+                            label={option.name}
+                            size="small"
+                        />
                     ))
                 }
                 sx={{ minWidth: 160 }}
@@ -398,8 +482,15 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 options={labels}
                 getOptionLabel={(opt) => opt.name}
                 value={labels.filter((l) => filters.labels.includes(l.id))}
-                onChange={(_, value) => updateFilter('labels', value.map((v) => v.id))}
-                renderInput={(params) => <TextField {...params} placeholder="Labels" />}
+                onChange={(_, value) =>
+                    updateFilter(
+                        "labels",
+                        value.map((v) => v.id),
+                    )
+                }
+                renderInput={(params) => (
+                    <TextField {...params} placeholder="Labels" />
+                )}
                 renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
                         <Chip
@@ -407,7 +498,11 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                             key={option.id}
                             label={option.name}
                             size="small"
-                            sx={{ fontWeight: 600, bgcolor: option.color, color: getContrastText(option.color) }}
+                            sx={{
+                                fontWeight: 600,
+                                bgcolor: option.color,
+                                color: getContrastText(option.color),
+                            }}
                         />
                     ))
                 }
@@ -421,22 +516,26 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 size="small"
                 displayEmpty
                 value={filters.priorities}
-                onChange={(e) => updateFilter('priorities', e.target.value as string[])}
+                onChange={(e) =>
+                    updateFilter("priorities", e.target.value as string[])
+                }
                 renderValue={(selected) =>
                     selected.length === 0 ? (
-                        <Box component="span" sx={{ color: 'text.secondary' }}>
+                        <Box component="span" sx={{ color: "text.secondary" }}>
                             Priority
                         </Box>
                     ) : (
-                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <Box sx={{ display: "flex", gap: 0.5 }}>
                             {(selected as string[]).map((p) => {
-                                const opt = PRIORITY_OPTIONS.find((o) => o.value === p);
+                                const opt = PRIORITY_OPTIONS.find(
+                                    (o) => o.value === p,
+                                );
                                 return (
                                     <Chip
                                         key={p}
                                         label={opt?.label ?? p}
                                         size="small"
-                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                        sx={{ height: 20, fontSize: "0.65rem" }}
                                     />
                                 );
                             })}
@@ -451,10 +550,13 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                             sx={{
                                 width: 10,
                                 height: 10,
-                                borderRadius: '50%',
+                                borderRadius: "50%",
                                 bgcolor: opt.color,
-                                border: opt.color === 'transparent' ? '1px solid' : 'none',
-                                borderColor: 'divider',
+                                border:
+                                    opt.color === "transparent"
+                                        ? "1px solid"
+                                        : "none",
+                                borderColor: "divider",
                                 mr: 1,
                             }}
                         />
@@ -469,7 +571,7 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 type="date"
                 label="From"
                 value={filters.dueDateFrom}
-                onChange={(e) => updateFilter('dueDateFrom', e.target.value)}
+                onChange={(e) => updateFilter("dueDateFrom", e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ width: 145 }}
             />
@@ -478,7 +580,7 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
                 type="date"
                 label="To"
                 value={filters.dueDateTo}
-                onChange={(e) => updateFilter('dueDateTo', e.target.value)}
+                onChange={(e) => updateFilter("dueDateTo", e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
                 sx={{ width: 145 }}
             />
@@ -486,7 +588,11 @@ export default function FilterBar({ members, labels, teamId, boardId, onFilterCh
             {/* Clear all */}
             {activeFilterCount > 0 && (
                 <Tooltip title="Clear all filters">
-                    <IconButton size="small" onClick={clearAll} aria-label="Clear all filters">
+                    <IconButton
+                        size="small"
+                        onClick={clearAll}
+                        aria-label="Clear all filters"
+                    >
                         <ClearIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>

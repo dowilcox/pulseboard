@@ -1,11 +1,11 @@
-import { PRIORITY_OPTIONS } from '@/constants/priorities';
-import type { Task } from '@/types';
-import { router } from '@inertiajs/react';
-import FlagIcon from '@mui/icons-material/Flag';
-import Box from '@mui/material/Box';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import type { SelectChangeEvent } from '@mui/material/Select';
+import { PRIORITY_OPTIONS } from "@/constants/priorities";
+import type { Task } from "@/types";
+import { router } from "@inertiajs/react";
+import FlagIcon from "@mui/icons-material/Flag";
+import Box from "@mui/material/Box";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import type { SelectChangeEvent } from "@mui/material/Select";
 
 interface Props {
     task: Task;
@@ -16,9 +16,9 @@ interface Props {
 export default function PrioritySelector({ task, teamId, boardId }: Props) {
     const handleChange = (e: SelectChangeEvent) => {
         router.put(
-            route('tasks.update', [teamId, boardId, task.id]),
+            route("tasks.update", [teamId, boardId, task.id]),
             { priority: e.target.value },
-            { preserveScroll: true }
+            { preserveScroll: true },
         );
     };
 
@@ -31,7 +31,7 @@ export default function PrioritySelector({ task, teamId, boardId }: Props) {
             renderValue={(value) => {
                 const p = PRIORITY_OPTIONS.find((pr) => pr.value === value);
                 return (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <FlagIcon sx={{ fontSize: 16, color: p?.color }} />
                         {p?.label}
                     </Box>
@@ -40,7 +40,7 @@ export default function PrioritySelector({ task, teamId, boardId }: Props) {
         >
             {PRIORITY_OPTIONS.map((p) => (
                 <MenuItem key={p.value} value={p.value}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <FlagIcon sx={{ fontSize: 16, color: p.color }} />
                         {p.label}
                     </Box>

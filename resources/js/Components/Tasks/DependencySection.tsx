@@ -1,14 +1,14 @@
-import type { Task, TaskSummary } from '@/types';
-import { router } from '@inertiajs/react';
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
-import Autocomplete from '@mui/material/Autocomplete';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import type { Task, TaskSummary } from "@/types";
+import { router } from "@inertiajs/react";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { useState } from "react";
 
 interface Props {
     task: Task;
@@ -17,7 +17,12 @@ interface Props {
     boardId: string;
 }
 
-export default function DependencySection({ task, boardTasks, teamId, boardId }: Props) {
+export default function DependencySection({
+    task,
+    boardTasks,
+    teamId,
+    boardId,
+}: Props) {
     const [addingBlockedBy, setAddingBlockedBy] = useState(false);
     const [addingBlocking, setAddingBlocking] = useState(false);
     const [selectedTask, setSelectedTask] = useState<TaskSummary | null>(null);
@@ -34,7 +39,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
 
     const handleAddBlockedBy = (depTask: TaskSummary) => {
         router.post(
-            route('tasks.dependencies.store', [teamId, boardId, task.id]),
+            route("tasks.dependencies.store", [teamId, boardId, task.id]),
             { depends_on_task_id: depTask.id },
             { preserveScroll: true },
         );
@@ -44,7 +49,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
 
     const handleAddBlocking = (depTask: TaskSummary) => {
         router.post(
-            route('tasks.dependencies.store', [teamId, boardId, depTask.id]),
+            route("tasks.dependencies.store", [teamId, boardId, depTask.id]),
             { depends_on_task_id: task.id },
             { preserveScroll: true },
         );
@@ -54,20 +59,30 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
 
     const handleRemoveBlockedBy = (depTaskId: string) => {
         router.delete(
-            route('tasks.dependencies.destroy', [teamId, boardId, task.id, depTaskId]),
+            route("tasks.dependencies.destroy", [
+                teamId,
+                boardId,
+                task.id,
+                depTaskId,
+            ]),
             { preserveScroll: true },
         );
     };
 
     const handleRemoveBlocking = (depTaskId: string) => {
         router.delete(
-            route('tasks.dependencies.destroy', [teamId, boardId, depTaskId, task.id]),
+            route("tasks.dependencies.destroy", [
+                teamId,
+                boardId,
+                depTaskId,
+                task.id,
+            ]),
             { preserveScroll: true },
         );
     };
 
     const formatTaskLabel = (t: TaskSummary | Task) => {
-        const num = t.task_number ? `#${t.task_number}` : '';
+        const num = t.task_number ? `#${t.task_number}` : "";
         return `${num} ${t.title}`.trim();
     };
 
@@ -79,26 +94,38 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
         available: TaskSummary[],
         onAdd: (t: TaskSummary) => void,
         onRemove: (id: string) => void,
-        color: 'warning' | 'info',
+        color: "warning" | "info",
     ) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                }}
+            >
+                <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color="text.secondary"
+                >
                     {label}
                 </Typography>
                 {!adding && (
                     <Button
                         size="small"
-                        startIcon={<AddIcon sx={{ fontSize: '14px !important' }} />}
+                        startIcon={
+                            <AddIcon sx={{ fontSize: "14px !important" }} />
+                        }
                         onClick={() => setAdding(true)}
                         sx={{
-                            textTransform: 'none',
-                            color: 'text.secondary',
-                            fontSize: '0.7rem',
+                            textTransform: "none",
+                            color: "text.secondary",
+                            fontSize: "0.7rem",
                             minWidth: 0,
                             py: 0,
                             px: 0.5,
-                            '&:hover': { color: 'text.primary' },
+                            "&:hover": { color: "text.primary" },
                         }}
                     >
                         Add
@@ -107,7 +134,7 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
             </Box>
 
             {items.length > 0 ? (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {items.map((dep) => (
                         <Chip
                             key={dep.id}
@@ -116,14 +143,26 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
                             color={color}
                             variant="outlined"
                             onDelete={() => onRemove(dep.id)}
-                            deleteIcon={<CloseIcon sx={{ fontSize: '14px !important' }} />}
-                            sx={{ maxWidth: '100%', height: 24, fontSize: '0.75rem' }}
+                            deleteIcon={
+                                <CloseIcon
+                                    sx={{ fontSize: "14px !important" }}
+                                />
+                            }
+                            sx={{
+                                maxWidth: "100%",
+                                height: 24,
+                                fontSize: "0.75rem",
+                            }}
                             aria-label={`${label}: ${formatTaskLabel(dep)}`}
                         />
                     ))}
                 </Box>
             ) : !adding ? (
-                <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                <Typography
+                    variant="caption"
+                    color="text.disabled"
+                    sx={{ fontStyle: "italic" }}
+                >
                     None
                 </Typography>
             ) : null}
@@ -143,12 +182,15 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
                             {...params}
                             placeholder="Search tasks..."
                             autoFocus
-                            inputProps={{ ...params.inputProps, 'aria-label': `Search for ${label.toLowerCase()} task` }}
+                            inputProps={{
+                                ...params.inputProps,
+                                "aria-label": `Search for ${label.toLowerCase()} task`,
+                            }}
                         />
                     )}
                     noOptionsText="No available tasks"
                     sx={{
-                        '& .MuiInputBase-root': { py: '2px' },
+                        "& .MuiInputBase-root": { py: "2px" },
                     }}
                 />
             )}
@@ -156,9 +198,27 @@ export default function DependencySection({ task, boardTasks, teamId, boardId }:
     );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {depRow('Blocked by', blockedBy, addingBlockedBy, setAddingBlockedBy, availableForBlockedBy, handleAddBlockedBy, handleRemoveBlockedBy, 'warning')}
-            {depRow('Blocking', dependencies, addingBlocking, setAddingBlocking, availableForBlocking, handleAddBlocking, handleRemoveBlocking, 'info')}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            {depRow(
+                "Blocked by",
+                blockedBy,
+                addingBlockedBy,
+                setAddingBlockedBy,
+                availableForBlockedBy,
+                handleAddBlockedBy,
+                handleRemoveBlockedBy,
+                "warning",
+            )}
+            {depRow(
+                "Blocking",
+                dependencies,
+                addingBlocking,
+                setAddingBlocking,
+                availableForBlocking,
+                handleAddBlocking,
+                handleRemoveBlocking,
+                "info",
+            )}
         </Box>
     );
 }

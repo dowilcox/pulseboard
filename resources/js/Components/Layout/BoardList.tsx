@@ -1,5 +1,5 @@
-import { useSidebar } from '@/Contexts/SidebarContext';
-import type { Board } from '@/types';
+import { useSidebar } from "@/Contexts/SidebarContext";
+import type { Board } from "@/types";
 import {
     closestCenter,
     DndContext,
@@ -7,27 +7,27 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-} from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
 import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     useSortable,
     verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { router } from '@inertiajs/react';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import Box from '@mui/material/Box';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import Typography from '@mui/material/Typography';
-import { useCallback } from 'react';
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { router } from "@inertiajs/react";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import Box from "@mui/material/Box";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import Typography from "@mui/material/Typography";
+import { useCallback } from "react";
 
 interface BoardListProps {
     boards: Board[];
@@ -41,7 +41,11 @@ interface SortableBoardItemProps {
     isActive: boolean;
 }
 
-function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) {
+function SortableBoardItem({
+    board,
+    teamId,
+    isActive,
+}: SortableBoardItemProps) {
     const {
         attributes,
         listeners,
@@ -58,7 +62,7 @@ function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) 
     };
 
     const handleBoardClick = () => {
-        router.get(route('teams.boards.show', [teamId, board.id]));
+        router.get(route("teams.boards.show", [teamId, board.id]));
     };
 
     return (
@@ -69,17 +73,17 @@ function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) 
                 sx={{
                     px: 2,
                     py: 1,
-                    '&.Mui-selected': {
-                        bgcolor: 'action.selected',
-                        '&:hover': {
-                            bgcolor: 'action.selected',
+                    "&.Mui-selected": {
+                        bgcolor: "action.selected",
+                        "&:hover": {
+                            bgcolor: "action.selected",
                         },
                     },
-                    '& .drag-handle': {
+                    "& .drag-handle": {
                         opacity: 0,
-                        transition: 'opacity 0.15s',
+                        transition: "opacity 0.15s",
                     },
-                    '&:hover .drag-handle': {
+                    "&:hover .drag-handle": {
                         opacity: 0.6,
                     },
                 }}
@@ -89,12 +93,12 @@ function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) 
                     {...attributes}
                     {...listeners}
                     sx={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                         mr: 0.5,
-                        cursor: 'grab',
-                        color: 'text.secondary',
-                        '&:active': { cursor: 'grabbing' },
+                        cursor: "grab",
+                        color: "text.secondary",
+                        "&:active": { cursor: "grabbing" },
                     }}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`Drag to reorder ${board.name}`}
@@ -106,13 +110,13 @@ function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) 
                 <ListItemIcon sx={{ minWidth: 32 }}>
                     <DashboardIcon
                         fontSize="small"
-                        color={isActive ? 'primary' : 'action'}
+                        color={isActive ? "primary" : "action"}
                     />
                 </ListItemIcon>
                 <ListItemText
                     primary={board.name}
                     primaryTypographyProps={{
-                        variant: 'body2',
+                        variant: "body2",
                         noWrap: true,
                         fontWeight: isActive ? 600 : 400,
                     }}
@@ -122,7 +126,11 @@ function SortableBoardItem({ board, teamId, isActive }: SortableBoardItemProps) 
     );
 }
 
-export default function BoardList({ boards, teamId, activeBoardId }: BoardListProps) {
+export default function BoardList({
+    boards,
+    teamId,
+    activeBoardId,
+}: BoardListProps) {
     const { reorderBoards } = useSidebar();
 
     const sensors = useSensors(
@@ -144,18 +152,25 @@ export default function BoardList({ boards, teamId, activeBoardId }: BoardListPr
             if (oldIndex === -1 || newIndex === -1) return;
 
             const reordered = arrayMove(boards, oldIndex, newIndex);
-            reorderBoards(teamId, reordered.map((b) => b.id));
+            reorderBoards(
+                teamId,
+                reordered.map((b) => b.id),
+            );
         },
         [boards, teamId, reorderBoards],
     );
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <Box sx={{ px: 2, py: 0.75 }}>
                 <Typography
                     variant="overline"
                     color="text.secondary"
-                    sx={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.1em' }}
+                    sx={{
+                        fontSize: "0.65rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.1em",
+                    }}
                 >
                     Boards
                 </Typography>

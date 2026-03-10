@@ -1,43 +1,43 @@
-import ColorSwatchPicker from '@/Components/Common/ColorSwatchPicker';
-import { LABEL_COLORS } from '@/constants/labelColors';
-import PageHeader from '@/Components/Layout/PageHeader';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import type { Label, PageProps, Team, User, UserWithTeamPivot } from '@/types';
-import { getContrastText } from '@/utils/colorContrast';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { useCallback, useState } from 'react';
-import AddIcon from '@mui/icons-material/Add';
-import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
-import KeyIcon from '@mui/icons-material/Key';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
-import Autocomplete from '@mui/material/Autocomplete';
-import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
-import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
+import { LABEL_COLORS } from "@/constants/labelColors";
+import PageHeader from "@/Components/Layout/PageHeader";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import type { Label, PageProps, Team, User, UserWithTeamPivot } from "@/types";
+import { getContrastText } from "@/utils/colorContrast";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { useCallback, useState } from "react";
+import AddIcon from "@mui/icons-material/Add";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import KeyIcon from "@mui/icons-material/Key";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
+import Autocomplete from "@mui/material/Autocomplete";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import IconButton from "@mui/material/IconButton";
+import InputLabel from "@mui/material/InputLabel";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemAvatar from "@mui/material/ListItemAvatar";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 
 interface Props {
     team: Team;
@@ -48,34 +48,50 @@ interface Props {
 }
 
 const roleColor = (role: string) =>
-    role === 'owner' ? 'primary' : role === 'admin' ? 'secondary' : 'default';
+    role === "owner" ? "primary" : role === "admin" ? "secondary" : "default";
 
-export default function TeamSettings({ team, labels, members, canManageMembers, canManageAdmins }: Props) {
+export default function TeamSettings({
+    team,
+    labels,
+    members,
+    canManageMembers,
+    canManageAdmins,
+}: Props) {
     const { auth } = usePage<PageProps>().props;
     const currentUserId = auth.user.id;
 
     // Label state
     const [addLabelOpen, setAddLabelOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
-    const [editColor, setEditColor] = useState('');
+    const [editName, setEditName] = useState("");
+    const [editColor, setEditColor] = useState("");
     const [deleteLabel, setDeleteLabel] = useState<Label | null>(null);
 
-    const addLabelForm = useForm({ name: '', color: LABEL_COLORS[0] as string });
+    const addLabelForm = useForm({
+        name: "",
+        color: LABEL_COLORS[0] as string,
+    });
 
     // Member state
     const [addMemberOpen, setAddMemberOpen] = useState(false);
-    const [removeMember, setRemoveMember] = useState<UserWithTeamPivot | null>(null);
-    const [userSearchResults, setUserSearchResults] = useState<Pick<User, 'id' | 'name' | 'email' | 'is_bot'>[]>([]);
+    const [removeMember, setRemoveMember] = useState<UserWithTeamPivot | null>(
+        null,
+    );
+    const [userSearchResults, setUserSearchResults] = useState<
+        Pick<User, "id" | "name" | "email" | "is_bot">[]
+    >([]);
     const [userSearchLoading, setUserSearchLoading] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<Pick<User, 'id' | 'name' | 'email' | 'is_bot'> | null>(null);
+    const [selectedUser, setSelectedUser] = useState<Pick<
+        User,
+        "id" | "name" | "email" | "is_bot"
+    > | null>(null);
 
-    const addMemberForm = useForm({ user_id: '', role: 'member' as string });
+    const addMemberForm = useForm({ user_id: "", role: "member" as string });
 
     // Label handlers
     const handleAddLabel = (e: React.FormEvent) => {
         e.preventDefault();
-        addLabelForm.post(route('labels.store', team.id), {
+        addLabelForm.post(route("labels.store", team.id), {
             onSuccess: () => {
                 setAddLabelOpen(false);
                 addLabelForm.reset();
@@ -99,39 +115,54 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
     };
 
     const saveEdit = (label: Label) => {
-        router.put(route('labels.update', [team.id, label.id]), {
-            name: editName,
-            color: editColor,
-        }, {
-            onSuccess: () => setEditingId(null),
-        });
+        router.put(
+            route("labels.update", [team.id, label.id]),
+            {
+                name: editName,
+                color: editColor,
+            },
+            {
+                onSuccess: () => setEditingId(null),
+            },
+        );
     };
 
     const confirmDeleteLabel = () => {
         if (!deleteLabel) return;
-        router.delete(route('labels.destroy', [team.id, deleteLabel.id]), {
+        router.delete(route("labels.destroy", [team.id, deleteLabel.id]), {
             onSuccess: () => setDeleteLabel(null),
         });
     };
 
     // Member handlers
-    const searchUsers = useCallback((query: string) => {
-        if (query.length < 2) {
-            setUserSearchResults([]);
-            return;
-        }
-        setUserSearchLoading(true);
-        fetch(route('teams.members.search', team.id) + '?q=' + encodeURIComponent(query), {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        })
-            .then((res) => res.json())
-            .then((data) => setUserSearchResults(data))
-            .finally(() => setUserSearchLoading(false));
-    }, [team.id]);
+    const searchUsers = useCallback(
+        (query: string) => {
+            if (query.length < 2) {
+                setUserSearchResults([]);
+                return;
+            }
+            setUserSearchLoading(true);
+            fetch(
+                route("teams.members.search", team.id) +
+                    "?q=" +
+                    encodeURIComponent(query),
+                {
+                    headers: {
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                },
+            )
+                .then((res) => res.json())
+                .then((data) => setUserSearchResults(data))
+                .finally(() => setUserSearchLoading(false));
+        },
+        [team.id],
+    );
 
     const handleAddMember = (e: React.FormEvent) => {
         e.preventDefault();
-        addMemberForm.post(route('teams.members.store', team.id), {
+        addMemberForm.post(route("teams.members.store", team.id), {
             onSuccess: () => {
                 setAddMemberOpen(false);
                 addMemberForm.reset();
@@ -149,16 +180,19 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
     };
 
     const handleRoleChange = (member: UserWithTeamPivot, newRole: string) => {
-        router.put(route('teams.members.update', [team.id, member.id]), {
+        router.put(route("teams.members.update", [team.id, member.id]), {
             role: newRole,
         });
     };
 
     const confirmRemoveMember = () => {
         if (!removeMember) return;
-        router.delete(route('teams.members.destroy', [team.id, removeMember.id]), {
-            onSuccess: () => setRemoveMember(null),
-        });
+        router.delete(
+            route("teams.members.destroy", [team.id, removeMember.id]),
+            {
+                onSuccess: () => setRemoveMember(null),
+            },
+        );
     };
 
     return (
@@ -168,19 +202,29 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                 <PageHeader
                     title="Settings"
                     breadcrumbs={[
-                        { label: 'Teams', href: route('teams.index') },
-                        { label: team.name, href: route('teams.show', team.id) },
+                        { label: "Teams", href: route("teams.index") },
+                        {
+                            label: team.name,
+                            href: route("teams.show", team.id),
+                        },
                     ]}
                 />
             }
         >
             <Head title={`Settings - ${team.name}`} />
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {/* Members */}
                 <Card variant="outlined">
                     <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 2,
+                            }}
+                        >
                             <Typography variant="subtitle1" fontWeight={600}>
                                 Members ({members.length})
                             </Typography>
@@ -197,10 +241,15 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
 
                         <List dense disablePadding>
                             {members.map((member) => {
-                                const isCurrentUser = member.id === currentUserId;
-                                const isElevated = member.pivot.role === 'admin' || member.pivot.role === 'owner';
-                                const canEdit = canManageMembers && !isCurrentUser
-                                    && (canManageAdmins || !isElevated);
+                                const isCurrentUser =
+                                    member.id === currentUserId;
+                                const isElevated =
+                                    member.pivot.role === "admin" ||
+                                    member.pivot.role === "owner";
+                                const canEdit =
+                                    canManageMembers &&
+                                    !isCurrentUser &&
+                                    (canManageAdmins || !isElevated);
 
                                 return (
                                     <ListItem
@@ -210,7 +259,9 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                             py: 0.75,
                                             px: 1,
                                             borderRadius: 1,
-                                            '&:hover': { bgcolor: 'action.hover' },
+                                            "&:hover": {
+                                                bgcolor: "action.hover",
+                                            },
                                         }}
                                         secondaryAction={
                                             canEdit ? (
@@ -219,7 +270,11 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                                         edge="end"
                                                         size="small"
                                                         color="error"
-                                                        onClick={() => setRemoveMember(member)}
+                                                        onClick={() =>
+                                                            setRemoveMember(
+                                                                member,
+                                                            )
+                                                        }
                                                     >
                                                         <PersonRemoveIcon fontSize="small" />
                                                     </IconButton>
@@ -228,38 +283,78 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                         }
                                     >
                                         <ListItemAvatar sx={{ minWidth: 40 }}>
-                                            <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem', fontWeight: 600 }}>
-                                                {member.name.charAt(0).toUpperCase()}
+                                            <Avatar
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {member.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
                                         <ListItemText
                                             primary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <Typography variant="body2" fontWeight={500}>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 0.5,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="body2"
+                                                        fontWeight={500}
+                                                    >
                                                         {member.name}
                                                     </Typography>
                                                     {isCurrentUser && (
-                                                        <Typography variant="caption" color="text.secondary">
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
                                                             (you)
                                                         </Typography>
                                                     )}
                                                 </Box>
                                             }
                                             secondary={member.email}
-                                            secondaryTypographyProps={{ variant: 'caption' }}
+                                            secondaryTypographyProps={{
+                                                variant: "caption",
+                                            }}
                                         />
                                         {canEdit ? (
-                                            <FormControl size="small" sx={{ minWidth: 100, mr: 4 }}>
+                                            <FormControl
+                                                size="small"
+                                                sx={{ minWidth: 100, mr: 4 }}
+                                            >
                                                 <Select
                                                     value={member.pivot.role}
-                                                    onChange={(e) => handleRoleChange(member, e.target.value)}
+                                                    onChange={(e) =>
+                                                        handleRoleChange(
+                                                            member,
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     variant="outlined"
-                                                    sx={{ fontSize: '0.8rem', height: 28 }}
+                                                    sx={{
+                                                        fontSize: "0.8rem",
+                                                        height: 28,
+                                                    }}
                                                 >
-                                                    <MenuItem value="member">Member</MenuItem>
-                                                    <MenuItem value="admin">Admin</MenuItem>
+                                                    <MenuItem value="member">
+                                                        Member
+                                                    </MenuItem>
+                                                    <MenuItem value="admin">
+                                                        Admin
+                                                    </MenuItem>
                                                     {canManageAdmins && (
-                                                        <MenuItem value="owner">Owner</MenuItem>
+                                                        <MenuItem value="owner">
+                                                            Owner
+                                                        </MenuItem>
                                                     )}
                                                 </Select>
                                             </FormControl>
@@ -268,8 +363,14 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                                 label={member.pivot.role}
                                                 size="small"
                                                 variant="outlined"
-                                                color={roleColor(member.pivot.role)}
-                                                sx={{ mr: canManageMembers ? 4 : 0 }}
+                                                color={roleColor(
+                                                    member.pivot.role,
+                                                )}
+                                                sx={{
+                                                    mr: canManageMembers
+                                                        ? 4
+                                                        : 0,
+                                                }}
                                             />
                                         )}
                                     </ListItem>
@@ -282,7 +383,14 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                 {/* Labels */}
                 <Card variant="outlined">
                     <CardContent>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 2,
+                            }}
+                        >
                             <Typography variant="subtitle1" fontWeight={600}>
                                 Labels
                             </Typography>
@@ -296,46 +404,84 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                         </Box>
 
                         {labels.length === 0 ? (
-                            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ py: 2 }}
+                            >
                                 No labels yet. Add a label to categorize tasks.
                             </Typography>
                         ) : (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 1,
+                                }}
+                            >
                                 {labels.map((label) => (
                                     <Box
                                         key={label.id}
                                         sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
+                                            display: "flex",
+                                            alignItems: "center",
                                             gap: 2,
                                             py: 1,
                                             px: 1.5,
                                             borderRadius: 1,
-                                            '&:hover': { bgcolor: 'action.hover' },
+                                            "&:hover": {
+                                                bgcolor: "action.hover",
+                                            },
                                         }}
                                     >
                                         {editingId === label.id ? (
-                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, width: '100%' }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: 1.5,
+                                                    width: "100%",
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                    }}
+                                                >
                                                     <TextField
                                                         size="small"
                                                         value={editName}
-                                                        onChange={(e) => setEditName(e.target.value)}
+                                                        onChange={(e) =>
+                                                            setEditName(
+                                                                e.target.value,
+                                                            )
+                                                        }
                                                         sx={{ flex: 1 }}
                                                         slotProps={{
-                                                            htmlInput: { maxLength: 50 },
+                                                            htmlInput: {
+                                                                maxLength: 50,
+                                                            },
                                                         }}
                                                     />
                                                     <Button
                                                         size="small"
                                                         variant="contained"
-                                                        onClick={() => saveEdit(label)}
-                                                        disabled={!editName.trim()}
+                                                        onClick={() =>
+                                                            saveEdit(label)
+                                                        }
+                                                        disabled={
+                                                            !editName.trim()
+                                                        }
                                                     >
                                                         Save
                                                     </Button>
                                                     <Tooltip title="Cancel">
-                                                        <IconButton size="small" onClick={cancelEdit}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={cancelEdit}
+                                                        >
                                                             <CloseIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
@@ -351,16 +497,24 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                                     sx={{
                                                         width: 16,
                                                         height: 16,
-                                                        borderRadius: '50%',
+                                                        borderRadius: "50%",
                                                         bgcolor: label.color,
                                                         flexShrink: 0,
                                                     }}
                                                 />
-                                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{ flex: 1 }}
+                                                >
                                                     {label.name}
                                                 </Typography>
                                                 <Tooltip title="Edit">
-                                                    <IconButton size="small" onClick={() => startEdit(label)}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() =>
+                                                            startEdit(label)
+                                                        }
+                                                    >
                                                         <EditIcon fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
@@ -368,7 +522,11 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                                     <IconButton
                                                         size="small"
                                                         color="error"
-                                                        onClick={() => setDeleteLabel(label)}
+                                                        onClick={() =>
+                                                            setDeleteLabel(
+                                                                label,
+                                                            )
+                                                        }
                                                     >
                                                         <DeleteIcon fontSize="small" />
                                                     </IconButton>
@@ -386,18 +544,31 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                 {canManageMembers && (
                     <Card variant="outlined">
                         <CardContent>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                }}
+                            >
                                 <Box>
-                                    <Typography variant="subtitle1" fontWeight={600}>
+                                    <Typography
+                                        variant="subtitle1"
+                                        fontWeight={600}
+                                    >
                                         API Tokens
                                     </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Create bot users and manage API tokens for external integrations.
+                                    <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                    >
+                                        Create bot users and manage API tokens
+                                        for external integrations.
                                     </Typography>
                                 </Box>
                                 <Button
                                     component={Link}
-                                    href={route('teams.bots.index', team.id)}
+                                    href={route("teams.bots.index", team.id)}
                                     startIcon={<KeyIcon />}
                                     size="small"
                                 >
@@ -410,9 +581,17 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Box>
 
             {/* Add Member Dialog */}
-            <Dialog open={addMemberOpen} onClose={handleAddMemberClose} maxWidth="xs" fullWidth aria-labelledby="add-member-dialog-title">
+            <Dialog
+                open={addMemberOpen}
+                onClose={handleAddMemberClose}
+                maxWidth="xs"
+                fullWidth
+                aria-labelledby="add-member-dialog-title"
+            >
                 <form onSubmit={handleAddMember}>
-                    <DialogTitle id="add-member-dialog-title">Add Member</DialogTitle>
+                    <DialogTitle id="add-member-dialog-title">
+                        Add Member
+                    </DialogTitle>
                     <DialogContent>
                         <Autocomplete
                             options={userSearchResults}
@@ -421,21 +600,38 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                             value={selectedUser}
                             loading={userSearchLoading}
                             onInputChange={(_e, value, reason) => {
-                                if (reason === 'input') searchUsers(value);
+                                if (reason === "input") searchUsers(value);
                             }}
                             onChange={(_e, value) => {
                                 setSelectedUser(value);
-                                addMemberForm.setData('user_id', value?.id ?? '');
+                                addMemberForm.setData(
+                                    "user_id",
+                                    value?.id ?? "",
+                                );
                             }}
-                            isOptionEqualToValue={(option, value) => option.id === value.id}
+                            isOptionEqualToValue={(option, value) =>
+                                option.id === value.id
+                            }
                             renderOption={(props, option) => (
                                 <li {...props} key={option.id}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                        <Typography variant="body2" fontWeight={500}>
-                                            {option.name}{option.is_bot ? ' (Bot)' : ''}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={500}
+                                        >
+                                            {option.name}
+                                            {option.is_bot ? " (Bot)" : ""}
                                         </Typography>
                                         {!option.is_bot && (
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
                                                 {option.email}
                                             </Typography>
                                         )}
@@ -455,8 +651,15 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                             ...params.InputProps,
                                             endAdornment: (
                                                 <>
-                                                    {userSearchLoading ? <CircularProgress size={20} /> : null}
-                                                    {params.InputProps.endAdornment}
+                                                    {userSearchLoading ? (
+                                                        <CircularProgress
+                                                            size={20}
+                                                        />
+                                                    ) : null}
+                                                    {
+                                                        params.InputProps
+                                                            .endAdornment
+                                                    }
                                                 </>
                                             ),
                                         },
@@ -471,7 +674,12 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                             <Select
                                 label="Role"
                                 value={addMemberForm.data.role}
-                                onChange={(e) => addMemberForm.setData('role', e.target.value)}
+                                onChange={(e) =>
+                                    addMemberForm.setData(
+                                        "role",
+                                        e.target.value,
+                                    )
+                                }
                             >
                                 <MenuItem value="member">Member</MenuItem>
                                 <MenuItem value="admin">Admin</MenuItem>
@@ -495,25 +703,48 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Dialog>
 
             {/* Remove Member Confirmation Dialog */}
-            <Dialog open={!!removeMember} onClose={() => setRemoveMember(null)} maxWidth="xs" aria-labelledby="remove-member-dialog-title">
-                <DialogTitle id="remove-member-dialog-title">Remove Member</DialogTitle>
+            <Dialog
+                open={!!removeMember}
+                onClose={() => setRemoveMember(null)}
+                maxWidth="xs"
+                aria-labelledby="remove-member-dialog-title"
+            >
+                <DialogTitle id="remove-member-dialog-title">
+                    Remove Member
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to remove {removeMember?.name} from this team? They will lose access to all team boards.
+                        Are you sure you want to remove {removeMember?.name}{" "}
+                        from this team? They will lose access to all team
+                        boards.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setRemoveMember(null)}>Cancel</Button>
-                    <Button onClick={confirmRemoveMember} color="error" variant="contained">
+                    <Button onClick={() => setRemoveMember(null)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={confirmRemoveMember}
+                        color="error"
+                        variant="contained"
+                    >
                         Remove
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Add Label Dialog */}
-            <Dialog open={addLabelOpen} onClose={handleAddLabelClose} maxWidth="xs" fullWidth aria-labelledby="add-label-dialog-title">
+            <Dialog
+                open={addLabelOpen}
+                onClose={handleAddLabelClose}
+                maxWidth="xs"
+                fullWidth
+                aria-labelledby="add-label-dialog-title"
+            >
                 <form onSubmit={handleAddLabel}>
-                    <DialogTitle id="add-label-dialog-title">Add Label</DialogTitle>
+                    <DialogTitle id="add-label-dialog-title">
+                        Add Label
+                    </DialogTitle>
                     <DialogContent>
                         <TextField
                             autoFocus
@@ -521,7 +752,9 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                             fullWidth
                             required
                             value={addLabelForm.data.name}
-                            onChange={(e) => addLabelForm.setData('name', e.target.value)}
+                            onChange={(e) =>
+                                addLabelForm.setData("name", e.target.value)
+                            }
                             error={!!addLabelForm.errors.name}
                             helperText={addLabelForm.errors.name}
                             sx={{ mt: 1, mb: 2 }}
@@ -529,21 +762,34 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                 htmlInput: { maxLength: 50 },
                             }}
                         />
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 1 }}
+                        >
                             Color
                         </Typography>
                         <ColorSwatchPicker
                             value={addLabelForm.data.color}
-                            onChange={(color) => addLabelForm.setData('color', color)}
+                            onChange={(color) =>
+                                addLabelForm.setData("color", color)
+                            }
                         />
                         {addLabelForm.errors.color && (
-                            <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                            <Typography
+                                variant="caption"
+                                color="error"
+                                sx={{ mt: 0.5 }}
+                            >
                                 {addLabelForm.errors.color}
                             </Typography>
                         )}
                         {addLabelForm.data.name && (
                             <Box sx={{ mt: 2 }}>
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
                                     Preview
                                 </Typography>
                                 <Box sx={{ mt: 0.5 }}>
@@ -553,7 +799,9 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
                                         sx={{
                                             fontWeight: 600,
                                             bgcolor: addLabelForm.data.color,
-                                            color: getContrastText(addLabelForm.data.color),
+                                            color: getContrastText(
+                                                addLabelForm.data.color,
+                                            ),
                                         }}
                                     />
                                 </Box>
@@ -574,16 +822,28 @@ export default function TeamSettings({ team, labels, members, canManageMembers, 
             </Dialog>
 
             {/* Delete Label Confirmation Dialog */}
-            <Dialog open={!!deleteLabel} onClose={() => setDeleteLabel(null)} maxWidth="xs" aria-labelledby="delete-label-dialog-title">
-                <DialogTitle id="delete-label-dialog-title">Delete Label</DialogTitle>
+            <Dialog
+                open={!!deleteLabel}
+                onClose={() => setDeleteLabel(null)}
+                maxWidth="xs"
+                aria-labelledby="delete-label-dialog-title"
+            >
+                <DialogTitle id="delete-label-dialog-title">
+                    Delete Label
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Are you sure you want to delete "{deleteLabel?.name}"? It will be removed from all tasks.
+                        Are you sure you want to delete "{deleteLabel?.name}"?
+                        It will be removed from all tasks.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={() => setDeleteLabel(null)}>Cancel</Button>
-                    <Button onClick={confirmDeleteLabel} color="error" variant="contained">
+                    <Button
+                        onClick={confirmDeleteLabel}
+                        color="error"
+                        variant="contained"
+                    >
                         Delete
                     </Button>
                 </DialogActions>

@@ -1,25 +1,31 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PRIORITY_COLORS } from '@/constants/priorities';
-import type { Board, Column, PaginatedResponse, Task, Team } from '@/types';
-import { getContrastText } from '@/utils/colorContrast';
-import MergeRequestChip from '@/Components/Gitlab/MergeRequestChip';
-import Avatar from '@mui/material/Avatar';
-import AvatarGroup from '@mui/material/AvatarGroup';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PRIORITY_COLORS } from "@/constants/priorities";
+import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
+import { getContrastText } from "@/utils/colorContrast";
+import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
+import Avatar from "@mui/material/Avatar";
+import AvatarGroup from "@mui/material/AvatarGroup";
+import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import TableSortLabel from "@mui/material/TableSortLabel";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 
-type SortKey = 'task_number' | 'title' | 'priority' | 'due_date' | 'column' | 'assignees';
-type SortDir = 'asc' | 'desc';
+type SortKey =
+    | "task_number"
+    | "title"
+    | "priority"
+    | "due_date"
+    | "column"
+    | "assignees";
+type SortDir = "asc" | "desc";
 
 const PRIORITY_ORDER: Record<string, number> = {
     urgent: 1,
@@ -31,12 +37,12 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 /** Map client sort keys to API sort fields */
 const SORT_KEY_TO_API: Record<SortKey, string> = {
-    task_number: 'task_number',
-    title: 'title',
-    priority: 'priority',
-    due_date: 'due_date',
-    column: 'sort_order',
-    assignees: 'sort_order',
+    task_number: "task_number",
+    title: "title",
+    priority: "priority",
+    due_date: "due_date",
+    column: "sort_order",
+    assignees: "sort_order",
 };
 
 interface Props {
@@ -48,9 +54,16 @@ interface Props {
     showGitlab?: boolean;
 }
 
-export default function ListView({ columns, board, team, filterFn, onTaskClick, showGitlab = false }: Props) {
-    const [sortKey, setSortKey] = useState<SortKey>('task_number');
-    const [sortDir, setSortDir] = useState<SortDir>('asc');
+export default function ListView({
+    columns,
+    board,
+    team,
+    filterFn,
+    onTaskClick,
+    showGitlab = false,
+}: Props) {
+    const [sortKey, setSortKey] = useState<SortKey>("task_number");
+    const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [extraTasks, setExtraTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -68,7 +81,10 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
 
     // Compute total tasks from column counts (server-provided) vs initial loaded tasks
     const totalTaskCount = useMemo(() => {
-        return columns.reduce((sum, col) => sum + (col.tasks_count ?? col.tasks?.length ?? 0), 0);
+        return columns.reduce(
+            (sum, col) => sum + (col.tasks_count ?? col.tasks?.length ?? 0),
+            0,
+        );
     }, [columns]);
 
     const initialTasks = useMemo(() => {
@@ -104,29 +120,34 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
         return [...allTasks].sort((a, b) => {
             let cmp = 0;
             switch (sortKey) {
-                case 'task_number':
+                case "task_number":
                     cmp = (a.task_number ?? 0) - (b.task_number ?? 0);
                     break;
-                case 'title':
+                case "title":
                     cmp = a.title.localeCompare(b.title);
                     break;
-                case 'priority':
-                    cmp = (PRIORITY_ORDER[a.priority] ?? 5) - (PRIORITY_ORDER[b.priority] ?? 5);
+                case "priority":
+                    cmp =
+                        (PRIORITY_ORDER[a.priority] ?? 5) -
+                        (PRIORITY_ORDER[b.priority] ?? 5);
                     break;
-                case 'due_date':
-                    cmp = (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999');
+                case "due_date":
+                    cmp = (a.due_date ?? "9999").localeCompare(
+                        b.due_date ?? "9999",
+                    );
                     break;
-                case 'column': {
-                    const colA = columnMap[a.column_id]?.name ?? '';
-                    const colB = columnMap[b.column_id]?.name ?? '';
+                case "column": {
+                    const colA = columnMap[a.column_id]?.name ?? "";
+                    const colB = columnMap[b.column_id]?.name ?? "";
                     cmp = colA.localeCompare(colB);
                     break;
                 }
-                case 'assignees':
-                    cmp = (a.assignees?.length ?? 0) - (b.assignees?.length ?? 0);
+                case "assignees":
+                    cmp =
+                        (a.assignees?.length ?? 0) - (b.assignees?.length ?? 0);
                     break;
             }
-            return sortDir === 'asc' ? cmp : -cmp;
+            return sortDir === "asc" ? cmp : -cmp;
         });
     }, [allTasks, sortKey, sortDir, columnMap]);
 
@@ -159,20 +180,20 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
             const apiSort = SORT_KEY_TO_API[sortKey];
             const params = new URLSearchParams({
                 page: String(nextPage),
-                per_page: '50',
+                per_page: "50",
                 sort: apiSort,
                 direction: sortDir,
             });
 
             const response = await fetch(
-                `${route('boards.tasks.index', [team.id, board.id])}?${params}`,
+                `${route("boards.tasks.index", [team.id, board.id])}?${params}`,
                 {
-                    headers: { Accept: 'application/json' },
+                    headers: { Accept: "application/json" },
                     signal: controller.signal,
-                }
+                },
             );
 
-            if (!response.ok) throw new Error('Failed to load tasks');
+            if (!response.ok) throw new Error("Failed to load tasks");
 
             const data: PaginatedResponse<Task> = await response.json();
 
@@ -180,8 +201,8 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
             setCurrentPage(nextPage);
             setHasMore(data.current_page < data.last_page);
         } catch (error) {
-            if ((error as Error).name !== 'AbortError') {
-                console.error('Failed to load more tasks:', error);
+            if ((error as Error).name !== "AbortError") {
+                console.error("Failed to load more tasks:", error);
             }
         } finally {
             setLoading(false);
@@ -199,7 +220,7 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                     fetchMoreTasks();
                 }
             },
-            { rootMargin: '200px' }
+            { rootMargin: "200px" },
         );
 
         observer.observe(sentinel);
@@ -208,10 +229,10 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
-            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+            setSortDir((d) => (d === "asc" ? "desc" : "asc"));
         } else {
             setSortKey(key);
-            setSortDir('asc');
+            setSortDir("asc");
         }
         // Reset lazy-loaded tasks when sort changes since server ordering differs
         setExtraTasks([]);
@@ -221,7 +242,7 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
     const renderSortLabel = (key: SortKey, label: string) => (
         <TableSortLabel
             active={sortKey === key}
-            direction={sortKey === key ? sortDir : 'asc'}
+            direction={sortKey === key ? sortDir : "asc"}
             onClick={() => handleSort(key)}
         >
             {label}
@@ -232,22 +253,50 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
         <TableContainer component={Paper} variant="outlined">
             <Table>
                 <TableHead>
-                    <TableRow sx={{ '& .MuiTableCell-head': { fontWeight: 600, bgcolor: 'action.hover', py: 1.5 } }}>
-                        <TableCell sx={{ width: 70 }}>{renderSortLabel('task_number', '#')}</TableCell>
-                        <TableCell>{renderSortLabel('title', 'Title')}</TableCell>
-                        <TableCell sx={{ width: 130 }}>{renderSortLabel('column', 'Status')}</TableCell>
-                        <TableCell sx={{ width: 120 }}>{renderSortLabel('priority', 'Priority')}</TableCell>
-                        <TableCell sx={{ width: 130 }}>{renderSortLabel('due_date', 'Due Date')}</TableCell>
-                        <TableCell sx={{ width: 150 }}>{renderSortLabel('assignees', 'Assignees')}</TableCell>
+                    <TableRow
+                        sx={{
+                            "& .MuiTableCell-head": {
+                                fontWeight: 600,
+                                bgcolor: "action.hover",
+                                py: 1.5,
+                            },
+                        }}
+                    >
+                        <TableCell sx={{ width: 70 }}>
+                            {renderSortLabel("task_number", "#")}
+                        </TableCell>
+                        <TableCell>
+                            {renderSortLabel("title", "Title")}
+                        </TableCell>
+                        <TableCell sx={{ width: 130 }}>
+                            {renderSortLabel("column", "Status")}
+                        </TableCell>
+                        <TableCell sx={{ width: 120 }}>
+                            {renderSortLabel("priority", "Priority")}
+                        </TableCell>
+                        <TableCell sx={{ width: 130 }}>
+                            {renderSortLabel("due_date", "Due Date")}
+                        </TableCell>
+                        <TableCell sx={{ width: 150 }}>
+                            {renderSortLabel("assignees", "Assignees")}
+                        </TableCell>
                         <TableCell sx={{ width: 160 }}>Labels</TableCell>
-                        {showGitlab && <TableCell sx={{ width: 110 }}>GitLab</TableCell>}
+                        {showGitlab && (
+                            <TableCell sx={{ width: 110 }}>GitLab</TableCell>
+                        )}
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {sortedTasks.length === 0 && !loading ? (
                         <TableRow>
-                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 6 }}>
-                                <Typography color="text.secondary">No tasks found</Typography>
+                            <TableCell
+                                colSpan={showGitlab ? 8 : 7}
+                                align="center"
+                                sx={{ py: 6 }}
+                            >
+                                <Typography color="text.secondary">
+                                    No tasks found
+                                </Typography>
                             </TableCell>
                         </TableRow>
                     ) : (
@@ -258,26 +307,36 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                                     key={task.id}
                                     hover
                                     tabIndex={0}
-                                    aria-label={`Task ${task.task_number ? '#' + task.task_number + ' ' : ''}${task.title}`}
+                                    aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
                                     sx={{
-                                        cursor: 'pointer',
-                                        '& .MuiTableCell-root': { py: 1.5 },
+                                        cursor: "pointer",
+                                        "& .MuiTableCell-root": { py: 1.5 },
                                     }}
                                     onClick={() => onTaskClick(task)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
+                                        if (
+                                            e.key === "Enter" ||
+                                            e.key === " "
+                                        ) {
                                             e.preventDefault();
                                             onTaskClick(task);
                                         }
                                     }}
                                 >
                                     <TableCell>
-                                        <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{ fontFamily: "monospace" }}
+                                        >
                                             #{task.task_number}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
-                                        <Typography variant="body2" fontWeight={500}>
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={500}
+                                        >
                                             {task.title}
                                         </Typography>
                                     </TableCell>
@@ -288,28 +347,47 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                                                 size="small"
                                                 sx={{
                                                     bgcolor: col.color,
-                                                    color: getContrastText(col.color),
+                                                    color: getContrastText(
+                                                        col.color,
+                                                    ),
                                                     height: 26,
-                                                    fontSize: '0.75rem',
+                                                    fontSize: "0.75rem",
                                                     fontWeight: 500,
                                                 }}
                                             />
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                            }}
+                                        >
                                             <Box
                                                 sx={{
                                                     width: 10,
                                                     height: 10,
-                                                    borderRadius: '50%',
-                                                    bgcolor: PRIORITY_COLORS[task.priority] ?? 'transparent',
-                                                    border: task.priority === 'none' ? '1px solid' : 'none',
-                                                    borderColor: 'divider',
+                                                    borderRadius: "50%",
+                                                    bgcolor:
+                                                        PRIORITY_COLORS[
+                                                            task.priority
+                                                        ] ?? "transparent",
+                                                    border:
+                                                        task.priority === "none"
+                                                            ? "1px solid"
+                                                            : "none",
+                                                    borderColor: "divider",
                                                     flexShrink: 0,
                                                 }}
                                             />
-                                            <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    textTransform: "capitalize",
+                                                }}
+                                            >
                                                 {task.priority}
                                             </Typography>
                                         </Box>
@@ -319,65 +397,103 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                                             <Typography
                                                 variant="body2"
                                                 color={
-                                                    new Date(task.due_date) < new Date()
-                                                        ? 'error'
-                                                        : 'text.secondary'
+                                                    new Date(task.due_date) <
+                                                    new Date()
+                                                        ? "error"
+                                                        : "text.secondary"
                                                 }
                                             >
-                                                {new Date(task.due_date).toLocaleDateString(undefined, {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    year: 'numeric',
-                                                })}
+                                                {new Date(
+                                                    task.due_date,
+                                                ).toLocaleDateString(
+                                                    undefined,
+                                                    {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric",
+                                                    },
+                                                )}
                                             </Typography>
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {task.assignees && task.assignees.length > 0 && (
-                                            <AvatarGroup
-                                                max={3}
-                                                sx={{
-                                                    justifyContent: 'flex-end',
-                                                    '& .MuiAvatar-root': {
-                                                        width: 28,
-                                                        height: 28,
-                                                        fontSize: '0.75rem',
-                                                    },
-                                                }}
-                                            >
-                                                {task.assignees.map((u) => (
-                                                    <Avatar key={u.id} alt={u.name} src={u.avatar_url}>
-                                                        {u.name.charAt(0)}
-                                                    </Avatar>
-                                                ))}
-                                            </AvatarGroup>
-                                        )}
+                                        {task.assignees &&
+                                            task.assignees.length > 0 && (
+                                                <AvatarGroup
+                                                    max={3}
+                                                    sx={{
+                                                        justifyContent:
+                                                            "flex-end",
+                                                        "& .MuiAvatar-root": {
+                                                            width: 28,
+                                                            height: 28,
+                                                            fontSize: "0.75rem",
+                                                        },
+                                                    }}
+                                                >
+                                                    {task.assignees.map((u) => (
+                                                        <Avatar
+                                                            key={u.id}
+                                                            alt={u.name}
+                                                            src={u.avatar_url}
+                                                        >
+                                                            {u.name.charAt(0)}
+                                                        </Avatar>
+                                                    ))}
+                                                </AvatarGroup>
+                                            )}
                                     </TableCell>
                                     <TableCell>
-                                        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                            {(task.labels ?? []).map((label) => (
-                                                <Chip
-                                                    key={label.id}
-                                                    label={label.name}
-                                                    size="small"
-                                                    sx={{
-                                                        height: 22,
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: 600,
-                                                        bgcolor: label.color,
-                                                        color: getContrastText(label.color),
-                                                    }}
-                                                />
-                                            ))}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                gap: 0.5,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            {(task.labels ?? []).map(
+                                                (label) => (
+                                                    <Chip
+                                                        key={label.id}
+                                                        label={label.name}
+                                                        size="small"
+                                                        sx={{
+                                                            height: 22,
+                                                            fontSize: "0.7rem",
+                                                            fontWeight: 600,
+                                                            bgcolor:
+                                                                label.color,
+                                                            color: getContrastText(
+                                                                label.color,
+                                                            ),
+                                                        }}
+                                                    />
+                                                ),
+                                            )}
                                         </Box>
                                     </TableCell>
                                     {showGitlab && (
-                                        <TableCell onClick={(e) => e.stopPropagation()}>
-                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                        <TableCell
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    gap: 0.5,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
                                                 {(task.gitlab_links ?? [])
-                                                    .filter((l) => l.link_type === 'merge_request')
+                                                    .filter(
+                                                        (l) =>
+                                                            l.link_type ===
+                                                            "merge_request",
+                                                    )
                                                     .map((link) => (
-                                                        <MergeRequestChip key={link.id} link={link} />
+                                                        <MergeRequestChip
+                                                            key={link.id}
+                                                            link={link}
+                                                        />
                                                     ))}
                                             </Box>
                                         </TableCell>
@@ -390,11 +506,25 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                     {/* Sentinel row for IntersectionObserver */}
                     {hasMore && (
                         <TableRow ref={sentinelRef}>
-                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 3, border: 0 }}>
+                            <TableCell
+                                colSpan={showGitlab ? 8 : 7}
+                                align="center"
+                                sx={{ py: 3, border: 0 }}
+                            >
                                 {loading && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 1,
+                                        }}
+                                    >
                                         <CircularProgress size={20} />
-                                        <Typography variant="body2" color="text.secondary">
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
                                             Loading more tasks...
                                         </Typography>
                                     </Box>
@@ -406,8 +536,15 @@ export default function ListView({ columns, board, team, filterFn, onTaskClick, 
                     {/* Task count summary */}
                     {!hasMore && sortedTasks.length > 0 && (
                         <TableRow>
-                            <TableCell colSpan={showGitlab ? 8 : 7} align="center" sx={{ py: 2, border: 0 }}>
-                                <Typography variant="caption" color="text.secondary">
+                            <TableCell
+                                colSpan={showGitlab ? 8 : 7}
+                                align="center"
+                                sx={{ py: 2, border: 0 }}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
                                     Showing all {sortedTasks.length} tasks
                                 </Typography>
                             </TableCell>

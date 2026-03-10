@@ -5,7 +5,7 @@
  * threshold — the standard crossover point for AA-level contrast.
  */
 export function getContrastText(hexColor: string): string {
-    const hex = hexColor.replace('#', '');
+    const hex = hexColor.replace("#", "");
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
     const b = parseInt(hex.substring(4, 6), 16) / 255;
@@ -16,5 +16,5 @@ export function getContrastText(hexColor: string): string {
     const luminance =
         0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 
-    return luminance > 0.179 ? 'rgba(0,0,0,0.87)' : '#fff';
+    return luminance > 0.179 ? "rgba(0,0,0,0.87)" : "#fff";
 }

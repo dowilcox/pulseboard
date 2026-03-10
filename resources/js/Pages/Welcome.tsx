@@ -1,8 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Logo from '@/Components/Common/Logo';
+import { Head, Link } from "@inertiajs/react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import Logo from "@/Components/Common/Logo";
 
 interface WelcomeProps {
     canLogin: boolean;
@@ -16,12 +16,12 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
 
             <Box
                 sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: '100vh',
-                    bgcolor: 'background.default',
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: "100vh",
+                    bgcolor: "background.default",
                     px: 2,
                 }}
             >
@@ -33,21 +33,21 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                     variant="h6"
                     component="p"
                     sx={{
-                        color: 'text.secondary',
+                        color: "text.secondary",
                         fontWeight: 400,
                         mb: 4,
-                        textAlign: 'center',
+                        textAlign: "center",
                         maxWidth: 480,
                     }}
                 >
                     A modern project management tool for teams that move fast.
                 </Typography>
 
-                <Box sx={{ display: 'flex', gap: 2 }}>
+                <Box sx={{ display: "flex", gap: 2 }}>
                     {canLogin && (
                         <Button
                             component={Link}
-                            href={route('login')}
+                            href={route("login")}
                             variant="contained"
                             size="large"
                         >
@@ -58,7 +58,7 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                     {canRegister && (
                         <Button
                             component={Link}
-                            href={route('register')}
+                            href={route("register")}
                             variant="outlined"
                             size="large"
                         >

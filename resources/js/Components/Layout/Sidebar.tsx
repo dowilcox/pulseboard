@@ -1,47 +1,57 @@
-import { Link, router, usePage } from '@inertiajs/react';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import GroupsIcon from '@mui/icons-material/Groups';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
-import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
-import type { PageProps } from '@/types';
-import { useSidebar } from '@/Contexts/SidebarContext';
-import Logo from '@/Components/Common/Logo';
-import BoardList from './BoardList';
-import TeamSelector from './TeamSelector';
+import { Link, router, usePage } from "@inertiajs/react";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import GroupsIcon from "@mui/icons-material/Groups";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
+import Toolbar from "@mui/material/Toolbar";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import type { PageProps } from "@/types";
+import { useSidebar } from "@/Contexts/SidebarContext";
+import Logo from "@/Components/Common/Logo";
+import BoardList from "./BoardList";
+import TeamSelector from "./TeamSelector";
 
 interface SidebarProps {
     activeBoardId?: string;
     forceExpanded?: boolean;
 }
 
-export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) {
+export default function Sidebar({
+    activeBoardId,
+    forceExpanded,
+}: SidebarProps) {
     const { auth } = usePage<PageProps>().props;
     const { collapsed, setCollapsed, currentTeam, boards } = useSidebar();
     const isCollapsed = forceExpanded ? false : collapsed;
 
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
             {/* Logo */}
             <Toolbar
                 sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: isCollapsed ? 'center' : 'center',
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: isCollapsed ? "center" : "center",
                     px: isCollapsed ? 0 : 2,
                     minHeight: 64,
                 }}
             >
-                <Link href={route('dashboard')} style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center' }}>
+                <Link
+                    href={route("dashboard")}
+                    style={{
+                        textDecoration: "none",
+                        display: "flex",
+                        justifyContent: "center",
+                    }}
+                >
                     <Logo size="small" showText={!isCollapsed} />
                 </Link>
             </Toolbar>
@@ -55,10 +65,18 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
                         <Tooltip title="My Tasks" placement="right">
                             <MenuItem
                                 component={Link}
-                                href={route('dashboard')}
-                                selected={route().current('dashboard')}
-                                aria-current={route().current('dashboard') ? 'page' : undefined}
-                                sx={{ py: 1.5, px: 0, justifyContent: 'center' }}
+                                href={route("dashboard")}
+                                selected={route().current("dashboard")}
+                                aria-current={
+                                    route().current("dashboard")
+                                        ? "page"
+                                        : undefined
+                                }
+                                sx={{
+                                    py: 1.5,
+                                    px: 0,
+                                    justifyContent: "center",
+                                }}
                             >
                                 <AssignmentIcon fontSize="small" />
                             </MenuItem>
@@ -66,10 +84,18 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
                         <Tooltip title="Teams" placement="right">
                             <MenuItem
                                 component={Link}
-                                href={route('teams.index')}
-                                selected={route().current('teams.index')}
-                                aria-current={route().current('teams.index') ? 'page' : undefined}
-                                sx={{ py: 1.5, px: 0, justifyContent: 'center' }}
+                                href={route("teams.index")}
+                                selected={route().current("teams.index")}
+                                aria-current={
+                                    route().current("teams.index")
+                                        ? "page"
+                                        : undefined
+                                }
+                                sx={{
+                                    py: 1.5,
+                                    px: 0,
+                                    justifyContent: "center",
+                                }}
                             >
                                 <GroupsIcon fontSize="small" />
                             </MenuItem>
@@ -78,10 +104,18 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
                             <Tooltip title="Admin" placement="right">
                                 <MenuItem
                                     component={Link}
-                                    href={route('admin.dashboard')}
-                                    selected={route().current('admin.*')}
-                                    aria-current={route().current('admin.*') ? 'page' : undefined}
-                                    sx={{ py: 1.5, px: 0, justifyContent: 'center' }}
+                                    href={route("admin.dashboard")}
+                                    selected={route().current("admin.*")}
+                                    aria-current={
+                                        route().current("admin.*")
+                                            ? "page"
+                                            : undefined
+                                    }
+                                    sx={{
+                                        py: 1.5,
+                                        px: 0,
+                                        justifyContent: "center",
+                                    }}
                                 >
                                     <AdminPanelSettingsIcon fontSize="small" />
                                 </MenuItem>
@@ -92,9 +126,13 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
                     <>
                         <MenuItem
                             component={Link}
-                            href={route('dashboard')}
-                            selected={route().current('dashboard')}
-                            aria-current={route().current('dashboard') ? 'page' : undefined}
+                            href={route("dashboard")}
+                            selected={route().current("dashboard")}
+                            aria-current={
+                                route().current("dashboard")
+                                    ? "page"
+                                    : undefined
+                            }
                             sx={{ py: 1.5, px: 2 }}
                         >
                             <ListItemIcon>
@@ -105,9 +143,13 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
 
                         <MenuItem
                             component={Link}
-                            href={route('teams.index')}
-                            selected={route().current('teams.index')}
-                            aria-current={route().current('teams.index') ? 'page' : undefined}
+                            href={route("teams.index")}
+                            selected={route().current("teams.index")}
+                            aria-current={
+                                route().current("teams.index")
+                                    ? "page"
+                                    : undefined
+                            }
                             sx={{ py: 1.5, px: 2 }}
                         >
                             <ListItemIcon>
@@ -119,9 +161,13 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
                         {auth.user.is_admin && (
                             <MenuItem
                                 component={Link}
-                                href={route('admin.dashboard')}
-                                selected={route().current('admin.*')}
-                                aria-current={route().current('admin.*') ? 'page' : undefined}
+                                href={route("admin.dashboard")}
+                                selected={route().current("admin.*")}
+                                aria-current={
+                                    route().current("admin.*")
+                                        ? "page"
+                                        : undefined
+                                }
                                 sx={{ py: 1.5, px: 2 }}
                             >
                                 <ListItemIcon>
@@ -150,32 +196,58 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
 
             {/* Collapsed board list — inline initials with tooltips */}
             {currentTeam && isCollapsed && boards.length > 0 && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5, mt: 1 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 1.5,
+                        mt: 1,
+                    }}
+                >
                     {boards.map((board) => {
                         const isActive = board.id === activeBoardId;
                         const words = board.name.trim().split(/\s+/);
-                        const initials = words.length >= 2
-                            ? (words[0][0] + words[1][0]).toUpperCase()
-                            : board.name.slice(0, 2).toUpperCase();
+                        const initials =
+                            words.length >= 2
+                                ? (words[0][0] + words[1][0]).toUpperCase()
+                                : board.name.slice(0, 2).toUpperCase();
                         return (
-                            <Tooltip key={board.id} title={board.name} placement="right">
+                            <Tooltip
+                                key={board.id}
+                                title={board.name}
+                                placement="right"
+                            >
                                 <Box
-                                    onClick={() => router.get(route('teams.boards.show', [currentTeam.id, board.id]))}
+                                    onClick={() =>
+                                        router.get(
+                                            route("teams.boards.show", [
+                                                currentTeam.id,
+                                                board.id,
+                                            ]),
+                                        )
+                                    }
                                     sx={{
                                         width: 32,
                                         height: 32,
-                                        borderRadius: '8px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        fontSize: '0.7rem',
+                                        borderRadius: "8px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        cursor: "pointer",
+                                        fontSize: "0.7rem",
                                         fontWeight: 600,
-                                        bgcolor: isActive ? 'primary.main' : 'action.hover',
-                                        color: isActive ? 'primary.contrastText' : 'text.secondary',
-                                        transition: 'all 0.15s',
-                                        '&:hover': {
-                                            bgcolor: isActive ? 'primary.dark' : 'action.selected',
+                                        bgcolor: isActive
+                                            ? "primary.main"
+                                            : "action.hover",
+                                        color: isActive
+                                            ? "primary.contrastText"
+                                            : "text.secondary",
+                                        transition: "all 0.15s",
+                                        "&:hover": {
+                                            bgcolor: isActive
+                                                ? "primary.dark"
+                                                : "action.selected",
                                         },
                                     }}
                                 >
@@ -193,10 +265,35 @@ export default function Sidebar({ activeBoardId, forceExpanded }: SidebarProps) 
             {!forceExpanded && (
                 <>
                     <Divider />
-                    <Box sx={{ display: 'flex', justifyContent: isCollapsed ? 'center' : 'flex-end', p: 0.5 }}>
-                        <Tooltip title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} placement="right">
-                            <IconButton size="small" onClick={() => setCollapsed(!isCollapsed)} aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-                                {isCollapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: isCollapsed ? "center" : "flex-end",
+                            p: 0.5,
+                        }}
+                    >
+                        <Tooltip
+                            title={
+                                isCollapsed
+                                    ? "Expand sidebar"
+                                    : "Collapse sidebar"
+                            }
+                            placement="right"
+                        >
+                            <IconButton
+                                size="small"
+                                onClick={() => setCollapsed(!isCollapsed)}
+                                aria-label={
+                                    isCollapsed
+                                        ? "Expand sidebar"
+                                        : "Collapse sidebar"
+                                }
+                            >
+                                {isCollapsed ? (
+                                    <ChevronRightIcon fontSize="small" />
+                                ) : (
+                                    <ChevronLeftIcon fontSize="small" />
+                                )}
                             </IconButton>
                         </Tooltip>
                     </Box>
