@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ReorderColumnsRequest extends FormRequest
@@ -17,26 +18,19 @@ class ReorderColumnsRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'column_ids' => ['required', 'array', 'min:1'],
-            'column_ids.*' => ['required', 'uuid', 'exists:columns,id'],
-        ];
-    }
-
-    /**
-     * Get custom messages for validator errors.
-     *
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return [
-            'column_ids.required' => 'The column order is required.',
-            'column_ids.*.exists' => 'One or more column IDs are invalid.',
+            'columns' => ['required', 'array', 'min:1'],
+            'columns.*.id' => ['nullable', 'uuid'],
+            'columns.*.name' => ['required', 'string', 'max:255'],
+            'columns.*.color' => ['required', 'string', 'max:7'],
+            'columns.*.wip_limit' => ['nullable', 'integer', 'min:0'],
+            'columns.*.is_done_column' => ['boolean'],
+            'columns.*.sort_order' => ['required', 'integer', 'min:0'],
+            'columns.*._destroy' => ['boolean'],
         ];
     }
 }

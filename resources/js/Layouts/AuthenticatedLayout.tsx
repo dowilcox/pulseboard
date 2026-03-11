@@ -28,6 +28,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
+import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider } from "@/Contexts/WebSocketContext";
 
 const DRAWER_WIDTH = 260;
@@ -44,12 +45,14 @@ export default function AuthenticatedLayout(
 ) {
     return (
         <WebSocketProvider>
-            <SidebarProvider
-                currentTeamOverride={props.currentTeam}
-                activeBoardId={props.activeBoardId}
-            >
-                <AuthenticatedLayoutInner {...props} />
-            </SidebarProvider>
+            <SnackbarProvider>
+                <SidebarProvider
+                    currentTeamOverride={props.currentTeam}
+                    activeBoardId={props.activeBoardId}
+                >
+                    <AuthenticatedLayoutInner {...props} />
+                </SidebarProvider>
+            </SnackbarProvider>
         </WebSocketProvider>
     );
 }

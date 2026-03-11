@@ -158,7 +158,11 @@ class BoardColumnTest extends TestCase
 
         $response = $this->actingAs($this->user)->put(
             route('teams.boards.columns.reorder', [$this->team, $this->board]),
-            ['column_ids' => [$column3->id, $this->column->id, $column2->id]]
+            ['columns' => [
+                ['id' => $column3->id, 'name' => $column3->name, 'color' => $column3->color, 'sort_order' => 0],
+                ['id' => $this->column->id, 'name' => $this->column->name, 'color' => $this->column->color, 'sort_order' => 1],
+                ['id' => $column2->id, 'name' => $column2->name, 'color' => $column2->color, 'sort_order' => 2],
+            ]]
         );
 
         $response->assertRedirect();
@@ -167,8 +171,9 @@ class BoardColumnTest extends TestCase
         $this->column->refresh();
         $column2->refresh();
 
-        $this->assertLessThan($this->column->sort_order, $column3->sort_order);
-        $this->assertLessThan($column2->sort_order, $this->column->sort_order);
+        $this->assertEquals(0, $column3->sort_order);
+        $this->assertEquals(1, $this->column->sort_order);
+        $this->assertEquals(2, $column2->sort_order);
     }
 
     public function test_can_delete_column(): void

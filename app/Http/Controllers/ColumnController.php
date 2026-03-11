@@ -49,7 +49,7 @@ class ColumnController extends Controller
     {
         $this->authorize('manageColumns', $board);
 
-        ReorderColumns::run($board, $request->validated('column_ids'));
+        ReorderColumns::run($board, $request->validated('columns'));
 
         return Redirect::back();
     }
