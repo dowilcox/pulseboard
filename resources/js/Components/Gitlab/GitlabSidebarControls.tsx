@@ -195,7 +195,7 @@ export default function GitlabSidebarControls({
                         disabled={creating}
                         sx={{ flex: 1, textTransform: "none" }}
                     >
-                        Branch
+                        Create Branch
                     </Button>
                     <Button
                         size="small"
@@ -211,7 +211,7 @@ export default function GitlabSidebarControls({
                         disabled={creating}
                         sx={{ flex: 1, textTransform: "none" }}
                     >
-                        MR
+                        Create MR
                     </Button>
                 </Box>
             )}
