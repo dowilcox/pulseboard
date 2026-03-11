@@ -145,6 +145,18 @@ Route::middleware('auth')->group(function () {
                 AdminTeamController::class,
                 'destroy',
             ])->name('teams.destroy');
+            Route::get('/teams/{team}/members/search', [
+                AdminTeamController::class,
+                'searchUsers',
+            ])->name('teams.members.search');
+            Route::post('/teams/{team}/members', [
+                AdminTeamController::class,
+                'addMember',
+            ])->name('teams.members.store');
+            Route::delete('/teams/{team}/members/{user}', [
+                AdminTeamController::class,
+                'removeMember',
+            ])->name('teams.members.destroy');
 
             // Boards
             Route::get('/boards', [AdminBoardController::class, 'index'])->name(
