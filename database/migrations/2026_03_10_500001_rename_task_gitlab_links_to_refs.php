@@ -9,6 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Skip on SQLite – the create migration already produces the final schema
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         // Rename table if not already renamed (idempotent for partial failures)
         if (Schema::hasTable('task_gitlab_links')) {
             Schema::rename('task_gitlab_links', 'task_gitlab_refs');
@@ -62,6 +67,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
         Schema::table('task_gitlab_refs', function (Blueprint $table) {
             $table->dropIndex(['task_id', 'ref_type']);
         });
