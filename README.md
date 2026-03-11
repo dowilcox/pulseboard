@@ -170,14 +170,16 @@ Requires PHP 8.2+, Composer, Node.js 18+, MySQL 8.0, and Redis 7 running locally
 
 ### WebSocket (Laravel Reverb)
 
-| Variable            | Description                                          | Default             |
-| ------------------- | ---------------------------------------------------- | ------------------- |
-| `REVERB_APP_ID`     | Reverb application ID                                | `pulseboard`        |
-| `REVERB_APP_KEY`    | Reverb app key (random string for production)        | `pulseboard-key`    |
-| `REVERB_APP_SECRET` | Reverb app secret (random string for production)     | `pulseboard-secret` |
-| `REVERB_HOST`       | Public hostname clients connect to                   | `localhost`         |
-| `REVERB_PORT`       | Reverb port (internal 8080, external 9080 in Docker) | `8080`              |
-| `REVERB_SCHEME`     | Protocol (`http` or `https`)                         | `http`              |
+| Variable            | Description                                            | Default             |
+| ------------------- | ------------------------------------------------------ | ------------------- |
+| `REVERB_APP_ID`     | Reverb application ID (**required**)                   | `pulseboard`        |
+| `REVERB_APP_KEY`    | Reverb app key (random string for production)          | `pulseboard-key`    |
+| `REVERB_APP_SECRET` | Reverb app secret (random string for production)       | `pulseboard-secret` |
+| `REVERB_HOST`       | Public hostname clients connect to for WebSocket       | `localhost`         |
+| `REVERB_PORT`       | Client-facing port (443 behind TLS proxy, 8080 direct) | `443`               |
+| `REVERB_SCHEME`     | Protocol (`http` or `https`)                           | `https`             |
+
+> **Important:** `REVERB_APP_ID` must be set — Reverb will silently exit every 60 seconds if it is null. `REVERB_HOST` should be the public hostname that browsers connect to (e.g. `ws.board.example.com`). When behind a TLS-terminating reverse proxy, set `REVERB_PORT=443` and `REVERB_SCHEME=https`. The internal Reverb server always listens on port 8080 regardless of these settings.
 
 ### Logging
 
@@ -287,9 +289,11 @@ MAIL_SCHEME=tls
 MAIL_USERNAME=<smtp-user>
 MAIL_PASSWORD=<smtp-password>
 MAIL_FROM_ADDRESS=noreply@example.com
+REVERB_APP_ID=pulseboard
 REVERB_APP_KEY=<random-32-char-string>
 REVERB_APP_SECRET=<random-32-char-string>
-REVERB_HOST=board.example.com
+REVERB_HOST=ws.board.example.com
+REVERB_PORT=443
 REVERB_SCHEME=https
 SESSION_SECURE_COOKIE=true
 OCTANE_HTTPS=true
@@ -353,12 +357,34 @@ docker compose -f docker-compose.prod.yml exec app php artisan tinker
 
 ### Reverse Proxy
 
-In production, place a reverse proxy (Nginx, Caddy, Traefik) in front of PulseBoard to handle TLS termination. The proxy should forward:
+In production, place a reverse proxy (Nginx, Caddy, Traefik) in front of PulseBoard to handle TLS termination. The recommended setup uses a **dedicated subdomain** for WebSocket traffic:
 
-- HTTP traffic to port `8000` (or `APP_PORT`)
-- WebSocket traffic (`/app/*`) to port `9080` (or `REVERB_EXTERNAL_PORT`)
+- `board.example.com` → HTTP traffic to container port `8000`
+- `ws.board.example.com` → WebSocket traffic to container port `8080`
 
-Set `TRUSTED_PROXIES=*` (or the proxy IP) and `OCTANE_HTTPS=true` when behind a TLS-terminating proxy.
+Set `TRUSTED_PROXIES=*` (or the proxy IP) and `OCTANE_HTTPS=true` when behind a TLS-terminating proxy. Set `REVERB_HOST=ws.board.example.com` so the frontend connects to the correct WebSocket endpoint.
+
+**Traefik example labels:**
+
+```yaml
+labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=proxy"
+    # HTTP (Octane)
+    - "traefik.http.routers.app.entrypoints=websecure"
+    - "traefik.http.routers.app.rule=Host(`board.example.com`)"
+    - "traefik.http.routers.app.tls=true"
+    - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.app.service=app"
+    - "traefik.http.services.app.loadbalancer.server.port=8000"
+    # WebSocket (Reverb)
+    - "traefik.http.routers.app-ws.entrypoints=websecure"
+    - "traefik.http.routers.app-ws.rule=Host(`ws.board.example.com`)"
+    - "traefik.http.routers.app-ws.tls=true"
+    - "traefik.http.routers.app-ws.tls.certresolver=letsencrypt"
+    - "traefik.http.routers.app-ws.service=app-ws"
+    - "traefik.http.services.app-ws.loadbalancer.server.port=8080"
+```
 
 ### Docker Services
 
