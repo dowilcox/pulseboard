@@ -8,6 +8,7 @@ import SwapVertIcon from "@mui/icons-material/SwapVert";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -17,7 +18,10 @@ import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import type { ReactNode } from "react";
 import { useState } from "react";
+
+const TIMELINE_WIDTH = 40;
 
 type FeedItem =
     | { type: "comment"; item: Comment; timestamp: string }
@@ -48,24 +52,89 @@ function formatTimestamp(ts: string): string {
     return date.toLocaleDateString();
 }
 
+function LabelChip({ name }: { name: string }) {
+    return (
+        <Chip
+            label={name}
+            size="small"
+            sx={{
+                height: 20,
+                fontSize: "0.7rem",
+                fontWeight: 600,
+                mx: 0.25,
+                verticalAlign: "middle",
+            }}
+        />
+    );
+}
+
 function activityDescription(
     action: string,
     changes: Record<string, unknown>,
-): string {
+): ReactNode {
     switch (action) {
         case "created":
             return "created this task";
         case "moved":
             if (changes.auto_moved) {
-                return `auto-moved from ${changes.from_column ?? "?"} to ${changes.to_column ?? "?"}`;
+                return (
+                    <>
+                        auto-moved from{" "}
+                        <strong>{String(changes.from_column ?? "?")}</strong> to{" "}
+                        <strong>{String(changes.to_column ?? "?")}</strong>
+                    </>
+                );
             }
-            return `moved from ${changes.from_column ?? "?"} to ${changes.to_column ?? "?"}`;
+            return (
+                <>
+                    moved from{" "}
+                    <strong>{String(changes.from_column ?? "?")}</strong> to{" "}
+                    <strong>{String(changes.to_column ?? "?")}</strong>
+                </>
+            );
         case "assigned":
-            return `assigned ${(changes.users as string[])?.join(", ") ?? "users"}`;
+            return (
+                <>
+                    assigned{" "}
+                    {(changes.users as string[])?.join(", ") ?? "users"}
+                </>
+            );
         case "unassigned":
-            return `unassigned ${(changes.users as string[])?.join(", ") ?? "users"}`;
-        case "labels_changed":
-            return "updated labels";
+            return (
+                <>
+                    unassigned{" "}
+                    {(changes.users as string[])?.join(", ") ?? "users"}
+                </>
+            );
+        case "labels_changed": {
+            const added = changes.added as string[] | undefined;
+            const removed = changes.removed as string[] | undefined;
+            const parts: ReactNode[] = [];
+            if (added?.length) {
+                parts.push(
+                    <span key="added">
+                        added{" "}
+                        {added.map((name) => (
+                            <LabelChip key={name} name={name} />
+                        ))}{" "}
+                        {added.length === 1 ? "label" : "labels"}
+                    </span>,
+                );
+            }
+            if (removed?.length) {
+                if (parts.length) parts.push(" and ");
+                parts.push(
+                    <span key="removed">
+                        removed{" "}
+                        {removed.map((name) => (
+                            <LabelChip key={name} name={name} />
+                        ))}{" "}
+                        {removed.length === 1 ? "label" : "labels"}
+                    </span>,
+                );
+            }
+            return parts.length ? <>{parts}</> : "updated labels";
+        }
         case "commented":
             return "added a comment";
         case "completed":
@@ -73,13 +142,69 @@ function activityDescription(
         case "uncompleted":
             return "marked this task as incomplete";
         case "dependency_added":
-            return `added a dependency on ${(changes.depends_on_title as string) ?? "a task"}`;
+            return (
+                <>
+                    added a dependency on{" "}
+                    <strong>
+                        {String(changes.depends_on_title ?? "a task")}
+                    </strong>
+                </>
+            );
         case "dependency_removed":
-            return `removed a dependency on ${(changes.depends_on_title as string) ?? "a task"}`;
+            return (
+                <>
+                    removed a dependency on{" "}
+                    <strong>
+                        {String(changes.depends_on_title ?? "a task")}
+                    </strong>
+                </>
+            );
         case "field_changed": {
             const fields = Object.keys(changes);
             return `updated ${fields.join(", ")}`;
         }
+        case "attachment_added":
+            return (
+                <>
+                    added attachment{" "}
+                    <strong>{String(changes.filename ?? "")}</strong>
+                </>
+            );
+        case "attachment_removed":
+            return (
+                <>
+                    removed attachment{" "}
+                    <strong>{String(changes.filename ?? "")}</strong>
+                </>
+            );
+        case "gitlab_branch_created":
+            return (
+                <>
+                    created branch{" "}
+                    <strong>{String(changes.branch ?? "")}</strong>
+                </>
+            );
+        case "gitlab_mr_created":
+            return (
+                <>
+                    created merge request{" "}
+                    <strong>{String(changes.title ?? "")}</strong>
+                </>
+            );
+        case "gitlab_mr_merged":
+            return (
+                <>
+                    merged merge request{" "}
+                    <strong>{String(changes.title ?? "")}</strong>
+                </>
+            );
+        case "gitlab_mr_closed":
+            return (
+                <>
+                    closed merge request{" "}
+                    <strong>{String(changes.title ?? "")}</strong>
+                </>
+            );
         default:
             return action;
     }
@@ -260,183 +385,280 @@ export default function ActivityFeed({
                 </Typography>
             )}
 
-            {/* Feed items */}
-            {feed.map((entry) => {
-                if (entry.type === "comment") {
-                    const comment = entry.item;
-                    const isOwn = comment.user_id === currentUserId;
-                    const isEditing = editingId === comment.id;
+            {/* Timeline container */}
+            {feed.length > 0 && (
+                <Box sx={{ position: "relative" }}>
+                    {/* Vertical timeline line */}
+                    <Box
+                        sx={{
+                            position: "absolute",
+                            left: TIMELINE_WIDTH / 2 - 1,
+                            top: 0,
+                            bottom: 0,
+                            width: 2,
+                            bgcolor: "divider",
+                        }}
+                    />
 
-                    return (
-                        <Box key={`comment-${comment.id}`} sx={{ mb: 2 }}>
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                                <Avatar
+                    {/* Feed items */}
+                    {feed.map((entry) => {
+                        if (entry.type === "comment") {
+                            const comment = entry.item;
+                            const isOwn = comment.user_id === currentUserId;
+                            const isEditing = editingId === comment.id;
+                            const wasEdited =
+                                comment.updated_at !== comment.created_at;
+
+                            return (
+                                <Box
+                                    key={`comment-${comment.id}`}
                                     sx={{
-                                        width: 28,
-                                        height: 28,
-                                        fontSize: "0.7rem",
+                                        display: "flex",
+                                        gap: 1.5,
+                                        mb: 2.5,
+                                        alignItems: "flex-start",
                                     }}
-                                    src={comment.user?.avatar_url}
                                 >
-                                    {comment.user?.name
-                                        ?.charAt(0)
-                                        .toUpperCase()}
-                                </Avatar>
-                                <Box sx={{ flex: 1 }}>
+                                    {/* Avatar on timeline */}
                                     <Box
                                         sx={{
+                                            width: TIMELINE_WIDTH,
+                                            flexShrink: 0,
                                             display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
+                                            justifyContent: "center",
                                         }}
                                     >
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight={600}
+                                        <Avatar
+                                            sx={{
+                                                width: 32,
+                                                height: 32,
+                                                fontSize: "0.8rem",
+                                                zIndex: 1,
+                                            }}
+                                            src={comment.user?.avatar_url}
                                         >
-                                            {comment.user?.name}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
+                                            {comment.user?.name
+                                                ?.charAt(0)
+                                                .toUpperCase()}
+                                        </Avatar>
+                                    </Box>
+
+                                    {/* Comment card */}
+                                    <Box
+                                        sx={{
+                                            flex: 1,
+                                            border: 1,
+                                            borderColor: "divider",
+                                            borderRadius: 1,
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        {/* Card header */}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                px: 2,
+                                                py: 1,
+                                                bgcolor: "action.hover",
+                                                borderBottom: 1,
+                                                borderColor: "divider",
+                                            }}
                                         >
-                                            {formatTimestamp(
-                                                comment.created_at,
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={600}
+                                            >
+                                                {comment.user?.name}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {formatTimestamp(
+                                                    comment.created_at,
+                                                )}
+                                            </Typography>
+                                            {wasEdited && (
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        fontStyle: "italic",
+                                                    }}
+                                                >
+                                                    (edited)
+                                                </Typography>
                                             )}
-                                        </Typography>
-                                        {isOwn && !isEditing && (
-                                            <>
-                                                <Tooltip title="Edit">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => {
-                                                            setEditingId(
-                                                                comment.id,
-                                                            );
-                                                            setEditBody(
-                                                                comment.body,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <EditIcon
-                                                            sx={{
-                                                                fontSize: 14,
+                                            <Box sx={{ flex: 1 }} />
+                                            {isOwn && !isEditing && (
+                                                <>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                setEditingId(
+                                                                    comment.id,
+                                                                );
+                                                                setEditBody(
+                                                                    comment.body,
+                                                                );
                                                             }}
-                                                        />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
+                                                        >
+                                                            <EditIcon
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                            />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() =>
+                                                                setDeleteCommentTarget(
+                                                                    comment.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <DeleteIcon
+                                                                sx={{
+                                                                    fontSize: 16,
+                                                                }}
+                                                            />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </>
+                                            )}
+                                        </Box>
+
+                                        {/* Card body */}
+                                        {isEditing ? (
+                                            <Box sx={{ p: 2 }}>
+                                                <RichTextEditor
+                                                    content={editBody}
+                                                    onChange={setEditBody}
+                                                    placeholder="Edit comment..."
+                                                    uploadImageUrl={
+                                                        uploadImageUrl
+                                                    }
+                                                    minHeight={100}
+                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        gap: 1,
+                                                        mt: 1,
+                                                    }}
+                                                >
+                                                    <Button
                                                         size="small"
+                                                        variant="contained"
                                                         onClick={() =>
-                                                            setDeleteCommentTarget(
+                                                            handleEditComment(
                                                                 comment.id,
                                                             )
                                                         }
                                                     >
-                                                        <DeleteIcon
-                                                            sx={{
-                                                                fontSize: 14,
-                                                            }}
-                                                        />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </>
+                                                        Save
+                                                    </Button>
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() =>
+                                                            setEditingId(null)
+                                                        }
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ p: 2 }}>
+                                                {isHtml(comment.body) ? (
+                                                    <RichTextDisplay
+                                                        content={comment.body}
+                                                    />
+                                                ) : (
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            whiteSpace:
+                                                                "pre-wrap",
+                                                        }}
+                                                    >
+                                                        {comment.body}
+                                                    </Typography>
+                                                )}
+                                            </Box>
                                         )}
                                     </Box>
-                                    {isEditing ? (
-                                        <Box sx={{ mt: 0.5 }}>
-                                            <RichTextEditor
-                                                content={editBody}
-                                                onChange={setEditBody}
-                                                placeholder="Edit comment..."
-                                                uploadImageUrl={uploadImageUrl}
-                                                minHeight={100}
-                                            />
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    gap: 1,
-                                                    mt: 1,
-                                                }}
-                                            >
-                                                <Button
-                                                    size="small"
-                                                    variant="contained"
-                                                    onClick={() =>
-                                                        handleEditComment(
-                                                            comment.id,
-                                                        )
-                                                    }
-                                                >
-                                                    Save
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    onClick={() =>
-                                                        setEditingId(null)
-                                                    }
-                                                >
-                                                    Cancel
-                                                </Button>
-                                            </Box>
-                                        </Box>
-                                    ) : (
-                                        <Box
-                                            sx={{
-                                                mt: 0.5,
-                                                p: 1.5,
-                                                bgcolor: "action.hover",
-                                                borderRadius: 1,
-                                            }}
-                                        >
-                                            {isHtml(comment.body) ? (
-                                                <RichTextDisplay
-                                                    content={comment.body}
-                                                />
-                                            ) : (
-                                                <Typography
-                                                    variant="body2"
-                                                    sx={{
-                                                        whiteSpace: "pre-wrap",
-                                                    }}
-                                                >
-                                                    {comment.body}
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    )}
                                 </Box>
-                            </Box>
-                        </Box>
-                    );
-                }
+                            );
+                        }
 
-                // Activity entry
-                const activity = entry.item;
-                return (
-                    <Box
-                        key={`activity-${activity.id}`}
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                            pl: 4.5,
-                        }}
-                    >
-                        <Typography variant="caption" color="text.secondary">
-                            <strong>{activity.user?.name ?? "System"}</strong>{" "}
-                            {activityDescription(
-                                activity.action,
-                                activity.changes ?? {},
-                            )}
-                            {" \u00b7 "}
-                            {formatTimestamp(activity.created_at)}
-                        </Typography>
-                    </Box>
-                );
-            })}
+                        // Activity entry
+                        const activity = entry.item;
+                        return (
+                            <Box
+                                key={`activity-${activity.id}`}
+                                sx={{
+                                    display: "flex",
+                                    gap: 1.5,
+                                    mb: 1.5,
+                                    alignItems: "center",
+                                    minHeight: 28,
+                                }}
+                            >
+                                {/* Timeline dot */}
+                                <Box
+                                    sx={{
+                                        width: TIMELINE_WIDTH,
+                                        flexShrink: 0,
+                                        display: "flex",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            width: 10,
+                                            height: 10,
+                                            borderRadius: "50%",
+                                            bgcolor: "text.disabled",
+                                            zIndex: 1,
+                                        }}
+                                    />
+                                </Box>
+
+                                {/* Activity text */}
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    component="div"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                        gap: 0.25,
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    <strong>
+                                        {activity.user?.name ?? "System"}
+                                    </strong>
+                                    {activityDescription(
+                                        activity.action,
+                                        activity.changes ?? {},
+                                    )}
+                                    <span style={{ marginLeft: 4 }}>
+                                        {formatTimestamp(activity.created_at)}
+                                    </span>
+                                </Typography>
+                            </Box>
+                        );
+                    })}
+                </Box>
+            )}
 
             {/* Delete comment confirmation dialog */}
             <Dialog
