@@ -5,6 +5,7 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import KeyIcon from "@mui/icons-material/Key";
 import LockIcon from "@mui/icons-material/Lock";
 import PeopleIcon from "@mui/icons-material/People";
+import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import List from "@mui/material/List";
@@ -41,6 +42,11 @@ const navSections: NavSection[] = [
                 label: "Teams",
                 icon: <GroupsIcon />,
                 route: "admin.teams.index",
+            },
+            {
+                label: "Boards",
+                icon: <ViewKanbanIcon />,
+                route: "admin.boards.index",
             },
         ],
     },

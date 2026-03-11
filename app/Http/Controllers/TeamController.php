@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Teams\CreateTeam;
+use App\Actions\Teams\DeleteTeam;
 use App\Actions\Teams\UpdateTeam;
+use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Team;
@@ -76,11 +78,11 @@ class TeamController extends Controller
     /**
      * Delete the specified team.
      */
-    public function destroy(Team $team): RedirectResponse
+    public function destroy(ConfirmDeleteRequest $request, Team $team): RedirectResponse
     {
         $this->authorize('delete', $team);
 
-        $team->delete();
+        DeleteTeam::run($team);
 
         return Redirect::route('teams.index');
     }

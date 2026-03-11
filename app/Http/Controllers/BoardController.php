@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Boards\ArchiveBoard;
 use App\Actions\Boards\CreateBoard;
+use App\Actions\Boards\DeleteBoard;
 use App\Actions\Boards\UpdateBoard;
+use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
@@ -116,6 +118,18 @@ class BoardController extends Controller
         UpdateBoard::run($board, $request->validated());
 
         return Redirect::route('teams.boards.show', [$team, $board]);
+    }
+
+    /**
+     * Delete the specified board permanently.
+     */
+    public function destroy(ConfirmDeleteRequest $request, Team $team, Board $board): RedirectResponse
+    {
+        $this->authorize('delete', $board);
+
+        DeleteBoard::run($board);
+
+        return Redirect::route('teams.show', $team);
     }
 
     /**

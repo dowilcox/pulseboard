@@ -1,5 +1,6 @@
 import AutomationRulesPanel from "@/Components/Automation/AutomationRulesPanel";
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
+import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PRIORITY_OPTIONS, PRIORITY_COLORS } from "@/constants/priorities";
@@ -11,6 +12,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import SaveIcon from "@mui/icons-material/Save";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -95,6 +97,18 @@ export default function BoardSettings({ board, team, members }: Props) {
         Record<string, string>
     >({});
     const [savingTaskTemplate, setSavingTaskTemplate] = useState(false);
+
+    // Delete board state
+    const [deleteBoardOpen, setDeleteBoardOpen] = useState(false);
+    const [deletingBoard, setDeletingBoard] = useState(false);
+
+    const handleDeleteBoard = () => {
+        setDeletingBoard(true);
+        router.delete(route("teams.boards.destroy", [team.id, board.id]), {
+            data: { confirmation: "DELETE" },
+            onFinish: () => setDeletingBoard(false),
+        });
+    };
 
     // Fetch task templates on mount
     useEffect(() => {
@@ -1100,7 +1114,58 @@ export default function BoardSettings({ board, team, members }: Props) {
                         </Button>
                     </CardContent>
                 </Card>
+
+                {/* Danger Zone */}
+                <Card variant="outlined" sx={{ borderColor: "error.main" }}>
+                    <CardContent>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                                mb: 1,
+                            }}
+                        >
+                            <WarningAmberIcon color="error" fontSize="small" />
+                            <Typography
+                                variant="subtitle1"
+                                fontWeight={600}
+                                color="error"
+                            >
+                                Danger Zone
+                            </Typography>
+                        </Box>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 2 }}
+                        >
+                            Permanently delete this board and all its columns,
+                            tasks, comments, and attachments. This action cannot
+                            be undone.
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => setDeleteBoardOpen(true)}
+                        >
+                            Delete Board
+                        </Button>
+                    </CardContent>
+                </Card>
             </Box>
+
+            {/* Delete Board Confirmation Dialog */}
+            <ConfirmDeleteDialog
+                open={deleteBoardOpen}
+                onClose={() => setDeleteBoardOpen(false)}
+                onConfirm={handleDeleteBoard}
+                title="Delete Board"
+                description="This will permanently delete this board and all its columns, tasks, comments, and attachments."
+                itemName={board.name}
+                processing={deletingBoard}
+            />
 
             <Snackbar
                 open={templateSnackbar.open}

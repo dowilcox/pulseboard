@@ -1,12 +1,15 @@
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
+import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
 import type { Board, PageProps, Team, UserWithTeamPivot } from "@/types";
+import DeleteIcon from "@mui/icons-material/Delete";
 import GroupsIcon from "@mui/icons-material/Groups";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
@@ -43,6 +46,8 @@ export default function Teams({ adminTeams: teams }: Props) {
     const [detailOpen, setDetailOpen] = useState(false);
     const [teamDetail, setTeamDetail] = useState<TeamDetail | null>(null);
     const [loading, setLoading] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const handleRowClick = async (team: TeamWithCounts) => {
         setDetailOpen(true);
@@ -58,6 +63,19 @@ export default function Teams({ adminTeams: teams }: Props) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleDeleteTeam = () => {
+        if (!teamDetail) return;
+        setDeleting(true);
+        router.delete(route("admin.teams.destroy", teamDetail.id), {
+            data: { confirmation: "DELETE" },
+            onSuccess: () => {
+                setDeleteOpen(false);
+                setDetailOpen(false);
+            },
+            onFinish: () => setDeleting(false),
+        });
     };
 
     return (
@@ -253,10 +271,33 @@ export default function Teams({ adminTeams: teams }: Props) {
                                     </Typography>
                                 )}
                             </List>
+
+                            <Divider sx={{ my: 2 }} />
+
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() => setDeleteOpen(true)}
+                                fullWidth
+                            >
+                                Delete Team
+                            </Button>
                         </Box>
                     ) : null}
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Team Confirmation Dialog */}
+            <ConfirmDeleteDialog
+                open={deleteOpen}
+                onClose={() => setDeleteOpen(false)}
+                onConfirm={handleDeleteTeam}
+                title="Delete Team"
+                description="This will permanently delete this team and all its boards, tasks, comments, attachments, and integrations."
+                itemName={teamDetail?.name ?? ""}
+                processing={deleting}
+            />
         </AuthenticatedLayout>
     );
 }

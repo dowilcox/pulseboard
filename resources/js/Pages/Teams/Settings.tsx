@@ -1,4 +1,5 @@
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
+import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import { LABEL_COLORS } from "@/constants/labelColors";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -11,6 +12,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import KeyIcon from "@mui/icons-material/Key";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -87,6 +89,13 @@ export default function TeamSettings({
     > | null>(null);
 
     const addMemberForm = useForm({ user_id: "", role: "member" as string });
+
+    // Delete team state
+    const [deleteTeamOpen, setDeleteTeamOpen] = useState(false);
+    const [deletingTeam, setDeletingTeam] = useState(false);
+
+    const isOwner =
+        members.find((m) => m.id === currentUserId)?.pivot.role === "owner";
 
     // Label handlers
     const handleAddLabel = (e: React.FormEvent) => {
@@ -193,6 +202,14 @@ export default function TeamSettings({
                 onSuccess: () => setRemoveMember(null),
             },
         );
+    };
+
+    const handleDeleteTeam = () => {
+        setDeletingTeam(true);
+        router.delete(route("teams.destroy", team.id), {
+            data: { confirmation: "DELETE" },
+            onFinish: () => setDeletingTeam(false),
+        });
     };
 
     return (
@@ -578,6 +595,51 @@ export default function TeamSettings({
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Danger Zone */}
+                {isOwner && (
+                    <Card variant="outlined" sx={{ borderColor: "error.main" }}>
+                        <CardContent>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mb: 1,
+                                }}
+                            >
+                                <WarningAmberIcon
+                                    color="error"
+                                    fontSize="small"
+                                />
+                                <Typography
+                                    variant="subtitle1"
+                                    fontWeight={600}
+                                    color="error"
+                                >
+                                    Danger Zone
+                                </Typography>
+                            </Box>
+                            <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mb: 2 }}
+                            >
+                                Permanently delete this team and all its boards,
+                                tasks, comments, and attachments. This action
+                                cannot be undone.
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={() => setDeleteTeamOpen(true)}
+                            >
+                                Delete Team
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
             </Box>
 
             {/* Add Member Dialog */}
@@ -848,6 +910,17 @@ export default function TeamSettings({
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Delete Team Confirmation Dialog */}
+            <ConfirmDeleteDialog
+                open={deleteTeamOpen}
+                onClose={() => setDeleteTeamOpen(false)}
+                onConfirm={handleDeleteTeam}
+                title="Delete Team"
+                description="This will permanently delete this team and all its boards, tasks, comments, attachments, and integrations."
+                itemName={team.name}
+                processing={deletingTeam}
+            />
         </AuthenticatedLayout>
     );
 }

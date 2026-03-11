@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Teams\DeleteTeam;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmDeleteRequest;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,5 +33,13 @@ class TeamController extends Controller
         ]);
 
         return response()->json($team);
+    }
+
+    public function destroy(ConfirmDeleteRequest $request, Team $team): RedirectResponse
+    {
+        DeleteTeam::run($team);
+
+        return Redirect::route('admin.teams.index')
+            ->with('success', "Team \"{$team->name}\" has been deleted.");
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ApiTokenController;
+use App\Http\Controllers\Admin\BoardController as AdminBoardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\SsoConfigurationController;
 use App\Http\Controllers\Admin\TeamController as AdminTeamController;
@@ -140,6 +141,19 @@ Route::middleware('auth')->group(function () {
                 AdminTeamController::class,
                 'show',
             ])->name('teams.show');
+            Route::delete('/teams/{team}', [
+                AdminTeamController::class,
+                'destroy',
+            ])->name('teams.destroy');
+
+            // Boards
+            Route::get('/boards', [AdminBoardController::class, 'index'])->name(
+                'boards.index',
+            );
+            Route::delete('/boards/{board}', [
+                AdminBoardController::class,
+                'destroy',
+            ])->name('boards.destroy');
 
             // SSO Configuration
             Route::get('/sso', [
@@ -251,6 +265,10 @@ Route::middleware('auth')->group(function () {
             BoardController::class,
             'archive',
         ])->name('teams.boards.archive');
+        Route::delete('/teams/{team}/boards/{board}', [
+            BoardController::class,
+            'destroy',
+        ])->name('teams.boards.destroy');
         Route::get('/teams/{team}/boards/{board}/settings', [
             BoardController::class,
             'settings',
