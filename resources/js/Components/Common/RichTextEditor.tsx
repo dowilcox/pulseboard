@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
+import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -60,6 +61,37 @@ function createTurndownService(): TurndownService {
     return td;
 }
 
+/**
+ * Custom paragraph extension that serializes empty paragraphs as <br> in
+ * markdown so blank lines survive the save/reload roundtrip.  The default
+ * prosemirror-markdown paragraph serializer silently discards them.
+ */
+const MarkdownParagraph = Paragraph.extend({
+    addStorage() {
+        return {
+            markdown: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                serialize(state: any, node: any) {
+                    const isEmpty =
+                        node.childCount === 0 ||
+                        (node.childCount === 1 &&
+                            node.firstChild?.type.name === "hardBreak");
+                    if (isEmpty) {
+                        state.write("<br>");
+                        state.closeBlock(node);
+                    } else {
+                        state.renderInline(node);
+                        state.closeBlock(node);
+                    }
+                },
+                parse: {
+                    // handled by markdown-it
+                },
+            },
+        };
+    },
+});
+
 interface RichTextEditorProps {
     content: string;
     onChange: (markdown: string) => void;
@@ -90,9 +122,11 @@ export default function RichTextEditor({
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
+                paragraph: false,
                 codeBlock: false,
                 link: { openOnClick: false },
             }),
+            MarkdownParagraph,
             Image,
             Placeholder.configure({ placeholder }),
             TaskList,
