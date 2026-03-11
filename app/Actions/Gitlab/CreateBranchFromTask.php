@@ -4,7 +4,7 @@ namespace App\Actions\Gitlab;
 
 use App\Models\GitlabProject;
 use App\Models\Task;
-use App\Models\TaskGitlabLink;
+use App\Models\TaskGitlabRef;
 use App\Services\ActivityLogger;
 use App\Services\GitlabApiService;
 use Illuminate\Support\Str;
@@ -14,7 +14,7 @@ class CreateBranchFromTask
 {
     use AsAction;
 
-    public function handle(Task $task, GitlabProject $gitlabProject): TaskGitlabLink
+    public function handle(Task $task, GitlabProject $gitlabProject): TaskGitlabRef
     {
         $branchName = $this->generateBranchName($task);
         $api = GitlabApiService::for($gitlabProject->connection);
@@ -25,10 +25,9 @@ class CreateBranchFromTask
             $gitlabProject->default_branch,
         );
 
-        $link = TaskGitlabLink::create([
+        $ref = TaskGitlabRef::create([
             'task_id' => $task->id,
-            'gitlab_project_id' => $gitlabProject->id,
-            'link_type' => 'branch',
+            'ref_type' => 'branch',
             'gitlab_ref' => $branchName,
             'title' => $branchName,
             'url' => $gitlabProject->web_url.'/-/tree/'.$branchName,
@@ -40,7 +39,7 @@ class CreateBranchFromTask
             'project' => $gitlabProject->path_with_namespace,
         ], auth()->user());
 
-        return $link;
+        return $ref;
     }
 
     protected function generateBranchName(Task $task): string

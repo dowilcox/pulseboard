@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DashboardController extends Controller
 {
@@ -20,7 +21,7 @@ class DashboardController extends Controller
         $myTasks = Task::whereHas('assignees', function ($q) use ($user) {
             $q->where('users.id', $user->id);
         })
-            ->with(['board.team', 'column', 'assignees', 'labels'])
+            ->with(['board.team', 'column', 'assignees', 'labels', 'gitlabProject'])
             ->withCount(['comments', 'subtasks'])
             ->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END")
             ->orderBy('due_date')
@@ -104,7 +105,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function exportCsv(Request $request, Team $team): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function exportCsv(Request $request, Team $team): StreamedResponse
     {
         $this->authorize('view', $team);
 

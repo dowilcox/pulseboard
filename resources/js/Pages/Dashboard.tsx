@@ -3,6 +3,7 @@ import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, router } from "@inertiajs/react";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -254,6 +255,16 @@ export default function Dashboard({ myTasks }: Props) {
                                                     : "none",
                                             }}
                                         >
+                                            {getGitlabPrefix(task) && (
+                                                <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ mr: 0.5 }}
+                                                >
+                                                    {getGitlabPrefix(task)}
+                                                </Typography>
+                                            )}
                                             {task.title}
                                         </Typography>
                                     </TableCell>

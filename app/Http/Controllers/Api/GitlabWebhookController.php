@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Gitlab\AutoLinkTask;
 use App\Actions\Gitlab\HandleMergeRequestWebhook;
 use App\Actions\Gitlab\HandlePipelineWebhook;
 use App\Http\Controllers\Controller;
@@ -55,10 +56,10 @@ class GitlabWebhookController extends Controller
         }
 
         // Auto-link based on branch name pattern
-        \App\Actions\Gitlab\AutoLinkTask::run(
+        AutoLinkTask::run(
             gitlabProject: $gitlabProject,
             text: $branchName,
-            linkType: 'branch',
+            refType: 'branch',
             gitlabRef: $branchName,
             title: $branchName,
             url: $gitlabProject->web_url.'/-/tree/'.$branchName,

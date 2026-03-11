@@ -1,30 +1,25 @@
 import { useState } from "react";
-import type { GitlabProject, Task, TaskGitlabLink } from "@/types";
+import type { GitlabProject, Task, TaskGitlabRef } from "@/types";
 import { router } from "@inertiajs/react";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import AddIcon from "@mui/icons-material/Add";
+import ClearIcon from "@mui/icons-material/Clear";
 import DeleteIcon from "@mui/icons-material/Delete";
 import MergeTypeIcon from "@mui/icons-material/MergeType";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Alert from "@mui/material/Alert";
+import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
-import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
-import InputLabel from "@mui/material/InputLabel";
 import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import PipelineBadge from "./PipelineBadge";
@@ -34,8 +29,9 @@ interface Props {
     teamId: string;
     boardId: string;
     gitlabProjects: GitlabProject[];
-    onLinkCreated?: (link: TaskGitlabLink) => void;
-    onLinkRemoved?: (linkId: string) => void;
+    onProjectChanged?: (project: GitlabProject | null) => void;
+    onRefCreated?: (ref: TaskGitlabRef) => void;
+    onRefRemoved?: (refId: string) => void;
 }
 
 export default function GitlabSection({
@@ -43,29 +39,71 @@ export default function GitlabSection({
     teamId,
     boardId,
     gitlabProjects,
-    onLinkCreated,
-    onLinkRemoved,
+    onProjectChanged,
+    onRefCreated,
+    onRefRemoved,
 }: Props) {
-    const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [createType, setCreateType] = useState<"branch" | "merge_request">(
-        "branch",
-    );
-    const [selectedProjectId, setSelectedProjectId] = useState<string>(
-        gitlabProjects[0]?.id ?? "",
-    );
+    const [settingProject, setSettingProject] = useState(false);
     const [creating, setCreating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const links = task.gitlab_links ?? [];
-    const branches = links.filter((l) => l.link_type === "branch");
-    const mergeRequests = links.filter((l) => l.link_type === "merge_request");
+    const refs = task.gitlab_refs ?? [];
+    const branches = refs.filter((r) => r.ref_type === "branch");
+    const mergeRequests = refs.filter((r) => r.ref_type === "merge_request");
 
-    const handleCreate = async () => {
+    const selectedProject =
+        task.gitlab_project ??
+        gitlabProjects.find((p) => p.id === task.gitlab_project_id) ??
+        null;
+
+    const handleSetProject = async (project: GitlabProject | null) => {
+        setSettingProject(true);
+        setError(null);
+
+        try {
+            const response = await fetch(
+                route("tasks.gitlab.set-project", [teamId, boardId, task.id]),
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-TOKEN":
+                            document.querySelector<HTMLMetaElement>(
+                                'meta[name="csrf-token"]',
+                            )?.content ?? "",
+                        Accept: "application/json",
+                    },
+                    body: JSON.stringify({
+                        gitlab_project_id: project?.id ?? null,
+                    }),
+                },
+            );
+
+            if (response.ok) {
+                if (onProjectChanged) {
+                    onProjectChanged(project);
+                } else {
+                    router.reload();
+                }
+            } else {
+                const data = await response.json();
+                setError(data.message ?? "Failed to set project");
+            }
+        } catch {
+            setError("Network error");
+        } finally {
+            setSettingProject(false);
+        }
+    };
+
+    const handleCreate = async (type: "branch" | "merge_request") => {
+        if (!selectedProject) return;
+
         setCreating(true);
         setError(null);
 
         const routeName =
-            createType === "branch"
+            type === "branch"
                 ? "tasks.gitlab.branch"
                 : "tasks.gitlab.merge-request";
 
@@ -82,20 +120,17 @@ export default function GitlabSection({
                             )?.content ?? "",
                         Accept: "application/json",
                     },
-                    body: JSON.stringify({
-                        gitlab_project_id: selectedProjectId,
-                    }),
+                    body: JSON.stringify({}),
                 },
             );
 
             if (response.ok) {
-                const link = await response.json();
-                if (onLinkCreated) {
-                    onLinkCreated(link);
+                const ref = await response.json();
+                if (onRefCreated) {
+                    onRefCreated(ref);
                 } else {
                     router.reload();
                 }
-                setCreateDialogOpen(false);
             } else {
                 const data = await response.json();
                 setError(data.error ?? "Failed to create");
@@ -107,14 +142,14 @@ export default function GitlabSection({
         }
     };
 
-    const handleRemoveLink = async (linkId: string) => {
+    const handleRemoveRef = async (refId: string) => {
         try {
             const response = await fetch(
                 route("tasks.gitlab.destroy", [
                     teamId,
                     boardId,
                     task.id,
-                    linkId,
+                    refId,
                 ]),
                 {
                     method: "DELETE",
@@ -128,8 +163,8 @@ export default function GitlabSection({
                 },
             );
             if (response.ok) {
-                if (onLinkRemoved) {
-                    onLinkRemoved(linkId);
+                if (onRefRemoved) {
+                    onRefRemoved(refId);
                 } else {
                     router.reload();
                 }
@@ -143,246 +178,307 @@ export default function GitlabSection({
 
     return (
         <Box>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    mb: 1,
-                }}
-            >
-                <Typography variant="subtitle2" fontWeight={600}>
-                    GitLab
-                </Typography>
-                <Button
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={() => setCreateDialogOpen(true)}
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                GitLab
+            </Typography>
+
+            {error && (
+                <Alert
+                    severity="error"
+                    sx={{ mb: 1 }}
+                    onClose={() => setError(null)}
                 >
-                    Link
-                </Button>
-            </Box>
-
-            {links.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                    No GitLab links yet
-                </Typography>
-            ) : (
-                <List dense disablePadding>
-                    {mergeRequests.map((link) => (
-                        <ListItem
-                            key={link.id}
-                            disableGutters
-                            secondaryAction={
-                                <Tooltip title="Remove link">
-                                    <IconButton
-                                        edge="end"
-                                        size="small"
-                                        onClick={() =>
-                                            handleRemoveLink(link.id)
-                                        }
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
-                            }
-                        >
-                            <ListItemIcon sx={{ minWidth: 32 }}>
-                                <MergeTypeIcon fontSize="small" color="info" />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Link
-                                            href={link.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            variant="body2"
-                                            underline="hover"
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.5,
-                                            }}
-                                        >
-                                            !{link.gitlab_iid} {link.title}
-                                            <OpenInNewIcon
-                                                sx={{ fontSize: 14 }}
-                                            />
-                                        </Link>
-                                        <PipelineBadge
-                                            status={link.pipeline_status}
-                                        />
-                                    </Box>
-                                }
-                                secondary={
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                    >
-                                        {link.state} · {link.author}
-                                    </Typography>
-                                }
-                            />
-                        </ListItem>
-                    ))}
-
-                    {branches.length > 0 && mergeRequests.length > 0 && (
-                        <Divider sx={{ my: 0.5 }} />
-                    )}
-
-                    {branches.map((link) => (
-                        <ListItem
-                            key={link.id}
-                            disableGutters
-                            secondaryAction={
-                                <Tooltip title="Remove link">
-                                    <IconButton
-                                        edge="end"
-                                        size="small"
-                                        onClick={() =>
-                                            handleRemoveLink(link.id)
-                                        }
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                </Tooltip>
-                            }
-                        >
-                            <ListItemIcon sx={{ minWidth: 32 }}>
-                                <AccountTreeIcon
-                                    fontSize="small"
-                                    color="action"
-                                />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={
-                                    <Link
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="body2"
-                                        underline="hover"
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 0.5,
-                                        }}
-                                    >
-                                        {link.gitlab_ref}
-                                        <OpenInNewIcon sx={{ fontSize: 14 }} />
-                                    </Link>
-                                }
-                            />
-                        </ListItem>
-                    ))}
-                </List>
+                    {error}
+                </Alert>
             )}
 
-            {/* Create Dialog */}
-            <Dialog
-                open={createDialogOpen}
-                onClose={() => setCreateDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                aria-labelledby="create-gitlab-link-dialog-title"
-            >
-                <DialogTitle id="create-gitlab-link-dialog-title">
-                    Create GitLab{" "}
-                    {createType === "branch" ? "Branch" : "Merge Request"}
-                </DialogTitle>
-                <DialogContent>
+            {/* Project Selector */}
+            <Box sx={{ mb: 1.5 }}>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    fontWeight={600}
+                >
+                    Project
+                </Typography>
+                <Autocomplete
+                    size="small"
+                    options={gitlabProjects}
+                    value={selectedProject}
+                    onChange={(_e, newValue) => handleSetProject(newValue)}
+                    getOptionLabel={(option) => option.path_with_namespace}
+                    isOptionEqualToValue={(option, value) =>
+                        option.id === value.id
+                    }
+                    loading={settingProject}
+                    clearIcon={<ClearIcon fontSize="small" />}
+                    renderOption={(props, option) => (
+                        <li {...props} key={option.id}>
+                            <Box>
+                                <Typography variant="body2">
+                                    {option.name}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                >
+                                    {option.path_with_namespace}
+                                </Typography>
+                            </Box>
+                        </li>
+                    )}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            placeholder="Select a project..."
+                            slotProps={{
+                                input: {
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {settingProject && (
+                                                <CircularProgress
+                                                    size={16}
+                                                    sx={{ mr: 1 }}
+                                                />
+                                            )}
+                                            {params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                },
+                            }}
+                        />
+                    )}
+                />
+            </Box>
+
+            {/* Project Info & Actions (shown when a project is selected) */}
+            {selectedProject && (
+                <>
+                    {/* Project Info */}
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            mb: 1.5,
+                            borderRadius: 1,
+                            bgcolor: "action.hover",
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 0.5,
+                            }}
+                        >
+                            <Link
+                                href={selectedProject.web_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="body2"
+                                fontWeight={600}
+                                underline="hover"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                }}
+                            >
+                                {selectedProject.name}
+                                <OpenInNewIcon sx={{ fontSize: 14 }} />
+                            </Link>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                            {selectedProject.path_with_namespace}
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                mt: 0.5,
+                            }}
+                        >
+                            <Chip
+                                label={selectedProject.default_branch}
+                                size="small"
+                                icon={<AccountTreeIcon sx={{ fontSize: 14 }} />}
+                                variant="outlined"
+                                sx={{ height: 22, fontSize: "0.7rem" }}
+                            />
+                        </Box>
+                    </Box>
+
+                    {/* Action Buttons */}
                     <Box
                         sx={{
                             display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            mt: 1,
+                            gap: 1,
+                            mb: 1.5,
                         }}
                     >
-                        {error && <Alert severity="error">{error}</Alert>}
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={
+                                creating ? (
+                                    <CircularProgress size={14} />
+                                ) : (
+                                    <AccountTreeIcon sx={{ fontSize: 16 }} />
+                                )
+                            }
+                            onClick={() => handleCreate("branch")}
+                            disabled={creating}
+                            sx={{ flex: 1, textTransform: "none" }}
+                        >
+                            Create Branch
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={
+                                creating ? (
+                                    <CircularProgress size={14} />
+                                ) : (
+                                    <MergeTypeIcon sx={{ fontSize: 16 }} />
+                                )
+                            }
+                            onClick={() => handleCreate("merge_request")}
+                            disabled={creating}
+                            sx={{ flex: 1, textTransform: "none" }}
+                        >
+                            Create MR
+                        </Button>
+                    </Box>
 
-                        <FormControl fullWidth>
-                            <InputLabel>Type</InputLabel>
-                            <Select
-                                value={createType}
-                                label="Type"
-                                onChange={(e) =>
-                                    setCreateType(
-                                        e.target.value as
-                                            | "branch"
-                                            | "merge_request",
-                                    )
-                                }
-                            >
-                                <MenuItem value="branch">Branch</MenuItem>
-                                <MenuItem value="merge_request">
-                                    Merge Request
-                                </MenuItem>
-                            </Select>
-                        </FormControl>
-
-                        {gitlabProjects.length > 1 && (
-                            <FormControl fullWidth>
-                                <InputLabel>Project</InputLabel>
-                                <Select
-                                    value={selectedProjectId}
-                                    label="Project"
-                                    onChange={(e) =>
-                                        setSelectedProjectId(e.target.value)
+                    {/* Existing Refs */}
+                    {refs.length > 0 && (
+                        <List dense disablePadding>
+                            {mergeRequests.map((ref) => (
+                                <ListItem
+                                    key={ref.id}
+                                    disableGutters
+                                    secondaryAction={
+                                        <Tooltip title="Remove">
+                                            <IconButton
+                                                edge="end"
+                                                size="small"
+                                                onClick={() =>
+                                                    handleRemoveRef(ref.id)
+                                                }
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
                                     }
                                 >
-                                    {gitlabProjects.map((project) => (
-                                        <MenuItem
-                                            key={project.id}
-                                            value={project.id}
-                                        >
-                                            {project.path_with_namespace}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        )}
+                                    <ListItemIcon sx={{ minWidth: 32 }}>
+                                        <MergeTypeIcon
+                                            fontSize="small"
+                                            color="info"
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={
+                                            <Box
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 1,
+                                                }}
+                                            >
+                                                <Link
+                                                    href={ref.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    variant="body2"
+                                                    underline="hover"
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 0.5,
+                                                    }}
+                                                >
+                                                    !{ref.gitlab_iid}{" "}
+                                                    {ref.title}
+                                                    <OpenInNewIcon
+                                                        sx={{ fontSize: 14 }}
+                                                    />
+                                                </Link>
+                                                <PipelineBadge
+                                                    status={ref.pipeline_status}
+                                                />
+                                            </Box>
+                                        }
+                                        secondary={
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {ref.state} · {ref.author}
+                                            </Typography>
+                                        }
+                                    />
+                                </ListItem>
+                            ))}
 
-                        {createType === "branch" && (
-                            <Typography variant="body2" color="text.secondary">
-                                Branch name: pb-{task.task_number}-...
-                            </Typography>
-                        )}
+                            {branches.length > 0 &&
+                                mergeRequests.length > 0 && (
+                                    <Divider sx={{ my: 0.5 }} />
+                                )}
 
-                        {createType === "merge_request" && (
-                            <Typography variant="body2" color="text.secondary">
-                                {branches.length > 0
-                                    ? `Will use existing branch: ${branches[0].gitlab_ref}`
-                                    : "A new branch will be created automatically"}
-                            </Typography>
-                        )}
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setCreateDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCreate}
-                        disabled={creating || !selectedProjectId}
-                        startIcon={
-                            creating ? (
-                                <CircularProgress size={16} />
-                            ) : undefined
-                        }
-                    >
-                        Create
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                            {branches.map((ref) => (
+                                <ListItem
+                                    key={ref.id}
+                                    disableGutters
+                                    secondaryAction={
+                                        <Tooltip title="Remove">
+                                            <IconButton
+                                                edge="end"
+                                                size="small"
+                                                onClick={() =>
+                                                    handleRemoveRef(ref.id)
+                                                }
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    }
+                                >
+                                    <ListItemIcon sx={{ minWidth: 32 }}>
+                                        <AccountTreeIcon
+                                            fontSize="small"
+                                            color="action"
+                                        />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={
+                                            <Link
+                                                href={ref.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                variant="body2"
+                                                underline="hover"
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                }}
+                                            >
+                                                {ref.gitlab_ref}
+                                                <OpenInNewIcon
+                                                    sx={{ fontSize: 14 }}
+                                                />
+                                            </Link>
+                                        }
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
+                </>
+            )}
         </Box>
     );
 }

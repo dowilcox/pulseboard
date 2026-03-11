@@ -23,7 +23,9 @@ import type {
     Team,
     User,
 } from "@/types";
+import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
@@ -160,23 +162,7 @@ export default function TasksShow({
         task.completed_at !== null && task.completed_at !== undefined;
     const taskNumber = task.task_number ? `#${task.task_number}` : "";
 
-    // Extract unique GitLab projects linked to this task
-    const linkedGitlabProjects = (task.gitlab_links ?? []).reduce(
-        (acc, link) => {
-            if (
-                link.gitlab_project &&
-                !acc.some((p) => p.id === link.gitlab_project!.id)
-            ) {
-                acc.push(link.gitlab_project);
-            }
-            return acc;
-        },
-        [] as GitlabProject[],
-    );
-    const gitlabPrefix =
-        linkedGitlabProjects.length > 0
-            ? `[${linkedGitlabProjects.map((p) => p.path_with_namespace).join(", ")}]`
-            : "";
+    const gitlabPrefix = getGitlabPrefix(task);
 
     return (
         <AuthenticatedLayout
@@ -250,30 +236,25 @@ export default function TasksShow({
                             aria-label="Task title"
                         />
 
-                        {/* GitLab project links */}
-                        {linkedGitlabProjects.length > 0 && (
-                            <Box
+                        {/* GitLab project link */}
+                        {task.gitlab_project && (
+                            <Link
+                                href={task.gitlab_project.web_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="caption"
+                                underline="hover"
+                                color="text.secondary"
                                 sx={{
                                     display: "flex",
-                                    flexWrap: "wrap",
+                                    alignItems: "center",
                                     gap: 0.5,
-                                    mt: 0.5,
+                                    mt: 0.25,
                                 }}
                             >
-                                {linkedGitlabProjects.map((project) => (
-                                    <Link
-                                        key={project.id}
-                                        href={project.web_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="body2"
-                                        underline="hover"
-                                        color="text.secondary"
-                                    >
-                                        {project.path_with_namespace}
-                                    </Link>
-                                ))}
-                            </Box>
+                                {task.gitlab_project.path_with_namespace}
+                                <OpenInNewIcon sx={{ fontSize: 12 }} />
+                            </Link>
                         )}
 
                         {/* Parent task breadcrumb */}

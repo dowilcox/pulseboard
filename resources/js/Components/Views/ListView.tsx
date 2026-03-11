@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
@@ -337,6 +338,16 @@ export default function ListView({
                                             variant="body2"
                                             fontWeight={500}
                                         >
+                                            {getGitlabPrefix(task) && (
+                                                <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ mr: 0.5 }}
+                                                >
+                                                    {getGitlabPrefix(task)}
+                                                </Typography>
+                                            )}
                                             {task.title}
                                         </Typography>
                                     </TableCell>
@@ -483,16 +494,16 @@ export default function ListView({
                                                     flexWrap: "wrap",
                                                 }}
                                             >
-                                                {(task.gitlab_links ?? [])
+                                                {(task.gitlab_refs ?? [])
                                                     .filter(
-                                                        (l) =>
-                                                            l.link_type ===
+                                                        (r) =>
+                                                            r.ref_type ===
                                                             "merge_request",
                                                     )
-                                                    .map((link) => (
+                                                    .map((ref) => (
                                                         <MergeRequestChip
-                                                            key={link.id}
-                                                            link={link}
+                                                            key={ref.id}
+                                                            gitlabRef={ref}
                                                         />
                                                     ))}
                                             </Box>

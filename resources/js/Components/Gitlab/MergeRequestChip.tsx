@@ -1,9 +1,9 @@
 import Chip from "@mui/material/Chip";
 import MergeIcon from "@mui/icons-material/MergeType";
-import type { TaskGitlabLink } from "@/types";
+import type { TaskGitlabRef } from "@/types";
 
 interface Props {
-    link: TaskGitlabLink;
+    gitlabRef: TaskGitlabRef;
 }
 
 const stateColors: Record<string, "success" | "error" | "info" | "default"> = {
@@ -12,18 +12,18 @@ const stateColors: Record<string, "success" | "error" | "info" | "default"> = {
     closed: "error",
 };
 
-export default function MergeRequestChip({ link }: Props) {
-    const color = stateColors[link.state ?? ""] ?? "default";
+export default function MergeRequestChip({ gitlabRef }: Props) {
+    const color = stateColors[gitlabRef.state ?? ""] ?? "default";
 
     return (
         <Chip
             icon={<MergeIcon />}
-            label={`!${link.gitlab_iid}`}
+            label={`!${gitlabRef.gitlab_iid}`}
             color={color}
             size="small"
             variant="outlined"
             component="a"
-            href={link.url}
+            href={gitlabRef.url}
             target="_blank"
             rel="noopener noreferrer"
             clickable

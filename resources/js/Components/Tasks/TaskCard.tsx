@@ -1,6 +1,7 @@
 import { PRIORITY_COLORS } from "@/constants/priorities";
-import type { GitlabProject, Task } from "@/types";
+import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -27,19 +28,7 @@ export default function TaskCard({ task, onClick }: Props) {
     const isBlocked = (task.blocked_by ?? []).length > 0;
     const checklistProgress = task.checklist_progress;
 
-    const gitlabPrefix = (task.gitlab_links ?? []).reduce((acc, link) => {
-        if (
-            link.gitlab_project &&
-            !acc.some((p) => p.id === link.gitlab_project!.id)
-        ) {
-            acc.push(link.gitlab_project);
-        }
-        return acc;
-    }, [] as GitlabProject[]);
-    const gitlabPrefixLabel =
-        gitlabPrefix.length > 0
-            ? `[${gitlabPrefix.map((p) => p.path_with_namespace).join(", ")}]`
-            : "";
+    const gitlabPrefixLabel = getGitlabPrefix(task);
 
     return (
         <Paper
@@ -148,17 +137,20 @@ export default function TaskCard({ task, onClick }: Props) {
             </Box>
 
             {/* GitLab MR badges */}
-            {task.gitlab_links &&
-                task.gitlab_links.filter((l) => l.link_type === "merge_request")
+            {task.gitlab_refs &&
+                task.gitlab_refs.filter((r) => r.ref_type === "merge_request")
                     .length > 0 && (
                     <Box
                         sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {task.gitlab_links
-                            .filter((l) => l.link_type === "merge_request")
-                            .map((link) => (
-                                <MergeRequestChip key={link.id} link={link} />
+                        {task.gitlab_refs
+                            .filter((r) => r.ref_type === "merge_request")
+                            .map((ref) => (
+                                <MergeRequestChip
+                                    key={ref.id}
+                                    gitlabRef={ref}
+                                />
                             ))}
                     </Box>
                 )}

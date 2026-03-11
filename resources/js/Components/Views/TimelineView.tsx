@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Column, Task } from "@/types";
+import { getGitlabPrefix, getPrefixedTitle } from "@/utils/gitlabPrefix";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
@@ -229,7 +230,7 @@ export default function TimelineView({
                                         }}
                                         role="button"
                                         tabIndex={0}
-                                        aria-label={`Open task ${task.task_number ? `#${task.task_number} ` : ""}${task.title}`}
+                                        aria-label={`Open task ${task.task_number ? `#${task.task_number} ` : ""}${getPrefixedTitle(task)}`}
                                         onClick={() => onTaskClick(task)}
                                         onKeyDown={(e) => {
                                             if (
@@ -242,6 +243,16 @@ export default function TimelineView({
                                         }}
                                     >
                                         <Typography variant="caption" noWrap>
+                                            {getGitlabPrefix(task) && (
+                                                <Typography
+                                                    component="span"
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{ mr: 0.25 }}
+                                                >
+                                                    {getGitlabPrefix(task)}
+                                                </Typography>
+                                            )}
                                             {task.task_number
                                                 ? `#${task.task_number} `
                                                 : ""}
@@ -256,12 +267,12 @@ export default function TimelineView({
                                         }}
                                     >
                                         <Tooltip
-                                            title={`${task.title} (${taskStart} - ${taskEnd})`}
+                                            title={`${getPrefixedTitle(task)} (${taskStart} - ${taskEnd})`}
                                         >
                                             <Box
                                                 role="button"
                                                 tabIndex={0}
-                                                aria-label={`Timeline bar for ${task.task_number ? `#${task.task_number} ` : ""}${task.title}, ${taskStart} to ${taskEnd}`}
+                                                aria-label={`Timeline bar for ${task.task_number ? `#${task.task_number} ` : ""}${getPrefixedTitle(task)}, ${taskStart} to ${taskEnd}`}
                                                 onClick={() =>
                                                     onTaskClick(task)
                                                 }
@@ -302,7 +313,7 @@ export default function TimelineView({
                                                         whiteSpace: "nowrap",
                                                     }}
                                                 >
-                                                    {task.title}
+                                                    {getPrefixedTitle(task)}
                                                 </Typography>
                                             </Box>
                                         </Tooltip>

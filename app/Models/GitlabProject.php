@@ -37,8 +37,8 @@ class GitlabProject extends Model
         return $this->belongsTo(Team::class);
     }
 
-    public function taskGitlabLinks(): HasMany
+    public function taskGitlabRefs(): HasMany
     {
-        return $this->hasMany(TaskGitlabLink::class);
+        return $this->hasMany(TaskGitlabRef::class);
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TaskGitlabLink extends Model
+class TaskGitlabRef extends Model
 {
     use HasFactory, HasUuids;
 
@@ -29,10 +29,5 @@ class TaskGitlabLink extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
-    }
-
-    public function gitlabProject(): BelongsTo
-    {
-        return $this->belongsTo(GitlabProject::class);
     }
 }

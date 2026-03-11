@@ -345,6 +345,10 @@ Route::middleware('auth')->group(function () {
         )->name('tasks.from-template');
 
         // Task GitLab
+        Route::put('/teams/{team}/boards/{board}/tasks/{task}/gitlab/project', [
+            TaskGitlabController::class,
+            'setProject',
+        ])->name('tasks.gitlab.set-project');
         Route::get('/teams/{team}/boards/{board}/tasks/{task}/gitlab', [
             TaskGitlabController::class,
             'index',
@@ -358,7 +362,7 @@ Route::middleware('auth')->group(function () {
             [TaskGitlabController::class, 'createMergeRequest'],
         )->name('tasks.gitlab.merge-request');
         Route::delete(
-            '/teams/{team}/boards/{board}/tasks/{task}/gitlab/{link}',
+            '/teams/{team}/boards/{board}/tasks/{task}/gitlab/{ref}',
             [TaskGitlabController::class, 'destroy'],
         )->name('tasks.gitlab.destroy');
 

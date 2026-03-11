@@ -4,7 +4,7 @@ namespace App\Actions\Gitlab;
 
 use App\Events\BoardChanged;
 use App\Models\GitlabProject;
-use App\Models\TaskGitlabLink;
+use App\Models\TaskGitlabRef;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class HandleMergeRequestWebhook
@@ -33,7 +33,7 @@ class HandleMergeRequestWebhook
         AutoLinkTask::run(
             gitlabProject: $gitlabProject,
             text: $searchText,
-            linkType: 'merge_request',
+            refType: 'merge_request',
             gitlabIid: $iid,
             gitlabRef: $sourceBranch,
             title: $title,
@@ -46,19 +46,21 @@ class HandleMergeRequestWebhook
             ],
         );
 
-        // Update existing links for this MR
-        $existingLinks = TaskGitlabLink::where('gitlab_project_id', $gitlabProject->id)
-            ->where('link_type', 'merge_request')
+        // Update existing refs for this MR
+        $existingRefs = TaskGitlabRef::whereHas('task', function ($q) use ($gitlabProject) {
+            $q->where('gitlab_project_id', $gitlabProject->id);
+        })
+            ->where('ref_type', 'merge_request')
             ->where('gitlab_iid', $iid)
             ->get();
 
-        foreach ($existingLinks as $link) {
-            $link->update([
+        foreach ($existingRefs as $ref) {
+            $ref->update([
                 'title' => $title,
                 'state' => $state,
                 'url' => $url,
                 'author' => $authorName,
-                'meta' => array_merge($link->meta ?? [], [
+                'meta' => array_merge($ref->meta ?? [], [
                     'source_branch' => $sourceBranch,
                     'target_branch' => $mrData['target_branch'] ?? '',
                 ]),
@@ -73,10 +75,10 @@ class HandleMergeRequestWebhook
             };
 
             broadcast(new BoardChanged(
-                boardId: $link->task->board_id,
+                boardId: $ref->task->board_id,
                 action: $action,
                 data: [
-                    'task_id' => $link->task_id,
+                    'task_id' => $ref->task_id,
                     'mr_iid' => $iid,
                     'state' => $state,
                 ],

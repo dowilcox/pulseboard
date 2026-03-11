@@ -4,7 +4,7 @@ namespace App\Actions\Gitlab;
 
 use App\Models\GitlabProject;
 use App\Models\Task;
-use App\Models\TaskGitlabLink;
+use App\Models\TaskGitlabRef;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class AutoLinkTask
@@ -14,12 +14,12 @@ class AutoLinkTask
     /**
      * Parse text for #{number} patterns and auto-link matching tasks.
      *
-     * @return TaskGitlabLink[] Created links
+     * @return TaskGitlabRef[] Created refs
      */
     public function handle(
         GitlabProject $gitlabProject,
         string $text,
-        string $linkType,
+        string $refType,
         ?int $gitlabIid = null,
         ?string $gitlabRef = null,
         ?string $title = null,
@@ -30,10 +30,10 @@ class AutoLinkTask
         array $meta = [],
     ): array {
         $pattern = config('gitlab.auto_link_pattern');
-        $links = [];
+        $refs = [];
 
         if (! preg_match_all($pattern, $text, $matches)) {
-            return $links;
+            return $refs;
         }
 
         $taskNumbers = array_unique($matches[1]);
@@ -50,10 +50,14 @@ class AutoLinkTask
                 continue;
             }
 
-            // Check if link already exists
-            $exists = TaskGitlabLink::where('task_id', $task->id)
-                ->where('gitlab_project_id', $gitlabProject->id)
-                ->where('link_type', $linkType)
+            // Auto-set the task's gitlab project if not already set
+            if (! $task->gitlab_project_id) {
+                $task->update(['gitlab_project_id' => $gitlabProject->id]);
+            }
+
+            // Check if ref already exists
+            $exists = TaskGitlabRef::where('task_id', $task->id)
+                ->where('ref_type', $refType)
                 ->when($gitlabIid, fn ($q) => $q->where('gitlab_iid', $gitlabIid))
                 ->when($gitlabRef && ! $gitlabIid, fn ($q) => $q->where('gitlab_ref', $gitlabRef))
                 ->exists();
@@ -62,10 +66,9 @@ class AutoLinkTask
                 continue;
             }
 
-            $links[] = TaskGitlabLink::create([
+            $refs[] = TaskGitlabRef::create([
                 'task_id' => $task->id,
-                'gitlab_project_id' => $gitlabProject->id,
-                'link_type' => $linkType,
+                'ref_type' => $refType,
                 'gitlab_iid' => $gitlabIid,
                 'gitlab_ref' => $gitlabRef,
                 'title' => $title,
@@ -78,6 +81,6 @@ class AutoLinkTask
             ]);
         }
 
-        return $links;
+        return $refs;
     }
 }

@@ -42,7 +42,8 @@ class BoardController extends Controller
                     ->with([
                         'assignees',
                         'labels',
-                        'gitlabLinks.gitlabProject',
+                        'gitlabProject',
+                        'gitlabRefs',
                         'blockedBy:id',
                     ])
                     ->withCount([

@@ -139,7 +139,7 @@ class BoardTaskApiTest extends TestCase
         $task = $response->json('data.0');
         $this->assertArrayHasKey('assignees', $task);
         $this->assertArrayHasKey('labels', $task);
-        $this->assertArrayHasKey('gitlab_links', $task);
+        $this->assertArrayHasKey('gitlab_refs', $task);
         $this->assertArrayHasKey('comments_count', $task);
         $this->assertArrayHasKey('subtasks_count', $task);
     }

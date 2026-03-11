@@ -16,18 +16,20 @@ import type {
     Label,
     Task,
     TaskFigmaLink,
-    TaskGitlabLink,
+    TaskGitlabRef,
     User,
 } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -248,6 +250,25 @@ export default function TaskDetailPanel({
                                 },
                             }}
                         />
+                        {displayTask.gitlab_project && (
+                            <Link
+                                href={displayTask.gitlab_project.web_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                variant="caption"
+                                underline="hover"
+                                color="text.secondary"
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mt: 0.25,
+                                }}
+                            >
+                                {displayTask.gitlab_project.path_with_namespace}
+                                <OpenInNewIcon sx={{ fontSize: 12 }} />
+                            </Link>
+                        )}
                         {displayTask.creator && (
                             <Typography
                                 variant="caption"
@@ -470,24 +491,34 @@ export default function TaskDetailPanel({
                             teamId={teamId}
                             boardId={boardId}
                             gitlabProjects={gitlabProjects}
-                            onLinkCreated={(link: TaskGitlabLink) => {
+                            onProjectChanged={(project) => {
                                 if (detail) {
                                     setDetail({
                                         ...detail,
-                                        gitlab_links: [
-                                            ...(detail.gitlab_links ?? []),
-                                            link,
+                                        gitlab_project_id:
+                                            project?.id ?? undefined,
+                                        gitlab_project: project ?? undefined,
+                                    });
+                                }
+                            }}
+                            onRefCreated={(ref: TaskGitlabRef) => {
+                                if (detail) {
+                                    setDetail({
+                                        ...detail,
+                                        gitlab_refs: [
+                                            ...(detail.gitlab_refs ?? []),
+                                            ref,
                                         ],
                                     });
                                 }
                             }}
-                            onLinkRemoved={(linkId: string) => {
+                            onRefRemoved={(refId: string) => {
                                 if (detail) {
                                     setDetail({
                                         ...detail,
-                                        gitlab_links: (
-                                            detail.gitlab_links ?? []
-                                        ).filter((l) => l.id !== linkId),
+                                        gitlab_refs: (
+                                            detail.gitlab_refs ?? []
+                                        ).filter((r) => r.id !== refId),
                                     });
                                 }
                             }}

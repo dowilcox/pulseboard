@@ -84,9 +84,14 @@ class Task extends Model
         return $this->hasMany(Attachment::class);
     }
 
-    public function gitlabLinks(): HasMany
+    public function gitlabProject(): BelongsTo
     {
-        return $this->hasMany(TaskGitlabLink::class);
+        return $this->belongsTo(GitlabProject::class);
+    }
+
+    public function gitlabRefs(): HasMany
+    {
+        return $this->hasMany(TaskGitlabRef::class);
     }
 
     public function figmaLinks(): HasMany

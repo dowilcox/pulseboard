@@ -177,6 +177,7 @@ export interface Task {
     column_id: string;
     task_number?: number;
     parent_task_id?: string;
+    gitlab_project_id?: string;
     title: string;
     description?: string;
     priority: "urgent" | "high" | "medium" | "low" | "none";
@@ -199,7 +200,8 @@ export interface Task {
     parent_task?: Task;
     dependencies?: Task[];
     blocked_by?: Task[];
-    gitlab_links?: TaskGitlabLink[];
+    gitlab_project?: GitlabProject;
+    gitlab_refs?: TaskGitlabRef[];
     figma_links?: TaskFigmaLink[];
     comments?: Comment[];
     activities?: Activity[];
@@ -294,11 +296,10 @@ export interface GitlabProject {
     team?: Team;
 }
 
-export interface TaskGitlabLink {
+export interface TaskGitlabRef {
     id: string;
     task_id: string;
-    gitlab_project_id: string;
-    link_type: "issue" | "merge_request" | "branch";
+    ref_type: "merge_request" | "branch";
     gitlab_iid?: number;
     gitlab_ref?: string;
     title?: string;
@@ -310,7 +311,6 @@ export interface TaskGitlabLink {
     last_synced_at: string;
     created_at: string;
     updated_at: string;
-    gitlab_project?: GitlabProject;
 }
 
 export interface FigmaConnection {

@@ -4,7 +4,7 @@ namespace App\Actions\Gitlab;
 
 use App\Models\GitlabProject;
 use App\Models\Task;
-use App\Models\TaskGitlabLink;
+use App\Models\TaskGitlabRef;
 use App\Services\ActivityLogger;
 use App\Services\GitlabApiService;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -13,23 +13,22 @@ class CreateMergeRequestFromTask
 {
     use AsAction;
 
-    public function handle(Task $task, GitlabProject $gitlabProject, ?string $sourceBranch = null): TaskGitlabLink
+    public function handle(Task $task, GitlabProject $gitlabProject, ?string $sourceBranch = null): TaskGitlabRef
     {
         $api = GitlabApiService::for($gitlabProject->connection);
 
-        // Use provided branch or find existing branch link for this task
+        // Use provided branch or find existing branch ref for this task
         if (! $sourceBranch) {
-            $branchLink = $task->gitlabLinks()
-                ->where('gitlab_project_id', $gitlabProject->id)
-                ->where('link_type', 'branch')
+            $branchRef = $task->gitlabRefs()
+                ->where('ref_type', 'branch')
                 ->first();
 
-            if ($branchLink) {
-                $sourceBranch = $branchLink->gitlab_ref;
+            if ($branchRef) {
+                $sourceBranch = $branchRef->gitlab_ref;
             } else {
                 // Create a branch first
-                $newBranchLink = CreateBranchFromTask::run($task, $gitlabProject);
-                $sourceBranch = $newBranchLink->gitlab_ref;
+                $newBranchRef = CreateBranchFromTask::run($task, $gitlabProject);
+                $sourceBranch = $newBranchRef->gitlab_ref;
             }
         }
 
@@ -45,10 +44,9 @@ class CreateMergeRequestFromTask
             'description' => $description,
         ]);
 
-        $link = TaskGitlabLink::create([
+        $ref = TaskGitlabRef::create([
             'task_id' => $task->id,
-            'gitlab_project_id' => $gitlabProject->id,
-            'link_type' => 'merge_request',
+            'ref_type' => 'merge_request',
             'gitlab_iid' => $mrData['iid'],
             'gitlab_ref' => $sourceBranch,
             'title' => $mrData['title'],
@@ -69,6 +67,6 @@ class CreateMergeRequestFromTask
             'project' => $gitlabProject->path_with_namespace,
         ], auth()->user());
 
-        return $link;
+        return $ref;
     }
 }
