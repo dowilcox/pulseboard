@@ -8,9 +8,11 @@ use App\Services\SamlService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use OneLogin\Saml2\Settings;
 
 class SsoConfigurationController extends Controller
 {
@@ -84,13 +86,18 @@ class SsoConfigurationController extends Controller
             $settings = $samlService->buildSettings($ssoConfiguration);
 
             // Validate the settings can be constructed
-            new \OneLogin\Saml2\Settings($settings, true);
+            new Settings($settings, true);
 
             return response()->json([
                 'success' => true,
                 'message' => 'SAML configuration is valid.',
             ]);
         } catch (\Exception $e) {
+            Log::warning('SSO configuration test failed', [
+                'config_id' => $ssoConfiguration->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

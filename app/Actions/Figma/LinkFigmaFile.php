@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\TaskFigmaLink;
 use App\Services\FigmaApiService;
 use App\Services\FigmaUrlParser;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -73,8 +74,12 @@ class LinkFigmaFile
                             ->all();
                     }
                 }
-            } catch (\Throwable) {
-                // Fall back to file name
+            } catch (\Throwable $e) {
+                Log::warning('Figma node metadata fetch failed', [
+                    'file_key' => $parsed['file_key'],
+                    'node_id' => $parsed['node_id'],
+                    'error' => $e->getMessage(),
+                ]);
             }
 
             // For non-page nodes, render a preview image of the specific node
@@ -87,8 +92,12 @@ class LinkFigmaFile
                     if (! empty($images[$parsed['node_id']])) {
                         $thumbnailUrl = $images[$parsed['node_id']];
                     }
-                } catch (\Throwable) {
-                    // Fall back to file-level thumbnail
+                } catch (\Throwable $e) {
+                    Log::warning('Figma node image fetch failed', [
+                        'file_key' => $parsed['file_key'],
+                        'node_id' => $parsed['node_id'],
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
         }

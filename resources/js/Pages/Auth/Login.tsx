@@ -13,14 +13,18 @@ import TextField from "@mui/material/TextField";
 
 interface LoginProps {
     status?: string;
+    error?: string;
     canResetPassword: boolean;
     ssoEnabled?: boolean;
+    localAuthEnabled?: boolean;
 }
 
 export default function Login({
     status,
+    error,
     canResetPassword,
     ssoEnabled,
+    localAuthEnabled = true,
 }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: "",
@@ -39,95 +43,98 @@ export default function Login({
         <GuestLayout>
             <Head title="Log In" />
 
+            {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    {error}
+                </Alert>
+            )}
+
             {status && (
-                <Alert
-                    severity="success"
-                    role="status"
-                    aria-live="polite"
-                    sx={{ mb: 2 }}
-                >
+                <Alert severity="success" sx={{ mb: 2 }}>
                     {status}
                 </Alert>
             )}
 
-            <Box component="form" onSubmit={submit} noValidate>
-                <TextField
-                    id="email"
-                    label="Email"
-                    type="email"
-                    name="email"
-                    value={data.email}
-                    onChange={(e) => setData("email", e.target.value)}
-                    error={!!errors.email}
-                    helperText={errors.email}
-                    autoComplete="username"
-                    autoFocus
-                    fullWidth
-                    margin="normal"
-                />
+            {localAuthEnabled && (
+                <Box component="form" onSubmit={submit} noValidate>
+                    <TextField
+                        id="email"
+                        label="Email"
+                        type="email"
+                        name="email"
+                        value={data.email}
+                        onChange={(e) => setData("email", e.target.value)}
+                        error={!!errors.email}
+                        helperText={errors.email}
+                        autoComplete="username"
+                        autoFocus
+                        fullWidth
+                        margin="normal"
+                    />
 
-                <TextField
-                    id="password"
-                    label="Password"
-                    type="password"
-                    name="password"
-                    value={data.password}
-                    onChange={(e) => setData("password", e.target.value)}
-                    error={!!errors.password}
-                    helperText={errors.password}
-                    autoComplete="current-password"
-                    fullWidth
-                    margin="normal"
-                />
+                    <TextField
+                        id="password"
+                        label="Password"
+                        type="password"
+                        name="password"
+                        value={data.password}
+                        onChange={(e) => setData("password", e.target.value)}
+                        error={!!errors.password}
+                        helperText={errors.password}
+                        autoComplete="current-password"
+                        fullWidth
+                        margin="normal"
+                    />
 
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData("remember", e.target.checked)
-                            }
-                            color="primary"
-                        />
-                    }
-                    label="Remember me"
-                    sx={{ mt: 1 }}
-                />
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                name="remember"
+                                checked={data.remember}
+                                onChange={(e) =>
+                                    setData("remember", e.target.checked)
+                                }
+                                color="primary"
+                            />
+                        }
+                        label="Remember me"
+                        sx={{ mt: 1 }}
+                    />
 
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "flex-end",
-                        mt: 2,
-                        gap: 2,
-                    }}
-                >
-                    {canResetPassword && (
-                        <MuiLink
-                            component={Link}
-                            href={route("password.request")}
-                            variant="body2"
-                            underline="hover"
-                        >
-                            Forgot your password?
-                        </MuiLink>
-                    )}
-
-                    <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={processing}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            mt: 2,
+                            gap: 2,
+                        }}
                     >
-                        Log in
-                    </Button>
+                        {canResetPassword && (
+                            <MuiLink
+                                component={Link}
+                                href={route("password.request")}
+                                variant="body2"
+                                underline="hover"
+                            >
+                                Forgot your password?
+                            </MuiLink>
+                        )}
+
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={processing}
+                        >
+                            Log in
+                        </Button>
+                    </Box>
                 </Box>
-            </Box>
+            )}
 
             {ssoEnabled && (
                 <>
-                    <Divider sx={{ my: 3 }}>or</Divider>
+                    {localAuthEnabled && <Divider sx={{ my: 3 }}>or</Divider>}
 
                     <Button
                         component="a"
@@ -135,6 +142,7 @@ export default function Login({
                         variant="outlined"
                         fullWidth
                         startIcon={<LockIcon />}
+                        sx={!localAuthEnabled ? { mt: 2 } : undefined}
                     >
                         Sign in with SSO
                     </Button>

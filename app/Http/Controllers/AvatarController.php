@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class AvatarController extends Controller
 {
@@ -29,7 +30,9 @@ class AvatarController extends Controller
                     $response = Http::timeout(3)->head("{$gravatarUrl}&d=404");
 
                     return $response->status() === 200;
-                } catch (\Throwable) {
+                } catch (\Throwable $e) {
+                    Log::warning('Gravatar check failed', ['error' => $e->getMessage()]);
+
                     return false;
                 }
             }

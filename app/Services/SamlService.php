@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SsoConfiguration;
+use Illuminate\Support\Facades\Log;
 use OneLogin\Saml2\Auth as SamlAuth;
 use OneLogin\Saml2\Settings as SamlSettings;
 
@@ -64,10 +65,23 @@ class SamlService
         $auth->processResponse();
 
         if ($auth->getErrors()) {
-            throw new \RuntimeException('SAML Error: '.implode(', ', $auth->getErrors()));
+            $reason = $auth->getLastErrorReason() ?: 'No additional details';
+
+            Log::error('SAML response processing failed', [
+                'errors' => $auth->getErrors(),
+                'reason' => $reason,
+                'config_id' => $config->id,
+                'config_name' => $config->name,
+            ]);
+
+            throw new \RuntimeException('SAML Error: '.implode(', ', $auth->getErrors()).' — '.$reason);
         }
 
         if (! $auth->isAuthenticated()) {
+            Log::warning('SAML response not authenticated', [
+                'config_id' => $config->id,
+            ]);
+
             throw new \RuntimeException('SAML authentication failed.');
         }
 
@@ -78,6 +92,12 @@ class SamlService
 
         $attributes = $auth->getAttributes();
         $nameId = $auth->getNameId();
+
+        Log::info('SAML authentication successful', [
+            'name_id' => $nameId,
+            'attributes' => array_keys($attributes),
+            'config_name' => $config->name,
+        ]);
 
         return [
             'name_id' => $nameId,

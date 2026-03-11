@@ -11,6 +11,7 @@ use App\Services\GitlabApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -74,6 +75,12 @@ class GitlabProjectController extends Controller
 
             return response()->json($results);
         } catch (GitlabApiException $e) {
+            Log::warning('GitLab project search failed', [
+                'connection_id' => $connection->id,
+                'query' => $request->q,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json(['error' => $e->getMessage()], 422);
         }
     }

@@ -10,6 +10,7 @@ use App\Models\TaskFigmaLink;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class TaskFigmaController extends Controller
@@ -51,6 +52,12 @@ class TaskFigmaController extends Controller
 
             return response()->json($link->load('figmaConnection'), 201);
         } catch (FigmaApiException $e) {
+            Log::warning('Figma file link failed', [
+                'task_id' => $task->id,
+                'url' => $validated['url'],
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json(['error' => $e->getMessage()], 422);
         } catch (ValidationException $e) {
             return response()->json(['error' => $e->getMessage()], 422);

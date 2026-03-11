@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SamlController extends Controller
 {
@@ -22,7 +23,7 @@ class SamlController extends Controller
         $config = SsoConfiguration::where('is_active', true)->first();
 
         if (! $config) {
-            return redirect()->route('login')->with('status', 'SSO is not configured.');
+            return redirect()->route('login')->with('error', 'SSO is not configured.');
         }
 
         $url = $this->samlService->initiateLogin($config);
@@ -35,13 +36,19 @@ class SamlController extends Controller
         $config = SsoConfiguration::where('is_active', true)->first();
 
         if (! $config) {
-            return redirect()->route('login')->with('status', 'SSO is not configured.');
+            return redirect()->route('login')->with('error', 'SSO is not configured.');
         }
 
         try {
             $samlUser = $this->samlService->processResponse($config);
         } catch (\RuntimeException $e) {
-            return redirect()->route('login')->with('status', 'SSO authentication failed: '.$e->getMessage());
+            Log::error('SAML authentication failed', [
+                'error' => $e->getMessage(),
+                'config_id' => $config->id,
+                'config_name' => $config->name,
+            ]);
+
+            return redirect()->route('login')->with('error', 'SSO authentication failed: '.$e->getMessage());
         }
 
         $user = User::where('auth_provider', 'saml2')
@@ -56,7 +63,7 @@ class SamlController extends Controller
                 // Only auto-link if the user has no other auth provider set
                 if ($existingUser->auth_provider !== null && $existingUser->auth_provider !== 'saml2') {
                     return redirect()->route('login')->with(
-                        'status',
+                        'error',
                         'An account with this email already exists using a different login method. Please log in with your password and link your SAML account from profile settings.'
                     );
                 }
@@ -65,7 +72,7 @@ class SamlController extends Controller
                 if ($existingUser->auth_provider === null) {
                     // Local password account — do not overwrite, require manual linking
                     return redirect()->route('login')->with(
-                        'status',
+                        'error',
                         'An account with this email already exists. Please log in with your password and link your SAML account from profile settings.'
                     );
                 }
@@ -88,7 +95,7 @@ class SamlController extends Controller
         }
 
         if ($user->deactivated_at) {
-            return redirect()->route('login')->with('status', 'Your account has been deactivated.');
+            return redirect()->route('login')->with('error', 'Your account has been deactivated.');
         }
 
         Auth::login($user, true);

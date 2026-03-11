@@ -12,6 +12,7 @@ use App\Services\GitlabApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 
 class GitlabConnectionController extends Controller
@@ -73,6 +74,11 @@ class GitlabConnectionController extends Controller
                 'message' => "Connected as {$user['name']} ({$user['username']})",
             ]);
         } catch (GitlabApiException $e) {
+            Log::warning('GitLab connection test failed', [
+                'connection_id' => $gitlabConnection->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

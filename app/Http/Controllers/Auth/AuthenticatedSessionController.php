@@ -19,10 +19,14 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): Response
     {
+        $ssoEnabled = SsoConfiguration::where('is_active', true)->exists();
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
-            'ssoEnabled' => SsoConfiguration::where('is_active', true)->exists(),
+            'error' => session('error'),
+            'ssoEnabled' => $ssoEnabled,
+            'localAuthEnabled' => ! AppSetting::isLocalAuthDisabled(),
         ]);
     }
 
@@ -31,6 +35,10 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        if (AppSetting::isLocalAuthDisabled()) {
+            return redirect()->route('login')->with('error', 'Local authentication is disabled. Please use SSO.');
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
