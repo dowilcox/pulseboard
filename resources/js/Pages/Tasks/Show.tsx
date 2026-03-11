@@ -1,6 +1,6 @@
 import RichTextEditor from "@/Components/Common/RichTextEditor";
 import FigmaSection from "@/Components/Figma/FigmaSection";
-import GitlabSection from "@/Components/Gitlab/GitlabSection";
+import GitlabRefsList from "@/Components/Gitlab/GitlabRefsList";
 import ActivityFeed from "@/Components/Tasks/ActivityFeed";
 import AttachmentList from "@/Components/Tasks/AttachmentList";
 import ChecklistEditor from "@/Components/Tasks/ChecklistEditor";
@@ -355,6 +355,17 @@ export default function TasksShow({
                         />
                     </Box>
 
+                    {/* GitLab Refs */}
+                    {(task.gitlab_refs ?? []).length > 0 && (
+                        <Box sx={{ mb: 3 }}>
+                            <GitlabRefsList
+                                task={task}
+                                teamId={team.id}
+                                boardId={board.id}
+                            />
+                        </Box>
+                    )}
+
                     {/* Figma */}
                     {figmaConnections.length > 0 && (
                         <Box sx={{ mb: 3 }}>
@@ -383,18 +394,6 @@ export default function TasksShow({
                             taskId={task.id}
                         />
                     </Box>
-
-                    {/* GitLab */}
-                    {gitlabProjects.length > 0 && (
-                        <Box sx={{ mb: 3 }}>
-                            <GitlabSection
-                                task={task}
-                                teamId={team.id}
-                                boardId={board.id}
-                                gitlabProjects={gitlabProjects}
-                            />
-                        </Box>
-                    )}
 
                     <Divider sx={{ mb: 2 }} />
 
@@ -441,6 +440,7 @@ export default function TasksShow({
                         labels={labels}
                         boardTasks={boardTasks}
                         teamBoards={teamBoards}
+                        gitlabProjects={gitlabProjects}
                     />
                 </Box>
             </Box>

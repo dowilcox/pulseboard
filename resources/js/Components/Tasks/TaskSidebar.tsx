@@ -1,3 +1,4 @@
+import GitlabSidebarControls from "@/Components/Gitlab/GitlabSidebarControls";
 import AssigneeSelector from "@/Components/Tasks/AssigneeSelector";
 import DependencySection from "@/Components/Tasks/DependencySection";
 import LabelSelector from "@/Components/Tasks/LabelSelector";
@@ -5,6 +6,7 @@ import PrioritySelector from "@/Components/Tasks/PrioritySelector";
 import RecurrenceConfig from "@/Components/Tasks/RecurrenceConfig";
 import type {
     Board,
+    GitlabProject,
     Label,
     RecurrenceConfig as RecurrenceConfigType,
     Task,
@@ -38,6 +40,7 @@ interface Props {
     labels: Label[];
     boardTasks: TaskSummary[];
     teamBoards: Board[];
+    gitlabProjects?: GitlabProject[];
 }
 
 function formatTimestamp(ts: string): string {
@@ -62,6 +65,7 @@ export default function TaskSidebar({
     labels,
     boardTasks,
     teamBoards,
+    gitlabProjects = [],
 }: Props) {
     const columns = board.columns ?? [];
     const isCompleted =
@@ -321,6 +325,19 @@ export default function TaskSidebar({
                     </MenuItem>
                 ))}
             </Select>
+
+            {/* GitLab */}
+            {gitlabProjects.length > 0 && (
+                <>
+                    {sectionLabel("GitLab")}
+                    <GitlabSidebarControls
+                        task={task}
+                        teamId={team.id}
+                        boardId={board.id}
+                        gitlabProjects={gitlabProjects}
+                    />
+                </>
+            )}
 
             {/* Details */}
             {sectionLabel("Details")}

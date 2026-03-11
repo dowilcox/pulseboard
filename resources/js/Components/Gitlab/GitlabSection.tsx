@@ -10,7 +10,6 @@ import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -252,64 +251,9 @@ export default function GitlabSection({
                 />
             </Box>
 
-            {/* Project Info & Actions (shown when a project is selected) */}
+            {/* Actions & Refs (shown when a project is selected) */}
             {selectedProject && (
                 <>
-                    {/* Project Info */}
-                    <Box
-                        sx={{
-                            p: 1.5,
-                            mb: 1.5,
-                            borderRadius: 1,
-                            bgcolor: "action.hover",
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 0.5,
-                            }}
-                        >
-                            <Link
-                                href={selectedProject.web_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="body2"
-                                fontWeight={600}
-                                underline="hover"
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                }}
-                            >
-                                {selectedProject.name}
-                                <OpenInNewIcon sx={{ fontSize: 14 }} />
-                            </Link>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                            {selectedProject.path_with_namespace}
-                        </Typography>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                                mt: 0.5,
-                            }}
-                        >
-                            <Chip
-                                label={selectedProject.default_branch}
-                                size="small"
-                                icon={<AccountTreeIcon sx={{ fontSize: 14 }} />}
-                                variant="outlined"
-                                sx={{ height: 22, fontSize: "0.7rem" }}
-                            />
-                        </Box>
-                    </Box>
-
                     {/* Action Buttons */}
                     <Box
                         sx={{
