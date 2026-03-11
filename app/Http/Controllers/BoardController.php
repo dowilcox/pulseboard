@@ -74,6 +74,8 @@ class BoardController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $labels = $team->labels()->orderBy('name')->get();
+
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
@@ -82,6 +84,7 @@ class BoardController extends Controller
             'gitlabProjects' => $gitlabProjects,
             'figmaConnections' => $figmaConnections,
             'taskTemplates' => $taskTemplates,
+            'labels' => $labels,
             'initialTasksPerColumn' => self::INITIAL_TASKS_PER_COLUMN,
         ]);
     }

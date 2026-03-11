@@ -27,12 +27,13 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Props {
     board: Board;
     team: Team;
     members: User[];
+    labels?: Label[];
     gitlabProjects?: GitlabProject[];
     figmaConnections?: FigmaConnection[];
     taskTemplates?: TaskTemplate[];
@@ -43,6 +44,7 @@ export default function BoardsShow({
     board,
     team,
     members,
+    labels: teamLabels = [],
     gitlabProjects = [],
     taskTemplates = [],
     initialTasksPerColumn = 20,
@@ -51,7 +53,6 @@ export default function BoardsShow({
     const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
     const canManage = userRole === "owner" || userRole === "admin";
     const columns = board.columns ?? [];
-    const [teamLabels, setTeamLabels] = useState<Label[]>([]);
     const [taskFilter, setTaskFilter] = useState<(task: Task) => boolean>(
         () => () => true,
     );
@@ -103,15 +104,6 @@ export default function BoardsShow({
     }, []);
 
     useBoardChannel(board.id, handleBoardEvent);
-
-    useEffect(() => {
-        fetch(route("labels.index", team.id), {
-            headers: { Accept: "application/json" },
-        })
-            .then((res) => res.json())
-            .then((data: Label[]) => setTeamLabels(data))
-            .catch(() => {});
-    }, [team.id]);
 
     const handleTaskClick = (task: Task) => {
         router.visit(route("tasks.show", [team.id, board.id, task.id]));
