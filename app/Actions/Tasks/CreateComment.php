@@ -2,6 +2,7 @@
 
 namespace App\Actions\Tasks;
 
+use App\Events\BoardChanged;
 use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
@@ -20,6 +21,16 @@ class CreateComment
         ]);
 
         ActivityLogger::log($task, 'commented', [], $user);
+
+        broadcast(new BoardChanged(
+            boardId: $task->board_id,
+            action: 'comment.created',
+            data: [
+                'task_id' => $task->id,
+                'comment_id' => $comment->id,
+            ],
+            userId: $user->id,
+        ))->toOthers();
 
         return $comment->load('user');
     }
