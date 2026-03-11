@@ -92,9 +92,9 @@ export default function TaskCard({ task, onClick }: Props) {
                     color="text.secondary"
                     sx={{ lineHeight: 1 }}
                 >
-                    {gitlabPrefixLabel}
-                    {gitlabPrefixLabel && task.task_number ? " " : ""}
                     {task.task_number ? `#${task.task_number}` : ""}
+                    {gitlabPrefixLabel && task.task_number ? " " : ""}
+                    {gitlabPrefixLabel}
                 </Typography>
             )}
 

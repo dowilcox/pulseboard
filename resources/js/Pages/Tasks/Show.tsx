@@ -170,7 +170,7 @@ export default function TasksShow({
             activeBoardId={board.id}
             header={
                 <PageHeader
-                    title={[gitlabPrefix, taskNumber, task.title]
+                    title={[taskNumber, gitlabPrefix, task.title]
                         .filter(Boolean)
                         .join(" ")}
                     breadcrumbs={[
@@ -191,7 +191,7 @@ export default function TasksShow({
             }
         >
             <Head
-                title={`${[gitlabPrefix, taskNumber, task.title].filter(Boolean).join(" ")} - ${board.name}`}
+                title={`${[taskNumber, gitlabPrefix, task.title].filter(Boolean).join(" ")} - ${board.name}`}
             />
 
             <Box
@@ -211,9 +211,9 @@ export default function TasksShow({
                                 color="text.secondary"
                                 fontWeight={600}
                             >
-                                {gitlabPrefix}
-                                {gitlabPrefix && taskNumber ? " " : ""}
                                 {taskNumber}
+                                {gitlabPrefix && taskNumber ? " " : ""}
+                                {gitlabPrefix}
                             </Typography>
                         )}
                         <TextField

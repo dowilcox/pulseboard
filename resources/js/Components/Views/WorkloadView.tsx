@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Column, Task, User } from "@/types";
-import { getGitlabPrefix } from "@/utils/gitlabPrefix";
+import { getTaskLabel } from "@/utils/gitlabPrefix";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -185,7 +185,7 @@ export default function WorkloadView({
                                 {wl.tasks.slice(0, 10).map((task) => (
                                     <Chip
                                         key={task.id}
-                                        label={`${getGitlabPrefix(task)}${getGitlabPrefix(task) ? " " : ""}${task.task_number ? `#${task.task_number}` : ""} ${task.title}`}
+                                        label={getTaskLabel(task)}
                                         size="small"
                                         onClick={() => onTaskClick(task)}
                                         sx={{
@@ -235,7 +235,7 @@ export default function WorkloadView({
                                     .map((task) => (
                                         <Chip
                                             key={task.id}
-                                            label={`${getGitlabPrefix(task)}${getGitlabPrefix(task) ? " " : ""}${task.task_number ? `#${task.task_number}` : ""} ${task.title}`}
+                                            label={getTaskLabel(task)}
                                             size="small"
                                             onClick={() => onTaskClick(task)}
                                             sx={{

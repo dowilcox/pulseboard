@@ -243,6 +243,9 @@ export default function TimelineView({
                                         }}
                                     >
                                         <Typography variant="caption" noWrap>
+                                            {task.task_number
+                                                ? `#${task.task_number} `
+                                                : ""}
                                             {getGitlabPrefix(task) && (
                                                 <Typography
                                                     component="span"
@@ -253,9 +256,6 @@ export default function TimelineView({
                                                     {getGitlabPrefix(task)}
                                                 </Typography>
                                             )}
-                                            {task.task_number
-                                                ? `#${task.task_number} `
-                                                : ""}
                                             {task.title}
                                         </Typography>
                                     </Box>
