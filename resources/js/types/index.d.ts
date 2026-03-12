@@ -23,7 +23,7 @@ export interface User {
     name: string;
     email: string;
     avatar_url?: string;
-    auth_provider: "local" | "saml2" | "okta";
+    auth_provider: "local" | "saml2";
     is_admin: boolean;
     is_bot: boolean;
     created_by_team_id?: string;

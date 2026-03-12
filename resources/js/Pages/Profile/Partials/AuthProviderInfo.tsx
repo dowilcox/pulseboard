@@ -8,7 +8,6 @@ import Typography from "@mui/material/Typography";
 const providerLabels: Record<string, string> = {
     local: "Local",
     saml2: "SAML2",
-    okta: "Okta",
 };
 
 export default function AuthProviderInfo() {

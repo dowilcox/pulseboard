@@ -12,11 +12,6 @@ class SamlService
 {
     public function buildSettings(SsoConfiguration $config): array
     {
-        $mapping = $config->attribute_mapping ?? [
-            'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
-            'name' => 'urn:oid:2.16.840.1.113730.3.1.241',
-        ];
-
         return [
             'strict' => true,
             'debug' => config('app.debug'),
@@ -65,15 +60,6 @@ class SamlService
 
     public function processResponse(SsoConfiguration $config): array
     {
-        $cert = $this->normalizeCertificate($config->certificate);
-
-        Log::error('SAML certificate diagnostic', [
-            'config_name' => $config->name,
-            'cert_length' => strlen($cert),
-            'cert_starts_with' => substr($cert, 0, 20),
-            'is_base64' => base64_decode($cert, true) !== false,
-        ]);
-
         $auth = $this->createAuth($config);
         $auth->processResponse();
 
@@ -98,10 +84,7 @@ class SamlService
             throw new \RuntimeException('SAML authentication failed.');
         }
 
-        $mapping = $config->attribute_mapping ?? [
-            'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
-            'name' => 'urn:oid:2.16.840.1.113730.3.1.241',
-        ];
+        $mapping = $this->defaultMapping($config);
 
         $attributes = $auth->getAttributes();
         $nameId = $auth->getNameId();
@@ -124,6 +107,14 @@ class SamlService
         $settings = new SamlSettings($this->buildSettings($config), true);
 
         return $settings->getSPMetadata();
+    }
+
+    private function defaultMapping(SsoConfiguration $config): array
+    {
+        return $config->attribute_mapping ?? [
+            'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
+            'name' => 'urn:oid:2.16.840.1.113730.3.1.241',
+        ];
     }
 
     private function normalizeCertificate(string $cert): string

@@ -82,7 +82,8 @@ services:
   test:
     build:
       context: .
-      dockerfile: docker/Dockerfile.dev
+      dockerfile: docker/Dockerfile
+      target: development
     container_name: pulseboard-test
     volumes:
       - .:/var/www/html

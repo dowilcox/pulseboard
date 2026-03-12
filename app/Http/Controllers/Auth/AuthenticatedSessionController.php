@@ -12,13 +12,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as BaseResponse;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * Display the login view.
      */
-    public function create(): Response|\Symfony\Component\HttpFoundation\Response
+    public function create(): Response|BaseResponse
     {
         $ssoEnabled = SsoConfiguration::where('is_active', true)->exists();
 

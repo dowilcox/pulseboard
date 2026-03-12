@@ -255,8 +255,8 @@ export default function RichTextEditor({
                 if (url) {
                     editor.chain().focus().setImage({ src: url }).run();
                 }
-            } catch (error) {
-                console.error("Image upload failed:", error);
+            } catch {
+                // Image upload failed silently
             }
         },
         [uploadImageUrl, editor],

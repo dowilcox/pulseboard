@@ -202,8 +202,8 @@ export default function ListView({
             setCurrentPage(nextPage);
             setHasMore(data.current_page < data.last_page);
         } catch (error) {
-            if ((error as Error).name !== "AbortError") {
-                console.error("Failed to load more tasks:", error);
+            if ((error as Error).name === "AbortError") {
+                // Ignore aborted requests
             }
         } finally {
             setLoading(false);
