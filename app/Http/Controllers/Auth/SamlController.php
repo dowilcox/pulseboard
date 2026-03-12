@@ -55,6 +55,8 @@ class SamlController extends Controller
             ->where('auth_provider_id', $samlUser['name_id'])
             ->first();
 
+        $samlName = $this->formatName($samlUser['name']) ?: $samlUser['email'];
+
         if (! $user) {
             // Try to link by email
             $existingUser = User::where('email', $samlUser['email'])->first();
@@ -64,18 +66,25 @@ class SamlController extends Controller
                 $existingUser->update([
                     'auth_provider' => 'saml2',
                     'auth_provider_id' => $samlUser['name_id'],
+                    'name' => $samlName,
                 ]);
                 $user = $existingUser;
             } else {
                 // JIT provisioning
                 $user = User::create([
-                    'name' => $samlUser['name'] ?: $samlUser['email'],
+                    'name' => $samlName,
                     'email' => $samlUser['email'],
                     'auth_provider' => 'saml2',
                     'auth_provider_id' => $samlUser['name_id'],
                     'email_verified_at' => now(),
                 ]);
             }
+        } else {
+            // Update name and email from IdP on every login
+            $user->update([
+                'name' => $samlName,
+                'email' => $samlUser['email'],
+            ]);
         }
 
         if ($user->deactivated_at) {
@@ -86,6 +95,18 @@ class SamlController extends Controller
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'));
+    }
+
+    private function formatName(string $name): string
+    {
+        // Convert "Last, First" to "First Last"
+        if (str_contains($name, ',')) {
+            $parts = array_map('trim', explode(',', $name, 2));
+
+            return $parts[1].' '.$parts[0];
+        }
+
+        return $name;
     }
 
     public function metadata(): Response
