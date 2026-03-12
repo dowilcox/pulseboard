@@ -39,7 +39,7 @@ class SamlService
                     'url' => $config->logout_url ?? '',
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect',
                 ],
-                'x509cert' => $config->certificate,
+                'x509cert' => $this->normalizeCertificate($config->certificate),
             ],
             'security' => [
                 'authnRequestsSigned' => false,
@@ -65,6 +65,15 @@ class SamlService
 
     public function processResponse(SsoConfiguration $config): array
     {
+        $cert = $this->normalizeCertificate($config->certificate);
+
+        Log::debug('SAML certificate diagnostic', [
+            'config_name' => $config->name,
+            'cert_length' => strlen($cert),
+            'cert_starts_with' => substr($cert, 0, 20),
+            'is_base64' => base64_decode($cert, true) !== false,
+        ]);
+
         $auth = $this->createAuth($config);
         $auth->processResponse();
 
@@ -115,6 +124,20 @@ class SamlService
         $settings = new SamlSettings($this->buildSettings($config), true);
 
         return $settings->getSPMetadata();
+    }
+
+    private function normalizeCertificate(string $cert): string
+    {
+        $cert = str_replace([
+            '-----BEGIN CERTIFICATE-----',
+            '-----END CERTIFICATE-----',
+            "\r\n",
+            "\r",
+            "\n",
+            ' ',
+        ], '', $cert);
+
+        return trim($cert);
     }
 
     private function getAttribute(array $attributes, string $key, string $fallback): string
