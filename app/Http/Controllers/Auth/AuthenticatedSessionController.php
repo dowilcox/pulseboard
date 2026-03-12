@@ -18,12 +18,12 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response|RedirectResponse
+    public function create(): Response|\Symfony\Component\HttpFoundation\Response
     {
         $ssoEnabled = SsoConfiguration::where('is_active', true)->exists();
 
         if (AppSetting::isLocalAuthDisabled() && $ssoEnabled) {
-            return redirect()->route('saml.login');
+            return Inertia::location(route('saml.login'));
         }
 
         return Inertia::render('Auth/Login', [

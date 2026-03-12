@@ -31,7 +31,7 @@ use App\Http\Controllers\TaskTemplateController;
 use App\Http\Controllers\TeamBotController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamMemberController;
-use Illuminate\Foundation\Application;
+use App\Models\AppSetting;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,9 +43,7 @@ Route::get('/', function () {
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
+        'canRegister' => Route::has('register') && ! AppSetting::isLocalAuthDisabled(),
     ]);
 });
 
