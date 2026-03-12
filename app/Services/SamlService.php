@@ -20,9 +20,9 @@ class SamlService
             'strict' => true,
             'debug' => config('app.debug'),
             'sp' => [
-                'entityId' => url('/auth/saml/metadata'),
+                'entityId' => config('app.url').'/auth/saml/metadata',
                 'assertionConsumerService' => [
-                    'url' => url('/auth/saml/acs'),
+                    'url' => config('app.url').'/auth/saml/acs',
                     'binding' => 'urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST',
                 ],
                 'NameIDFormat' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress',
