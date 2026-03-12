@@ -18,6 +18,8 @@ class FigmaConnection extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['api_token'];
+
     protected function casts(): array
     {
         return [

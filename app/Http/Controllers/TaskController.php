@@ -160,7 +160,7 @@ class TaskController extends Controller
 
         DeleteTask::run($task);
 
-        return Redirect::back();
+        return Redirect::route('teams.boards.show', [$team, $board]);
     }
 
     /**

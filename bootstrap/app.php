@@ -1,8 +1,15 @@
 <?php
 
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureNotDeactivated;
+use App\Http\Middleware\EnsureTeamMember;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,16 +25,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-            \App\Http\Middleware\EnsureNotDeactivated::class,
+            SecurityHeaders::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
+            EnsureNotDeactivated::class,
         ]);
 
         $middleware->alias([
-            'team.member' => \App\Http\Middleware\EnsureTeamMember::class,
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
-            'ensure.active' => \App\Http\Middleware\EnsureNotDeactivated::class,
-            'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
+            'team.member' => EnsureTeamMember::class,
+            'admin' => EnsureAdmin::class,
+            'ensure.active' => EnsureNotDeactivated::class,
+            'abilities' => CheckAbilities::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

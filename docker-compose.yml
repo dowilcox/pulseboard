@@ -95,7 +95,13 @@ services:
       - SESSION_DRIVER=array
       - QUEUE_CONNECTION=sync
     working_dir: /var/www/html
-    entrypoint: ["php", "artisan", "test"]
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        'php artisan config:clear && php artisan test "$@"',
+        "--",
+      ]
     profiles:
       - test
     networks:

@@ -16,6 +16,8 @@ class SsoConfiguration extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['certificate'];
+
     protected function casts(): array
     {
         return [

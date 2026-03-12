@@ -34,7 +34,7 @@ class LabelController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:50'],
-            'color' => ['sometimes', 'string', 'max:7'],
+            'color' => ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
 
         $label->update($validated);

@@ -15,7 +15,7 @@ class StoreLabelRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:50'],
-            'color' => ['required', 'string', 'max:7'],
+            'color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ];
     }
 }

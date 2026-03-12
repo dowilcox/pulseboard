@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------
 # Stage 1: Composer dependencies
 # ---------------------------------------------------------------------------
-FROM docker.io/library/composer:2 AS composer
+FROM docker.io/library/composer:2.8 AS composer
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN composer install \
 # ---------------------------------------------------------------------------
 # Stage 2: Frontend build
 # ---------------------------------------------------------------------------
-FROM docker.io/library/node:20-alpine AS frontend
+FROM docker.io/library/node:20.19-alpine AS frontend
 
 WORKDIR /app
 
@@ -53,7 +53,7 @@ RUN npx tsc --noEmit && npx vite build
 # ---------------------------------------------------------------------------
 # Stage 3: Production runtime
 # ---------------------------------------------------------------------------
-FROM docker.io/dunglas/frankenphp:1-php8.4 AS production
+FROM docker.io/dunglas/frankenphp:1.4-php8.4 AS production
 
 LABEL maintainer="PulseBoard" \
       org.opencontainers.image.title="PulseBoard" \
@@ -139,7 +139,7 @@ ENTRYPOINT ["entrypoint.sh"]
 # ---------------------------------------------------------------------------
 # Stage 4: Development (optional target for local dev)
 # ---------------------------------------------------------------------------
-FROM docker.io/dunglas/frankenphp:1-php8.4 AS development
+FROM docker.io/dunglas/frankenphp:1.4-php8.4 AS development
 
 LABEL maintainer="PulseBoard Development"
 
@@ -176,7 +176,7 @@ RUN pecl install redis \
     && docker-php-ext-enable redis
 
 # ---- Composer --------------------------------------------------------------
-COPY --from=docker.io/library/composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=docker.io/library/composer:2.8 /usr/bin/composer /usr/bin/composer
 
 # ---- Node.js 20 LTS -------------------------------------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \

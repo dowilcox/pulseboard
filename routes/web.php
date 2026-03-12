@@ -48,18 +48,20 @@ Route::get('/', function () {
 });
 
 // Public avatar endpoint
-Route::get('/avatars/{user}', [AvatarController::class, 'show'])->name(
-    'avatars.show',
-);
+Route::get('/avatars/{user}', [AvatarController::class, 'show'])
+    ->middleware('throttle:60,1')
+    ->name('avatars.show');
 
 // SAML SSO routes (no auth required)
-Route::get('/auth/saml/login', [SamlController::class, 'redirect'])->name(
-    'saml.login',
-);
-Route::post('/auth/saml/acs', [SamlController::class, 'acs'])->name('saml.acs');
-Route::get('/auth/saml/metadata', [SamlController::class, 'metadata'])->name(
-    'saml.metadata',
-);
+Route::get('/auth/saml/login', [SamlController::class, 'redirect'])
+    ->middleware('throttle:10,1')
+    ->name('saml.login');
+Route::post('/auth/saml/acs', [SamlController::class, 'acs'])
+    ->middleware('throttle:10,1')
+    ->name('saml.acs');
+Route::get('/auth/saml/metadata', [SamlController::class, 'metadata'])
+    ->middleware('throttle:10,1')
+    ->name('saml.metadata');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

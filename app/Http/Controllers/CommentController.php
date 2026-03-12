@@ -33,7 +33,7 @@ class CommentController extends Controller
         }
 
         $validated = $request->validate([
-            'body' => ['required', 'string'],
+            'body' => ['required', 'string', 'max:10000'],
         ]);
 
         UpdateComment::run($comment, $validated['body']);

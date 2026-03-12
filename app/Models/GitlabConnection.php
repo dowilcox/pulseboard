@@ -18,6 +18,8 @@ class GitlabConnection extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['api_token', 'webhook_secret'];
+
     protected function casts(): array
     {
         return [

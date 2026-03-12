@@ -107,7 +107,7 @@ class FigmaConnectionController extends Controller
             return response()->json(
                 [
                     'success' => false,
-                    'message' => $e->getMessage(),
+                    'message' => 'Connection test failed. Check your credentials and try again.',
                 ],
                 422,
             );
