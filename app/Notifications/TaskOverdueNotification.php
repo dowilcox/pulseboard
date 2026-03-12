@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -28,6 +29,8 @@ class TaskOverdueNotification extends Notification
 
     public function toDatabase(object $notifiable): array
     {
+        $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
+
         return [
             'type' => 'task_overdue',
             'task_id' => $this->task->id,
@@ -36,12 +39,13 @@ class TaskOverdueNotification extends Notification
             'team_id' => $this->task->board->team_id,
             'due_date' => $this->task->due_date,
             'board_name' => $this->task->board->name,
-            'message' => "\"{$this->task->title}\" is overdue (was due {$this->task->due_date})",
+            'message' => "\"{$this->task->title}\" is overdue (was due {$dueFormatted})",
         ];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
+        $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
         $url = url(
             "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
         );
@@ -50,7 +54,7 @@ class TaskOverdueNotification extends Notification
             ->subject("Overdue: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
             ->line(
-                "Your task \"{$this->task->title}\" was due on {$this->task->due_date} and is now overdue.",
+                "Your task \"{$this->task->title}\" was due on {$dueFormatted} and is now overdue.",
             )
             ->line("Board: {$this->task->board->name}")
             ->action('View Task', $url)
