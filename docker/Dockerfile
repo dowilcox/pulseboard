@@ -114,6 +114,9 @@ COPY app ./app
 COPY --from=composer /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
+# Clear any locally-cached package discovery (may reference dev-only packages)
+RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+
 # ---- Storage directories ---------------------------------------------------
 RUN mkdir -p \
         storage/app/public \
