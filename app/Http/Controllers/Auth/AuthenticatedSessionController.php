@@ -18,9 +18,13 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(): Response|RedirectResponse
     {
         $ssoEnabled = SsoConfiguration::where('is_active', true)->exists();
+
+        if (AppSetting::isLocalAuthDisabled() && $ssoEnabled) {
+            return redirect()->route('saml.login');
+        }
 
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
