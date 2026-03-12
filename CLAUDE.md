@@ -22,11 +22,11 @@ docker compose up      # Containerized dev (app:8000, mysql:3306, redis:6379)
 
 ## Container Build & Push
 
-Registry: `ghcr.io/dowilcox/pulseboard`. Multi-stage Dockerfile (`docker/Dockerfile`): composer deps → frontend build → FrankenPHP production runtime.
+Registry: `ghcr.io/dowilcox/pulseboard`. Multi-stage Dockerfile (`docker/Dockerfile`): composer deps → frontend build → FrankenPHP production runtime. Production server is `linux/amd64` — always specify `--platform` when building on Apple Silicon.
 
 ```bash
-# Build production container
-docker build -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:<version> -t ghcr.io/dowilcox/pulseboard:latest .
+# Build production container (must target linux/amd64 for deployment)
+docker build --platform linux/amd64 -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:<version> -t ghcr.io/dowilcox/pulseboard:latest .
 
 # Push to GitHub Container Registry
 docker push ghcr.io/dowilcox/pulseboard:<version>
