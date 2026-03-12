@@ -19,6 +19,7 @@ class SamlService
         return [
             'strict' => true,
             'debug' => config('app.debug'),
+            'baseurl' => config('app.url').'/auth/saml/',
             'sp' => [
                 'entityId' => config('app.url').'/auth/saml/metadata',
                 'assertionConsumerService' => [
@@ -49,6 +50,8 @@ class SamlService
 
     public function createAuth(SsoConfiguration $config): SamlAuth
     {
+        SamlUtils::setProxyVars(true);
+
         return new SamlAuth($this->buildSettings($config));
     }
 
