@@ -3,6 +3,8 @@ import { usePage } from "@inertiajs/react";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
 import type { AppNotification, PageProps } from "@/types";
 
+type NotificationError = "fetch" | "mark_read" | "mark_all_read";
+
 interface NotificationEvent {
     id: string;
     type: string;
@@ -17,6 +19,7 @@ export function useNotifications() {
     );
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState<NotificationError | null>(null);
 
     // Sync count from server props
     useEffect(() => {
@@ -25,14 +28,16 @@ export function useNotifications() {
 
     const fetchNotifications = useCallback(async () => {
         try {
+            setError(null);
             const res = await fetch(route("notifications.index"), {
                 headers: { Accept: "application/json" },
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             setNotifications(data.data ?? []);
             setLoaded(true);
         } catch {
-            // silently fail
+            setError("fetch");
         }
     }, []);
 
@@ -61,7 +66,8 @@ export function useNotifications() {
 
     const markRead = useCallback(async (id: string) => {
         try {
-            await fetch(route("notifications.read", id), {
+            setError(null);
+            const res = await fetch(route("notifications.read", id), {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -72,6 +78,7 @@ export function useNotifications() {
                         )?.content ?? "",
                 },
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             setNotifications((prev) =>
                 prev.map((n) =>
                     n.id === id
@@ -81,13 +88,14 @@ export function useNotifications() {
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch {
-            // silently fail
+            setError("mark_read");
         }
     }, []);
 
     const markAllRead = useCallback(async () => {
         try {
-            await fetch(route("notifications.read-all"), {
+            setError(null);
+            const res = await fetch(route("notifications.read-all"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -98,6 +106,7 @@ export function useNotifications() {
                         )?.content ?? "",
                 },
             });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             setNotifications((prev) =>
                 prev.map((n) => ({
                     ...n,
@@ -106,7 +115,7 @@ export function useNotifications() {
             );
             setUnreadCount(0);
         } catch {
-            // silently fail
+            setError("mark_all_read");
         }
     }, []);
 
@@ -117,5 +126,6 @@ export function useNotifications() {
         markRead,
         markAllRead,
         loaded,
+        error,
     };
 }

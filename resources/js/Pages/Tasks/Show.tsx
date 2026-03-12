@@ -35,12 +35,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
     task: Task;
-    team: {
-        id: string;
-        name: string;
-        slug: string;
-        members?: User[];
-    };
+    team: Pick<Team, "id" | "name" | "slug"> & { members?: User[] };
     board: Board;
     members: User[];
     labels: Label[];

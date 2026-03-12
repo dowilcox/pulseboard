@@ -13,6 +13,7 @@ import type {
     TaskSummary,
     User,
 } from "@/types";
+import type { RequestPayload } from "@inertiajs/core";
 import { router } from "@inertiajs/react";
 import BookmarkAddIcon from "@mui/icons-material/BookmarkAdd";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -90,7 +91,7 @@ export default function TaskSidebar({
         (data: Record<string, unknown>) => {
             router.put(
                 route("tasks.update", [team.id, board.id, task.id]),
-                data as any,
+                data as RequestPayload,
                 {
                     preserveScroll: true,
                     preserveState: true,

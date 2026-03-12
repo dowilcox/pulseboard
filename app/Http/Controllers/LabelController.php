@@ -30,7 +30,8 @@ class LabelController extends Controller
 
     public function update(Request $request, Team $team, Label $label): RedirectResponse
     {
-        abort_unless($label->team_id === $team->id, 403);
+        $this->authorize('update', $team);
+        abort_unless($label->team_id === $team->id, 404);
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:50'],
@@ -44,7 +45,8 @@ class LabelController extends Controller
 
     public function destroy(Team $team, Label $label): RedirectResponse
     {
-        abort_unless($label->team_id === $team->id, 403);
+        $this->authorize('update', $team);
+        abort_unless($label->team_id === $team->id, 404);
 
         $label->delete();
 

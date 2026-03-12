@@ -11,6 +11,8 @@ class BoardController extends Controller
 {
     public function index(Team $team): JsonResponse
     {
+        $this->authorize('view', $team);
+
         $boards = $team->boards()
             ->where('is_archived', false)
             ->orderBy('sort_order')
