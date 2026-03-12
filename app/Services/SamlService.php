@@ -67,7 +67,7 @@ class SamlService
     {
         $cert = $this->normalizeCertificate($config->certificate);
 
-        Log::debug('SAML certificate diagnostic', [
+        Log::error('SAML certificate diagnostic', [
             'config_name' => $config->name,
             'cert_length' => strlen($cert),
             'cert_starts_with' => substr($cert, 0, 20),
