@@ -103,7 +103,9 @@ class TeamManagementTest extends TestCase
 
     public function test_owner_can_delete_team(): void
     {
-        $response = $this->actingAs($this->user)->delete(route('teams.destroy', $this->team));
+        $response = $this->actingAs($this->user)->delete(route('teams.destroy', $this->team), [
+            'confirmation' => 'DELETE',
+        ]);
 
         $response->assertRedirect(route('teams.index'));
         $this->assertDatabaseMissing('teams', ['id' => $this->team->id]);
@@ -114,7 +116,9 @@ class TeamManagementTest extends TestCase
         $admin = User::factory()->create();
         $this->addTeamMember($admin, $this->team, 'admin');
 
-        $response = $this->actingAs($admin)->delete(route('teams.destroy', $this->team));
+        $response = $this->actingAs($admin)->delete(route('teams.destroy', $this->team), [
+            'confirmation' => 'DELETE',
+        ]);
 
         $response->assertForbidden();
     }
