@@ -19,7 +19,8 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import axios from "axios";
+import Alert from "@mui/material/Alert";
+import axios, { AxiosError } from "axios";
 import { useCallback, useRef, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
@@ -53,6 +54,7 @@ export default function AttachmentList({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [dragOver, setDragOver] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -70,9 +72,11 @@ export default function AttachmentList({
         async (files: FileList | File[]) => {
             setUploading(true);
             setUploadProgress(0);
+            setUploadError(null);
             const fileArray = Array.from(files);
             const totalFiles = fileArray.length;
             let completedFiles = 0;
+            const errors: string[] = [];
 
             for (const file of fileArray) {
                 const formData = new FormData();
@@ -98,9 +102,36 @@ export default function AttachmentList({
                         },
                     );
                     completedFiles++;
-                } catch {
+                } catch (err) {
                     completedFiles++;
+                    if (err instanceof AxiosError && err.response) {
+                        const data = err.response.data;
+                        const validationErrors =
+                            data?.errors?.file ??
+                            Object.values(data?.errors ?? {}).flat();
+                        if (validationErrors.length > 0) {
+                            errors.push(
+                                `${file.name}: ${(validationErrors as string[]).join(", ")}`,
+                            );
+                        } else if (err.response.status === 413) {
+                            errors.push(
+                                `${file.name}: File is too large. Maximum upload size is 10MB.`,
+                            );
+                        } else {
+                            errors.push(
+                                `${file.name}: Upload failed (${err.response.status}).`,
+                            );
+                        }
+                    } else {
+                        errors.push(
+                            `${file.name}: Upload failed. Check your connection and try again.`,
+                        );
+                    }
                 }
+            }
+
+            if (errors.length > 0) {
+                setUploadError(errors.join("\n"));
             }
 
             setUploading(false);
@@ -200,6 +231,16 @@ export default function AttachmentList({
                     value={uploadProgress}
                     sx={{ mb: 1 }}
                 />
+            )}
+
+            {uploadError && (
+                <Alert
+                    severity="error"
+                    onClose={() => setUploadError(null)}
+                    sx={{ mb: 1, whiteSpace: "pre-line" }}
+                >
+                    {uploadError}
+                </Alert>
             )}
 
             {/* Image gallery */}

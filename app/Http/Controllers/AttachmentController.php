@@ -21,7 +21,12 @@ class AttachmentController extends Controller
         $this->authorize('update', $task);
 
         $request->validate([
-            'file' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,webm,svg'], // 10MB max
+            'file' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,webm,svg'],
+        ], [
+            'file.required' => 'Please select a file to upload.',
+            'file.file' => 'The upload failed. The file may be too large (max 10MB) or the server rejected it.',
+            'file.max' => 'The file is too large. Maximum size is 10MB.',
+            'file.mimes' => 'This file type is not supported. Allowed types: images, PDF, Office documents, text, CSV, ZIP, and video files.',
         ]);
 
         UploadAttachment::run($task, $request->file('file'), $request->user());

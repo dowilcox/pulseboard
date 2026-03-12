@@ -90,6 +90,11 @@ RUN pecl install redis \
     && docker-php-ext-enable redis
 
 # ---- Configuration files ---------------------------------------------------
+# FrankenPHP uses /etc/frankenphp for its embedded PHP SAPI
+COPY docker/php.ini         /etc/frankenphp/php.ini
+RUN mkdir -p /etc/frankenphp/php.d && cp /etc/frankenphp/php.ini /etc/frankenphp/php.d/99-custom.ini
+# Also copy for CLI PHP (artisan, tinker, etc.)
+COPY docker/php.ini         /usr/local/etc/php/php.ini
 COPY docker/php.ini         /usr/local/etc/php/conf.d/99-custom.ini
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh   /usr/local/bin/entrypoint.sh
@@ -127,6 +132,9 @@ RUN mkdir -p \
         storage/logs \
         bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
+
+# ---- Caddy / FrankenPHP request body limit ---------------------------------
+ENV CADDY_SERVER_EXTRA_DIRECTIVES="request_body { max_size 30MB }"
 
 # ---- Health check -----------------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
@@ -184,6 +192,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && rm -rf /var/lib/apt/lists/*
 
 # ---- Configuration files ---------------------------------------------------
+# FrankenPHP uses /etc/frankenphp for its embedded PHP SAPI
+COPY docker/php.dev.ini     /etc/frankenphp/php.ini
+RUN mkdir -p /etc/frankenphp/php.d && cp /etc/frankenphp/php.ini /etc/frankenphp/php.d/99-custom.ini
+# Also copy for CLI PHP (artisan, tinker, etc.)
+COPY docker/php.dev.ini     /usr/local/etc/php/php.ini
 COPY docker/php.dev.ini     /usr/local/etc/php/conf.d/99-custom.ini
 COPY docker/supervisord.dev.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/entrypoint.sh   /usr/local/bin/entrypoint.sh
@@ -193,6 +206,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 WORKDIR /var/www/html
 
 RUN mkdir -p storage/logs bootstrap/cache
+
+# ---- Caddy / FrankenPHP request body limit ---------------------------------
+ENV CADDY_SERVER_EXTRA_DIRECTIVES="request_body { max_size 30MB }"
 
 EXPOSE 8000 8080
 
