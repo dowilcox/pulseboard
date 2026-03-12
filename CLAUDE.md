@@ -17,6 +17,20 @@ composer setup         # First-time setup (install deps, .env, key, migrate, bui
 npx tsc --noEmit       # TypeScript type checking
 npx vite build         # Production frontend build
 docker compose up      # Containerized dev (app:8000, mysql:3306, redis:6379)
+
+```
+
+## Container Build & Push
+
+Registry: `ghcr.io/dowilcox/pulseboard`. Multi-stage Dockerfile (`docker/Dockerfile`): composer deps → frontend build → FrankenPHP production runtime.
+
+```bash
+# Build production container
+docker build -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:<version> -t ghcr.io/dowilcox/pulseboard:latest .
+
+# Push to GitHub Container Registry
+docker push ghcr.io/dowilcox/pulseboard:<version>
+docker push ghcr.io/dowilcox/pulseboard:latest
 ```
 
 ## Architecture
@@ -40,6 +54,7 @@ return Inertia::render('Boards/Show', ['board' => $board]);
 ### Frontend: Inertia Page Resolution
 
 No client-side router. Laravel routes render Inertia pages which resolve to React components:
+
 - Route calls `Inertia::render('Boards/Show', $props)` -> loads `resources/js/Pages/Boards/Show.tsx`
 - Pages receive typed props from Laravel, wrapped in a Layout component
 - Shared data (auth user, teams list) injected via `HandleInertiaRequests` middleware
@@ -47,6 +62,7 @@ No client-side router. Laravel routes render Inertia pages which resolve to Reac
 ### Authorization
 
 Three layers:
+
 1. **`team.member` middleware** - rejects non-members at the route level
 2. **Policies** (`TeamPolicy`, `BoardPolicy`) - fine-grained role checks (owner/admin/member)
 3. **Controllers** call `$this->authorize()` before delegating to Actions
