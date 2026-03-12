@@ -6,6 +6,7 @@ use App\Models\SsoConfiguration;
 use Illuminate\Support\Facades\Log;
 use OneLogin\Saml2\Auth as SamlAuth;
 use OneLogin\Saml2\Settings as SamlSettings;
+use OneLogin\Saml2\Utils as SamlUtils;
 
 class SamlService
 {
