@@ -32,6 +32,9 @@ node_modules
 # Composer development cache
 vendor
 
+# Cached package/service discovery (dev-only providers leak into production)
+bootstrap/cache/*.php
+
 # Environment (secrets - must not be baked into images)
 .env
 .env.local
