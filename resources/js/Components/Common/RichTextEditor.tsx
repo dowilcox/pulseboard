@@ -99,6 +99,7 @@ interface RichTextEditorProps {
     editable?: boolean;
     uploadImageUrl?: string;
     minHeight?: number;
+    autoFocus?: boolean;
 }
 
 export default function RichTextEditor({
@@ -108,6 +109,7 @@ export default function RichTextEditor({
     editable = true,
     uploadImageUrl,
     minHeight = 200,
+    autoFocus = false,
 }: RichTextEditorProps) {
     const theme = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,6 +147,7 @@ export default function RichTextEditor({
         ],
         content,
         editable,
+        autofocus: autoFocus ? "end" : false,
         onUpdate: ({ editor: ed }) => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const storage = ed.storage as any;

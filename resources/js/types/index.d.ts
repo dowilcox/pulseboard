@@ -226,10 +226,12 @@ export interface Comment {
     id: string;
     task_id: string;
     user_id: string;
+    parent_id: string | null;
     body: string;
     created_at: string;
     updated_at: string;
     user?: User;
+    replies?: Comment[];
 }
 
 export interface Activity {
