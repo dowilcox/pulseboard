@@ -99,7 +99,7 @@ services:
       [
         "/bin/sh",
         "-c",
-        'php artisan config:clear && php artisan test "$@"',
+        'php artisan config:clear && php vendor/bin/phpunit "$@"',
         "--",
       ]
     profiles:

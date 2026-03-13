@@ -180,8 +180,8 @@ RUN docker-php-ext-configure gd \
         pdo_sqlite \
         zip
 
-RUN pecl install redis \
-    && docker-php-ext-enable redis
+RUN pecl install redis pcov \
+    && docker-php-ext-enable redis pcov
 
 # ---- Composer --------------------------------------------------------------
 COPY --from=docker.io/library/composer:2.8 /usr/bin/composer /usr/bin/composer
