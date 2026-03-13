@@ -419,6 +419,10 @@ Route::middleware('auth')->group(function () {
             '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}',
             [AttachmentController::class, 'download'],
         )->name('attachments.download');
+        Route::get(
+            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}/view',
+            [AttachmentController::class, 'view'],
+        )->name('attachments.view');
         Route::delete(
             '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}',
             [AttachmentController::class, 'destroy'],

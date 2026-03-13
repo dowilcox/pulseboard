@@ -43,6 +43,23 @@ class AttachmentController extends Controller
         return Storage::disk('local')->download($attachment->file_path, $attachment->filename);
     }
 
+    public function view(Team $team, Board $board, Task $task, Attachment $attachment): StreamedResponse
+    {
+        $this->authorize('view', $task);
+
+        abort_unless(Storage::disk('local')->exists($attachment->file_path), 404, 'File not found.');
+
+        return new StreamedResponse(function () use ($attachment) {
+            $stream = Storage::disk('local')->readStream($attachment->file_path);
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $attachment->mime_type,
+            'Content-Disposition' => 'inline; filename="'.addcslashes($attachment->filename, '"\\').'"',
+            'Content-Length' => $attachment->file_size,
+        ]);
+    }
+
     public function destroy(Team $team, Board $board, Task $task, Attachment $attachment): RedirectResponse
     {
         $this->authorize('update', $task);

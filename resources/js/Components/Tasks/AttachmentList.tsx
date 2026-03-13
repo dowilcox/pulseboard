@@ -17,6 +17,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Link from "@mui/material/Link";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
@@ -306,14 +307,27 @@ export default function AttachmentList({
                                         gap: 0.5,
                                     }}
                                 >
-                                    <Typography
+                                    <Link
+                                        href={route("attachments.view", [
+                                            teamId,
+                                            boardId,
+                                            taskId,
+                                            attachment.id,
+                                        ])}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        underline="hover"
                                         variant="caption"
-                                        color="white"
                                         noWrap
-                                        sx={{ px: 1, maxWidth: "100%" }}
+                                        sx={{
+                                            px: 1,
+                                            maxWidth: "100%",
+                                            color: "white",
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         {attachment.filename}
-                                    </Typography>
+                                    </Link>
                                     <Box sx={{ display: "flex", gap: 0.5 }}>
                                         <Tooltip title="Download">
                                             <IconButton
@@ -408,12 +422,25 @@ export default function AttachmentList({
                                     />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary={attachment.filename}
+                                    primary={
+                                        <Link
+                                            href={route("attachments.view", [
+                                                teamId,
+                                                boardId,
+                                                taskId,
+                                                attachment.id,
+                                            ])}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            underline="hover"
+                                            variant="body2"
+                                            noWrap
+                                            sx={{ display: "block" }}
+                                        >
+                                            {attachment.filename}
+                                        </Link>
+                                    }
                                     secondary={`${formatFileSize(attachment.file_size)} ${attachment.user ? `by ${attachment.user.name}` : ""}`}
-                                    primaryTypographyProps={{
-                                        variant: "body2",
-                                        noWrap: true,
-                                    }}
                                     secondaryTypographyProps={{
                                         variant: "caption",
                                     }}
