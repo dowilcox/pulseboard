@@ -75,6 +75,9 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
                         "&:first-of-type": { mt: 0 },
                     },
                     "& p": { ...theme.typography.body1, my: 0.5 },
+                    "& p:last-child:has(.ProseMirror-trailingBreak)": {
+                        display: "none",
+                    },
                     "& ul, & ol": { pl: 3 },
                     '& ul[data-type="taskList"]': {
                         listStyle: "none",
