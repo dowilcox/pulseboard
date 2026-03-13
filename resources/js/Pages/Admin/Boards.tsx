@@ -6,6 +6,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
 import type { Board, PageProps } from "@/types";
 import DeleteIcon from "@mui/icons-material/Delete";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
@@ -88,9 +89,38 @@ export default function Boards({ adminBoards: boards }: Props) {
                                     {boards.map((board) => (
                                         <TableRow key={board.id} hover>
                                             <TableCell>
-                                                <Typography fontWeight={500}>
-                                                    {board.name}
-                                                </Typography>
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1.5,
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        src={
+                                                            board.image_url ??
+                                                            undefined
+                                                        }
+                                                        variant="rounded"
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            fontSize: "0.75rem",
+                                                            fontWeight: 600,
+                                                            bgcolor:
+                                                                "primary.main",
+                                                        }}
+                                                    >
+                                                        {board.name
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </Avatar>
+                                                    <Typography
+                                                        fontWeight={500}
+                                                    >
+                                                        {board.name}
+                                                    </Typography>
+                                                </Box>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">

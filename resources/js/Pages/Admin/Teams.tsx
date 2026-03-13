@@ -11,6 +11,7 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
 import Autocomplete from "@mui/material/Autocomplete";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -265,19 +266,54 @@ export default function Teams({ adminTeams: teams }: Props) {
                                             aria-label={`View details for team ${team.name}`}
                                         >
                                             <TableCell>
-                                                <Typography fontWeight={500}>
-                                                    {team.name}
-                                                </Typography>
-                                                {team.description && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="text.secondary"
-                                                        noWrap
-                                                        sx={{ maxWidth: 300 }}
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1.5,
+                                                    }}
+                                                >
+                                                    <Avatar
+                                                        src={
+                                                            team.image_url ??
+                                                            undefined
+                                                        }
+                                                        variant="rounded"
+                                                        sx={{
+                                                            width: 28,
+                                                            height: 28,
+                                                            fontSize: "0.75rem",
+                                                            fontWeight: 600,
+                                                            bgcolor:
+                                                                "primary.main",
+                                                        }}
                                                     >
-                                                        {team.description}
-                                                    </Typography>
-                                                )}
+                                                        {team.name
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </Avatar>
+                                                    <Box>
+                                                        <Typography
+                                                            fontWeight={500}
+                                                        >
+                                                            {team.name}
+                                                        </Typography>
+                                                        {team.description && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                noWrap
+                                                                sx={{
+                                                                    maxWidth: 300,
+                                                                }}
+                                                            >
+                                                                {
+                                                                    team.description
+                                                                }
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </Box>
                                             </TableCell>
                                             <TableCell>
                                                 <Chip
@@ -322,7 +358,22 @@ export default function Teams({ adminTeams: teams }: Props) {
                 fullWidth
                 aria-labelledby="team-detail-dialog-title"
             >
-                <DialogTitle id="team-detail-dialog-title">
+                <DialogTitle
+                    id="team-detail-dialog-title"
+                    sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+                >
+                    <Avatar
+                        src={teamDetail?.image_url ?? undefined}
+                        sx={{
+                            width: 32,
+                            height: 32,
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            bgcolor: "primary.main",
+                        }}
+                    >
+                        {teamDetail?.name?.charAt(0).toUpperCase() ?? "?"}
+                    </Avatar>
                     {teamDetail?.name ?? "Team Details"}
                 </DialogTitle>
                 <DialogContent>

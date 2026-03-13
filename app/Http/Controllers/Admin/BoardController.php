@@ -15,7 +15,7 @@ class BoardController extends Controller
 {
     public function index(): Response
     {
-        $boards = Board::with('team:id,name')
+        $boards = Board::with(['team:id,name', 'media'])
             ->withCount('tasks')
             ->orderBy('name')
             ->get();

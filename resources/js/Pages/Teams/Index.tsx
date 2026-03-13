@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Team } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import GroupsIcon from "@mui/icons-material/Groups";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -134,6 +135,23 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                                                 mb: 1,
                                             }}
                                         >
+                                            <Avatar
+                                                src={
+                                                    team.image_url ?? undefined
+                                                }
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    fontSize: "0.875rem",
+                                                    fontWeight: 600,
+                                                    mr: 1.5,
+                                                    bgcolor: "primary.main",
+                                                }}
+                                            >
+                                                {team.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </Avatar>
                                             <Typography
                                                 variant="h6"
                                                 component="h3"

@@ -266,6 +266,30 @@ export default function TeamsShow({ team, members, boards }: Props) {
                 elevation={0}
                 sx={{ p: 2.5, mb: 3, bgcolor: "action.hover" }}
             >
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mb: team.description ? 1.5 : 0,
+                    }}
+                >
+                    <Avatar
+                        src={team.image_url ?? undefined}
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            fontSize: "1rem",
+                            fontWeight: 600,
+                            mr: 1.5,
+                            bgcolor: "primary.main",
+                        }}
+                    >
+                        {team.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant="h6" fontWeight={600}>
+                        {team.name}
+                    </Typography>
+                </Box>
                 {team.description && (
                     <Typography
                         variant="body2"
@@ -499,13 +523,24 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                                 mb: 1,
                                             }}
                                         >
-                                            <DashboardIcon
-                                                fontSize="small"
+                                            <Avatar
+                                                src={
+                                                    board.image_url ?? undefined
+                                                }
+                                                variant="rounded"
                                                 sx={{
-                                                    color: "primary.main",
+                                                    width: 24,
+                                                    height: 24,
+                                                    fontSize: "0.7rem",
+                                                    fontWeight: 600,
                                                     mr: 1,
+                                                    bgcolor: "primary.main",
                                                 }}
-                                            />
+                                            >
+                                                {board.name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </Avatar>
                                             <Typography
                                                 variant="subtitle1"
                                                 component="h3"

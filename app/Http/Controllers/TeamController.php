@@ -27,6 +27,7 @@ class TeamController extends Controller
     {
         $teams = auth()->user()
             ->teams()
+            ->with('media')
             ->withCount(['members', 'boards'])
             ->withPivot('role')
             ->orderBy('name')
@@ -54,10 +55,10 @@ class TeamController extends Controller
     {
         $this->authorize('view', $team);
 
-        $team->load(['members' => function ($query) {
+        $team->load(['media', 'members' => function ($query) {
             $query->whereNull('deactivated_at');
         }, 'boards' => function ($query) {
-            $query->active()->with('columns')->orderBy('sort_order');
+            $query->active()->with(['columns', 'media'])->orderBy('sort_order');
         }]);
 
         return Inertia::render('Teams/Show', [

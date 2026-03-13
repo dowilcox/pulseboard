@@ -21,7 +21,8 @@ class TeamController extends Controller
 {
     public function index(): Response
     {
-        $teams = Team::withCount(['members', 'boards'])
+        $teams = Team::with('media')
+            ->withCount(['members', 'boards'])
             ->orderBy('name')
             ->get();
 
@@ -33,8 +34,9 @@ class TeamController extends Controller
     public function show(Team $team): JsonResponse
     {
         $team->load([
+            'media',
             'members',
-            'boards:id,team_id,name,is_archived,created_at',
+            'boards' => fn ($q) => $q->select('id', 'team_id', 'name', 'is_archived', 'created_at')->with('media'),
         ]);
 
         return response()->json($team);

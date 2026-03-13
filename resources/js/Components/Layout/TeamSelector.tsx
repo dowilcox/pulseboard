@@ -98,9 +98,29 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                     }
                     const team = teams.find((t) => t.id === selected);
                     return (
-                        <Typography variant="body2" fontWeight={600} noWrap>
-                            {team?.name ?? "Unknown team"}
-                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                            }}
+                        >
+                            <Avatar
+                                src={team?.image_url ?? undefined}
+                                sx={{
+                                    width: 20,
+                                    height: 20,
+                                    fontSize: "0.65rem",
+                                    fontWeight: 600,
+                                    bgcolor: "primary.main",
+                                }}
+                            >
+                                {team?.name?.charAt(0).toUpperCase() ?? "?"}
+                            </Avatar>
+                            <Typography variant="body2" fontWeight={600} noWrap>
+                                {team?.name ?? "Unknown team"}
+                            </Typography>
+                        </Box>
                     );
                 }}
             >
@@ -109,6 +129,19 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
 
                     return (
                         <MenuItem key={team.id} value={team.id}>
+                            <Avatar
+                                src={team.image_url ?? undefined}
+                                sx={{
+                                    width: 20,
+                                    height: 20,
+                                    fontSize: "0.65rem",
+                                    fontWeight: 600,
+                                    mr: 1,
+                                    bgcolor: "primary.main",
+                                }}
+                            >
+                                {team.name.charAt(0).toUpperCase()}
+                            </Avatar>
                             <ListItemText
                                 primary={team.name}
                                 primaryTypographyProps={{ variant: "body2" }}
