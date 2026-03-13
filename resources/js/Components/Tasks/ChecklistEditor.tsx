@@ -203,6 +203,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                             disableUnderline: true,
                                             sx: {
                                                 fontSize: "0.875rem",
+                                                py: 0.5,
                                                 textDecoration: item.completed
                                                     ? "line-through"
                                                     : "none",
