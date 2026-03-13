@@ -200,10 +200,6 @@ function activityDescription(
     }
 }
 
-function isHtml(text: string): boolean {
-    return /<[a-z][\s\S]*>/i.test(text);
-}
-
 export default function ActivityFeed({
     comments,
     activities,
@@ -458,13 +454,7 @@ export default function ActivityFeed({
 
         return (
             <Box sx={{ p: 2 }}>
-                {isHtml(comment.body) ? (
-                    <RichTextDisplay content={comment.body} />
-                ) : (
-                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                        {comment.body}
-                    </Typography>
-                )}
+                <RichTextDisplay content={comment.body} />
             </Box>
         );
     };
@@ -587,19 +577,7 @@ export default function ActivityFeed({
                         </>
                     ) : (
                         <>
-                            {isHtml(reply.body) ? (
-                                <RichTextDisplay content={reply.body} />
-                            ) : (
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        whiteSpace: "pre-wrap",
-                                        fontSize: "0.85rem",
-                                    }}
-                                >
-                                    {reply.body}
-                                </Typography>
-                            )}
+                            <RichTextDisplay content={reply.body} />
                         </>
                     )}
                 </Box>
