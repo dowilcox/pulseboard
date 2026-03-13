@@ -17,7 +17,8 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader \
     --no-scripts \
-    --no-progress
+    --no-progress \
+    --ignore-platform-req=ext-exif
 
 # ---------------------------------------------------------------------------
 # Stage 2: Frontend build
