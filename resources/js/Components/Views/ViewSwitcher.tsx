@@ -1,6 +1,5 @@
 import type { BoardViewMode } from "@/types";
 import TableRowsIcon from "@mui/icons-material/TableRows";
-import TimelineIcon from "@mui/icons-material/Timeline";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import WorkIcon from "@mui/icons-material/Work";
 import ToggleButton from "@mui/material/ToggleButton";
@@ -23,11 +22,6 @@ const views: {
         icon: <ViewColumnIcon fontSize="small" />,
     },
     { value: "list", label: "List", icon: <TableRowsIcon fontSize="small" /> },
-    {
-        value: "timeline",
-        label: "Timeline",
-        icon: <TimelineIcon fontSize="small" />,
-    },
     {
         value: "workload",
         label: "Workload",

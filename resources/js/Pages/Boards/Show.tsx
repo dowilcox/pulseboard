@@ -2,7 +2,6 @@ import FilterBar from "@/Components/Tasks/FilterBar";
 import PresenceAvatars from "@/Components/Layout/PresenceAvatars";
 import KanbanView from "@/Components/Views/KanbanView";
 import ListView from "@/Components/Views/ListView";
-import TimelineView from "@/Components/Views/TimelineView";
 import ViewSwitcher from "@/Components/Views/ViewSwitcher";
 import WorkloadView from "@/Components/Views/WorkloadView";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
@@ -132,14 +131,6 @@ export default function BoardsShow({
                         filterFn={taskFilter}
                         onTaskClick={handleTaskClick}
                         showGitlab={gitlabProjects.length > 0}
-                    />
-                );
-            case "timeline":
-                return (
-                    <TimelineView
-                        columns={columns}
-                        filterFn={taskFilter}
-                        onTaskClick={handleTaskClick}
                     />
                 );
             case "workload":
