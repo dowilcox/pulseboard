@@ -54,6 +54,7 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
                     placement="right"
                 >
                     <Avatar
+                        src={currentTeam?.image_url ?? undefined}
                         sx={{
                             width: 32,
                             height: 32,

@@ -63,6 +63,7 @@ export interface Team {
     name: string;
     slug: string;
     description?: string;
+    image_url?: string | null;
     settings: Record<string, unknown>;
     created_at: string;
     updated_at: string;
@@ -89,6 +90,7 @@ export interface Board {
     team_id: string;
     name: string;
     description?: string;
+    image_url?: string | null;
     is_archived: boolean;
     sort_order: number;
     default_task_template_id?: string;
@@ -249,9 +251,9 @@ export interface Attachment {
     task_id: string;
     user_id: string;
     filename: string;
-    file_path: string;
     file_size: number;
     mime_type: string;
+    thumbnail_url?: string;
     created_at: string;
     user?: User;
 }

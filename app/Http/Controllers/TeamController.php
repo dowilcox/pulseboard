@@ -9,10 +9,14 @@ use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Team;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileCannotBeAdded;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class TeamController extends Controller
 {
@@ -108,5 +112,36 @@ class TeamController extends Controller
             'canManageMembers' => $canManageMembers,
             'canManageAdmins' => $canManageAdmins,
         ]);
+    }
+
+    public function uploadImage(Request $request, Team $team): JsonResponse
+    {
+        $this->authorize('update', $team);
+
+        $request->validate([
+            'image' => ['required', 'image', 'max:2048'],
+        ]);
+
+        try {
+            $team->addMedia($request->file('image'))
+                ->toMediaCollection('avatar');
+        } catch (FileIsTooBig) {
+            return response()->json(['message' => 'The image is too large. Maximum size is 2MB.'], 422);
+        } catch (FileCannotBeAdded $e) {
+            return response()->json(['message' => 'The image could not be uploaded: '.$e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'image_url' => $team->getFirstMediaUrl('avatar', 'avatar'),
+        ]);
+    }
+
+    public function deleteImage(Team $team): JsonResponse
+    {
+        $this->authorize('update', $team);
+
+        $team->clearMediaCollection('avatar');
+
+        return response()->json(['message' => 'Image removed']);
     }
 }

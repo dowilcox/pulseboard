@@ -4,7 +4,6 @@ namespace App\Actions\Tasks;
 
 use App\Models\Task;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class UploadTaskImage
@@ -13,8 +12,9 @@ class UploadTaskImage
 
     public function handle(Task $task, UploadedFile $file): string
     {
-        $path = $file->store("task-images/{$task->id}", 'public');
+        $media = $task->addMedia($file)
+            ->toMediaCollection('editor-images');
 
-        return Storage::disk('public')->url($path);
+        return $media->getUrl();
     }
 }

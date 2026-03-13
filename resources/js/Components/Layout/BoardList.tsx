@@ -108,10 +108,24 @@ function SortableBoardItem({
                     <DragIndicatorIcon sx={{ fontSize: 16 }} />
                 </Box>
                 <ListItemIcon sx={{ minWidth: 32 }}>
-                    <DashboardIcon
-                        fontSize="small"
-                        color={isActive ? "primary" : "action"}
-                    />
+                    {board.image_url ? (
+                        <Box
+                            component="img"
+                            src={board.image_url}
+                            alt={board.name}
+                            sx={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "4px",
+                                objectFit: "cover",
+                            }}
+                        />
+                    ) : (
+                        <DashboardIcon
+                            fontSize="small"
+                            color={isActive ? "primary" : "action"}
+                        />
+                    )}
                 </ListItemIcon>
                 <ListItemText
                     primary={board.name}

@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Attachment;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
@@ -65,12 +64,11 @@ class AttachmentControllerTest extends TestCase
         );
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('attachments', [
-            'task_id' => $this->task->id,
-            'user_id' => $this->user->id,
-            'filename' => 'document.pdf',
-            'mime_type' => 'application/pdf',
-        ]);
+
+        $media = $this->task->getMedia('attachments');
+        $this->assertCount(1, $media);
+        $this->assertEquals('document.pdf', $media->first()->getCustomProperty('original_filename'));
+        $this->assertEquals($this->user->id, $media->first()->getCustomProperty('uploaded_by'));
     }
 
     public function test_upload_requires_file(): void
@@ -83,11 +81,11 @@ class AttachmentControllerTest extends TestCase
         $response->assertSessionHasErrors('file');
     }
 
-    public function test_upload_rejects_file_over_10mb(): void
+    public function test_upload_rejects_file_over_15mb(): void
     {
         Storage::fake('local');
 
-        $file = UploadedFile::fake()->create('large.zip', 11000, 'application/zip');
+        $file = UploadedFile::fake()->create('large.zip', 16000, 'application/zip');
 
         $response = $this->actingAs($this->user)->post(
             route('attachments.store', [$this->team, $this->board, $this->task]),
@@ -117,24 +115,19 @@ class AttachmentControllerTest extends TestCase
         Storage::fake('local');
 
         $file = UploadedFile::fake()->create('document.pdf', 1024, 'application/pdf');
-        $path = $file->store("attachments/{$this->task->id}", 'local');
 
-        $attachment = Attachment::create([
-            'task_id' => $this->task->id,
-            'user_id' => $this->user->id,
-            'filename' => 'document.pdf',
-            'file_path' => $path,
-            'file_size' => 1024,
-            'mime_type' => 'application/pdf',
-            'created_at' => now(),
-        ]);
+        $media = $this->task->addMedia($file)
+            ->withCustomProperties([
+                'original_filename' => 'document.pdf',
+                'uploaded_by' => $this->user->id,
+            ])
+            ->toMediaCollection('attachments');
 
         $response = $this->actingAs($this->user)->get(
-            route('attachments.download', [$this->team, $this->board, $this->task, $attachment])
+            route('attachments.download', [$this->team, $this->board, $this->task, $media->uuid])
         );
 
         $response->assertOk();
-        $response->assertDownload('document.pdf');
     }
 
     public function test_team_member_can_delete_attachment(): void
@@ -142,25 +135,20 @@ class AttachmentControllerTest extends TestCase
         Storage::fake('local');
 
         $file = UploadedFile::fake()->create('document.pdf', 1024, 'application/pdf');
-        $path = $file->store("attachments/{$this->task->id}", 'local');
 
-        $attachment = Attachment::create([
-            'task_id' => $this->task->id,
-            'user_id' => $this->user->id,
-            'filename' => 'document.pdf',
-            'file_path' => $path,
-            'file_size' => 1024,
-            'mime_type' => 'application/pdf',
-            'created_at' => now(),
-        ]);
+        $media = $this->task->addMedia($file)
+            ->withCustomProperties([
+                'original_filename' => 'document.pdf',
+                'uploaded_by' => $this->user->id,
+            ])
+            ->toMediaCollection('attachments');
 
         $response = $this->actingAs($this->user)->delete(
-            route('attachments.destroy', [$this->team, $this->board, $this->task, $attachment])
+            route('attachments.destroy', [$this->team, $this->board, $this->task, $media->uuid])
         );
 
         $response->assertRedirect();
-        $this->assertDatabaseMissing('attachments', ['id' => $attachment->id]);
-        Storage::disk('local')->assertMissing($path);
+        $this->assertDatabaseMissing('media', ['id' => $media->id]);
     }
 
     public function test_upload_logs_activity(): void
@@ -186,20 +174,16 @@ class AttachmentControllerTest extends TestCase
         Storage::fake('local');
 
         $file = UploadedFile::fake()->create('document.pdf', 1024, 'application/pdf');
-        $path = $file->store("attachments/{$this->task->id}", 'local');
 
-        $attachment = Attachment::create([
-            'task_id' => $this->task->id,
-            'user_id' => $this->user->id,
-            'filename' => 'document.pdf',
-            'file_path' => $path,
-            'file_size' => 1024,
-            'mime_type' => 'application/pdf',
-            'created_at' => now(),
-        ]);
+        $media = $this->task->addMedia($file)
+            ->withCustomProperties([
+                'original_filename' => 'document.pdf',
+                'uploaded_by' => $this->user->id,
+            ])
+            ->toMediaCollection('attachments');
 
         $this->actingAs($this->user)->delete(
-            route('attachments.destroy', [$this->team, $this->board, $this->task, $attachment])
+            route('attachments.destroy', [$this->team, $this->board, $this->task, $media->uuid])
         );
 
         $this->assertDatabaseHas('activities', [

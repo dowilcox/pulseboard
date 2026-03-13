@@ -5,7 +5,6 @@ namespace App\Actions\Boards;
 use App\Events\BoardChanged;
 use App\Models\Board;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class DeleteBoard
@@ -14,13 +13,10 @@ class DeleteBoard
 
     public function handle(Board $board): void
     {
-        // Collect and delete attachment files
-        $tasks = $board->tasks()->with('attachments')->get();
-        $filePaths = $tasks->flatMap(fn ($task) => $task->attachments->pluck('file_path'));
-
-        foreach ($filePaths as $path) {
-            Storage::disk('local')->delete($path);
-        }
+        // Delete tasks via Eloquent to trigger media library cleanup
+        $board->tasks()->each(function ($task) {
+            $task->delete();
+        });
 
         // Broadcast deletion event before deleting
         broadcast(new BoardChanged(
@@ -30,7 +26,6 @@ class DeleteBoard
             userId: Auth::id(),
         ))->toOthers();
 
-        // FK cascades handle all DB records
         $board->delete();
     }
 }

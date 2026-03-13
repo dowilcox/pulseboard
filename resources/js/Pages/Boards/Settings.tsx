@@ -1,4 +1,5 @@
 import AutomationRulesPanel from "@/Components/Automation/AutomationRulesPanel";
+import BoardImageUpload from "@/Components/Boards/BoardImageUpload";
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import PageHeader from "@/Components/Layout/PageHeader";
@@ -450,6 +451,9 @@ export default function BoardSettings({ board, team, members }: Props) {
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Board Image */}
+                <BoardImageUpload board={board} teamId={team.id} />
 
                 {/* Column management */}
                 <Card variant="outlined">

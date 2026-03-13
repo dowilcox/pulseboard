@@ -1,3 +1,4 @@
+import ImageUpload from "@/Components/Common/ImageUpload";
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import { LABEL_COLORS } from "@/constants/labelColors";
@@ -231,6 +232,16 @@ export default function TeamSettings({
             <Head title={`Settings - ${team.name}`} />
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                {/* Team Image */}
+                <ImageUpload
+                    title="Team Image"
+                    description="Upload an image to use as the team avatar in the sidebar. Recommended size: 128×128px. Max file size: 2MB."
+                    imageUrl={team.image_url}
+                    altText={team.name}
+                    uploadRoute={route("teams.upload-image", team.id)}
+                    deleteRoute={route("teams.delete-image", team.id)}
+                />
+
                 {/* Members */}
                 <Card variant="outlined">
                     <CardContent>

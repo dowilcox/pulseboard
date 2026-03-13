@@ -2,25 +2,24 @@
 
 namespace App\Actions\Tasks;
 
-use App\Models\Attachment;
 use App\Services\ActivityLogger;
-use Illuminate\Support\Facades\Storage;
 use Lorisleiva\Actions\Concerns\AsAction;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DeleteAttachment
 {
     use AsAction;
 
-    public function handle(Attachment $attachment): void
+    public function handle(Media $media): void
     {
-        $task = $attachment->task;
+        $task = $media->model;
 
-        Storage::disk('local')->delete($attachment->file_path);
+        $filename = $media->getCustomProperty('original_filename', $media->file_name);
 
         ActivityLogger::log($task, 'attachment_removed', [
-            'filename' => $attachment->filename,
+            'filename' => $filename,
         ]);
 
-        $attachment->delete();
+        $media->delete();
     }
 }

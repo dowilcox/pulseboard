@@ -237,6 +237,7 @@ export default function Sidebar({
                                         cursor: "pointer",
                                         fontSize: "0.7rem",
                                         fontWeight: 600,
+                                        overflow: "hidden",
                                         bgcolor: isActive
                                             ? "primary.main"
                                             : "action.hover",
@@ -251,7 +252,20 @@ export default function Sidebar({
                                         },
                                     }}
                                 >
-                                    {initials}
+                                    {board.image_url ? (
+                                        <Box
+                                            component="img"
+                                            src={board.image_url}
+                                            alt={board.name}
+                                            sx={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                    ) : (
+                                        initials
+                                    )}
                                 </Box>
                             </Tooltip>
                         );

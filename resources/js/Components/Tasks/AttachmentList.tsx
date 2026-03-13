@@ -131,7 +131,7 @@ export default function AttachmentList({
                             );
                         } else if (err.response.status === 413) {
                             errors.push(
-                                `${file.name}: File is too large. Maximum upload size is 10MB.`,
+                                `${file.name}: File is too large. Maximum upload size is 15MB.`,
                             );
                         } else {
                             errors.push(
@@ -230,7 +230,7 @@ export default function AttachmentList({
                     Drop files here or click to upload
                 </Typography>
                 <Typography variant="caption" color="text.disabled">
-                    Max 10MB per file
+                    Max 15MB per file
                 </Typography>
                 <input
                     ref={fileInputRef}

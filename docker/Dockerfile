@@ -80,6 +80,7 @@ RUN docker-php-ext-configure gd \
         --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
+        exif \
         gd \
         pcntl \
         pdo_mysql \
@@ -174,6 +175,7 @@ RUN docker-php-ext-configure gd \
         --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
+        exif \
         gd \
         pcntl \
         pdo_mysql \

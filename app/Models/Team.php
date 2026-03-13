@@ -7,10 +7,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Team extends Model
+class Team extends Model implements HasMedia
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia;
 
     /**
      * The primary key type.
@@ -39,6 +42,46 @@ class Team extends Model
         return [
             'settings' => 'array',
         ];
+    }
+
+    protected $appends = ['image_url'];
+
+    protected $hidden = ['media'];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile()
+            ->useDisk('public')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('avatar')
+            ->width(128)
+            ->height(128)
+            ->sharpen(10)
+            ->nonQueued()
+            ->performOnCollections('avatar');
+
+        $this->addMediaConversion('avatar-lg')
+            ->width(256)
+            ->height(256)
+            ->sharpen(10)
+            ->nonQueued()
+            ->performOnCollections('avatar');
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        $media = $this->getFirstMedia('avatar');
+
+        if (! $media) {
+            return null;
+        }
+
+        return $media->getUrl('avatar');
     }
 
     public function members(): BelongsToMany

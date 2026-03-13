@@ -5,7 +5,6 @@ namespace App\Actions\Teams;
 use App\Models\Team;
 use App\Services\GitlabApiService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class DeleteTeam
@@ -31,17 +30,15 @@ class DeleteTeam
             }
         }
 
-        // Collect and delete attachment files
-        $boards = $team->boards()->with('tasks.attachments')->get();
-        $filePaths = $boards->flatMap(fn ($board) => $board->tasks->flatMap(
-            fn ($task) => $task->attachments->pluck('file_path')
-        ));
+        // Delete boards and their tasks via Eloquent to trigger media library cleanup
+        $team->boards()->each(function ($board) {
+            $board->tasks()->each(function ($task) {
+                $task->delete();
+            });
+            $board->delete();
+        });
 
-        foreach ($filePaths as $path) {
-            Storage::disk('local')->delete($path);
-        }
-
-        // FK cascades handle all DB records
+        // FK cascades handle remaining DB records
         $team->delete();
     }
 }

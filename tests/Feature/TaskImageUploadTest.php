@@ -60,7 +60,8 @@ class TaskImageUploadTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure(['url']);
 
-        Storage::disk('public')->assertExists("task-images/{$task->id}/{$file->hashName()}");
+        $media = $task->getMedia('editor-images');
+        $this->assertCount(1, $media);
     }
 
     public function test_rejects_non_image_file(): void

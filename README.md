@@ -28,8 +28,8 @@
 - Subtasks, checklists, and task dependencies (blocked-by / blocking)
 - Task recurrence (daily, weekly, monthly, custom)
 - Priority levels, due dates, effort estimates, and custom fields
-- File attachments with drag-and-drop upload
-- Rich text descriptions with inline image support
+- File attachments with drag-and-drop upload (up to 15 MB per file)
+- Rich text descriptions with inline image support (up to 5 MB per image)
 
 ### Templates & Automation
 
@@ -256,6 +256,21 @@ docker compose --profile test run --rm test --verbose
 - **WebSocket** context provides Echo instance and connection status for real-time features
 - **TypeScript** interfaces for all backend models in `resources/js/types/index.d.ts`
 - **Path alias:** `@/*` maps to `resources/js/*`
+
+### File Uploads
+
+File uploads are managed by [spatie/laravel-medialibrary](https://spatie.be/docs/laravel-medialibrary). Uploaded files are stored as media collections on their parent models, with automatic image conversions for avatars.
+
+| Upload Type               | Max Size | Disk              | Image Conversions                         |
+| ------------------------- | -------- | ----------------- | ----------------------------------------- |
+| Task attachments          | 15 MB    | `local` (private) | `thumb` (200x200) for images              |
+| Editor images (rich text) | 5 MB     | `public`          | None                                      |
+| Board avatars             | 2 MB     | `public`          | `avatar` (128x128), `avatar-lg` (256x256) |
+| Team avatars              | 2 MB     | `public`          | `avatar` (128x128), `avatar-lg` (256x256) |
+
+All image conversions run synchronously (non-queued) using the GD driver. Allowed attachment types: images, PDF, Office documents, text, CSV, ZIP, and video files.
+
+Deleting a board or team cascades through Eloquent (not DB-level cascades) to ensure media files are cleaned up automatically.
 
 ### API
 

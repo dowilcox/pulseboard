@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Activity;
-use App\Models\Attachment;
 use App\Models\AutomationRule;
 use App\Models\Board;
 use App\Models\BoardTemplate;
@@ -738,27 +737,39 @@ class DemoSeeder extends Seeder
 
         $this->command->info('  ✓ 14 activity records');
 
-        // ── Attachments (fake entries, no actual files) ────────
+        // ── Attachments (fake media entries, no actual files) ────────
         $attachments = [
-            [$sprintTasks['Set up OAuth2 provider integration'], $admin, 'oauth-flow-diagram.png', 'images/oauth-flow-diagram.png', 245_000, 'image/png'],
-            [$sprintTasks['Optimize database queries for dashboard'], $admin, 'query-profile-before.sql', 'docs/query-profile-before.sql', 3_400, 'text/plain'],
-            [$sprintTasks['Optimize database queries for dashboard'], $admin, 'query-profile-after.sql', 'docs/query-profile-after.sql', 2_100, 'text/plain'],
-            [$sprintTasks['Add search functionality to task list'], $admin, 'search-mockup.png', 'images/search-mockup.png', 180_000, 'image/png'],
-            [$bugTasks[0], $carol, 'error-screenshot.png', 'images/error-screenshot.png', 320_000, 'image/png'],
-            [$bugTasks[1], $eve, 'ipad-recording.mp4', 'videos/ipad-recording.mp4', 4_500_000, 'video/mp4'],
-            [$designTasks[0], $carol, 'color-palette-v2.figma', 'design/color-palette-v2.figma', 890_000, 'application/octet-stream'],
+            [$sprintTasks['Set up OAuth2 provider integration'], $admin, 'oauth-flow-diagram.png', 245_000, 'image/png'],
+            [$sprintTasks['Optimize database queries for dashboard'], $admin, 'query-profile-before.sql', 3_400, 'text/plain'],
+            [$sprintTasks['Optimize database queries for dashboard'], $admin, 'query-profile-after.sql', 2_100, 'text/plain'],
+            [$sprintTasks['Add search functionality to task list'], $admin, 'search-mockup.png', 180_000, 'image/png'],
+            [$bugTasks[0], $carol, 'error-screenshot.png', 320_000, 'image/png'],
+            [$bugTasks[1], $eve, 'ipad-recording.mp4', 4_500_000, 'video/mp4'],
+            [$designTasks[0], $carol, 'color-palette-v2.figma', 890_000, 'application/octet-stream'],
         ];
 
-        foreach ($attachments as [$task, $user, $filename, $path, $size, $mime]) {
-            DB::table('attachments')->insert([
-                'id' => Str::uuid()->toString(),
-                'task_id' => $task->id,
-                'user_id' => $user->id,
-                'filename' => $filename,
-                'file_path' => $path,
-                'file_size' => $size,
+        foreach ($attachments as [$task, $user, $filename, $size, $mime]) {
+            DB::table('media')->insert([
+                'model_type' => Task::class,
+                'model_id' => $task->id,
+                'uuid' => Str::uuid()->toString(),
+                'collection_name' => 'attachments',
+                'name' => pathinfo($filename, PATHINFO_FILENAME),
+                'file_name' => $filename,
                 'mime_type' => $mime,
+                'disk' => 'local',
+                'conversions_disk' => 'local',
+                'size' => $size,
+                'manipulations' => '[]',
+                'custom_properties' => json_encode([
+                    'original_filename' => $filename,
+                    'uploaded_by' => $user->id,
+                ]),
+                'generated_conversions' => '[]',
+                'responsive_images' => '[]',
+                'order_column' => null,
                 'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
@@ -1000,7 +1011,7 @@ class DemoSeeder extends Seeder
                 ['Labels', (string) Label::count()],
                 ['Comments', (string) Comment::count()],
                 ['Activities', (string) Activity::count()],
-                ['Attachments', (string) Attachment::count()],
+                ['Attachments', (string) Media::where('collection_name', 'attachments')->count()],
                 ['Saved Filters', (string) SavedFilter::count()],
                 ['Automation Rules', (string) AutomationRule::count()],
                 ['Task Templates', (string) TaskTemplate::count()],

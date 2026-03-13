@@ -24,6 +24,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileCannotBeAdded;
+use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class TaskController extends Controller
 {
@@ -76,7 +78,6 @@ class TaskController extends Controller
             'comments.replies' => fn ($q) => $q->orderBy('created_at'),
             'comments.replies.user',
             'activities.user',
-            'attachments.user',
             'subtasks.assignees',
             'subtasks.labels',
             'gitlabProject.connection',
@@ -93,6 +94,8 @@ class TaskController extends Controller
                 $query->whereNotNull('completed_at');
             },
         ]);
+        $task->load('media');
+        $task->append('attachments');
 
         if (request()->wantsJson()) {
             return response()->json($task);
@@ -292,7 +295,13 @@ class TaskController extends Controller
             'image' => ['required', 'image', 'max:5120'],
         ]);
 
-        $url = UploadTaskImage::run($task, $request->file('image'));
+        try {
+            $url = UploadTaskImage::run($task, $request->file('image'));
+        } catch (FileIsTooBig) {
+            return response()->json(['message' => 'The image is too large. Maximum size is 5MB.'], 422);
+        } catch (FileCannotBeAdded $e) {
+            return response()->json(['message' => 'The image could not be uploaded: '.$e->getMessage()], 422);
+        }
 
         return response()->json(['url' => $url]);
     }

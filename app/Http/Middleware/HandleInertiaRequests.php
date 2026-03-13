@@ -39,8 +39,10 @@ class HandleInertiaRequests extends Middleware
                     ->user()
                     ->teams()
                     ->with([
+                        'media',
                         'boards' => fn ($q) => $q
                             ->select('id', 'team_id', 'name', 'sort_order')
+                            ->with('media')
                             ->orderBy('sort_order'),
                     ])
                     ->withPivot('role')

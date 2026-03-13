@@ -237,6 +237,14 @@ Route::middleware('auth')->group(function () {
             TeamController::class,
             'settings',
         ])->name('teams.settings');
+        Route::post('/teams/{team}/image', [
+            TeamController::class,
+            'uploadImage',
+        ])->name('teams.upload-image');
+        Route::delete('/teams/{team}/image', [
+            TeamController::class,
+            'deleteImage',
+        ])->name('teams.delete-image');
 
         // Team Members
         Route::get('/teams/{team}/members/search', [
@@ -285,6 +293,14 @@ Route::middleware('auth')->group(function () {
             BoardController::class,
             'settings',
         ])->name('teams.boards.settings');
+        Route::post('/teams/{team}/boards/{board}/image', [
+            BoardController::class,
+            'uploadImage',
+        ])->name('teams.boards.upload-image');
+        Route::delete('/teams/{team}/boards/{board}/image', [
+            BoardController::class,
+            'deleteImage',
+        ])->name('teams.boards.delete-image');
 
         // Columns
         Route::post('/teams/{team}/boards/{board}/columns', [
@@ -416,15 +432,15 @@ Route::middleware('auth')->group(function () {
             'store',
         ])->name('attachments.store');
         Route::get(
-            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}',
+            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{media}',
             [AttachmentController::class, 'download'],
         )->name('attachments.download');
         Route::get(
-            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}/view',
+            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{media}/view',
             [AttachmentController::class, 'view'],
         )->name('attachments.view');
         Route::delete(
-            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{attachment}',
+            '/teams/{team}/boards/{board}/tasks/{task}/attachments/{media}',
             [AttachmentController::class, 'destroy'],
         )->name('attachments.destroy');
 

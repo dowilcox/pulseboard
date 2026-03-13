@@ -9,10 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Task extends Model
+class Task extends Model implements HasMedia
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, InteractsWithMedia;
 
     protected $keyType = 'string';
 
@@ -21,6 +24,8 @@ class Task extends Model
     protected $guarded = [];
 
     protected $appends = ['is_completed', 'checklist_progress'];
+
+    protected $hidden = ['media'];
 
     protected function casts(): array
     {
@@ -35,6 +40,24 @@ class Task extends Model
             'recurrence_config' => 'array',
             'recurrence_next_at' => 'datetime',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('attachments')
+            ->useDisk('local');
+
+        $this->addMediaCollection('editor-images')
+            ->useDisk('public');
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(200)
+            ->height(200)
+            ->nonQueued()
+            ->performOnCollections('attachments');
     }
 
     public function board(): BelongsTo
@@ -79,9 +102,46 @@ class Task extends Model
         return $this->hasMany(Activity::class);
     }
 
-    public function attachments(): HasMany
+    public function getAttachmentsAttribute(): array
     {
-        return $this->hasMany(Attachment::class);
+        if (! $this->relationLoaded('media')) {
+            return [];
+        }
+
+        $media = $this->getMedia('attachments');
+
+        if ($media->isEmpty()) {
+            return [];
+        }
+
+        $userIds = $media->map(fn ($m) => $m->getCustomProperty('uploaded_by'))->filter()->unique();
+        $users = $userIds->isNotEmpty()
+            ? User::whereIn('id', $userIds)->get()->keyBy('id')
+            : collect();
+
+        return $media->map(function ($item) use ($users) {
+            $userId = $item->getCustomProperty('uploaded_by');
+            $user = $userId ? $users->get($userId) : null;
+
+            return [
+                'id' => $item->uuid,
+                'task_id' => $item->model_id,
+                'user_id' => $userId,
+                'filename' => $item->getCustomProperty('original_filename', $item->file_name),
+                'file_size' => $item->size,
+                'mime_type' => $item->mime_type,
+                'thumbnail_url' => $item->hasGeneratedConversion('thumb')
+                    ? $item->getUrl('thumb')
+                    : null,
+                'created_at' => $item->created_at?->toISOString(),
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar_url' => $user->avatar_url ?? null,
+                ] : null,
+            ];
+        })->values()->all();
     }
 
     public function gitlabProject(): BelongsTo
