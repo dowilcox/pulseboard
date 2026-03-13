@@ -1,6 +1,7 @@
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
 import type { Activity, Comment, PageProps } from "@/types";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 import { router, usePage } from "@inertiajs/react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -23,7 +24,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const TIMELINE_WIDTH = 40;
 
@@ -39,21 +40,6 @@ interface Props {
     taskId: string;
     currentUserId: string;
     uploadImageUrl?: string;
-}
-
-function formatTimestamp(ts: string): string {
-    const date = new Date(ts);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
 }
 
 function LabelChip({ name }: { name: string }) {
@@ -249,28 +235,32 @@ export default function ActivityFeed({
     );
 
     // Merge and sort by timestamp
-    const feed: FeedItem[] = [
-        ...comments.map(
-            (c): FeedItem => ({
-                type: "comment",
-                item: c,
-                timestamp: c.created_at,
-            }),
-        ),
-        ...activities
-            .filter((a) => a.action !== "commented")
-            .map(
-                (a): FeedItem => ({
-                    type: "activity",
-                    item: a,
-                    timestamp: a.created_at,
+    const feed = useMemo<FeedItem[]>(() => {
+        const items: FeedItem[] = [
+            ...comments.map(
+                (c): FeedItem => ({
+                    type: "comment",
+                    item: c,
+                    timestamp: c.created_at,
                 }),
             ),
-    ].sort((a, b) => {
-        const diff =
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-        return sortOrder === "asc" ? diff : -diff;
-    });
+            ...activities
+                .filter((a) => a.action !== "commented")
+                .map(
+                    (a): FeedItem => ({
+                        type: "activity",
+                        item: a,
+                        timestamp: a.created_at,
+                    }),
+                ),
+        ];
+        return items.sort((a, b) => {
+            const diff =
+                new Date(a.timestamp).getTime() -
+                new Date(b.timestamp).getTime();
+            return sortOrder === "asc" ? diff : -diff;
+        });
+    }, [comments, activities, sortOrder]);
 
     const handleToggleSort = () => {
         const newOrder = sortOrder === "asc" ? "desc" : "asc";
@@ -328,6 +318,7 @@ export default function ActivityFeed({
             {
                 preserveScroll: true,
                 onSuccess: () => setEditingId(null),
+                onError: () => {},
             },
         );
     };
@@ -634,6 +625,7 @@ export default function ActivityFeed({
                     <Button
                         size="small"
                         onClick={() => toggleThread(comment.id)}
+                        aria-expanded={!isCollapsed}
                         startIcon={
                             isCollapsed ? (
                                 <ExpandMoreIcon />

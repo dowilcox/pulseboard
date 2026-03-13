@@ -20,6 +20,14 @@ export function useNotifications() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState<NotificationError | null>(null);
+    const fetchControllerRef = useRef<AbortController | null>(null);
+
+    // Abort pending fetches on unmount
+    useEffect(() => {
+        return () => {
+            fetchControllerRef.current?.abort();
+        };
+    }, []);
 
     // Sync count from server props
     useEffect(() => {
@@ -27,16 +35,21 @@ export function useNotifications() {
     }, [unreadNotificationsCount]);
 
     const fetchNotifications = useCallback(async () => {
+        fetchControllerRef.current?.abort();
+        const controller = new AbortController();
+        fetchControllerRef.current = controller;
         try {
             setError(null);
             const res = await fetch(route("notifications.index"), {
                 headers: { Accept: "application/json" },
+                signal: controller.signal,
             });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             setNotifications(data.data ?? []);
             setLoaded(true);
-        } catch {
+        } catch (err) {
+            if (err instanceof Error && err.name === "AbortError") return;
             setError("fetch");
         }
     }, []);

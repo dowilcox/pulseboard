@@ -41,7 +41,11 @@ export default function ViewSwitcher({ value, onChange }: Props) {
         >
             {views.map((view) => (
                 <Tooltip key={view.value} title={view.label}>
-                    <ToggleButton value={view.value} sx={{ px: 1.5 }}>
+                    <ToggleButton
+                        value={view.value}
+                        aria-label={view.label}
+                        sx={{ px: 1.5 }}
+                    >
                         {view.icon}
                     </ToggleButton>
                 </Tooltip>

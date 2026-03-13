@@ -87,6 +87,8 @@ export default function TaskDetailPanel({
     useEffect(() => {
         if (!task || !open) {
             setDetail(null);
+            if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
+            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             return;
         }
 
@@ -100,7 +102,10 @@ export default function TaskDetailPanel({
             headers: { Accept: "application/json" },
             signal: controller.signal,
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then((data: TaskDetail) => {
                 setDetail(data);
                 setTitle(data.title);
@@ -145,7 +150,10 @@ export default function TaskDetailPanel({
             headers: { Accept: "application/json" },
             signal: controller.signal,
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then((data: TaskDetail) => {
                 setDetail(data);
                 setTitle(data.title);
@@ -167,7 +175,7 @@ export default function TaskDetailPanel({
                 router.put(
                     route("tasks.update", [teamId, boardId, task.id]),
                     { title: newTitle },
-                    { preserveScroll: true },
+                    { preserveScroll: true, onError: () => {} },
                 );
             }, 600);
         },
@@ -182,7 +190,7 @@ export default function TaskDetailPanel({
                 router.put(
                     route("tasks.update", [teamId, boardId, task.id]),
                     { description: newDesc || null },
-                    { preserveScroll: true },
+                    { preserveScroll: true, onError: () => {} },
                 );
             }, 800);
         },
@@ -194,7 +202,7 @@ export default function TaskDetailPanel({
         router.put(
             route("tasks.update", [teamId, boardId, task.id]),
             { due_date: newDate || null },
-            { preserveScroll: true },
+            { preserveScroll: true, onError: () => {} },
         );
     };
 

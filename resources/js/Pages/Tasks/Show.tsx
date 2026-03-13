@@ -105,6 +105,9 @@ export default function TasksShow({
                 {
                     preserveScroll: true,
                     preserveState: true,
+                    onError: () => {
+                        // Inertia will display validation errors automatically
+                    },
                 },
             );
         },
@@ -153,8 +156,7 @@ export default function TasksShow({
         router.visit(route("tasks.show", [team.id, board.id, subtask.id]));
     };
 
-    const isCompleted =
-        task.completed_at !== null && task.completed_at !== undefined;
+    const isCompleted = task.completed_at != null;
     const taskNumber = task.task_number ? `#${task.task_number}` : "";
 
     const gitlabPrefix = getGitlabPrefix(task);

@@ -63,25 +63,7 @@ export default function BoardsShow({
     // Real-time: board channel listener
     const handleBoardEvent = useCallback((event: BoardEvent) => {
         switch (event.action) {
-            case "created":
-            case "task.deleted":
-                router.reload();
-                break;
-
-            case "moved":
-            case "task.reordered":
-                router.reload();
-                break;
-
-            case "field_changed":
-            case "assigned":
-            case "unassigned":
-            case "labels_changed":
-                if (event.data.task_id) {
-                    router.reload();
-                }
-                break;
-
+            // These don't affect the board view
             case "commented":
             case "comment.updated":
             case "comment.deleted":
@@ -89,15 +71,9 @@ export default function BoardsShow({
             case "attachment_removed":
                 break;
 
-            case "gitlab_branch_created":
-            case "gitlab_mr_created":
-            case "gitlab_mr_merged":
-            case "gitlab_mr_closed":
-                router.reload();
-                break;
-
+            // Everything else: partial reload of board data only
             default:
-                router.reload();
+                router.reload({ only: ["board"] });
                 break;
         }
     }, []);

@@ -4,7 +4,6 @@ import {
     useEffect,
     useState,
     useMemo,
-    useRef,
     type ReactNode,
 } from "react";
 import { router, usePage } from "@inertiajs/react";
@@ -32,7 +31,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const { reverb } = usePage<PageProps>().props;
     const [connectionStatus, setConnectionStatus] =
         useState<ConnectionStatus>("disconnected");
-    const echoRef = useRef<Echo<"reverb"> | null>(null);
+    const [echo, setEcho] = useState<Echo<"reverb"> | null>(null);
 
     useEffect(() => {
         if (!reverb?.key || !reverb?.host) {
@@ -40,7 +39,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         }
 
         const echoInstance = createEcho(reverb);
-        echoRef.current = echoInstance;
+        setEcho(echoInstance);
         setConnectionStatus("connecting");
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- laravel-echo doesn't expose Pusher types on connector
@@ -103,16 +102,16 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             pusher.connection.unbind("disconnected", handleDisconnected);
             pusher.connection.unbind("state_change", handleStateChange);
             echoInstance.disconnect();
-            echoRef.current = null;
+            setEcho(null);
         };
     }, [reverb?.key, reverb?.host, reverb?.port, reverb?.scheme]);
 
     const value = useMemo(
         () => ({
-            echo: echoRef.current,
+            echo,
             connectionStatus,
         }),
-        [connectionStatus],
+        [echo, connectionStatus],
     );
 
     return (

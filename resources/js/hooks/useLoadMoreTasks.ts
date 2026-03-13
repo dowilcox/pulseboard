@@ -1,5 +1,5 @@
 import type { PaginatedResponse, Task } from "@/types";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseLoadMoreTasksOptions {
     teamId: string;
@@ -31,6 +31,16 @@ export function useLoadMoreTasks({
         loading: false,
     });
     const abortControllers = useRef<Record<string, AbortController>>({});
+
+    // Abort all in-flight requests on unmount
+    useEffect(() => {
+        return () => {
+            for (const controller of Object.values(abortControllers.current)) {
+                controller.abort();
+            }
+            abortControllers.current = {};
+        };
+    }, []);
 
     /**
      * Initialize load state for a column based on its initial task count vs total.
@@ -119,7 +129,8 @@ export function useLoadMoreTasks({
 
                 return data.data;
             } catch (error) {
-                if ((error as Error).name === "AbortError") return [];
+                if (error instanceof Error && error.name === "AbortError")
+                    return [];
 
                 setColumnLoadStates((prev) => ({
                     ...prev,
@@ -175,7 +186,8 @@ export function useLoadMoreTasks({
 
                 return data.data;
             } catch (error) {
-                if ((error as Error).name === "AbortError") return [];
+                if (error instanceof Error && error.name === "AbortError")
+                    return [];
 
                 setGlobalLoadState((prev) => ({ ...prev, loading: false }));
                 return [];

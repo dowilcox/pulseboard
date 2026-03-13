@@ -22,7 +22,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import axios, { AxiosError } from "axios";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
@@ -60,14 +60,29 @@ export default function AttachmentList({
     const [deleteTarget, setDeleteTarget] = useState<Attachment | null>(null);
     const [lightboxIndex, setLightboxIndex] = useState(-1);
 
-    const imageAttachments = attachments.filter((a) => isImage(a.mime_type));
-    const fileAttachments = attachments.filter((a) => !isImage(a.mime_type));
+    const imageAttachments = useMemo(
+        () => attachments.filter((a) => isImage(a.mime_type)),
+        [attachments],
+    );
+    const fileAttachments = useMemo(
+        () => attachments.filter((a) => !isImage(a.mime_type)),
+        [attachments],
+    );
 
-    const lightboxSlides = imageAttachments.map((a) => ({
-        src: route("attachments.download", [teamId, boardId, taskId, a.id]),
-        alt: a.filename,
-        title: a.filename,
-    }));
+    const lightboxSlides = useMemo(
+        () =>
+            imageAttachments.map((a) => ({
+                src: route("attachments.download", [
+                    teamId,
+                    boardId,
+                    taskId,
+                    a.id,
+                ]),
+                alt: a.filename,
+                title: a.filename,
+            })),
+        [imageAttachments, teamId, boardId, taskId],
+    );
 
     const uploadFiles = useCallback(
         async (files: FileList | File[]) => {

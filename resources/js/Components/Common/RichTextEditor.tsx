@@ -37,6 +37,7 @@ import SourceIcon from "@mui/icons-material/IntegrationInstructions";
 import Popover from "@mui/material/Popover";
 import InputAdornment from "@mui/material/InputAdornment";
 import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
 import axios from "axios";
 
 const lowlight = createLowlight(common);
@@ -120,6 +121,9 @@ export default function RichTextEditor({
     const [linkUrl, setLinkUrl] = useState("https://");
     const linkInputRef = useRef<HTMLInputElement>(null);
     const [, setTick] = useState(0);
+    const [imageUploadError, setImageUploadError] = useState<string | null>(
+        null,
+    );
 
     const editor = useEditor({
         extensions: [
@@ -259,7 +263,7 @@ export default function RichTextEditor({
                     editor.chain().focus().setImage({ src: url }).run();
                 }
             } catch {
-                // Image upload failed silently
+                setImageUploadError("Image upload failed. Please try again.");
             }
         },
         [uploadImageUrl, editor],
@@ -661,6 +665,15 @@ export default function RichTextEditor({
                         sourceMode,
                     )}
                 </Box>
+            )}
+            {imageUploadError && (
+                <Alert
+                    severity="error"
+                    onClose={() => setImageUploadError(null)}
+                    sx={{ m: 1 }}
+                >
+                    {imageUploadError}
+                </Alert>
             )}
             {sourceMode ? (
                 <TextField

@@ -186,7 +186,10 @@ export default function FilterBar({
             headers: { Accept: "application/json" },
             signal: controller.signal,
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then((data: SavedFilter[]) => setSavedFilters(data))
             .catch(() => {});
         return controller;
@@ -223,7 +226,10 @@ export default function FilterBar({
                 is_default: saveFilterDefault,
             }),
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then(() => {
                 fetchSavedFilters();
                 setSavePopoverAnchor(null);
@@ -241,6 +247,9 @@ export default function FilterBar({
                 "X-CSRF-TOKEN": getCsrfToken(),
             },
         })
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            })
             .then(() => {
                 setSavedFilters((prev) =>
                     prev.filter((f) => f.id !== filterId),

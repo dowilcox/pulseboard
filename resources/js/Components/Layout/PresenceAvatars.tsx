@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Tooltip from "@mui/material/Tooltip";
@@ -9,7 +10,10 @@ interface Props {
 }
 
 export default function PresenceAvatars({ users, currentUserId }: Props) {
-    const otherUsers = users.filter((u) => u.id !== currentUserId);
+    const otherUsers = useMemo(
+        () => users.filter((u) => u.id !== currentUserId),
+        [users, currentUserId],
+    );
 
     if (otherUsers.length === 0) return null;
 

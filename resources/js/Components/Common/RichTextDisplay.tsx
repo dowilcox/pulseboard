@@ -49,7 +49,7 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
         }
     }, [content, editor]);
 
-    if (!content) return null;
+    if (content == null) return null;
 
     return (
         <Box

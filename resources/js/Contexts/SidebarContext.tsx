@@ -147,15 +147,31 @@ export function SidebarProvider({
     const reorderBoards = useCallback(
         (teamId: string, orderedBoardIds: string[]) => {
             // Optimistically update local state so UI doesn't snap back
-            setLocalBoardOrder((prev) => ({
-                ...prev,
-                [teamId]: orderedBoardIds,
-            }));
-            router.patch(
-                route("profile.ui-preferences.update"),
-                { board_order: { [teamId]: orderedBoardIds } },
-                { preserveScroll: true, preserveState: true },
-            );
+            setLocalBoardOrder((prev) => {
+                const previous = prev[teamId];
+                router.patch(
+                    route("profile.ui-preferences.update"),
+                    { board_order: { [teamId]: orderedBoardIds } },
+                    {
+                        preserveScroll: true,
+                        preserveState: true,
+                        onError: () => {
+                            // Rollback optimistic update on failure
+                            setLocalBoardOrder((cur) => {
+                                if (previous) {
+                                    return { ...cur, [teamId]: previous };
+                                }
+                                const { [teamId]: _, ...rest } = cur;
+                                return rest;
+                            });
+                        },
+                    },
+                );
+                return {
+                    ...prev,
+                    [teamId]: orderedBoardIds,
+                };
+            });
         },
         [],
     );

@@ -23,8 +23,7 @@ interface Props {
 
 export default function TaskCard({ task, onClick }: Props) {
     const priorityColor = PRIORITY_COLORS[task.priority] ?? "transparent";
-    const isCompleted =
-        task.completed_at !== null && task.completed_at !== undefined;
+    const isCompleted = task.completed_at != null;
     const isBlocked = (task.blocked_by ?? []).length > 0;
     const checklistProgress = task.checklist_progress;
 
@@ -203,6 +202,7 @@ export default function TaskCard({ task, onClick }: Props) {
                         )}
                         {(task.comments_count ?? 0) > 0 && (
                             <Box
+                                aria-label={`${task.comments_count} ${task.comments_count === 1 ? "comment" : "comments"}`}
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
@@ -227,6 +227,7 @@ export default function TaskCard({ task, onClick }: Props) {
                             <Typography
                                 variant="caption"
                                 color="text.secondary"
+                                aria-label={`${task.completed_subtasks_count ?? 0} of ${task.subtasks_count} subtasks completed`}
                             >
                                 {task.completed_subtasks_count ?? 0}/
                                 {task.subtasks_count}

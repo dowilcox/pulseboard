@@ -17,13 +17,32 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                 px: 2,
             }}
         >
+            <Box
+                component="a"
+                href="#main-content"
+                sx={{
+                    position: "absolute",
+                    left: -9999,
+                    top: "auto",
+                    "&:focus": {
+                        position: "static",
+                        p: 1,
+                    },
+                }}
+            >
+                Skip to content
+            </Box>
             <Box sx={{ mb: 4 }}>
-                <Link href="/" style={{ textDecoration: "none" }}>
+                <Link
+                    href="/"
+                    aria-label="PulseBoard home"
+                    style={{ textDecoration: "none" }}
+                >
                     <Logo size="medium" showText />
                 </Link>
             </Box>
 
-            <Box component="main">
+            <Box component="main" id="main-content">
                 <Paper
                     elevation={2}
                     sx={{

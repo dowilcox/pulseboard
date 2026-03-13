@@ -4,6 +4,7 @@ import DependencySection from "@/Components/Tasks/DependencySection";
 import LabelSelector from "@/Components/Tasks/LabelSelector";
 import PrioritySelector from "@/Components/Tasks/PrioritySelector";
 import RecurrenceConfig from "@/Components/Tasks/RecurrenceConfig";
+import { formatTimestamp } from "@/utils/formatTimestamp";
 import type {
     Board,
     GitlabProject,
@@ -44,20 +45,6 @@ interface Props {
     gitlabProjects?: GitlabProject[];
 }
 
-function formatTimestamp(ts: string): string {
-    const date = new Date(ts);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-}
-
 export default function TaskSidebar({
     task,
     team,
@@ -69,8 +56,7 @@ export default function TaskSidebar({
     gitlabProjects = [],
 }: Props) {
     const columns = board.columns ?? [];
-    const isCompleted =
-        task.completed_at !== null && task.completed_at !== undefined;
+    const isCompleted = task.completed_at != null;
 
     const [dueDate, setDueDate] = useState(task.due_date ?? "");
     const [effortEstimate, setEffortEstimate] = useState<string>(
@@ -95,6 +81,7 @@ export default function TaskSidebar({
                 {
                     preserveScroll: true,
                     preserveState: true,
+                    onError: () => {},
                 },
             );
         },
@@ -102,10 +89,15 @@ export default function TaskSidebar({
     );
 
     const handleColumnChange = (columnId: string) => {
+        const targetColumn = columns.find((c) => c.id === columnId);
+        const maxSort = (targetColumn?.tasks ?? []).reduce(
+            (max, t) => Math.max(max, t.sort_order ?? 0),
+            0,
+        );
         router.patch(
             route("tasks.move", [team.id, board.id, task.id]),
-            { column_id: columnId, sort_order: 0 },
-            { preserveScroll: true },
+            { column_id: columnId, sort_order: maxSort + 1 },
+            { preserveScroll: true, onError: () => {} },
         );
     };
 
@@ -118,7 +110,7 @@ export default function TaskSidebar({
         router.patch(
             route("tasks.move", [team.id, board.id, task.id]),
             { board_id: newBoardId, column_id: firstColumn.id, sort_order: 0 },
-            { preserveScroll: true },
+            { preserveScroll: true, onError: () => {} },
         );
     };
 
@@ -126,7 +118,7 @@ export default function TaskSidebar({
         router.patch(
             route("tasks.toggle-complete", [team.id, board.id, task.id]),
             {},
-            { preserveScroll: true },
+            { preserveScroll: true, onError: () => {} },
         );
     };
 

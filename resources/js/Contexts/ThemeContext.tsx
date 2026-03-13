@@ -40,10 +40,14 @@ function getSystemPreference(): "light" | "dark" {
 export function ThemeContextProvider({ children }: { children: ReactNode }) {
     const [mode, setModeState] = useState<ThemeMode>(() => {
         if (typeof window !== "undefined") {
-            return (
-                (localStorage.getItem("pulseboard-theme") as ThemeMode) ||
-                "system"
-            );
+            const stored = localStorage.getItem("pulseboard-theme");
+            if (
+                stored === "light" ||
+                stored === "dark" ||
+                stored === "system"
+            ) {
+                return stored;
+            }
         }
         return "system";
     });
