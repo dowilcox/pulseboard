@@ -8,6 +8,7 @@ use App\Models\TaskGitlabRef;
 use App\Services\ActivityLogger;
 use App\Services\GitlabApiService;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateBranchFromTask
@@ -16,6 +17,13 @@ class CreateBranchFromTask
 
     public function handle(Task $task, GitlabProject $gitlabProject): TaskGitlabRef
     {
+        $existing = $task->gitlabRefs()->where('ref_type', 'branch')->first();
+        if ($existing) {
+            throw ValidationException::withMessages([
+                'branch' => ['A branch already exists for this task.'],
+            ]);
+        }
+
         $branchName = $this->generateBranchName($task);
         $api = GitlabApiService::for($gitlabProject->connection);
 

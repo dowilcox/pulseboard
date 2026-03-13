@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Models\TaskGitlabRef;
 use App\Services\ActivityLogger;
 use App\Services\GitlabApiService;
+use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateMergeRequestFromTask
@@ -15,6 +16,16 @@ class CreateMergeRequestFromTask
 
     public function handle(Task $task, GitlabProject $gitlabProject, ?string $sourceBranch = null): TaskGitlabRef
     {
+        $existingMr = $task->gitlabRefs()
+            ->where('ref_type', 'merge_request')
+            ->whereIn('state', ['opened', 'locked'])
+            ->first();
+        if ($existingMr) {
+            throw ValidationException::withMessages([
+                'merge_request' => ['An open merge request already exists for this task.'],
+            ]);
+        }
+
         $api = GitlabApiService::for($gitlabProject->connection);
 
         // Use provided branch or find existing branch ref for this task

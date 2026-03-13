@@ -12,6 +12,7 @@ use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class TaskGitlabController extends Controller
 {
@@ -61,6 +62,8 @@ class TaskGitlabController extends Controller
             $ref = CreateBranchFromTask::run($task, $gitlabProject);
 
             return response()->json($ref, 201);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
         } catch (GitlabApiException $e) {
             Log::error('GitLab branch creation failed', [
                 'task_id' => $task->id,
@@ -93,6 +96,8 @@ class TaskGitlabController extends Controller
             );
 
             return response()->json($ref, 201);
+        } catch (ValidationException $e) {
+            return response()->json(['error' => $e->getMessage()], 409);
         } catch (GitlabApiException $e) {
             Log::error('GitLab merge request creation failed', [
                 'task_id' => $task->id,

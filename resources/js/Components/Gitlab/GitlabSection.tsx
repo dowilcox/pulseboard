@@ -49,6 +49,10 @@ export default function GitlabSection({
     const refs = task.gitlab_refs ?? [];
     const branches = refs.filter((r) => r.ref_type === "branch");
     const mergeRequests = refs.filter((r) => r.ref_type === "merge_request");
+    const hasBranch = branches.length > 0;
+    const hasOpenMr = mergeRequests.some(
+        (r) => r.state === "opened" || r.state === "locked",
+    );
 
     const selectedProject =
         task.gitlab_project ??
@@ -262,38 +266,66 @@ export default function GitlabSection({
                             mb: 1.5,
                         }}
                     >
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={
-                                creating ? (
-                                    <CircularProgress size={14} />
-                                ) : (
-                                    <AccountTreeIcon sx={{ fontSize: 16 }} />
-                                )
+                        <Tooltip
+                            title={
+                                hasBranch
+                                    ? "A branch already exists for this task"
+                                    : ""
                             }
-                            onClick={() => handleCreate("branch")}
-                            disabled={creating}
-                            sx={{ flex: 1, textTransform: "none" }}
                         >
-                            Create Branch
-                        </Button>
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={
-                                creating ? (
-                                    <CircularProgress size={14} />
-                                ) : (
-                                    <MergeTypeIcon sx={{ fontSize: 16 }} />
-                                )
+                            <span style={{ flex: 1 }}>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    fullWidth
+                                    startIcon={
+                                        creating ? (
+                                            <CircularProgress size={14} />
+                                        ) : (
+                                            <AccountTreeIcon
+                                                sx={{ fontSize: 16 }}
+                                            />
+                                        )
+                                    }
+                                    onClick={() => handleCreate("branch")}
+                                    disabled={creating || hasBranch}
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Create Branch
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Tooltip
+                            title={
+                                hasOpenMr
+                                    ? "An open merge request already exists"
+                                    : ""
                             }
-                            onClick={() => handleCreate("merge_request")}
-                            disabled={creating}
-                            sx={{ flex: 1, textTransform: "none" }}
                         >
-                            Create MR
-                        </Button>
+                            <span style={{ flex: 1 }}>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    fullWidth
+                                    startIcon={
+                                        creating ? (
+                                            <CircularProgress size={14} />
+                                        ) : (
+                                            <MergeTypeIcon
+                                                sx={{ fontSize: 16 }}
+                                            />
+                                        )
+                                    }
+                                    onClick={() =>
+                                        handleCreate("merge_request")
+                                    }
+                                    disabled={creating || hasOpenMr}
+                                    sx={{ textTransform: "none" }}
+                                >
+                                    Create MR
+                                </Button>
+                            </span>
+                        </Tooltip>
                     </Box>
 
                     {/* Existing Refs */}
