@@ -73,9 +73,12 @@ export default function AutomationRulesPanel({
         fetch(route("boards.automation-rules.index", [teamId, boardId]), {
             headers: { Accept: "application/json" },
         })
-            .then((res) => res.json())
+            .then((res) => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
             .then((data: AutomationRule[]) => {
-                setRules(data);
+                setRules(Array.isArray(data) ? data : []);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
