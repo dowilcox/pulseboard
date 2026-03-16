@@ -96,6 +96,11 @@ if [ ! -f "/var/www/html/public/frankenphp-worker.php" ]; then
     php artisan octane:install --server=frankenphp --no-interaction
 fi
 
+# ---- Ensure FrankenPHP binary is in PATH ------------------------------------
+if [ ! -f "/usr/local/bin/frankenphp" ] && [ -f "/var/www/html/frankenphp" ]; then
+    ln -sf /var/www/html/frankenphp /usr/local/bin/frankenphp
+fi
+
 # ---- Verify APP_KEY is set before caching ------------------------------------
 if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
     echo "[entrypoint] ERROR: APP_KEY is still not set after key generation. Aborting."
