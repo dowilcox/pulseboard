@@ -14,7 +14,4 @@ You have **{{ $notifications->count() }}** new notification{{ $notifications->co
 <x-mail::button :url="$appUrl">
 View PulseBoard
 </x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
 </x-mail::message>

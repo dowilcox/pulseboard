@@ -97,7 +97,7 @@ class SendNotificationEmails extends Command
 
             if ($emailable->count() >= self::DIGEST_THRESHOLD) {
                 // Send digest
-                Mail::to($user)->queue(
+                Mail::to($user)->send(
                     new NotificationDigest($user, $emailable),
                 );
                 $digestsSent++;
@@ -127,6 +127,6 @@ class SendNotificationEmails extends Command
         User $user,
         DatabaseNotification $notification,
     ): void {
-        Mail::to($user)->queue(new NotificationEmail($user, $notification));
+        Mail::to($user)->send(new NotificationEmail($user, $notification));
     }
 }
