@@ -105,7 +105,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
     }, []);
 
     useEffect(() => {
-        fetch(route("teams.dashboard.stats", team.id), {
+        fetch(route("teams.dashboard.stats", team.slug), {
             headers: { Accept: "application/json" },
         })
             .then((res) => {
@@ -137,7 +137,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
         if (selectedTemplate) {
             router.post(
                 route("teams.templates.create-board", [
-                    team.id,
+                    team.slug,
                     selectedTemplate.id,
                 ]),
                 { name: data.name, description: data.description },
@@ -151,7 +151,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                 },
             );
         } else {
-            post(route("teams.boards.store", team.id), {
+            post(route("teams.boards.store", team.slug), {
                 onSuccess: () => {
                     setCreateOpen(false);
                     reset();
@@ -195,7 +195,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                 variant="outlined"
                                 startIcon={<DownloadIcon />}
                                 size="small"
-                                href={route("teams.export.csv", team.id)}
+                                href={route("teams.export.csv", team.slug)}
                             >
                                 Export CSV
                             </Button>
@@ -208,7 +208,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                         router.get(
                                             route(
                                                 "teams.gitlab-projects.index",
-                                                team.id,
+                                                team.slug,
                                             ),
                                         )
                                     }
@@ -223,7 +223,10 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     size="small"
                                     onClick={() =>
                                         router.get(
-                                            route("teams.figma.index", team.id),
+                                            route(
+                                                "teams.figma.index",
+                                                team.slug,
+                                            ),
                                         )
                                     }
                                 >
@@ -237,7 +240,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     size="small"
                                     onClick={() =>
                                         router.get(
-                                            route("teams.settings", team.id),
+                                            route("teams.settings", team.slug),
                                         )
                                     }
                                 >
@@ -504,8 +507,8 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     onClick={() =>
                                         router.get(
                                             route("teams.boards.show", [
-                                                team.id,
-                                                board.id,
+                                                team.slug,
+                                                board.slug,
                                             ]),
                                         )
                                     }

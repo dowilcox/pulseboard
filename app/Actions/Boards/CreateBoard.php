@@ -4,6 +4,7 @@ namespace App\Actions\Boards;
 
 use App\Models\Board;
 use App\Models\Team;
+use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateBoard
@@ -33,6 +34,7 @@ class CreateBoard
 
         $board = $team->boards()->create([
             'name' => $data['name'],
+            'slug' => $this->generateUniqueSlug($team, $data['name']),
             'description' => $data['description'] ?? null,
             'sort_order' => $nextSortOrder,
         ]);
@@ -47,5 +49,19 @@ class CreateBoard
         }
 
         return $board->load('columns');
+    }
+
+    private function generateUniqueSlug(Team $team, string $name): string
+    {
+        $slug = Str::slug($name);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        while ($team->boards()->where('slug', $slug)->exists()) {
+            $slug = "{$originalSlug}-{$counter}";
+            $counter++;
+        }
+
+        return $slug;
     }
 }

@@ -251,8 +251,8 @@ interface ColumnLoadState {
 
 interface Props {
     columns: Column[];
-    board: { id: string };
-    team: { id: string };
+    board: { id: string; slug: string };
+    team: { id: string; slug: string };
     filterFn: (task: Task) => boolean;
     onTaskClick: (task: Task) => void;
     taskTemplates?: TaskTemplate[];
@@ -361,7 +361,7 @@ export default function KanbanView({
                 });
 
                 const response = await fetch(
-                    `${route("boards.tasks.index", [team.id, board.id])}?${params}`,
+                    `${route("boards.tasks.index", [team.slug, board.slug])}?${params}`,
                     {
                         headers: { Accept: "application/json" },
                         signal: controller.signal,
@@ -404,7 +404,7 @@ export default function KanbanView({
                 }));
             }
         },
-        [columnLoadStates, team.id, board.id, initialTasksPerColumn],
+        [columnLoadStates, team.slug, board.slug, initialTasksPerColumn],
     );
 
     const sensors = useSensors(
@@ -515,13 +515,16 @@ export default function KanbanView({
             sortOrders.splice(finalIndex, 1);
             const newSortOrder = computeSortOrder(sortOrders, finalIndex);
 
+            const activeTask = finalTasks.find((t) => t.id === activeId);
+            const taskSlug = activeTask?.slug ?? activeId;
+
             router.patch(
-                route("tasks.move", [team.id, board.id, activeId]),
+                route("tasks.move", [team.slug, board.slug, taskSlug]),
                 { column_id: targetCol, sort_order: newSortOrder },
                 { preserveScroll: true },
             );
         },
-        [columnTasks, team.id, board.id],
+        [columnTasks, team.slug, board.slug],
     );
 
     return (
@@ -575,8 +578,8 @@ export default function KanbanView({
                             onClick={() =>
                                 router.get(
                                     route("teams.boards.settings", [
-                                        team.id,
-                                        board.id,
+                                        team.slug,
+                                        board.slug,
                                     ]),
                                 )
                             }
@@ -760,8 +763,8 @@ export default function KanbanView({
                                         )}
 
                                         <QuickCreateTask
-                                            teamId={team.id}
-                                            boardId={board.id}
+                                            teamId={team.slug}
+                                            boardId={board.slug}
                                             columnId={column.id}
                                             templates={taskTemplates}
                                             disabled={atWipLimit}

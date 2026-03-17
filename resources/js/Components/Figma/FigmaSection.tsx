@@ -86,7 +86,7 @@ export default function FigmaSection({
 
         try {
             const response = await fetch(
-                route("tasks.figma.store", [teamId, boardId, task.id]),
+                route("tasks.figma.store", [teamId, boardId, task.slug]),
                 {
                     method: "POST",
                     headers: {
@@ -130,7 +130,7 @@ export default function FigmaSection({
                 route("tasks.figma.destroy", [
                     teamId,
                     boardId,
-                    task.id,
+                    task.slug,
                     linkId,
                 ]),
                 {

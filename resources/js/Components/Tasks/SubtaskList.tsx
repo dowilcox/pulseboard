@@ -63,7 +63,7 @@ export default function SubtaskList({
     const handleToggleComplete = (subtask: Task, e: React.MouseEvent) => {
         e.stopPropagation();
         router.patch(
-            route("tasks.toggle-complete", [teamId, boardId, subtask.id]),
+            route("tasks.toggle-complete", [teamId, boardId, subtask.slug]),
             {},
             { preserveScroll: true },
         );

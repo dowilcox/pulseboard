@@ -19,9 +19,14 @@ class UpdateTeam
     {
         $attributes = [];
 
+        if (isset($data['slug'])) {
+            $attributes['slug'] = Str::slug($data['slug']);
+        } elseif (isset($data['name'])) {
+            $attributes['slug'] = $this->generateUniqueSlug($data['name'], $team->id);
+        }
+
         if (isset($data['name'])) {
             $attributes['name'] = $data['name'];
-            $attributes['slug'] = $this->generateUniqueSlug($data['name'], $team->id);
         }
 
         if (array_key_exists('description', $data)) {

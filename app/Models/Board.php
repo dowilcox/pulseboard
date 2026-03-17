@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -129,5 +130,31 @@ class Board extends Model implements HasMedia
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_archived', false);
+    }
+
+    public function getRouteKey(): string
+    {
+        return $this->slug;
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        $query = $this->newQuery();
+
+        // Scope to the parent team if resolved in the route
+        $team = request()->route('team');
+        if ($team instanceof Team) {
+            $query->where('team_id', $team->id);
+        }
+
+        if (Str::isUuid($value)) {
+            return $query->where('id', $value)->first();
+        }
+
+        return $query->where('slug', $value)->first();
     }
 }

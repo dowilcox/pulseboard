@@ -189,7 +189,7 @@ export default function Sidebar({
             {currentTeam && !isCollapsed && (
                 <BoardList
                     boards={boards}
-                    teamId={currentTeam.id}
+                    teamId={currentTeam.slug}
                     activeBoardId={activeBoardId}
                 />
             )}
@@ -222,8 +222,8 @@ export default function Sidebar({
                                     onClick={() =>
                                         router.get(
                                             route("teams.boards.show", [
-                                                currentTeam.id,
-                                                board.id,
+                                                currentTeam.slug,
+                                                board.slug,
                                             ]),
                                         )
                                     }

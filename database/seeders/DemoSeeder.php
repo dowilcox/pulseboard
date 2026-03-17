@@ -20,6 +20,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class DemoSeeder extends Seeder
 {
@@ -175,6 +176,7 @@ class DemoSeeder extends Seeder
         $sprintBoard = Board::create([
             'team_id' => $engineeringTeam->id,
             'name' => 'Sprint 24 - Q1 2026',
+            'slug' => 'sprint-24-q1-2026',
             'description' => 'Current sprint: auth improvements, API v2, performance',
             'sort_order' => 0,
             'settings' => ['default_view' => 'kanban'],
@@ -201,6 +203,7 @@ class DemoSeeder extends Seeder
         $backlogBoard = Board::create([
             'team_id' => $engineeringTeam->id,
             'name' => 'Product Backlog',
+            'slug' => 'product-backlog',
             'description' => 'All upcoming features and improvements',
             'sort_order' => 1,
             'settings' => ['default_view' => 'list'],
@@ -226,6 +229,7 @@ class DemoSeeder extends Seeder
         $bugBoard = Board::create([
             'team_id' => $engineeringTeam->id,
             'name' => 'Bug Tracker',
+            'slug' => 'bug-tracker',
             'description' => 'Bug reports and fixes',
             'sort_order' => 2,
         ]);
@@ -251,6 +255,7 @@ class DemoSeeder extends Seeder
         $archivedBoard = Board::create([
             'team_id' => $engineeringTeam->id,
             'name' => 'Sprint 23 (Archived)',
+            'slug' => 'sprint-23-archived',
             'description' => 'Previous sprint - completed',
             'sort_order' => 3,
             'is_archived' => true,
@@ -535,6 +540,7 @@ class DemoSeeder extends Seeder
         $designBoard = Board::create([
             'team_id' => $designTeam->id,
             'name' => 'Design System v2',
+            'slug' => 'design-system-v2',
             'description' => 'Redesigning the component library',
             'sort_order' => 0,
         ]);
@@ -605,6 +611,7 @@ class DemoSeeder extends Seeder
         $marketingBoard = Board::create([
             'team_id' => $marketingTeam->id,
             'name' => 'Q1 Campaign',
+            'slug' => 'q1-campaign',
             'description' => 'Q1 2026 marketing initiatives',
             'sort_order' => 0,
         ]);

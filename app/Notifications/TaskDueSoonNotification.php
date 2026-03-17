@@ -12,7 +12,10 @@ class TaskDueSoonNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Task $task) {}
+    public function __construct(public Task $task)
+    {
+        $this->task->loadMissing('board.team');
+    }
 
     public function via(object $notifiable): array
     {
@@ -37,6 +40,9 @@ class TaskDueSoonNotification extends Notification
             'task_title' => $this->task->title,
             'board_id' => $this->task->board_id,
             'team_id' => $this->task->board->team_id,
+            'team_slug' => $this->task->board->team->slug,
+            'board_slug' => $this->task->board->slug,
+            'task_slug' => $this->task->slug,
             'due_date' => $this->task->due_date,
             'board_name' => $this->task->board->name,
             'message' => "\"{$this->task->title}\" is due soon ({$dueFormatted})",
@@ -47,7 +53,7 @@ class TaskDueSoonNotification extends Notification
     {
         $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
         $url = url(
-            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
         );
 
         return (new MailMessage)

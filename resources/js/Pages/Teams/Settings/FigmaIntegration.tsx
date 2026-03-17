@@ -103,7 +103,7 @@ export default function FigmaIntegration({ team, connections }: Props) {
         if (editingConnection) {
             connForm.put(
                 route("teams.figma-connections.update", [
-                    team.id,
+                    team.slug,
                     editingConnection.id,
                 ]),
                 {
@@ -111,16 +111,19 @@ export default function FigmaIntegration({ team, connections }: Props) {
                 },
             );
         } else {
-            connForm.post(route("teams.figma-connections.store", team.id), {
+            connForm.post(route("teams.figma-connections.store", team.slug), {
                 onSuccess: () => setConnDialogOpen(false),
             });
         }
     };
 
     const handleDeleteConnection = (id: string) => {
-        router.delete(route("teams.figma-connections.destroy", [team.id, id]), {
-            onSuccess: () => setDeleteConnId(null),
-        });
+        router.delete(
+            route("teams.figma-connections.destroy", [team.slug, id]),
+            {
+                onSuccess: () => setDeleteConnId(null),
+            },
+        );
     };
 
     const handleTestConnection = async (connection: FigmaConnection) => {
@@ -133,7 +136,10 @@ export default function FigmaIntegration({ team, connections }: Props) {
 
         try {
             const response = await fetch(
-                route("teams.figma-connections.test", [team.id, connection.id]),
+                route("teams.figma-connections.test", [
+                    team.slug,
+                    connection.id,
+                ]),
                 {
                     method: "POST",
                     headers: {
@@ -172,7 +178,7 @@ export default function FigmaIntegration({ team, connections }: Props) {
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                     ]}
                 />

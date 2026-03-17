@@ -89,7 +89,7 @@ export default function ApiTokens({ team, bots }: Props) {
     });
 
     const handleCreateBot = () => {
-        botForm.post(route("teams.bots.store", team.id), {
+        botForm.post(route("teams.bots.store", team.slug), {
             onSuccess: () => {
                 setBotDialogOpen(false);
                 botForm.reset();
@@ -107,7 +107,7 @@ export default function ApiTokens({ team, bots }: Props) {
     const handleCreateToken = () => {
         if (!selectedBot) return;
         tokenForm.post(
-            route("teams.bots.create-token", [team.id, selectedBot.id]),
+            route("teams.bots.create-token", [team.slug, selectedBot.id]),
             {
                 onSuccess: () => {
                     setTokenDialogOpen(false);
@@ -121,7 +121,7 @@ export default function ApiTokens({ team, bots }: Props) {
         if (!confirmRevoke) return;
         router.delete(
             route("teams.bots.revoke-token", [
-                team.id,
+                team.slug,
                 confirmRevoke.bot.id,
                 confirmRevoke.tokenId,
             ]),
@@ -134,7 +134,7 @@ export default function ApiTokens({ team, bots }: Props) {
     const handleDeleteBot = () => {
         if (!confirmDeleteBot) return;
         router.delete(
-            route("teams.bots.destroy", [team.id, confirmDeleteBot.id]),
+            route("teams.bots.destroy", [team.slug, confirmDeleteBot.id]),
             {
                 onSuccess: () => setConfirmDeleteBot(null),
             },
@@ -168,11 +168,11 @@ export default function ApiTokens({ team, bots }: Props) {
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                         {
                             label: "Settings",
-                            href: route("teams.settings", team.id),
+                            href: route("teams.settings", team.slug),
                         },
                     ]}
                 />

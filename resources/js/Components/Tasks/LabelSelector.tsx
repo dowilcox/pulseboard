@@ -23,7 +23,7 @@ export default function LabelSelector({
 
     const handleChange = (_: unknown, newValue: Label[]) => {
         router.put(
-            route("tasks.labels.update", [teamId, boardId, task.id]),
+            route("tasks.labels.update", [teamId, boardId, task.slug]),
             { label_ids: newValue.map((l) => l.id) },
             { preserveScroll: true },
         );

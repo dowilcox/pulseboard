@@ -57,11 +57,11 @@ export default function NotificationBell() {
 
         // Navigate to the task if we have the data
         const data = notification.data;
-        if (data.team_id && data.board_id && data.task_id) {
+        if (data.team_slug && data.board_slug && data.task_slug) {
             const target = route("tasks.show", [
-                data.team_id,
-                data.board_id,
-                data.task_id,
+                data.team_slug,
+                data.board_slug,
+                data.task_slug,
             ]);
             if (
                 window.location.pathname ===

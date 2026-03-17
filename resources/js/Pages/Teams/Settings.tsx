@@ -101,7 +101,7 @@ export default function TeamSettings({
     // Label handlers
     const handleAddLabel = (e: React.FormEvent) => {
         e.preventDefault();
-        addLabelForm.post(route("labels.store", team.id), {
+        addLabelForm.post(route("labels.store", team.slug), {
             onSuccess: () => {
                 setAddLabelOpen(false);
                 addLabelForm.reset();
@@ -126,7 +126,7 @@ export default function TeamSettings({
 
     const saveEdit = (label: Label) => {
         router.put(
-            route("labels.update", [team.id, label.id]),
+            route("labels.update", [team.slug, label.id]),
             {
                 name: editName,
                 color: editColor,
@@ -139,7 +139,7 @@ export default function TeamSettings({
 
     const confirmDeleteLabel = () => {
         if (!deleteLabel) return;
-        router.delete(route("labels.destroy", [team.id, deleteLabel.id]), {
+        router.delete(route("labels.destroy", [team.slug, deleteLabel.id]), {
             onSuccess: () => setDeleteLabel(null),
         });
     };
@@ -153,7 +153,7 @@ export default function TeamSettings({
             }
             setUserSearchLoading(true);
             fetch(
-                route("teams.members.search", team.id) +
+                route("teams.members.search", team.slug) +
                     "?q=" +
                     encodeURIComponent(query),
                 {
@@ -172,7 +172,7 @@ export default function TeamSettings({
 
     const handleAddMember = (e: React.FormEvent) => {
         e.preventDefault();
-        addMemberForm.post(route("teams.members.store", team.id), {
+        addMemberForm.post(route("teams.members.store", team.slug), {
             onSuccess: () => {
                 setAddMemberOpen(false);
                 addMemberForm.reset();
@@ -190,7 +190,7 @@ export default function TeamSettings({
     };
 
     const handleRoleChange = (member: UserWithTeamPivot, newRole: string) => {
-        router.put(route("teams.members.update", [team.id, member.id]), {
+        router.put(route("teams.members.update", [team.slug, member.id]), {
             role: newRole,
         });
     };
@@ -198,7 +198,7 @@ export default function TeamSettings({
     const confirmRemoveMember = () => {
         if (!removeMember) return;
         router.delete(
-            route("teams.members.destroy", [team.id, removeMember.id]),
+            route("teams.members.destroy", [team.slug, removeMember.id]),
             {
                 onSuccess: () => setRemoveMember(null),
             },
@@ -207,7 +207,7 @@ export default function TeamSettings({
 
     const handleDeleteTeam = () => {
         setDeletingTeam(true);
-        router.delete(route("teams.destroy", team.id), {
+        router.delete(route("teams.destroy", team.slug), {
             data: { confirmation: "DELETE" },
             onFinish: () => setDeletingTeam(false),
         });
@@ -223,7 +223,7 @@ export default function TeamSettings({
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                     ]}
                 />
@@ -238,8 +238,8 @@ export default function TeamSettings({
                     description="Upload an image to use as the team avatar in the sidebar. Recommended size: 128×128px. Max file size: 2MB."
                     imageUrl={team.image_url}
                     altText={team.name}
-                    uploadRoute={route("teams.upload-image", team.id)}
-                    deleteRoute={route("teams.delete-image", team.id)}
+                    uploadRoute={route("teams.upload-image", team.slug)}
+                    deleteRoute={route("teams.delete-image", team.slug)}
                 />
 
                 {/* Members */}
@@ -596,7 +596,7 @@ export default function TeamSettings({
                                 </Box>
                                 <Button
                                     component={Link}
-                                    href={route("teams.bots.index", team.id)}
+                                    href={route("teams.bots.index", team.slug)}
                                     startIcon={<KeyIcon />}
                                     size="small"
                                 >

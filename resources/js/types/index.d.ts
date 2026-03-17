@@ -89,6 +89,7 @@ export interface Board {
     id: string;
     team_id: string;
     name: string;
+    slug: string;
     description?: string;
     image_url?: string | null;
     is_archived: boolean;
@@ -153,6 +154,7 @@ export interface RecurrenceConfig {
 
 export interface TaskSummary {
     id: string;
+    slug: string;
     task_number?: number;
     title: string;
     column_id: string;
@@ -178,6 +180,7 @@ export interface Task {
     board_id: string;
     column_id: string;
     task_number?: number;
+    slug?: string;
     parent_task_id?: string;
     gitlab_project_id?: string;
     title: string;
@@ -267,6 +270,9 @@ export interface AppNotification {
         task_title: string;
         board_id: string;
         team_id: string;
+        team_slug: string;
+        board_slug: string;
+        task_slug: string;
         message: string;
         [key: string]: unknown;
     };

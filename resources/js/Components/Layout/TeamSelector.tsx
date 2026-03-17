@@ -23,13 +23,16 @@ export default function TeamSelector({ collapsed }: TeamSelectorProps) {
         const teamId = event.target.value;
         if (teamId && teamId !== currentTeam?.id) {
             setSelectedTeamId(teamId);
-            router.get(route("teams.show", teamId));
+            const team = teams.find((t) => t.id === teamId);
+            if (team) {
+                router.get(route("teams.show", team.slug));
+            }
         }
     };
 
     const handleCollapsedClick = () => {
         if (currentTeam) {
-            router.get(route("teams.show", currentTeam.id));
+            router.get(route("teams.show", currentTeam.slug));
         }
     };
 

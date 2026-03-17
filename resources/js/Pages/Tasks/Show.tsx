@@ -100,7 +100,7 @@ export default function TasksShow({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Inertia's RequestPayload doesn't accept interfaces without index signatures
         (data: Record<string, any>) => {
             router.put(
-                route("tasks.update", [team.id, board.id, task.id]),
+                route("tasks.update", [team.slug, board.slug, task.slug]),
                 data,
                 {
                     preserveScroll: true,
@@ -111,7 +111,7 @@ export default function TasksShow({
                 },
             );
         },
-        [team.id, board.id, task.id],
+        [team.slug, board.slug, task.slug],
     );
 
     const handleTitleChange = (newTitle: string) => {
@@ -153,7 +153,9 @@ export default function TasksShow({
     };
 
     const handleSubtaskClick = (subtask: Task) => {
-        router.visit(route("tasks.show", [team.id, board.id, subtask.id]));
+        router.visit(
+            route("tasks.show", [team.slug, board.slug, subtask.slug]),
+        );
     };
 
     const isCompleted = task.completed_at != null;
@@ -174,13 +176,13 @@ export default function TasksShow({
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                         {
                             label: board.name,
                             href: route("teams.boards.show", [
-                                team.id,
-                                board.id,
+                                team.slug,
+                                board.slug,
                             ]),
                         },
                     ]}
@@ -265,9 +267,9 @@ export default function TasksShow({
                                 <Link
                                     component={InertiaLink}
                                     href={route("tasks.show", [
-                                        team.id,
-                                        board.id,
-                                        task.parent_task.id,
+                                        team.slug,
+                                        board.slug,
+                                        task.parent_task.slug,
                                     ])}
                                     underline="hover"
                                 >
@@ -296,9 +298,9 @@ export default function TasksShow({
                             onChange={handleDescriptionChange}
                             placeholder="Add a description..."
                             uploadImageUrl={route("tasks.images.store", [
-                                team.id,
-                                board.id,
-                                task.id,
+                                team.slug,
+                                board.slug,
+                                task.slug,
                             ])}
                             minHeight={150}
                         />
@@ -345,8 +347,8 @@ export default function TasksShow({
                         </Typography>
                         <SubtaskList
                             task={task}
-                            teamId={team.id}
-                            boardId={board.id}
+                            teamId={team.slug}
+                            boardId={board.slug}
                             columnId={task.column_id}
                             onSubtaskClick={handleSubtaskClick}
                         />
@@ -357,8 +359,8 @@ export default function TasksShow({
                         <Box sx={{ mb: 3 }}>
                             <GitlabRefsList
                                 task={task}
-                                teamId={team.id}
-                                boardId={board.id}
+                                teamId={team.slug}
+                                boardId={board.slug}
                             />
                         </Box>
                     )}
@@ -368,8 +370,8 @@ export default function TasksShow({
                         <Box sx={{ mb: 3 }}>
                             <FigmaSection
                                 task={task}
-                                teamId={team.id}
-                                boardId={board.id}
+                                teamId={team.slug}
+                                boardId={board.slug}
                                 figmaConnections={figmaConnections}
                             />
                         </Box>
@@ -386,8 +388,8 @@ export default function TasksShow({
                         </Typography>
                         <AttachmentList
                             attachments={task.attachments ?? []}
-                            teamId={team.id}
-                            boardId={board.id}
+                            teamId={team.slug}
+                            boardId={board.slug}
                             taskId={task.id}
                         />
                     </Box>
@@ -406,14 +408,14 @@ export default function TasksShow({
                         <ActivityFeed
                             comments={task.comments ?? []}
                             activities={task.activities ?? []}
-                            teamId={team.id}
-                            boardId={board.id}
+                            teamId={team.slug}
+                            boardId={board.slug}
                             taskId={task.id}
                             currentUserId={auth.user.id}
                             uploadImageUrl={route("tasks.images.store", [
-                                team.id,
-                                board.id,
-                                task.id,
+                                team.slug,
+                                board.slug,
+                                task.slug,
                             ])}
                         />
                     </Box>

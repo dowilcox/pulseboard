@@ -12,7 +12,10 @@ class TaskAssignedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Task $task, public User $assigner) {}
+    public function __construct(public Task $task, public User $assigner)
+    {
+        $this->task->loadMissing('board.team');
+    }
 
     public function via(object $notifiable): array
     {
@@ -35,6 +38,9 @@ class TaskAssignedNotification extends Notification
             'task_title' => $this->task->title,
             'board_id' => $this->task->board_id,
             'team_id' => $this->task->board->team_id,
+            'team_slug' => $this->task->board->team->slug,
+            'board_slug' => $this->task->board->slug,
+            'task_slug' => $this->task->slug,
             'assigner_name' => $this->assigner->name,
             'message' => "{$this->assigner->name} assigned you to \"{$this->task->title}\"",
         ];
@@ -43,7 +49,7 @@ class TaskAssignedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
-            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
         );
 
         return (new MailMessage)

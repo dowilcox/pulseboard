@@ -81,7 +81,7 @@ export default function BoardsShow({
     useBoardChannel(board.id, handleBoardEvent);
 
     const handleTaskClick = (task: Task) => {
-        router.visit(route("tasks.show", [team.id, board.id, task.id]));
+        router.visit(route("tasks.show", [team.slug, board.slug, task.slug]));
     };
 
     const renderView = () => {
@@ -132,7 +132,7 @@ export default function BoardsShow({
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                     ]}
                     actions={
@@ -151,8 +151,8 @@ export default function BoardsShow({
                                         onClick={() =>
                                             router.get(
                                                 route("teams.boards.settings", [
-                                                    team.id,
-                                                    board.id,
+                                                    team.slug,
+                                                    board.slug,
                                                 ]),
                                             )
                                         }
@@ -173,8 +173,8 @@ export default function BoardsShow({
                 <FilterBar
                     members={members}
                     labels={teamLabels}
-                    teamId={team.id}
-                    boardId={board.id}
+                    teamId={team.slug}
+                    boardId={board.slug}
                     onFilterChange={(fn) => setTaskFilter(() => fn)}
                 />
             )}

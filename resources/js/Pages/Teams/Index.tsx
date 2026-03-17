@@ -124,7 +124,9 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                             >
                                 <CardActionArea
                                     onClick={() =>
-                                        router.get(route("teams.show", team.id))
+                                        router.get(
+                                            route("teams.show", team.slug),
+                                        )
                                     }
                                 >
                                     <CardContent>

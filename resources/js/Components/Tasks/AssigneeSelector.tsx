@@ -24,7 +24,7 @@ export default function AssigneeSelector({
 
     const handleChange = (_: unknown, newValue: User[]) => {
         router.put(
-            route("tasks.assignees.update", [teamId, boardId, task.id]),
+            route("tasks.assignees.update", [teamId, boardId, task.slug]),
             { user_ids: newValue.map((u) => u.id) },
             { preserveScroll: true },
         );

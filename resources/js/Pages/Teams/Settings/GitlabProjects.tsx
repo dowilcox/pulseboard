@@ -135,7 +135,7 @@ export default function GitlabProjects({
         if (editingConnection) {
             connForm.put(
                 route("teams.gitlab-connections.update", [
-                    team.id,
+                    team.slug,
                     editingConnection.id,
                 ]),
                 {
@@ -143,7 +143,7 @@ export default function GitlabProjects({
                 },
             );
         } else {
-            connForm.post(route("teams.gitlab-connections.store", team.id), {
+            connForm.post(route("teams.gitlab-connections.store", team.slug), {
                 onSuccess: () => setConnDialogOpen(false),
             });
         }
@@ -151,7 +151,7 @@ export default function GitlabProjects({
 
     const handleDeleteConnection = (id: string) => {
         router.delete(
-            route("teams.gitlab-connections.destroy", [team.id, id]),
+            route("teams.gitlab-connections.destroy", [team.slug, id]),
             {
                 onSuccess: () => setDeleteConnId(null),
             },
@@ -169,7 +169,7 @@ export default function GitlabProjects({
         try {
             const response = await fetch(
                 route("teams.gitlab-connections.test", [
-                    team.id,
+                    team.slug,
                     connection.id,
                 ]),
                 {
@@ -203,7 +203,7 @@ export default function GitlabProjects({
     // Project handlers
     const handleLinkProject = (project: { id: number }) => {
         router.post(
-            route("teams.gitlab-projects.store", team.id),
+            route("teams.gitlab-projects.store", team.slug),
             {
                 connection_id: selectedConnectionId,
                 gitlab_project_id: project.id,
@@ -215,7 +215,7 @@ export default function GitlabProjects({
     };
 
     const handleUnlink = (id: string) => {
-        router.delete(route("teams.gitlab-projects.destroy", [team.id, id]), {
+        router.delete(route("teams.gitlab-projects.destroy", [team.slug, id]), {
             onSuccess: () => setDeleteProjectId(null),
         });
     };
@@ -230,7 +230,7 @@ export default function GitlabProjects({
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                     ]}
                 />
@@ -735,7 +735,7 @@ export default function GitlabProjects({
                         {selectedConnectionId && (
                             <GitlabProjectSearch
                                 connectionId={selectedConnectionId}
-                                teamId={team.id}
+                                teamId={team.slug}
                                 onSelect={handleLinkProject}
                             />
                         )}

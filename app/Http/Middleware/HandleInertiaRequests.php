@@ -41,7 +41,7 @@ class HandleInertiaRequests extends Middleware
                     ->with([
                         'media',
                         'boards' => fn ($q) => $q
-                            ->select('id', 'team_id', 'name', 'sort_order')
+                            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
                             ->with('media')
                             ->orderBy('sort_order'),
                     ])

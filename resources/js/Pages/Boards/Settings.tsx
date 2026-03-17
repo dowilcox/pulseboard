@@ -105,7 +105,7 @@ export default function BoardSettings({ board, team, members }: Props) {
 
     const handleDeleteBoard = () => {
         setDeletingBoard(true);
-        router.delete(route("teams.boards.destroy", [team.id, board.id]), {
+        router.delete(route("teams.boards.destroy", [team.slug, board.slug]), {
             data: { confirmation: "DELETE" },
             onFinish: () => setDeletingBoard(false),
         });
@@ -115,7 +115,7 @@ export default function BoardSettings({ board, team, members }: Props) {
     useEffect(() => {
         const controller = new AbortController();
 
-        fetch(route("teams.task-templates.index", team.id), {
+        fetch(route("teams.task-templates.index", team.slug), {
             signal: controller.signal,
             headers: { Accept: "application/json" },
         })
@@ -134,7 +134,7 @@ export default function BoardSettings({ board, team, members }: Props) {
     }, [team.id]);
 
     const handleDeleteTaskTemplate = (templateId: string) => {
-        fetch(route("teams.task-templates.destroy", [team.id, templateId]), {
+        fetch(route("teams.task-templates.destroy", [team.slug, templateId]), {
             method: "DELETE",
             headers: {
                 Accept: "application/json",
@@ -162,7 +162,7 @@ export default function BoardSettings({ board, team, members }: Props) {
         setTemplateFormErrors({});
 
         router.post(
-            route("teams.task-templates.store", team.id),
+            route("teams.task-templates.store", team.slug),
             {
                 name: templateFormData.name,
                 description_template:
@@ -185,7 +185,7 @@ export default function BoardSettings({ board, team, members }: Props) {
                         effort_estimate: "",
                     });
                     // Re-fetch templates after creation
-                    fetch(route("teams.task-templates.index", team.id), {
+                    fetch(route("teams.task-templates.index", team.slug), {
                         headers: { Accept: "application/json" },
                     })
                         .then((res) => res.json())
@@ -202,7 +202,7 @@ export default function BoardSettings({ board, team, members }: Props) {
     const handleSaveAsTemplate = () => {
         setSavingTemplate(true);
         router.post(
-            route("boards.create-template", [team.id, board.id]),
+            route("boards.create-template", [team.slug, board.slug]),
             {},
             {
                 onSuccess: () => {
@@ -227,7 +227,7 @@ export default function BoardSettings({ board, team, members }: Props) {
 
     const handleBoardSave = (e: React.FormEvent) => {
         e.preventDefault();
-        boardForm.put(route("teams.boards.update", [team.id, board.id]));
+        boardForm.put(route("teams.boards.update", [team.slug, board.slug]));
     };
 
     const handleAddColumn = () => {
@@ -308,7 +308,7 @@ export default function BoardSettings({ board, team, members }: Props) {
         }));
 
         router.put(
-            route("teams.boards.columns.reorder", [team.id, board.id]),
+            route("teams.boards.columns.reorder", [team.slug, board.slug]),
             { columns: payload },
             {
                 onSuccess: () => setSavingColumns(false),
@@ -333,13 +333,13 @@ export default function BoardSettings({ board, team, members }: Props) {
                         { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
-                            href: route("teams.show", team.id),
+                            href: route("teams.show", team.slug),
                         },
                         {
                             label: board.name,
                             href: route("teams.boards.show", [
-                                team.id,
-                                board.id,
+                                team.slug,
+                                board.slug,
                             ]),
                         },
                     ]}
@@ -453,7 +453,7 @@ export default function BoardSettings({ board, team, members }: Props) {
                 </Card>
 
                 {/* Board Image */}
-                <BoardImageUpload board={board} teamId={team.id} />
+                <BoardImageUpload board={board} teamId={team.slug} />
 
                 {/* Column management */}
                 <Card variant="outlined">
@@ -1082,8 +1082,8 @@ export default function BoardSettings({ board, team, members }: Props) {
 
                 {/* Automation Rules */}
                 <AutomationRulesPanel
-                    teamId={team.id}
-                    boardId={board.id}
+                    teamId={team.slug}
+                    boardId={board.slug}
                     columns={board.columns ?? []}
                     members={members}
                 />

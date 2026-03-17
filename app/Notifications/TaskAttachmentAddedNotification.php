@@ -16,7 +16,9 @@ class TaskAttachmentAddedNotification extends Notification
         public Task $task,
         public User $uploader,
         public string $filename,
-    ) {}
+    ) {
+        $this->task->loadMissing('board.team');
+    }
 
     public function via(object $notifiable): array
     {
@@ -37,6 +39,9 @@ class TaskAttachmentAddedNotification extends Notification
             'task_title' => $this->task->title,
             'board_id' => $this->task->board_id,
             'team_id' => $this->task->board->team_id,
+            'team_slug' => $this->task->board->team->slug,
+            'board_slug' => $this->task->board->slug,
+            'task_slug' => $this->task->slug,
             'uploader_name' => $this->uploader->name,
             'filename' => $this->filename,
             'message' => "{$this->uploader->name} added \"{$this->filename}\" to \"{$this->task->title}\"",
@@ -46,7 +51,7 @@ class TaskAttachmentAddedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
-            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
         );
 
         return (new MailMessage)

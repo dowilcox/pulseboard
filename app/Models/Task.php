@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -23,7 +24,7 @@ class Task extends Model implements HasMedia
 
     protected $guarded = [];
 
-    protected $appends = ['is_completed', 'checklist_progress'];
+    protected $appends = ['is_completed', 'checklist_progress', 'slug'];
 
     protected $hidden = ['media'];
 
@@ -226,5 +227,47 @@ class Task extends Model implements HasMedia
         return $total > 0
             ? ['completed' => $completed, 'total' => $total]
             : null;
+    }
+
+    public function getSlugAttribute(): ?string
+    {
+        if (! $this->task_number) {
+            return null;
+        }
+
+        return $this->task_number.'-'.Str::slug($this->title);
+    }
+
+    public function getRouteKey(): string
+    {
+        return $this->slug ?? $this->id;
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        $query = $this->newQuery();
+
+        // Scope to the parent board if resolved in the route
+        $board = request()->route('board');
+        if ($board instanceof Board) {
+            $query->where('board_id', $board->id);
+        }
+
+        // Try UUID first
+        if (Str::isUuid($value)) {
+            return $query->where('id', $value)->first();
+        }
+
+        // Parse {number}-{slug} format — only the number matters
+        $taskNumber = (int) $value;
+        if ($taskNumber > 0) {
+            return $query->where('task_number', $taskNumber)->first();
+        }
+
+        return null;
     }
 }

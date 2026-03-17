@@ -39,7 +39,7 @@ export default function DependencySection({
 
     const handleAddBlockedBy = (depTask: TaskSummary) => {
         router.post(
-            route("tasks.dependencies.store", [teamId, boardId, task.id]),
+            route("tasks.dependencies.store", [teamId, boardId, task.slug]),
             { depends_on_task_id: depTask.id },
             { preserveScroll: true },
         );
@@ -49,7 +49,7 @@ export default function DependencySection({
 
     const handleAddBlocking = (depTask: TaskSummary) => {
         router.post(
-            route("tasks.dependencies.store", [teamId, boardId, depTask.id]),
+            route("tasks.dependencies.store", [teamId, boardId, depTask.slug]),
             { depends_on_task_id: task.id },
             { preserveScroll: true },
         );
@@ -62,7 +62,7 @@ export default function DependencySection({
             route("tasks.dependencies.destroy", [
                 teamId,
                 boardId,
-                task.id,
+                task.slug,
                 depTaskId,
             ]),
             { preserveScroll: true },
@@ -75,7 +75,7 @@ export default function DependencySection({
                 teamId,
                 boardId,
                 depTaskId,
-                task.id,
+                task.slug,
             ]),
             { preserveScroll: true },
         );
@@ -142,7 +142,7 @@ export default function DependencySection({
                             size="small"
                             color={color}
                             variant="outlined"
-                            onDelete={() => onRemove(dep.id)}
+                            onDelete={() => onRemove(dep.slug ?? dep.id)}
                             deleteIcon={
                                 <CloseIcon
                                     sx={{ fontSize: "14px !important" }}

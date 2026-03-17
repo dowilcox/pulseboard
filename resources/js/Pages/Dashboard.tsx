@@ -25,6 +25,7 @@ interface MyTask extends Task {
     board?: {
         id: string;
         name: string;
+        slug: string;
         team?: { id: string; name: string; slug: string };
     };
     column?: {
@@ -64,12 +65,12 @@ export default function Dashboard({ myTasks }: Props) {
     );
 
     const handleTaskClick = (task: MyTask) => {
-        if (task.board?.team?.id && task.board?.id) {
+        if (task.board?.team?.slug && task.board?.slug && task.slug) {
             router.get(
                 route("tasks.show", [
-                    task.board.team.id,
-                    task.board.id,
-                    task.id,
+                    task.board.team.slug,
+                    task.board.slug,
+                    task.slug,
                 ]),
             );
         }

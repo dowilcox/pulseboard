@@ -12,7 +12,10 @@ class TaskCompletedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Task $task, public User $completedBy) {}
+    public function __construct(public Task $task, public User $completedBy)
+    {
+        $this->task->loadMissing('board.team');
+    }
 
     public function via(object $notifiable): array
     {
@@ -33,6 +36,9 @@ class TaskCompletedNotification extends Notification
             'task_title' => $this->task->title,
             'board_id' => $this->task->board_id,
             'team_id' => $this->task->board->team_id,
+            'team_slug' => $this->task->board->team->slug,
+            'board_slug' => $this->task->board->slug,
+            'task_slug' => $this->task->slug,
             'completed_by_name' => $this->completedBy->name,
             'message' => "{$this->completedBy->name} completed \"{$this->task->title}\"",
         ];
@@ -41,7 +47,7 @@ class TaskCompletedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
-            "/teams/{$this->task->board->team_id}/boards/{$this->task->board_id}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
         );
 
         return (new MailMessage)

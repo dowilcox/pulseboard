@@ -76,7 +76,7 @@ export default function TaskSidebar({
     const saveField = useCallback(
         (data: Record<string, unknown>) => {
             router.put(
-                route("tasks.update", [team.id, board.id, task.id]),
+                route("tasks.update", [team.slug, board.slug, task.slug]),
                 data as RequestPayload,
                 {
                     preserveScroll: true,
@@ -85,7 +85,7 @@ export default function TaskSidebar({
                 },
             );
         },
-        [team.id, board.id, task.id],
+        [team.slug, board.slug, task.slug],
     );
 
     const handleColumnChange = (columnId: string) => {
@@ -95,7 +95,7 @@ export default function TaskSidebar({
             0,
         );
         router.patch(
-            route("tasks.move", [team.id, board.id, task.id]),
+            route("tasks.move", [team.slug, board.slug, task.slug]),
             { column_id: columnId, sort_order: maxSort + 1 },
             { preserveScroll: true, onError: () => {} },
         );
@@ -108,7 +108,7 @@ export default function TaskSidebar({
         if (!firstColumn) return;
 
         router.patch(
-            route("tasks.move", [team.id, board.id, task.id]),
+            route("tasks.move", [team.slug, board.slug, task.slug]),
             { board_id: newBoardId, column_id: firstColumn.id, sort_order: 0 },
             { preserveScroll: true, onError: () => {} },
         );
@@ -116,7 +116,7 @@ export default function TaskSidebar({
 
     const handleToggleComplete = () => {
         router.patch(
-            route("tasks.toggle-complete", [team.id, board.id, task.id]),
+            route("tasks.toggle-complete", [team.slug, board.slug, task.slug]),
             {},
             { preserveScroll: true, onError: () => {} },
         );
@@ -147,16 +147,21 @@ export default function TaskSidebar({
     };
 
     const handleDelete = () => {
-        router.delete(route("tasks.destroy", [team.id, board.id, task.id]), {
-            onSuccess: () =>
-                router.visit(route("teams.boards.show", [team.id, board.id])),
-        });
+        router.delete(
+            route("tasks.destroy", [team.slug, board.slug, task.slug]),
+            {
+                onSuccess: () =>
+                    router.visit(
+                        route("teams.boards.show", [team.slug, board.slug]),
+                    ),
+            },
+        );
     };
 
     const handleSaveAsTemplate = () => {
         if (!templateName.trim()) return;
         router.post(
-            route("tasks.save-template", [team.id, board.id, task.id]),
+            route("tasks.save-template", [team.slug, board.slug, task.slug]),
             { name: templateName.trim() },
             {
                 preserveScroll: true,
@@ -325,8 +330,8 @@ export default function TaskSidebar({
                     {sectionLabel("GitLab")}
                     <GitlabSidebarControls
                         task={task}
-                        teamId={team.id}
-                        boardId={board.id}
+                        teamId={team.slug}
+                        boardId={board.slug}
                         gitlabProjects={gitlabProjects}
                     />
                 </>
@@ -339,8 +344,8 @@ export default function TaskSidebar({
                     "Priority",
                     <PrioritySelector
                         task={task}
-                        teamId={team.id}
-                        boardId={board.id}
+                        teamId={team.slug}
+                        boardId={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -348,8 +353,8 @@ export default function TaskSidebar({
                     <AssigneeSelector
                         task={task}
                         members={members}
-                        teamId={team.id}
-                        boardId={board.id}
+                        teamId={team.slug}
+                        boardId={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -357,8 +362,8 @@ export default function TaskSidebar({
                     <LabelSelector
                         task={task}
                         labels={labels}
-                        teamId={team.id}
-                        boardId={board.id}
+                        teamId={team.slug}
+                        boardId={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -405,8 +410,8 @@ export default function TaskSidebar({
                 <DependencySection
                     task={task}
                     boardTasks={boardTasks}
-                    teamId={team.id}
-                    boardId={board.id}
+                    teamId={team.slug}
+                    boardId={board.slug}
                 />
 
                 {fieldRow(

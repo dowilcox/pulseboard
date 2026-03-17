@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Task>
+ * @extends Factory<Task>
  */
 class TaskFactory extends Factory
 {
@@ -18,6 +19,7 @@ class TaskFactory extends Factory
             'board_id' => Board::factory(),
             'column_id' => Column::factory(),
             'title' => fake()->sentence(4),
+            'task_number' => fake()->unique()->numberBetween(1, 99999),
             'description' => fake()->optional(0.7)->paragraph(),
             'priority' => fake()->randomElement(['urgent', 'high', 'medium', 'low', 'none']),
             'sort_order' => fake()->randomFloat(2, 0, 100),

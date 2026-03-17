@@ -98,7 +98,7 @@ export default function TaskDetailPanel({
 
         const controller = new AbortController();
 
-        fetch(route("tasks.show", [teamId, boardId, task.id]), {
+        fetch(route("tasks.show", [teamId, boardId, task.slug]), {
             headers: { Accept: "application/json" },
             signal: controller.signal,
         })
@@ -146,7 +146,7 @@ export default function TaskDetailPanel({
 
         const controller = new AbortController();
 
-        fetch(route("tasks.show", [teamId, boardId, task.id]), {
+        fetch(route("tasks.show", [teamId, boardId, task.slug]), {
             headers: { Accept: "application/json" },
             signal: controller.signal,
         })
@@ -173,7 +173,7 @@ export default function TaskDetailPanel({
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
             titleTimeoutRef.current = setTimeout(() => {
                 router.put(
-                    route("tasks.update", [teamId, boardId, task.id]),
+                    route("tasks.update", [teamId, boardId, task.slug]),
                     { title: newTitle },
                     { preserveScroll: true, onError: () => {} },
                 );
@@ -188,7 +188,7 @@ export default function TaskDetailPanel({
             if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             descTimeoutRef.current = setTimeout(() => {
                 router.put(
-                    route("tasks.update", [teamId, boardId, task.id]),
+                    route("tasks.update", [teamId, boardId, task.slug]),
                     { description: newDesc || null },
                     { preserveScroll: true, onError: () => {} },
                 );
@@ -200,7 +200,7 @@ export default function TaskDetailPanel({
     const saveDueDate = (newDate: string) => {
         if (!task) return;
         router.put(
-            route("tasks.update", [teamId, boardId, task.id]),
+            route("tasks.update", [teamId, boardId, task.slug]),
             { due_date: newDate || null },
             { preserveScroll: true, onError: () => {} },
         );
@@ -208,7 +208,7 @@ export default function TaskDetailPanel({
 
     const handleDelete = () => {
         if (!task) return;
-        router.delete(route("tasks.destroy", [teamId, boardId, task.id]), {
+        router.delete(route("tasks.destroy", [teamId, boardId, task.slug]), {
             preserveScroll: true,
             onSuccess: () => onClose(),
         });

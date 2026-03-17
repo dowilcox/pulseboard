@@ -49,7 +49,7 @@ export default function GitlabSidebarControls({
 
         try {
             const response = await fetch(
-                route("tasks.gitlab.set-project", [teamId, boardId, task.id]),
+                route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
                 {
                     method: "PUT",
                     headers: {
@@ -92,7 +92,7 @@ export default function GitlabSidebarControls({
 
         try {
             const response = await fetch(
-                route(routeName, [teamId, boardId, task.id]),
+                route(routeName, [teamId, boardId, task.slug]),
                 {
                     method: "POST",
                     headers: {

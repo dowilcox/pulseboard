@@ -62,7 +62,7 @@ function SortableBoardItem({
     };
 
     const handleBoardClick = () => {
-        router.get(route("teams.boards.show", [teamId, board.id]));
+        router.get(route("teams.boards.show", [teamId, board.slug]));
     };
 
     return (

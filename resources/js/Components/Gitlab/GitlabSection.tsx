@@ -65,7 +65,7 @@ export default function GitlabSection({
 
         try {
             const response = await fetch(
-                route("tasks.gitlab.set-project", [teamId, boardId, task.id]),
+                route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
                 {
                     method: "PUT",
                     headers: {
@@ -112,7 +112,7 @@ export default function GitlabSection({
 
         try {
             const response = await fetch(
-                route(routeName, [teamId, boardId, task.id]),
+                route(routeName, [teamId, boardId, task.slug]),
                 {
                     method: "POST",
                     headers: {
@@ -151,7 +151,7 @@ export default function GitlabSection({
                 route("tasks.gitlab.destroy", [
                     teamId,
                     boardId,
-                    task.id,
+                    task.slug,
                     refId,
                 ]),
                 {

@@ -187,7 +187,7 @@ export default function ListView({
             });
 
             const response = await fetch(
-                `${route("boards.tasks.index", [team.id, board.id])}?${params}`,
+                `${route("boards.tasks.index", [team.slug, board.slug])}?${params}`,
                 {
                     headers: { Accept: "application/json" },
                     signal: controller.signal,
@@ -208,7 +208,15 @@ export default function ListView({
         } finally {
             setLoading(false);
         }
-    }, [loading, hasMore, currentPage, sortKey, sortDir, team.id, board.id]);
+    }, [
+        loading,
+        hasMore,
+        currentPage,
+        sortKey,
+        sortDir,
+        team.slug,
+        board.slug,
+    ]);
 
     // IntersectionObserver for infinite scroll
     useEffect(() => {

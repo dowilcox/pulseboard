@@ -16,7 +16,7 @@ interface Props {
 export default function PrioritySelector({ task, teamId, boardId }: Props) {
     const handleChange = (e: SelectChangeEvent) => {
         router.put(
-            route("tasks.update", [teamId, boardId, task.id]),
+            route("tasks.update", [teamId, boardId, task.slug]),
             { priority: e.target.value },
             { preserveScroll: true },
         );
