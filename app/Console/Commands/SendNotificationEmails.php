@@ -7,6 +7,7 @@ use App\Mail\NotificationEmail;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendNotificationEmails extends Command
@@ -37,6 +38,8 @@ class SendNotificationEmails extends Command
 
     public function handle(): int
     {
+        Log::info('[notifications:send-emails] Starting notification email run');
+
         // Find all notifications that haven't been emailed yet,
         // created in the last hour (don't email very old ones).
         $pending = DatabaseNotification::query()
@@ -49,10 +52,12 @@ class SendNotificationEmails extends Command
             ->get();
 
         if ($pending->isEmpty()) {
-            $this->info('No pending notifications to email.');
+            Log::debug('[notifications:send-emails] No pending notifications to email');
 
             return Command::SUCCESS;
         }
+
+        Log::info("[notifications:send-emails] Found {$pending->count()} pending notification(s)");
 
         // Group by user
         $grouped = $pending->groupBy('notifiable_id');
@@ -63,6 +68,7 @@ class SendNotificationEmails extends Command
         foreach ($grouped as $userId => $notifications) {
             $user = User::find($userId);
             if (! $user || $user->deactivated_at) {
+                Log::info("[notifications:send-emails] Skipping user {$userId} (not found or deactivated)");
                 // Mark as emailed so we don't keep processing them
                 DatabaseNotification::whereIn(
                     'id',
@@ -79,13 +85,21 @@ class SendNotificationEmails extends Command
                 $prefKey = $notification->data['type'] ?? null;
 
                 if (! $prefKey || ! isset(self::EMAIL_TYPES[$prefKey])) {
+                    Log::debug("[notifications:send-emails] Notification {$notification->id} has unknown type '{$prefKey}', skipping");
+
                     return false;
                 }
 
-                return $user->wantsNotification($prefKey, 'email');
+                $wants = $user->wantsNotification($prefKey, 'email');
+                if (! $wants) {
+                    Log::debug("[notifications:send-emails] User {$user->email} opted out of '{$prefKey}' emails");
+                }
+
+                return $wants;
             });
 
             if ($emailable->isEmpty()) {
+                Log::info("[notifications:send-emails] No emailable notifications for user {$user->email} ({$notifications->count()} filtered out)");
                 // Mark all as emailed even if user doesn't want them
                 DatabaseNotification::whereIn(
                     'id',
@@ -95,18 +109,32 @@ class SendNotificationEmails extends Command
                 continue;
             }
 
-            if ($emailable->count() >= self::DIGEST_THRESHOLD) {
-                // Send digest
-                Mail::to($user)->send(
-                    new NotificationDigest($user, $emailable),
-                );
-                $digestsSent++;
-            } else {
-                // Send individual emails using each notification's toMail()
-                foreach ($emailable as $notification) {
-                    $this->sendIndividualEmail($user, $notification);
-                    $emailsSent++;
+            try {
+                if ($emailable->count() >= self::DIGEST_THRESHOLD) {
+                    // Send digest
+                    Log::info("[notifications:send-emails] Sending digest to {$user->email} ({$emailable->count()} notifications)");
+                    Mail::to($user)->send(
+                        new NotificationDigest($user, $emailable),
+                    );
+                    $digestsSent++;
+                } else {
+                    // Send individual emails
+                    foreach ($emailable as $notification) {
+                        $type = $notification->data['type'] ?? 'unknown';
+                        Log::info("[notifications:send-emails] Sending {$type} email to {$user->email}");
+                        Mail::to($user)->send(new NotificationEmail($user, $notification));
+                        $emailsSent++;
+                    }
                 }
+            } catch (\Throwable $e) {
+                Log::error("[notifications:send-emails] Failed to send email to {$user->email}: {$e->getMessage()}", [
+                    'user_id' => $userId,
+                    'notification_ids' => $emailable->pluck('id')->toArray(),
+                    'exception' => $e,
+                ]);
+
+                // Don't mark as emailed so we retry next run
+                continue;
             }
 
             // Mark all user's pending notifications as emailed
@@ -116,17 +144,8 @@ class SendNotificationEmails extends Command
             )->update(['emailed_at' => now()]);
         }
 
-        $this->info(
-            "Sent {$emailsSent} individual email(s) and {$digestsSent} digest(s).",
-        );
+        Log::info("[notifications:send-emails] Complete: {$emailsSent} email(s), {$digestsSent} digest(s) sent");
 
         return Command::SUCCESS;
-    }
-
-    private function sendIndividualEmail(
-        User $user,
-        DatabaseNotification $notification,
-    ): void {
-        Mail::to($user)->send(new NotificationEmail($user, $notification));
     }
 }
