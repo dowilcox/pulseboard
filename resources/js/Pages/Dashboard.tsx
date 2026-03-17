@@ -40,27 +40,15 @@ interface MyTask extends Task {
 
 interface Props {
     myTasks: MyTask[];
+    completedCount: number;
 }
 
-export default function Dashboard({ myTasks }: Props) {
+export default function Dashboard({ myTasks, completedCount }: Props) {
     const overdueTasks = useMemo(
         () =>
             myTasks.filter(
-                (t) =>
-                    t.due_date &&
-                    new Date(t.due_date) < new Date() &&
-                    !t.column?.is_done_column,
+                (t) => t.due_date && new Date(t.due_date) < new Date(),
             ),
-        [myTasks],
-    );
-
-    const activeTasks = useMemo(
-        () => myTasks.filter((t) => !t.column?.is_done_column),
-        [myTasks],
-    );
-
-    const doneTasks = useMemo(
-        () => myTasks.filter((t) => t.column?.is_done_column),
         [myTasks],
     );
 
@@ -104,7 +92,7 @@ export default function Dashboard({ myTasks }: Props) {
                         </Typography>
                     </Box>
                     <Typography variant="h4" component="p" fontWeight={700}>
-                        {activeTasks.length}
+                        {myTasks.length}
                     </Typography>
                 </Paper>
 
@@ -170,7 +158,7 @@ export default function Dashboard({ myTasks }: Props) {
                         </Typography>
                     </Box>
                     <Typography variant="h4" component="p" fontWeight={700}>
-                        {doneTasks.length}
+                        {completedCount}
                     </Typography>
                 </Paper>
             </Box>
@@ -220,9 +208,6 @@ export default function Dashboard({ myTasks }: Props) {
                                     aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
                                     sx={{
                                         cursor: "pointer",
-                                        opacity: task.column?.is_done_column
-                                            ? 0.5
-                                            : 1,
                                     }}
                                     onClick={() => handleTaskClick(task)}
                                     onKeyDown={(e) => {
@@ -250,10 +235,7 @@ export default function Dashboard({ myTasks }: Props) {
                                             variant="body2"
                                             fontWeight={500}
                                             sx={{
-                                                textDecoration: task.column
-                                                    ?.is_done_column
-                                                    ? "line-through"
-                                                    : "none",
+                                                textDecoration: "none",
                                             }}
                                         >
                                             {getGitlabPrefix(task) && (
@@ -336,10 +318,8 @@ export default function Dashboard({ myTasks }: Props) {
                                             <Typography
                                                 variant="body2"
                                                 color={
-                                                    !task.column
-                                                        ?.is_done_column &&
                                                     new Date(task.due_date) <
-                                                        new Date()
+                                                    new Date()
                                                         ? "error"
                                                         : "text.secondary"
                                                 }

@@ -17,18 +17,27 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // My tasks: all tasks assigned to this user across all boards
-        $myTasks = Task::whereHas('assignees', function ($q) use ($user) {
+        // Base query: tasks assigned to this user
+        $baseQuery = Task::whereHas('assignees', function ($q) use ($user) {
             $q->where('users.id', $user->id);
-        })
+        });
+
+        // Count completed tasks for the stat card
+        $completedCount = (clone $baseQuery)
+            ->whereHas('column', fn ($q) => $q->where('is_done_column', true))
+            ->count();
+
+        // Active tasks only, sorted by last updated
+        $myTasks = (clone $baseQuery)
+            ->whereHas('column', fn ($q) => $q->where('is_done_column', false))
             ->with(['board.team', 'column', 'assignees', 'labels', 'gitlabProject'])
             ->withCount(['comments', 'subtasks'])
-            ->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 WHEN 'low' THEN 4 ELSE 5 END")
-            ->orderBy('due_date')
+            ->orderBy('updated_at', 'desc')
             ->get();
 
         return Inertia::render('Dashboard', [
             'myTasks' => $myTasks,
+            'completedCount' => $completedCount,
         ]);
     }
 
