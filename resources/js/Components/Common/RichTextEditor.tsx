@@ -130,6 +130,7 @@ export default function RichTextEditor({
             StarterKit.configure({
                 paragraph: false,
                 codeBlock: false,
+                underline: false,
                 link: { openOnClick: false },
             }),
             MarkdownParagraph,

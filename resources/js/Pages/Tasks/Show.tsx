@@ -1,3 +1,4 @@
+import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
 import FigmaSection from "@/Components/Figma/FigmaSection";
 import GitlabRefsList from "@/Components/Gitlab/GitlabRefsList";
@@ -25,8 +26,10 @@ import type {
 } from "@/types";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
+import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
@@ -65,6 +68,10 @@ export default function TasksShow({
         task.checklists ?? [],
     );
     const [links, setLinks] = useState<TaskLink[]>(task.links ?? []);
+    const [editingDescription, setEditingDescription] = useState(false);
+
+    const isDescriptionEmpty = (val: string) =>
+        !val.replace(/<br\s*\/?>/g, "").trim();
 
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,11 +131,13 @@ export default function TasksShow({
         );
     };
 
-    const handleDescriptionChange = (html: string) => {
-        setDescription(html);
+    const handleDescriptionChange = (val: string) => {
+        setDescription(val);
+        if (!editingDescription) setEditingDescription(true);
         if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
+        const normalized = isDescriptionEmpty(val) ? null : val;
         descTimeoutRef.current = setTimeout(
-            () => saveField({ description: html || null }),
+            () => saveField({ description: normalized }),
             800,
         );
     };
@@ -282,39 +291,102 @@ export default function TasksShow({
                         )}
                     </Box>
 
-                    <Divider sx={{ mb: 3 }} />
-
                     {/* Description */}
-                    <Box sx={{ mb: 3 }}>
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                    <Box sx={{ mb: 4 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
                         >
-                            Description
-                        </Typography>
-                        <RichTextEditor
-                            content={description}
-                            onChange={handleDescriptionChange}
-                            placeholder="Add a description..."
-                            uploadImageUrl={route("tasks.images.store", [
-                                team.slug,
-                                board.slug,
-                                task.slug,
-                            ])}
-                            minHeight={150}
-                        />
+                            <Typography
+                                variant="subtitle1"
+                                fontWeight={700}
+                                sx={{ letterSpacing: "0.01em" }}
+                            >
+                                Description
+                            </Typography>
+                            {!editingDescription &&
+                                !isDescriptionEmpty(description) && (
+                                    <Button
+                                        size="small"
+                                        startIcon={
+                                            <EditIcon fontSize="small" />
+                                        }
+                                        onClick={() =>
+                                            setEditingDescription(true)
+                                        }
+                                    >
+                                        Edit
+                                    </Button>
+                                )}
+                        </Box>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
+                        {editingDescription ||
+                        isDescriptionEmpty(description) ? (
+                            <>
+                                <RichTextEditor
+                                    content={description}
+                                    onChange={handleDescriptionChange}
+                                    placeholder="Add a description..."
+                                    uploadImageUrl={route(
+                                        "tasks.images.store",
+                                        [team.slug, board.slug, task.slug],
+                                    )}
+                                    minHeight={150}
+                                    autoFocus
+                                />
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        justifyContent: "flex-end",
+                                        mt: 1,
+                                    }}
+                                >
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        disableElevation
+                                        onClick={() => {
+                                            // Flush any pending save
+                                            if (descTimeoutRef.current) {
+                                                clearTimeout(
+                                                    descTimeoutRef.current,
+                                                );
+                                                saveField({
+                                                    description:
+                                                        isDescriptionEmpty(
+                                                            description,
+                                                        )
+                                                            ? null
+                                                            : description,
+                                                });
+                                            }
+                                            setEditingDescription(false);
+                                        }}
+                                    >
+                                        Save
+                                    </Button>
+                                </Box>
+                            </>
+                        ) : !isDescriptionEmpty(description) ? (
+                            <Box sx={{ px: 1 }}>
+                                <RichTextDisplay content={description} />
+                            </Box>
+                        ) : null}
                     </Box>
 
                     {/* Checklists */}
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 4 }}>
                         <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ letterSpacing: "0.01em" }}
                         >
                             Checklists
                         </Typography>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <ChecklistEditor
                             checklists={checklists}
                             onChange={handleChecklistsChange}
@@ -322,14 +394,15 @@ export default function TasksShow({
                     </Box>
 
                     {/* Related Links */}
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 4 }}>
                         <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ letterSpacing: "0.01em" }}
                         >
                             Related Links
                         </Typography>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <LinkEditor
                             links={links}
                             onChange={handleLinksChange}
@@ -337,14 +410,15 @@ export default function TasksShow({
                     </Box>
 
                     {/* Subtasks */}
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 4 }}>
                         <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ letterSpacing: "0.01em" }}
                         >
                             Subtasks
                         </Typography>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <SubtaskList
                             task={task}
                             teamId={team.slug}
@@ -356,7 +430,7 @@ export default function TasksShow({
 
                     {/* GitLab Refs */}
                     {(task.gitlab_refs ?? []).length > 0 && (
-                        <Box sx={{ mb: 3 }}>
+                        <Box sx={{ mb: 4 }}>
                             <GitlabRefsList
                                 task={task}
                                 teamId={team.slug}
@@ -367,7 +441,7 @@ export default function TasksShow({
 
                     {/* Figma */}
                     {figmaConnections.length > 0 && (
-                        <Box sx={{ mb: 3 }}>
+                        <Box sx={{ mb: 4 }}>
                             <FigmaSection
                                 task={task}
                                 teamId={team.slug}
@@ -378,14 +452,15 @@ export default function TasksShow({
                     )}
 
                     {/* Attachments */}
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{ mb: 4 }}>
                         <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ letterSpacing: "0.01em" }}
                         >
                             Attachments
                         </Typography>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <AttachmentList
                             attachments={task.attachments ?? []}
                             teamId={team.slug}
@@ -394,17 +469,16 @@ export default function TasksShow({
                         />
                     </Box>
 
-                    <Divider sx={{ mb: 2 }} />
-
                     {/* Activity + Comments */}
                     <Box>
                         <Typography
-                            variant="subtitle2"
-                            fontWeight={600}
-                            sx={{ mb: 1 }}
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ letterSpacing: "0.01em" }}
                         >
                             Activity
                         </Typography>
+                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <ActivityFeed
                             comments={task.comments ?? []}
                             activities={task.activities ?? []}

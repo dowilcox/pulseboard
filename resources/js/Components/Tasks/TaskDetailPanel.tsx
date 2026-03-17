@@ -1,3 +1,5 @@
+import RichTextDisplay from "@/Components/Common/RichTextDisplay";
+import RichTextEditor from "@/Components/Common/RichTextEditor";
 import FigmaSection from "@/Components/Figma/FigmaSection";
 import GitlabSection from "@/Components/Gitlab/GitlabSection";
 import ActivityFeed from "@/Components/Tasks/ActivityFeed";
@@ -23,6 +25,7 @@ import { router, usePage } from "@inertiajs/react";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -30,8 +33,8 @@ import Divider from "@mui/material/Divider";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
-import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -72,6 +75,11 @@ export default function TaskDetailPanel({
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
+    const [editingDescription, setEditingDescription] = useState(false);
+
+    const isDescriptionEmpty = (val: string) =>
+        !val.replace(/<br\s*\/?>/g, "").trim();
+
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -87,6 +95,7 @@ export default function TaskDetailPanel({
     useEffect(() => {
         if (!task || !open) {
             setDetail(null);
+            setEditingDescription(false);
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
             if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             return;
@@ -403,25 +412,91 @@ export default function TaskDetailPanel({
 
                 {/* Description */}
                 <Box sx={{ mb: 3 }}>
-                    <Typography
-                        variant="subtitle2"
-                        fontWeight={600}
-                        sx={{ mb: 1 }}
-                    >
-                        Description
-                    </Typography>
-                    <TextField
-                        fullWidth
-                        multiline
-                        minRows={3}
-                        placeholder="Add a description..."
-                        value={description}
-                        onChange={(e) => {
-                            setDescription(e.target.value);
-                            saveDescription(e.target.value);
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            mb: 1,
                         }}
-                        size="small"
-                    />
+                    >
+                        <Typography variant="subtitle2" fontWeight={600}>
+                            Description
+                        </Typography>
+                        {!editingDescription &&
+                            !isDescriptionEmpty(description) && (
+                                <Button
+                                    size="small"
+                                    startIcon={<EditIcon fontSize="small" />}
+                                    onClick={() => setEditingDescription(true)}
+                                >
+                                    Edit
+                                </Button>
+                            )}
+                    </Box>
+                    {editingDescription || isDescriptionEmpty(description) ? (
+                        <>
+                            <RichTextEditor
+                                content={description}
+                                onChange={(val) => {
+                                    setDescription(val);
+                                    if (!editingDescription)
+                                        setEditingDescription(true);
+                                    saveDescription(
+                                        isDescriptionEmpty(val) ? "" : val,
+                                    );
+                                }}
+                                placeholder="Add a description..."
+                                minHeight={120}
+                                autoFocus
+                            />
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                    mt: 1,
+                                }}
+                            >
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    disableElevation
+                                    onClick={() => {
+                                        if (descTimeoutRef.current) {
+                                            clearTimeout(
+                                                descTimeoutRef.current,
+                                            );
+                                            const normalized =
+                                                isDescriptionEmpty(description)
+                                                    ? null
+                                                    : description;
+                                            router.put(
+                                                route("tasks.update", [
+                                                    teamId,
+                                                    boardId,
+                                                    task!.slug,
+                                                ]),
+                                                {
+                                                    description: normalized,
+                                                },
+                                                {
+                                                    preserveScroll: true,
+                                                    onError: () => {},
+                                                },
+                                            );
+                                        }
+                                        setEditingDescription(false);
+                                    }}
+                                >
+                                    Save
+                                </Button>
+                            </Box>
+                        </>
+                    ) : !isDescriptionEmpty(description) ? (
+                        <Box sx={{ px: 1 }}>
+                            <RichTextDisplay content={description} />
+                        </Box>
+                    ) : null}
                 </Box>
 
                 {/* Subtasks */}
