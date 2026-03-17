@@ -31,6 +31,7 @@ export default function NotificationBell() {
         fetchNotifications,
         markRead,
         markAllRead,
+        clearAll,
         loaded,
     } = useNotifications();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -71,6 +72,9 @@ export default function NotificationBell() {
             } else {
                 router.get(target);
             }
+        } else if (data.team_id && data.board_id) {
+            // Fallback for old notifications without slugs
+            router.get(`/teams/${data.team_id}/boards/${data.board_id}`);
         }
     };
 
@@ -120,15 +124,36 @@ export default function NotificationBell() {
                     <Typography variant="subtitle2" fontWeight={600}>
                         Notifications
                     </Typography>
-                    {unreadCount > 0 && (
-                        <Button
-                            size="small"
-                            onClick={() => markAllRead()}
-                            sx={{ textTransform: "none", fontSize: "0.75rem" }}
-                        >
-                            Mark all read
-                        </Button>
-                    )}
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {unreadCount > 0 && (
+                            <Button
+                                size="small"
+                                onClick={() => markAllRead()}
+                                sx={{
+                                    textTransform: "none",
+                                    fontSize: "0.75rem",
+                                }}
+                            >
+                                Mark all read
+                            </Button>
+                        )}
+                        {notifications.length > 0 && (
+                            <Button
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                    clearAll();
+                                    handleClose();
+                                }}
+                                sx={{
+                                    textTransform: "none",
+                                    fontSize: "0.75rem",
+                                }}
+                            >
+                                Clear all
+                            </Button>
+                        )}
+                    </Box>
                 </Box>
                 <Divider />
 

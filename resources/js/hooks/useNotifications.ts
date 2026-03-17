@@ -132,12 +132,35 @@ export function useNotifications() {
         }
     }, []);
 
+    const clearAll = useCallback(async () => {
+        try {
+            setError(null);
+            const res = await fetch(route("notifications.clear-all"), {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN":
+                        document.querySelector<HTMLMetaElement>(
+                            'meta[name="csrf-token"]',
+                        )?.content ?? "",
+                },
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            setNotifications([]);
+            setUnreadCount(0);
+        } catch {
+            setError("mark_all_read");
+        }
+    }, []);
+
     return {
         unreadCount,
         notifications,
         fetchNotifications,
         markRead,
         markAllRead,
+        clearAll,
         loaded,
         error,
     };

@@ -106,6 +106,10 @@ Route::middleware('auth')->group(function () {
         NotificationController::class,
         'markAllRead',
     ])->name('notifications.read-all');
+    Route::delete('/notifications', [
+        NotificationController::class,
+        'clearAll',
+    ])->name('notifications.clear-all');
 
     // Admin
     Route::middleware('admin')

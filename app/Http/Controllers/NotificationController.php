@@ -34,4 +34,11 @@ class NotificationController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function clearAll(Request $request): JsonResponse
+    {
+        $request->user()->notifications()->delete();
+
+        return response()->json(['success' => true]);
+    }
 }
