@@ -81,13 +81,11 @@ export default function TaskDetailPanel({
         !val.replace(/<br\s*\/?>/g, "").trim();
 
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Clean up pending timeouts on unmount
     useEffect(() => {
         return () => {
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
-            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
         };
     }, []);
 
@@ -97,7 +95,6 @@ export default function TaskDetailPanel({
             setDetail(null);
             setEditingDescription(false);
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
-            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             return;
         }
 
@@ -194,14 +191,12 @@ export default function TaskDetailPanel({
     const saveDescription = useCallback(
         (newDesc: string) => {
             if (!task) return;
-            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
-            descTimeoutRef.current = setTimeout(() => {
-                router.put(
-                    route("tasks.update", [teamId, boardId, task.slug]),
-                    { description: newDesc || null },
-                    { preserveScroll: true, onError: () => {} },
-                );
-            }, 800);
+            const normalized = isDescriptionEmpty(newDesc) ? null : newDesc;
+            router.put(
+                route("tasks.update", [teamId, boardId, task.slug]),
+                { description: normalized },
+                { preserveScroll: true, onError: () => {} },
+            );
         },
         [task?.id, teamId, boardId],
     );
@@ -442,9 +437,6 @@ export default function TaskDetailPanel({
                                     setDescription(val);
                                     if (!editingDescription)
                                         setEditingDescription(true);
-                                    saveDescription(
-                                        isDescriptionEmpty(val) ? "" : val,
-                                    );
                                 }}
                                 placeholder="Add a description..."
                                 minHeight={120}
@@ -462,29 +454,7 @@ export default function TaskDetailPanel({
                                     variant="contained"
                                     disableElevation
                                     onClick={() => {
-                                        if (descTimeoutRef.current) {
-                                            clearTimeout(
-                                                descTimeoutRef.current,
-                                            );
-                                            const normalized =
-                                                isDescriptionEmpty(description)
-                                                    ? null
-                                                    : description;
-                                            router.put(
-                                                route("tasks.update", [
-                                                    teamId,
-                                                    boardId,
-                                                    task!.slug,
-                                                ]),
-                                                {
-                                                    description: normalized,
-                                                },
-                                                {
-                                                    preserveScroll: true,
-                                                    onError: () => {},
-                                                },
-                                            );
-                                        }
+                                        saveDescription(description);
                                         setEditingDescription(false);
                                     }}
                                 >
