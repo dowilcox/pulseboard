@@ -14,7 +14,7 @@ class StoreCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'body' => ['required', 'string', 'max:10000'],
+            'body' => ['required', 'string', 'max:65535'],
             'parent_id' => ['nullable', 'uuid', 'exists:comments,id'],
         ];
     }

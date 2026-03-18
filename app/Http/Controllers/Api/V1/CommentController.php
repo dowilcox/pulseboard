@@ -35,7 +35,7 @@ class CommentController extends Controller
         $this->authorize('view', $board);
 
         $validated = $request->validate([
-            'body' => ['required', 'string', 'max:10000'],
+            'body' => ['required', 'string', 'max:65535'],
             'parent_id' => ['nullable', 'uuid', 'exists:comments,id'],
         ]);
 
