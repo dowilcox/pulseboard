@@ -53,7 +53,7 @@ class TaskOverdueNotification extends Notification
     {
         $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
         $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
         );
 
         return (new MailMessage)

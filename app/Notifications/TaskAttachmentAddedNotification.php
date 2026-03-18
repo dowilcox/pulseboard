@@ -51,7 +51,7 @@ class TaskAttachmentAddedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
         );
 
         return (new MailMessage)

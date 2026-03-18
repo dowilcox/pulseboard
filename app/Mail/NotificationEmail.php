@@ -28,11 +28,12 @@ class NotificationEmail extends Mailable
         $this->notificationMessage = $data['message'] ?? 'New notification';
         $this->taskTitle = $data['task_title'] ?? 'Task';
 
-        $teamId = $data['team_id'] ?? '';
-        $boardId = $data['board_id'] ?? '';
+        $teamSlug = $data['team_slug'] ?? '';
+        $boardSlug = $data['board_slug'] ?? '';
+        $taskSlug = $data['task_slug'] ?? '';
         $this->actionUrl =
-            $teamId && $boardId
-                ? url("/teams/{$teamId}/boards/{$boardId}")
+            $teamSlug && $boardSlug && $taskSlug
+                ? url("/{$teamSlug}/{$boardSlug}/tasks/{$taskSlug}")
                 : config('app.url');
     }
 

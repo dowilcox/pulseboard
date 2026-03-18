@@ -56,7 +56,7 @@ class TaskMentionedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}",
+            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
         );
         $preview = mb_strimwidth($this->comment->body, 0, 200, '...');
 
