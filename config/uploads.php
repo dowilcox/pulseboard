@@ -17,22 +17,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Allowed Image MIME Types
-    |--------------------------------------------------------------------------
-    |
-    | MIME types corresponding to the allowed image types above. Used by
-    | Spatie Media Library's acceptsMimeTypes() on avatar collections.
-    |
-    | Env: UPLOAD_IMAGE_MIMES (comma-separated MIME types)
-    |
-    */
-    'image_mime_types' => explode(',', env(
-        'UPLOAD_IMAGE_MIMES',
-        'image/jpeg,image/png,image/gif,image/webp'
-    )),
-
-    /*
-    |--------------------------------------------------------------------------
     | Allowed Attachment Types
     |--------------------------------------------------------------------------
     |

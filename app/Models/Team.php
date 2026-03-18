@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Symfony\Component\Mime\MimeTypes;
 
 class Team extends Model implements HasMedia
 {
@@ -54,7 +55,20 @@ class Team extends Model implements HasMedia
         $this->addMediaCollection('avatar')
             ->singleFile()
             ->useDisk('public')
-            ->acceptsMimeTypes(config('uploads.image_mime_types'));
+            ->acceptsMimeTypes(self::imageMimeTypes());
+    }
+
+    /**
+     * Derive MIME types from the configured image extensions.
+     */
+    public static function imageMimeTypes(): array
+    {
+        $guesser = MimeTypes::getDefault();
+
+        return array_unique(array_merge(...array_map(
+            fn (string $ext) => $guesser->getMimeTypes($ext),
+            config('uploads.image_types'),
+        )));
     }
 
     public function registerMediaConversions(?Media $media = null): void
