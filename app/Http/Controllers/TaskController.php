@@ -291,8 +291,11 @@ class TaskController extends Controller
     ): JsonResponse {
         $this->authorize('update', $task);
 
+        $maxSize = config('uploads.max_size.editor_image');
+        $allowedTypes = implode(',', config('uploads.image_types'));
+
         $request->validate([
-            'image' => ['required', 'image', 'max:5120'],
+            'image' => ['required', 'image', "max:{$maxSize}", "mimes:{$allowedTypes}"],
         ]);
 
         try {

@@ -119,8 +119,11 @@ class TeamController extends Controller
     {
         $this->authorize('update', $team);
 
+        $maxSize = config('uploads.max_size.avatar');
+        $allowedTypes = implode(',', config('uploads.image_types'));
+
         $request->validate([
-            'image' => ['required', 'image', 'max:2048'],
+            'image' => ['required', 'image', "max:{$maxSize}", "mimes:{$allowedTypes}"],
         ]);
 
         try {

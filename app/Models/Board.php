@@ -57,7 +57,7 @@ class Board extends Model implements HasMedia
         $this->addMediaCollection('avatar')
             ->singleFile()
             ->useDisk('public')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']);
+            ->acceptsMimeTypes(config('uploads.image_mime_types'));
     }
 
     public function registerMediaConversions(?Media $media = null): void
