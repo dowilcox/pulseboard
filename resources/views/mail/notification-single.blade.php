@@ -1,9 +1,11 @@
 <x-mail::message>
-# Hello {{ $user->name }},
 
 {{ $message }}
 
-<x-mail::button :url="$actionUrl">
-View Task
-</x-mail::button>
+---
+
+[View it on PulseBoard]({{ $actionUrl }}).
+
+<small>You're receiving this email because of your account on {{ $appDomain }}. [Manage all notifications]({{ $notificationSettingsUrl }})</small>
+
 </x-mail::message>

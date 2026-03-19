@@ -1,17 +1,15 @@
 <x-mail::message>
-# Hello {{ $user->name }},
 
-You have **{{ $notifications->count() }}** new notification{{ $notifications->count() !== 1 ? 's' : '' }} on PulseBoard.
+You have **{{ $notifications->count() }}** new notification{{ $notifications->count() !== 1 ? 's' : '' }}:
 
-<x-mail::table>
-| | Notification |
-|---|---|
 @foreach ($notifications as $notification)
-| {{ \Carbon\Carbon::parse($notification->created_at)->format('M j, g:ia') }} | {{ $notification->data['message'] ?? 'New notification' }} |
+- {{ $notification->data['message'] ?? 'New notification' }}
 @endforeach
-</x-mail::table>
 
-<x-mail::button :url="$appUrl">
-View PulseBoard
-</x-mail::button>
+---
+
+[View it on PulseBoard]({{ $appUrl }}).
+
+<small>You're receiving this email because of your account on {{ $appDomain }}. [Manage all notifications]({{ $notificationSettingsUrl }})</small>
+
 </x-mail::message>

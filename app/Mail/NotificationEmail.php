@@ -57,12 +57,16 @@ class NotificationEmail extends Mailable
 
     public function content(): Content
     {
+        $appUrl = config('app.url');
+
         return new Content(
             markdown: 'mail.notification-single',
             with: [
                 'user' => $this->user,
                 'message' => $this->notificationMessage,
                 'actionUrl' => $this->actionUrl,
+                'appDomain' => parse_url($appUrl, PHP_URL_HOST),
+                'notificationSettingsUrl' => $appUrl.'/profile#notifications',
             ],
         );
     }

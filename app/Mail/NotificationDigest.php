@@ -34,12 +34,16 @@ class NotificationDigest extends Mailable
 
     public function content(): Content
     {
+        $appUrl = config('app.url');
+
         return new Content(
             markdown: 'mail.notification-digest',
             with: [
                 'user' => $this->user,
                 'notifications' => $this->notifications,
-                'appUrl' => config('app.url'),
+                'appUrl' => $appUrl,
+                'appDomain' => parse_url($appUrl, PHP_URL_HOST),
+                'notificationSettingsUrl' => $appUrl.'/profile#notifications',
             ],
         );
     }
