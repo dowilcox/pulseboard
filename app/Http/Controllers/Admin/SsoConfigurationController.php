@@ -100,7 +100,7 @@ class SsoConfigurationController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage(),
+                'message' => 'Configuration validation failed. Please check your settings.',
             ], 422);
         }
     }

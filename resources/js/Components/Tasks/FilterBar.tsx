@@ -28,6 +28,7 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSnackbar } from "@/Contexts/SnackbarContext";
 
 interface Filters {
     search: string;
@@ -69,6 +70,7 @@ export default function FilterBar({
     boardId,
     onFilterChange,
 }: Props) {
+    const { showSnackbar } = useSnackbar();
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
     const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
     const [savedFiltersMenuAnchor, setSavedFiltersMenuAnchor] =
@@ -191,9 +193,13 @@ export default function FilterBar({
                 return res.json();
             })
             .then((data: SavedFilter[]) => setSavedFilters(data))
-            .catch(() => {});
+            .catch((err) => {
+                if (err instanceof DOMException && err.name === "AbortError")
+                    return;
+                showSnackbar("Failed to load saved filters", "error");
+            });
         return controller;
-    }, [teamId, boardId]);
+    }, [teamId, boardId, showSnackbar]);
 
     useEffect(() => {
         const controller = fetchSavedFilters();
@@ -236,7 +242,7 @@ export default function FilterBar({
                 setSaveFilterName("");
                 setSaveFilterDefault(false);
             })
-            .catch(() => {});
+            .catch(() => showSnackbar("Failed to save filter", "error"));
     };
 
     const handleDeleteFilter = (filterId: string) => {
@@ -255,7 +261,7 @@ export default function FilterBar({
                     prev.filter((f) => f.id !== filterId),
                 );
             })
-            .catch(() => {});
+            .catch(() => showSnackbar("Failed to delete filter", "error"));
     };
 
     const handleApplySavedFilter = (savedFilter: SavedFilter) => {

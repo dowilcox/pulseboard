@@ -24,7 +24,7 @@ services:
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-pulseboard}
       - DB_USERNAME=${DB_USERNAME:-pulseboard}
-      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - DB_PASSWORD=${DB_PASSWORD:?Set DB_PASSWORD in .env}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - QUEUE_CONNECTION=redis
@@ -32,8 +32,8 @@ services:
       - SESSION_DRIVER=redis
       - BROADCAST_CONNECTION=reverb
       - REVERB_APP_ID=${REVERB_APP_ID:-pulseboard}
-      - REVERB_APP_KEY=${REVERB_APP_KEY:-pulseboard-key}
-      - REVERB_APP_SECRET=${REVERB_APP_SECRET:-pulseboard-secret}
+      - REVERB_APP_KEY=${REVERB_APP_KEY:?Set REVERB_APP_KEY in .env}
+      - REVERB_APP_SECRET=${REVERB_APP_SECRET:?Set REVERB_APP_SECRET in .env}
       - REVERB_HOST=0.0.0.0
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
@@ -49,8 +49,8 @@ services:
     environment:
       - MYSQL_DATABASE=${DB_DATABASE:-pulseboard}
       - MYSQL_USER=${DB_USERNAME:-pulseboard}
-      - MYSQL_PASSWORD=${DB_PASSWORD:-secret}
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-secret}
+      - MYSQL_PASSWORD=${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

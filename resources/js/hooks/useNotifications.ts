@@ -3,7 +3,7 @@ import { usePage } from "@inertiajs/react";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
 import type { AppNotification, PageProps } from "@/types";
 
-type NotificationError = "fetch" | "mark_read" | "mark_all_read";
+type NotificationError = "fetch" | "mark_read" | "mark_all_read" | "clear_all";
 
 interface NotificationEvent {
     id: string;
@@ -150,7 +150,7 @@ export function useNotifications() {
             setNotifications([]);
             setUnreadCount(0);
         } catch {
-            setError("mark_all_read");
+            setError("clear_all");
         }
     }, []);
 

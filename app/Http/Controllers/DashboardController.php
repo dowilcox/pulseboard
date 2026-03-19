@@ -88,7 +88,7 @@ class DashboardController extends Controller
             ->whereIn('tasks.board_id', $boardIds)
             ->where('activities.action', 'moved')
             ->where('activities.created_at', '>=', now()->subWeeks(8))
-            ->whereRaw("JSON_EXTRACT(activities.changes, '$.to_done') = true")
+            ->where('activities.changes->to_done', true)
             ->select(DB::raw('YEARWEEK(activities.created_at) as week'), DB::raw('count(*) as completed'))
             ->groupBy('week')
             ->orderBy('week')
@@ -100,7 +100,7 @@ class DashboardController extends Controller
             ->whereIn('tasks.board_id', $boardIds)
             ->where('activities.action', 'moved')
             ->where('activities.created_at', '>=', now()->subDays(30))
-            ->whereRaw("JSON_EXTRACT(activities.changes, '$.to_done') = true")
+            ->where('activities.changes->to_done', true)
             ->select(DB::raw('AVG(DATEDIFF(activities.created_at, tasks.created_at)) as avg_days'))
             ->value('avg_days');
 
