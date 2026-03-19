@@ -74,7 +74,6 @@ export default function TasksShow({
         !val.replace(/<br\s*\/?>/g, "").trim();
 
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const descTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const checklistTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
         null,
     );
@@ -84,7 +83,6 @@ export default function TasksShow({
     useEffect(() => {
         return () => {
             if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
-            if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
             if (checklistTimeoutRef.current)
                 clearTimeout(checklistTimeoutRef.current);
             if (linksTimeoutRef.current) clearTimeout(linksTimeoutRef.current);
@@ -134,12 +132,11 @@ export default function TasksShow({
     const handleDescriptionChange = (val: string) => {
         setDescription(val);
         if (!editingDescription) setEditingDescription(true);
-        if (descTimeoutRef.current) clearTimeout(descTimeoutRef.current);
-        const normalized = isDescriptionEmpty(val) ? null : val;
-        descTimeoutRef.current = setTimeout(
-            () => saveField({ description: normalized }),
-            800,
-        );
+    };
+
+    const saveDescription = () => {
+        const normalized = isDescriptionEmpty(description) ? null : description;
+        saveField({ description: normalized });
     };
 
     const handleChecklistsChange = (newChecklists: Checklist[]) => {
@@ -349,20 +346,7 @@ export default function TasksShow({
                                         variant="contained"
                                         disableElevation
                                         onClick={() => {
-                                            // Flush any pending save
-                                            if (descTimeoutRef.current) {
-                                                clearTimeout(
-                                                    descTimeoutRef.current,
-                                                );
-                                                saveField({
-                                                    description:
-                                                        isDescriptionEmpty(
-                                                            description,
-                                                        )
-                                                            ? null
-                                                            : description,
-                                                });
-                                            }
+                                            saveDescription();
                                             setEditingDescription(false);
                                         }}
                                     >
