@@ -58,6 +58,10 @@ interface TaskDetail extends Task {
     creator?: User;
 }
 
+function isDescriptionEmpty(val: string): boolean {
+    return !val.replace(/<br\s*\/?>/g, "").trim();
+}
+
 export default function TaskDetailPanel({
     task,
     open,
@@ -76,9 +80,6 @@ export default function TaskDetailPanel({
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [editingDescription, setEditingDescription] = useState(false);
-
-    const isDescriptionEmpty = (val: string) =>
-        !val.replace(/<br\s*\/?>/g, "").trim();
 
     const titleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

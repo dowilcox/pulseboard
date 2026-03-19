@@ -2,13 +2,17 @@ import TaskCard from "@/Components/Tasks/TaskCard";
 import type { Task } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { memo } from "react";
 
 interface Props {
     task: Task;
     onClick?: (task: Task) => void;
 }
 
-export default function SortableTaskCard({ task, onClick }: Props) {
+const SortableTaskCard = memo(function SortableTaskCard({
+    task,
+    onClick,
+}: Props) {
     const {
         attributes,
         listeners,
@@ -36,4 +40,6 @@ export default function SortableTaskCard({ task, onClick }: Props) {
             <TaskCard task={task} onClick={onClick} />
         </div>
     );
-}
+});
+
+export default SortableTaskCard;

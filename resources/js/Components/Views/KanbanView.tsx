@@ -323,6 +323,16 @@ export default function KanbanView({
         return map;
     }, [columns]);
 
+    const taskMap = useMemo(() => {
+        const map = new Map<string, Task>();
+        for (const tasks of Object.values(columnTasks)) {
+            for (const task of tasks) {
+                map.set(task.id, task);
+            }
+        }
+        return map;
+    }, [columnTasks]);
+
     const isColumnFull = useCallback(
         (columnId: string, extraCount = 0) => {
             const col = columnMap[columnId];
@@ -418,16 +428,10 @@ export default function KanbanView({
 
     const handleDragStart = useCallback(
         (event: DragStartEvent) => {
-            const { active } = event;
-            for (const tasks of Object.values(columnTasks)) {
-                const task = tasks.find((t) => t.id === active.id);
-                if (task) {
-                    setActiveTask(task);
-                    break;
-                }
-            }
+            const task = taskMap.get(event.active.id as string) ?? null;
+            setActiveTask(task);
         },
-        [columnTasks],
+        [taskMap],
     );
 
     const handleDragOver = useCallback(

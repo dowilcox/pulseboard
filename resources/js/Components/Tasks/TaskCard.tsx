@@ -15,13 +15,14 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { memo } from "react";
 
 interface Props {
     task: Task;
     onClick?: (task: Task) => void;
 }
 
-export default function TaskCard({ task, onClick }: Props) {
+const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
     const priorityColor = PRIORITY_COLORS[task.priority] ?? "transparent";
     const isCompleted = task.completed_at != null;
     const isBlocked = (task.blocked_by ?? []).length > 0;
@@ -282,4 +283,6 @@ export default function TaskCard({ task, onClick }: Props) {
             )}
         </Paper>
     );
-}
+});
+
+export default TaskCard;

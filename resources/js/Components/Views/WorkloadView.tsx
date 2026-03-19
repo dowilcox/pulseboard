@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Column, Task, User } from "@/types";
 import { getTaskLabel } from "@/utils/gitlabPrefix";
@@ -8,6 +8,32 @@ import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+
+function TaskChip({
+    task,
+    onTaskClick,
+}: {
+    task: Task;
+    onTaskClick: (task: Task) => void;
+}) {
+    const handleClick = useCallback(
+        () => onTaskClick(task),
+        [onTaskClick, task],
+    );
+    return (
+        <Chip
+            label={getTaskLabel(task)}
+            size="small"
+            onClick={handleClick}
+            sx={{
+                cursor: "pointer",
+                borderLeft: 3,
+                borderColor: PRIORITY_COLORS[task.priority] ?? "#e5e7eb",
+                maxWidth: 200,
+            }}
+        />
+    );
+}
 
 interface Props {
     columns: Column[];
@@ -183,20 +209,10 @@ export default function WorkloadView({
                                 }}
                             >
                                 {wl.tasks.slice(0, 10).map((task) => (
-                                    <Chip
+                                    <TaskChip
                                         key={task.id}
-                                        label={getTaskLabel(task)}
-                                        size="small"
-                                        onClick={() => onTaskClick(task)}
-                                        sx={{
-                                            cursor: "pointer",
-                                            borderLeft: 3,
-                                            borderColor:
-                                                PRIORITY_COLORS[
-                                                    task.priority
-                                                ] ?? "#e5e7eb",
-                                            maxWidth: 200,
-                                        }}
+                                        task={task}
+                                        onTaskClick={onTaskClick}
                                     />
                                 ))}
                                 {wl.tasks.length > 10 && (
@@ -233,20 +249,10 @@ export default function WorkloadView({
                                 {workloads.unassigned
                                     .slice(0, 10)
                                     .map((task) => (
-                                        <Chip
+                                        <TaskChip
                                             key={task.id}
-                                            label={getTaskLabel(task)}
-                                            size="small"
-                                            onClick={() => onTaskClick(task)}
-                                            sx={{
-                                                cursor: "pointer",
-                                                borderLeft: 3,
-                                                borderColor:
-                                                    PRIORITY_COLORS[
-                                                        task.priority
-                                                    ] ?? "#e5e7eb",
-                                                maxWidth: 200,
-                                            }}
+                                            task={task}
+                                            onTaskClick={onTaskClick}
                                         />
                                     ))}
                                 {workloads.unassigned.length > 10 && (

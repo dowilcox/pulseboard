@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
@@ -45,6 +45,200 @@ const SORT_KEY_TO_API: Record<SortKey, string> = {
     column: "sort_order",
     assignees: "sort_order",
 };
+
+interface TaskRowProps {
+    task: Task;
+    column?: Column;
+    onTaskClick: (task: Task) => void;
+    showGitlab: boolean;
+}
+
+const TaskRow = memo(function TaskRow({
+    task,
+    column,
+    onTaskClick,
+    showGitlab,
+}: TaskRowProps) {
+    const handleClick = useCallback(
+        () => onTaskClick(task),
+        [onTaskClick, task],
+    );
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onTaskClick(task);
+            }
+        },
+        [onTaskClick, task],
+    );
+
+    return (
+        <TableRow
+            hover
+            tabIndex={0}
+            aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
+            sx={{
+                cursor: "pointer",
+                "& .MuiTableCell-root": { py: 1.5 },
+            }}
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+        >
+            <TableCell>
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ fontFamily: "monospace" }}
+                >
+                    #{task.task_number}
+                </Typography>
+            </TableCell>
+            <TableCell>
+                <Typography variant="body2" fontWeight={500}>
+                    {getGitlabPrefix(task) && (
+                        <Typography
+                            component="span"
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mr: 0.5 }}
+                        >
+                            {getGitlabPrefix(task)}
+                        </Typography>
+                    )}
+                    {task.title}
+                </Typography>
+            </TableCell>
+            <TableCell>
+                {column && (
+                    <Chip
+                        label={column.name}
+                        size="small"
+                        sx={{
+                            bgcolor: column.color,
+                            color: getContrastText(column.color),
+                            height: 26,
+                            fontSize: "0.75rem",
+                            fontWeight: 500,
+                        }}
+                    />
+                )}
+            </TableCell>
+            <TableCell>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "50%",
+                            bgcolor:
+                                PRIORITY_COLORS[task.priority] ?? "transparent",
+                            border:
+                                task.priority === "none" ? "1px solid" : "none",
+                            borderColor: "divider",
+                            flexShrink: 0,
+                        }}
+                    />
+                    <Typography
+                        variant="body2"
+                        sx={{ textTransform: "capitalize" }}
+                    >
+                        {task.priority}
+                    </Typography>
+                </Box>
+            </TableCell>
+            <TableCell>
+                {task.due_date && (
+                    <Typography
+                        variant="body2"
+                        color={
+                            new Date(task.due_date) < new Date()
+                                ? "error"
+                                : "text.secondary"
+                        }
+                    >
+                        {new Date(task.due_date).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        })}
+                    </Typography>
+                )}
+            </TableCell>
+            <TableCell>
+                {task.assignees && task.assignees.length > 0 && (
+                    <AvatarGroup
+                        max={3}
+                        sx={{
+                            justifyContent: "flex-end",
+                            "& .MuiAvatar-root": {
+                                width: 28,
+                                height: 28,
+                                fontSize: "0.75rem",
+                            },
+                        }}
+                    >
+                        {task.assignees.map((u) => (
+                            <Avatar key={u.id} alt={u.name} src={u.avatar_url}>
+                                {u.name.charAt(0)}
+                            </Avatar>
+                        ))}
+                    </AvatarGroup>
+                )}
+            </TableCell>
+            <TableCell>
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 0.5,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    {(task.labels ?? []).map((label) => (
+                        <Chip
+                            key={label.id}
+                            label={label.name}
+                            size="small"
+                            sx={{
+                                height: 22,
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                bgcolor: label.color,
+                                color: getContrastText(label.color),
+                            }}
+                        />
+                    ))}
+                </Box>
+            </TableCell>
+            {showGitlab && (
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 0.5,
+                            flexWrap: "wrap",
+                        }}
+                    >
+                        {(task.gitlab_refs ?? [])
+                            .filter((r) => r.ref_type === "merge_request")
+                            .map((ref) => (
+                                <MergeRequestChip
+                                    key={ref.id}
+                                    gitlabRef={ref}
+                                />
+                            ))}
+                    </Box>
+                </TableCell>
+            )}
+        </TableRow>
+    );
+});
 
 interface Props {
     columns: Column[];
@@ -309,217 +503,15 @@ export default function ListView({
                             </TableCell>
                         </TableRow>
                     ) : (
-                        sortedTasks.map((task) => {
-                            const col = columnMap[task.column_id];
-                            return (
-                                <TableRow
-                                    key={task.id}
-                                    hover
-                                    tabIndex={0}
-                                    aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
-                                    sx={{
-                                        cursor: "pointer",
-                                        "& .MuiTableCell-root": { py: 1.5 },
-                                    }}
-                                    onClick={() => onTaskClick(task)}
-                                    onKeyDown={(e) => {
-                                        if (
-                                            e.key === "Enter" ||
-                                            e.key === " "
-                                        ) {
-                                            e.preventDefault();
-                                            onTaskClick(task);
-                                        }
-                                    }}
-                                >
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                            sx={{ fontFamily: "monospace" }}
-                                        >
-                                            #{task.task_number}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography
-                                            variant="body2"
-                                            fontWeight={500}
-                                        >
-                                            {getGitlabPrefix(task) && (
-                                                <Typography
-                                                    component="span"
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{ mr: 0.5 }}
-                                                >
-                                                    {getGitlabPrefix(task)}
-                                                </Typography>
-                                            )}
-                                            {task.title}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        {col && (
-                                            <Chip
-                                                label={col.name}
-                                                size="small"
-                                                sx={{
-                                                    bgcolor: col.color,
-                                                    color: getContrastText(
-                                                        col.color,
-                                                    ),
-                                                    height: 26,
-                                                    fontSize: "0.75rem",
-                                                    fontWeight: 500,
-                                                }}
-                                            />
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: "50%",
-                                                    bgcolor:
-                                                        PRIORITY_COLORS[
-                                                            task.priority
-                                                        ] ?? "transparent",
-                                                    border:
-                                                        task.priority === "none"
-                                                            ? "1px solid"
-                                                            : "none",
-                                                    borderColor: "divider",
-                                                    flexShrink: 0,
-                                                }}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    textTransform: "capitalize",
-                                                }}
-                                            >
-                                                {task.priority}
-                                            </Typography>
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        {task.due_date && (
-                                            <Typography
-                                                variant="body2"
-                                                color={
-                                                    new Date(task.due_date) <
-                                                    new Date()
-                                                        ? "error"
-                                                        : "text.secondary"
-                                                }
-                                            >
-                                                {new Date(
-                                                    task.due_date,
-                                                ).toLocaleDateString(
-                                                    undefined,
-                                                    {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        year: "numeric",
-                                                    },
-                                                )}
-                                            </Typography>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {task.assignees &&
-                                            task.assignees.length > 0 && (
-                                                <AvatarGroup
-                                                    max={3}
-                                                    sx={{
-                                                        justifyContent:
-                                                            "flex-end",
-                                                        "& .MuiAvatar-root": {
-                                                            width: 28,
-                                                            height: 28,
-                                                            fontSize: "0.75rem",
-                                                        },
-                                                    }}
-                                                >
-                                                    {task.assignees.map((u) => (
-                                                        <Avatar
-                                                            key={u.id}
-                                                            alt={u.name}
-                                                            src={u.avatar_url}
-                                                        >
-                                                            {u.name.charAt(0)}
-                                                        </Avatar>
-                                                    ))}
-                                                </AvatarGroup>
-                                            )}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                gap: 0.5,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
-                                            {(task.labels ?? []).map(
-                                                (label) => (
-                                                    <Chip
-                                                        key={label.id}
-                                                        label={label.name}
-                                                        size="small"
-                                                        sx={{
-                                                            height: 22,
-                                                            fontSize: "0.7rem",
-                                                            fontWeight: 600,
-                                                            bgcolor:
-                                                                label.color,
-                                                            color: getContrastText(
-                                                                label.color,
-                                                            ),
-                                                        }}
-                                                    />
-                                                ),
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    {showGitlab && (
-                                        <TableCell
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    gap: 0.5,
-                                                    flexWrap: "wrap",
-                                                }}
-                                            >
-                                                {(task.gitlab_refs ?? [])
-                                                    .filter(
-                                                        (r) =>
-                                                            r.ref_type ===
-                                                            "merge_request",
-                                                    )
-                                                    .map((ref) => (
-                                                        <MergeRequestChip
-                                                            key={ref.id}
-                                                            gitlabRef={ref}
-                                                        />
-                                                    ))}
-                                            </Box>
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            );
-                        })
+                        sortedTasks.map((task) => (
+                            <TaskRow
+                                key={task.id}
+                                task={task}
+                                column={columnMap[task.column_id]}
+                                onTaskClick={onTaskClick}
+                                showGitlab={showGitlab ?? false}
+                            />
+                        ))
                     )}
 
                     {/* Sentinel row for IntersectionObserver */}
