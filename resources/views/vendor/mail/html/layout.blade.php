@@ -12,9 +12,6 @@
 width: 100% !important;
 }
 
-.footer {
-width: 100% !important;
-}
 }
 
 @media only screen and (max-width: 500px) {
@@ -49,7 +46,6 @@ width: 100% !important;
 </td>
 </tr>
 
-{!! $footer ?? '' !!}
 </table>
 </td>
 </tr>

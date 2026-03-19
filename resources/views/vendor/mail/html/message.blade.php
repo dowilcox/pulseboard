@@ -18,10 +18,4 @@
 </x-slot:subcopy>
 @endisset
 
-{{-- Footer --}}
-<x-slot:footer>
-<x-mail::footer>
-{{ config('app.name') }}
-</x-mail::footer>
-</x-slot:footer>
 </x-mail::layout>
