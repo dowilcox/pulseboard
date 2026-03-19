@@ -380,7 +380,7 @@ export default function RichTextEditor({
                     "& h2": { ...theme.typography.h5, mt: 2, mb: 1 },
                     "& h3": { ...theme.typography.h6, mt: 2, mb: 1 },
                     "& p": { ...theme.typography.body1, my: 0.5 },
-                    "& > :not(:only-child):last-child:has(.ProseMirror-trailingBreak)":
+                    "&:not(:focus-within) > :not(:only-child):last-child:has(.ProseMirror-trailingBreak)":
                         {
                             display: "none",
                         },
