@@ -17,16 +17,16 @@ class CreateTask
 
     public function handle(Board $board, Column $column, array $data, User $creator): Task
     {
-        if ($column->wip_limit !== null && $column->wip_limit > 0) {
-            $currentCount = $column->tasks()->count();
-            if ($currentCount >= $column->wip_limit) {
-                throw ValidationException::withMessages([
-                    'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
-                ]);
-            }
-        }
-
         $task = DB::transaction(function () use ($board, $column, $data, $creator) {
+            if ($column->wip_limit !== null && $column->wip_limit > 0) {
+                $currentCount = Task::where('column_id', $column->id)->lockForUpdate()->count();
+                if ($currentCount >= $column->wip_limit) {
+                    throw ValidationException::withMessages([
+                        'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
+                    ]);
+                }
+            }
+
             $maxSort = Task::where('column_id', $column->id)->max('sort_order') ?? 0;
 
             $taskNumber = DB::table('tasks')

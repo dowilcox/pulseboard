@@ -8,6 +8,7 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -21,29 +22,33 @@ class MoveTask
         $fromBoard = $task->board;
         $crossBoard = $targetBoard && $targetBoard->id !== $fromBoard->id;
 
-        if ($fromColumn->id !== $column->id && $column->wip_limit !== null && $column->wip_limit > 0) {
-            $currentCount = $column->tasks()->count();
-            if ($currentCount >= $column->wip_limit) {
-                throw ValidationException::withMessages([
-                    'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
-                ]);
+        DB::transaction(function () use ($task, $column, $sortOrder, $targetBoard, $fromColumn, $crossBoard) {
+            if ($fromColumn->id !== $column->id && $column->wip_limit !== null && $column->wip_limit > 0) {
+                $currentCount = Task::where('column_id', $column->id)->lockForUpdate()->count();
+                if ($currentCount >= $column->wip_limit) {
+                    throw ValidationException::withMessages([
+                        'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
+                    ]);
+                }
             }
-        }
 
-        $updateData = [
-            'column_id' => $column->id,
-            'sort_order' => $sortOrder,
-        ];
+            $updateData = [
+                'column_id' => $column->id,
+                'sort_order' => $sortOrder,
+            ];
 
-        if ($crossBoard) {
-            $updateData['board_id'] = $targetBoard->id;
+            if ($crossBoard) {
+                $updateData['board_id'] = $targetBoard->id;
 
-            // Reassign task number for the new board
-            $maxTaskNumber = Task::where('board_id', $targetBoard->id)->max('task_number') ?? 0;
-            $updateData['task_number'] = $maxTaskNumber + 1;
-        }
+                $maxTaskNumber = DB::table('tasks')
+                    ->where('board_id', $targetBoard->id)
+                    ->lockForUpdate()
+                    ->max('task_number') ?? 0;
+                $updateData['task_number'] = $maxTaskNumber + 1;
+            }
 
-        $task->update($updateData);
+            $task->update($updateData);
+        });
 
         if ($crossBoard) {
             ActivityLogger::log($task, 'moved', [

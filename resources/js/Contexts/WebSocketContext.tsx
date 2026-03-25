@@ -75,8 +75,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             setConnectionStatus("connected");
         }
 
-        // On reconnect, reload to catch up on missed events
+        // On reconnect, reload to catch up on missed events.
+        // Guard against reload loops by tracking recent reload attempts.
         let wasDisconnected = false;
+        let lastReloadAt = 0;
         const handleStateChange = ({
             current,
             previous,
@@ -89,7 +91,13 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             }
             if (wasDisconnected && current === "connected") {
                 wasDisconnected = false;
-                router.reload();
+                const now = Date.now();
+                // Prevent reload if we just reloaded within the last 5 seconds
+                // (avoids loops when session is expired and 419 triggers another reload)
+                if (now - lastReloadAt > 5000) {
+                    lastReloadAt = now;
+                    router.reload();
+                }
             }
         };
         pusher.connection.bind("state_change", handleStateChange);

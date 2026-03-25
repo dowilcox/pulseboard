@@ -81,7 +81,6 @@ export default function TaskSidebar({
                 {
                     preserveScroll: true,
                     preserveState: true,
-                    onError: () => {},
                 },
             );
         },
@@ -97,7 +96,7 @@ export default function TaskSidebar({
         router.patch(
             route("tasks.move", [team.slug, board.slug, task.slug]),
             { column_id: columnId, sort_order: maxSort + 1 },
-            { preserveScroll: true, onError: () => {} },
+            { preserveScroll: true },
         );
     };
 
@@ -110,7 +109,7 @@ export default function TaskSidebar({
         router.patch(
             route("tasks.move", [team.slug, board.slug, task.slug]),
             { board_id: newBoardId, column_id: firstColumn.id, sort_order: 0 },
-            { preserveScroll: true, onError: () => {} },
+            { preserveScroll: true },
         );
     };
 
@@ -118,7 +117,7 @@ export default function TaskSidebar({
         router.patch(
             route("tasks.toggle-complete", [team.slug, board.slug, task.slug]),
             {},
-            { preserveScroll: true, onError: () => {} },
+            { preserveScroll: true },
         );
     };
 

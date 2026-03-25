@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Notifications\TaskOverdueNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SendOverdueReminders extends Command
 {
@@ -22,18 +23,28 @@ class SendOverdueReminders extends Command
             ->with(['assignees', 'board'])
             ->get();
 
+        if ($overdue->isEmpty()) {
+            $this->info('No overdue tasks found.');
+
+            return Command::SUCCESS;
+        }
+
+        // Batch-load today's overdue notifications to avoid N+1
+        $alreadySent = DB::table('notifications')
+            ->where('type', TaskOverdueNotification::class)
+            ->where('created_at', '>=', Carbon::today())
+            ->get(['notifiable_id', 'data'])
+            ->groupBy('notifiable_id')
+            ->map(fn ($notifications) => $notifications->map(
+                fn ($n) => json_decode($n->data, true)['task_id'] ?? null
+            )->filter()->all());
+
         $sent = 0;
 
         foreach ($overdue as $task) {
             foreach ($task->assignees as $user) {
-                // Deduplicate: check if this notification was already sent today
-                $alreadySent = $user->notifications()
-                    ->where('type', TaskOverdueNotification::class)
-                    ->whereJsonContains('data->task_id', $task->id)
-                    ->where('created_at', '>=', Carbon::today())
-                    ->exists();
-
-                if ($alreadySent) {
+                $userSentTaskIds = $alreadySent->get($user->id, []);
+                if (in_array($task->id, $userSentTaskIds)) {
                     continue;
                 }
 

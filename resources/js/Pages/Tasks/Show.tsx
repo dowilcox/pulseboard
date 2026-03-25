@@ -92,11 +92,26 @@ export default function TasksShow({
     // Real-time: board channel listener
     const handleBoardEvent = useCallback(
         (event: BoardEvent) => {
+            // Board deleted — redirect to team page
+            if (event.action === "board.deleted") {
+                router.visit(route("teams.show", [team.slug]));
+                return;
+            }
+            // Current task deleted — redirect to board
+            if (
+                event.action === "task.deleted" &&
+                event.data.task_id === task.id
+            ) {
+                router.visit(
+                    route("teams.boards.show", [team.slug, board.slug]),
+                );
+                return;
+            }
             const eventTaskId = event.data.task_id;
             if (eventTaskId && eventTaskId !== task.id) return;
             router.reload();
         },
-        [task.id],
+        [task.id, team.slug, board.slug],
     );
     useBoardChannel(board.id, handleBoardEvent);
 
@@ -110,9 +125,6 @@ export default function TasksShow({
                 {
                     preserveScroll: true,
                     preserveState: true,
-                    onError: () => {
-                        // Inertia will display validation errors automatically
-                    },
                 },
             );
         },

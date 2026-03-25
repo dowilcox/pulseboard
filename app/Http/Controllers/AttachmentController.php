@@ -38,7 +38,7 @@ class AttachmentController extends Controller
         try {
             UploadAttachment::run($task, $request->file('file'), $request->user());
         } catch (FileIsTooBig) {
-            return Redirect::back()->withErrors(['file' => 'The file is too large. Maximum size is 15MB.']);
+            return Redirect::back()->withErrors(['file' => 'The file is too large. Maximum size is '.round($maxSize / 1024).'MB.']);
         } catch (MimeTypeNotAllowed|FileUnacceptableForCollection) {
             return Redirect::back()->withErrors(['file' => 'This file type is not supported.']);
         } catch (FileCannotBeAdded $e) {

@@ -91,6 +91,16 @@ export default function SubtaskList({
                 </Box>
             )}
 
+            {total === 0 && !showForm && (
+                <Typography
+                    variant="caption"
+                    color="text.disabled"
+                    sx={{ fontStyle: "italic", pl: 0.5 }}
+                >
+                    No subtasks yet
+                </Typography>
+            )}
+
             <List dense disablePadding>
                 {subtasks.map((subtask) => {
                     const isCompleted =

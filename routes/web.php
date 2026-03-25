@@ -89,9 +89,9 @@ Route::middleware('auth')->group(function () {
         ProfileController::class,
         'updateUiPreferences',
     ])->name('profile.ui-preferences.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name(
-        'profile.destroy',
-    );
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->middleware('throttle:5,1')
+        ->name('profile.destroy');
 
     // Notifications
     Route::get('/notifications', [
@@ -225,9 +225,9 @@ Route::middleware('auth')->group(function () {
 
     // Teams index & create (static routes — must be above {team} catch-all)
     Route::get('/teams', [TeamController::class, 'index'])->name('teams.index');
-    Route::post('/teams', [TeamController::class, 'store'])->name(
-        'teams.store',
-    );
+    Route::post('/teams', [TeamController::class, 'store'])
+        ->middleware('throttle:10,1')
+        ->name('teams.store');
 
     // Team-scoped routes (slug-based: /{team}/...)
     // IMPORTANT: All /{team}/fixed-path routes must come BEFORE /{team}/{board} catch-all
@@ -278,7 +278,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{team}/boards', [
             BoardController::class,
             'store',
-        ])->name('teams.boards.store');
+        ])->middleware('throttle:10,1')->name('teams.boards.store');
 
         // Task Templates (fixed path before catch-all)
         Route::get('/{team}/task-templates', [

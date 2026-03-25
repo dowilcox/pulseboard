@@ -23,6 +23,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { router } from "@inertiajs/react";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -272,6 +273,7 @@ export default function KanbanView({
     const [columnTasks, setColumnTasks] = useState<Record<string, Task[]>>(() =>
         buildColumnTasksMap(columns),
     );
+    const { showSnackbar } = useSnackbar();
     const [columnLoadStates, setColumnLoadStates] = useState<
         Record<string, ColumnLoadState>
     >({});
@@ -408,13 +410,20 @@ export default function KanbanView({
             } catch (error) {
                 if ((error as Error).name === "AbortError") return;
 
+                showSnackbar("Failed to load more tasks", "error");
                 setColumnLoadStates((prev) => ({
                     ...prev,
                     [columnId]: { ...prev[columnId], loading: false },
                 }));
             }
         },
-        [columnLoadStates, team.slug, board.slug, initialTasksPerColumn],
+        [
+            columnLoadStates,
+            team.slug,
+            board.slug,
+            initialTasksPerColumn,
+            showSnackbar,
+        ],
     );
 
     const sensors = useSensors(

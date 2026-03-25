@@ -61,22 +61,30 @@ export default function BoardsShow({
     const presenceUsers = usePresence(board.id);
 
     // Real-time: board channel listener
-    const handleBoardEvent = useCallback((event: BoardEvent) => {
-        switch (event.action) {
-            // These don't affect the board view
-            case "commented":
-            case "comment.updated":
-            case "comment.deleted":
-            case "attachment_added":
-            case "attachment_removed":
-                break;
+    const handleBoardEvent = useCallback(
+        (event: BoardEvent) => {
+            switch (event.action) {
+                // Board deleted — redirect to team page
+                case "board.deleted":
+                    router.visit(route("teams.show", [team.slug]));
+                    break;
 
-            // Everything else: partial reload of board data only
-            default:
-                router.reload({ only: ["board"] });
-                break;
-        }
-    }, []);
+                // These don't affect the board view
+                case "commented":
+                case "comment.updated":
+                case "comment.deleted":
+                case "attachment_added":
+                case "attachment_removed":
+                    break;
+
+                // Everything else: partial reload of board data only
+                default:
+                    router.reload({ only: ["board"] });
+                    break;
+            }
+        },
+        [team.slug],
+    );
 
     useBoardChannel(board.id, handleBoardEvent);
 
