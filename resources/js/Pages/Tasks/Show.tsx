@@ -350,9 +350,23 @@ export default function TasksShow({
                                     sx={{
                                         display: "flex",
                                         justifyContent: "flex-end",
+                                        gap: 1,
                                         mt: 1,
                                     }}
                                 >
+                                    {editingDescription && (
+                                        <Button
+                                            size="small"
+                                            onClick={() => {
+                                                setDescription(
+                                                    task.description ?? "",
+                                                );
+                                                setEditingDescription(false);
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
                                     <Button
                                         size="small"
                                         variant="contained"

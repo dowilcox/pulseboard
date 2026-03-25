@@ -170,15 +170,13 @@ export default function LinkEditor({ links, onChange }: Props) {
                         }}
                         slotProps={{ inputLabel: { shrink: true } }}
                     />
-                    <Box sx={{ display: "flex", gap: 1 }}>
-                        <Button
-                            size="small"
-                            variant="contained"
-                            onClick={handleAdd}
-                            disabled={!newUrl.trim()}
-                        >
-                            Add
-                        </Button>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                        }}
+                    >
                         <Button
                             size="small"
                             onClick={() => {
@@ -189,6 +187,14 @@ export default function LinkEditor({ links, onChange }: Props) {
                             }}
                         >
                             Cancel
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            onClick={handleAdd}
+                            disabled={!newUrl.trim()}
+                        >
+                            Add
                         </Button>
                     </Box>
                 </Box>

@@ -92,12 +92,8 @@ export default function SubtaskList({
             )}
 
             {total === 0 && !showForm && (
-                <Typography
-                    variant="caption"
-                    color="text.disabled"
-                    sx={{ fontStyle: "italic", pl: 0.5 }}
-                >
-                    No subtasks yet
+                <Typography variant="body2" color="text.secondary">
+                    No subtasks yet.
                 </Typography>
             )}
 

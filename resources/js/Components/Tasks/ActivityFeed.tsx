@@ -436,16 +436,23 @@ export default function ActivityFeed({
                         uploadImageUrl={uploadImageUrl}
                         minHeight={80}
                     />
-                    <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 1,
+                            mt: 1,
+                        }}
+                    >
+                        <Button size="small" onClick={() => setEditingId(null)}>
+                            Cancel
+                        </Button>
                         <Button
                             size="small"
                             variant="contained"
                             onClick={() => handleEditComment(comment.id)}
                         >
                             Save
-                        </Button>
-                        <Button size="small" onClick={() => setEditingId(null)}>
-                            Cancel
                         </Button>
                     </Box>
                 </Box>
@@ -556,22 +563,23 @@ export default function ActivityFeed({
                             <Box
                                 sx={{
                                     display: "flex",
+                                    justifyContent: "flex-end",
                                     gap: 1,
                                     mt: 1,
                                 }}
                             >
                                 <Button
                                     size="small"
+                                    onClick={() => setEditingId(null)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    size="small"
                                     variant="contained"
                                     onClick={() => handleEditComment(reply.id)}
                                 >
                                     Save
-                                </Button>
-                                <Button
-                                    size="small"
-                                    onClick={() => setEditingId(null)}
-                                >
-                                    Cancel
                                 </Button>
                             </Box>
                         </>
@@ -649,10 +657,20 @@ export default function ActivityFeed({
                                 <Box
                                     sx={{
                                         display: "flex",
+                                        justifyContent: "flex-end",
                                         gap: 1,
                                         mt: 1,
                                     }}
                                 >
+                                    <Button
+                                        size="small"
+                                        onClick={() => {
+                                            setReplyingTo(null);
+                                            setReplyBody("");
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
                                     <Button
                                         size="small"
                                         variant="contained"
@@ -664,15 +682,6 @@ export default function ActivityFeed({
                                         }
                                     >
                                         Reply
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        onClick={() => {
-                                            setReplyingTo(null);
-                                            setReplyBody("");
-                                        }}
-                                    >
-                                        Cancel
                                     </Button>
                                 </Box>
                             </>
@@ -721,15 +730,22 @@ export default function ActivityFeed({
                     uploadImageUrl={uploadImageUrl}
                     minHeight={100}
                 />
-                <Button
-                    size="small"
-                    variant="contained"
-                    disabled={submitting || !newCommentBody.trim()}
-                    onClick={handleAddComment}
-                    sx={{ mt: 1 }}
+                <Box
+                    sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 1,
+                    }}
                 >
-                    Comment
-                </Button>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        disabled={submitting || !newCommentBody.trim()}
+                        onClick={handleAddComment}
+                    >
+                        Comment
+                    </Button>
+                </Box>
             </Box>
 
             <Divider sx={{ mb: 2 }} />

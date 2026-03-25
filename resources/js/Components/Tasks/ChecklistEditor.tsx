@@ -273,20 +273,20 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 />
                                 <Button
                                     size="small"
-                                    variant="contained"
-                                    onClick={() => handleAddItem(checklist.id)}
-                                    disabled={!newItemText.trim()}
-                                >
-                                    Add
-                                </Button>
-                                <Button
-                                    size="small"
                                     onClick={() => {
                                         setAddingItemTo(null);
                                         setNewItemText("");
                                     }}
                                 >
                                     Cancel
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => handleAddItem(checklist.id)}
+                                    disabled={!newItemText.trim()}
+                                >
+                                    Add
                                 </Button>
                             </Box>
                         ) : (
@@ -342,20 +342,20 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                     />
                     <Button
                         size="small"
-                        variant="contained"
-                        onClick={handleAddChecklist}
-                        disabled={!newChecklistTitle.trim()}
-                    >
-                        Add
-                    </Button>
-                    <Button
-                        size="small"
                         onClick={() => {
                             setAddingChecklist(false);
                             setNewChecklistTitle("");
                         }}
                     >
                         Cancel
+                    </Button>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleAddChecklist}
+                        disabled={!newChecklistTitle.trim()}
+                    >
+                        Add
                     </Button>
                 </Box>
             ) : (
