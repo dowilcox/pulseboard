@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import axios from "axios";
 import { router } from "@inertiajs/react";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -43,30 +44,19 @@ export default function ImageUpload({
         formData.append("image", file);
 
         try {
-            const response = await fetch(uploadRoute, {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                    Accept: "application/json",
-                },
-                body: formData,
-            });
-
-            if (response.ok) {
-                router.reload();
-            } else {
-                const data = await response.json();
+            await axios.post(uploadRoute, formData);
+            router.reload();
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                const data = e.response.data;
                 setError(
-                    data.message ??
-                        data.errors?.image?.[0] ??
+                    data?.message ??
+                        data?.errors?.image?.[0] ??
                         "Failed to upload image",
                 );
+            } else {
+                setError("Network error");
             }
-        } catch {
-            setError("Network error");
         } finally {
             setUploading(false);
             if (fileInputRef.current) {
@@ -80,24 +70,10 @@ export default function ImageUpload({
         setError(null);
 
         try {
-            const response = await fetch(deleteRoute, {
-                method: "DELETE",
-                headers: {
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                    Accept: "application/json",
-                },
-            });
-
-            if (response.ok) {
-                router.reload();
-            } else {
-                setError("Failed to remove image");
-            }
+            await axios.delete(deleteRoute);
+            router.reload();
         } catch {
-            setError("Network error");
+            setError("Failed to remove image");
         } finally {
             setDeleting(false);
         }

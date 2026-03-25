@@ -1,3 +1,4 @@
+import axios from "axios";
 import QuickCreateTask from "@/Components/Tasks/QuickCreateTask";
 import SortableTaskCard from "@/Components/Tasks/SortableTaskCard";
 import TaskCard from "@/Components/Tasks/TaskCard";
@@ -372,17 +373,13 @@ export default function KanbanView({
                     direction: "asc",
                 });
 
-                const response = await fetch(
-                    `${route("boards.tasks.index", [team.slug, board.slug])}?${params}`,
+                const { data } = await axios.get<PaginatedResponse<Task>>(
+                    route("boards.tasks.index", [team.slug, board.slug]),
                     {
-                        headers: { Accept: "application/json" },
+                        params: Object.fromEntries(params),
                         signal: controller.signal,
                     },
                 );
-
-                if (!response.ok) throw new Error("Failed to load tasks");
-
-                const data: PaginatedResponse<Task> = await response.json();
 
                 // Append new tasks, deduplicating
                 setColumnTasks((prev) => {
@@ -408,7 +405,7 @@ export default function KanbanView({
                     },
                 }));
             } catch (error) {
-                if ((error as Error).name === "AbortError") return;
+                if (axios.isCancel(error)) return;
 
                 showSnackbar("Failed to load more tasks", "error");
                 setColumnLoadStates((prev) => ({

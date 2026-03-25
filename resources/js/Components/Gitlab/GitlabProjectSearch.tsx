@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import axios from "axios";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
@@ -41,25 +42,16 @@ export default function GitlabProjectSearch({
             debounceRef.current = setTimeout(async () => {
                 setLoading(true);
                 try {
-                    const params = new URLSearchParams({
-                        connection_id: connectionId,
-                        q: query,
-                    });
-                    const response = await fetch(
-                        route("teams.gitlab-projects.search", teamId) +
-                            "?" +
-                            params.toString(),
+                    const { data } = await axios.get(
+                        route("teams.gitlab-projects.search", teamId),
                         {
-                            headers: {
-                                Accept: "application/json",
-                                "X-Requested-With": "XMLHttpRequest",
+                            params: {
+                                connection_id: connectionId,
+                                q: query,
                             },
                         },
                     );
-                    if (response.ok) {
-                        const data = await response.json();
-                        setOptions(data);
-                    }
+                    setOptions(data);
                 } catch {
                     setOptions([]);
                 } finally {

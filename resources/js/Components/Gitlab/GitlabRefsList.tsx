@@ -1,4 +1,5 @@
 import type { Task } from "@/types";
+import axios from "axios";
 import { router } from "@inertiajs/react";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,27 +30,15 @@ export default function GitlabRefsList({ task, teamId, boardId }: Props) {
 
     const handleRemoveRef = async (refId: string) => {
         try {
-            const response = await fetch(
+            await axios.delete(
                 route("tasks.gitlab.destroy", [
                     teamId,
                     boardId,
                     task.id,
                     refId,
                 ]),
-                {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                },
             );
-            if (response.ok) {
-                router.reload();
-            }
+            router.reload();
         } catch {
             // Silently fail
         }

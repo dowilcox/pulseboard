@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FigmaConnection, Task, TaskFigmaLink } from "@/types";
+import axios from "axios";
 import { router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import BrushIcon from "@mui/icons-material/Brush";
@@ -85,40 +86,26 @@ export default function FigmaSection({
         setError(null);
 
         try {
-            const response = await fetch(
+            const { data: link } = await axios.post(
                 route("tasks.figma.store", [teamId, boardId, task.slug]),
                 {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        figma_connection_id: selectedConnectionId,
-                        url: figmaUrl,
-                    }),
+                    figma_connection_id: selectedConnectionId,
+                    url: figmaUrl,
                 },
             );
-
-            if (response.ok) {
-                const link = await response.json();
-                if (onLinkCreated) {
-                    onLinkCreated(link);
-                } else {
-                    router.reload();
-                }
-                setDialogOpen(false);
-                setFigmaUrl("");
+            if (onLinkCreated) {
+                onLinkCreated(link);
             } else {
-                const data = await response.json();
-                setError(data.error ?? "Failed to link Figma file");
+                router.reload();
             }
-        } catch {
-            setError("Network error");
+            setDialogOpen(false);
+            setFigmaUrl("");
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                setError(e.response.data?.error ?? "Failed to link Figma file");
+            } else {
+                setError("Network error");
+            }
         } finally {
             setCreating(false);
         }
@@ -126,30 +113,18 @@ export default function FigmaSection({
 
     const handleRemoveLink = async (linkId: string) => {
         try {
-            const response = await fetch(
+            await axios.delete(
                 route("tasks.figma.destroy", [
                     teamId,
                     boardId,
                     task.slug,
                     linkId,
                 ]),
-                {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                },
             );
-            if (response.ok) {
-                if (onLinkRemoved) {
-                    onLinkRemoved(linkId);
-                } else {
-                    router.reload();
-                }
+            if (onLinkRemoved) {
+                onLinkRemoved(linkId);
+            } else {
+                router.reload();
             }
         } catch {
             // Silently fail

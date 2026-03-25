@@ -1,4 +1,5 @@
 import { Head, router } from "@inertiajs/react";
+import axios from "axios";
 import { useCallback, useState } from "react";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
 import PageHeader from "@/Components/Layout/PageHeader";
@@ -90,10 +91,9 @@ export default function Teams({ adminTeams: teams }: Props) {
         setTeamDetail(null);
 
         try {
-            const response = await fetch(route("admin.teams.show", team.id), {
-                headers: { Accept: "application/json" },
-            });
-            const data = await response.json();
+            const { data } = await axios.get(
+                route("admin.teams.show", team.id),
+            );
             setTeamDetail(data);
         } finally {
             setLoading(false);
@@ -120,19 +120,11 @@ export default function Teams({ adminTeams: teams }: Props) {
                 return;
             }
             setUserSearchLoading(true);
-            fetch(
-                route("admin.teams.members.search", teamDetail.id) +
-                    "?q=" +
-                    encodeURIComponent(query),
-                {
-                    headers: {
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => setUserSearchResults(data))
+            axios
+                .get(route("admin.teams.members.search", teamDetail.id), {
+                    params: { q: query },
+                })
+                .then(({ data }) => setUserSearchResults(data))
                 .finally(() => setUserSearchLoading(false));
         },
         [teamDetail?.id],
@@ -142,35 +134,20 @@ export default function Teams({ adminTeams: teams }: Props) {
         if (!teamDetail || !selectedUser) return;
         setAddingMember(true);
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content");
-            const response = await fetch(
+            const { data: updatedMembers } = await axios.post(
                 route("admin.teams.members.store", teamDetail.id),
                 {
-                    method: "POST",
-                    headers: {
-                        Accept: "application/json",
-                        "Content-Type": "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                        ...(csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {}),
-                    },
-                    body: JSON.stringify({
-                        user_id: selectedUser.id,
-                        role: selectedRole,
-                    }),
+                    user_id: selectedUser.id,
+                    role: selectedRole,
                 },
             );
-            if (response.ok) {
-                const updatedMembers = await response.json();
-                setTeamDetail((prev) =>
-                    prev ? { ...prev, members: updatedMembers } : prev,
-                );
-                setAddMemberOpen(false);
-                setSelectedUser(null);
-                setSelectedRole("member");
-                setUserSearchResults([]);
-            }
+            setTeamDetail((prev) =>
+                prev ? { ...prev, members: updatedMembers } : prev,
+            );
+            setAddMemberOpen(false);
+            setSelectedUser(null);
+            setSelectedRole("member");
+            setUserSearchResults([]);
         } finally {
             setAddingMember(false);
         }
@@ -180,30 +157,16 @@ export default function Teams({ adminTeams: teams }: Props) {
         if (!teamDetail || !removeMember) return;
         setRemovingMember(true);
         try {
-            const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content");
-            const response = await fetch(
+            const { data: updatedMembers } = await axios.delete(
                 route("admin.teams.members.destroy", [
                     teamDetail.id,
                     removeMember.id,
                 ]),
-                {
-                    method: "DELETE",
-                    headers: {
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                        ...(csrfToken ? { "X-CSRF-TOKEN": csrfToken } : {}),
-                    },
-                },
             );
-            if (response.ok) {
-                const updatedMembers = await response.json();
-                setTeamDetail((prev) =>
-                    prev ? { ...prev, members: updatedMembers } : prev,
-                );
-                setRemoveMember(null);
-            }
+            setTeamDetail((prev) =>
+                prev ? { ...prev, members: updatedMembers } : prev,
+            );
+            setRemoveMember(null);
         } finally {
             setRemovingMember(false);
         }

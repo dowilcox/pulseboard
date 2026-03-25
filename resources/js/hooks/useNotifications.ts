@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import axios from "axios";
 import { usePage } from "@inertiajs/react";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
 import type { AppNotification, PageProps } from "@/types";
@@ -40,16 +41,13 @@ export function useNotifications() {
         fetchControllerRef.current = controller;
         try {
             setError(null);
-            const res = await fetch(route("notifications.index"), {
-                headers: { Accept: "application/json" },
+            const { data } = await axios.get(route("notifications.index"), {
                 signal: controller.signal,
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
             setNotifications(data.data ?? []);
             setLoaded(true);
         } catch (err) {
-            if (err instanceof Error && err.name === "AbortError") return;
+            if (axios.isCancel(err)) return;
             setError("fetch");
         }
     }, []);
@@ -80,18 +78,7 @@ export function useNotifications() {
     const markRead = useCallback(async (id: string) => {
         try {
             setError(null);
-            const res = await fetch(route("notifications.read", id), {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            await axios.patch(route("notifications.read", id));
             setNotifications((prev) =>
                 prev.map((n) =>
                     n.id === id
@@ -108,18 +95,7 @@ export function useNotifications() {
     const markAllRead = useCallback(async () => {
         try {
             setError(null);
-            const res = await fetch(route("notifications.read-all"), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            await axios.post(route("notifications.read-all"));
             setNotifications((prev) =>
                 prev.map((n) => ({
                     ...n,
@@ -135,18 +111,7 @@ export function useNotifications() {
     const clearAll = useCallback(async () => {
         try {
             setError(null);
-            const res = await fetch(route("notifications.clear-all"), {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            await axios.delete(route("notifications.clear-all"));
             setNotifications([]);
             setUnreadCount(0);
         } catch {

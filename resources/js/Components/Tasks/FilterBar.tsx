@@ -1,3 +1,4 @@
+import axios from "axios";
 import { PRIORITY_OPTIONS } from "@/constants/priorities";
 import type { Label, SavedFilter, Task, User } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
@@ -47,13 +48,6 @@ const EMPTY_FILTERS: Filters = {
     dueDateFrom: "",
     dueDateTo: "",
 };
-
-function getCsrfToken(): string {
-    return (
-        document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')
-            ?.content ?? ""
-    );
-}
 
 interface Props {
     members: User[];
@@ -184,18 +178,13 @@ export default function FilterBar({
     // Load saved filters on mount
     const fetchSavedFilters = useCallback(() => {
         const controller = new AbortController();
-        fetch(route("boards.filters.index", [teamId, boardId]), {
-            headers: { Accept: "application/json" },
-            signal: controller.signal,
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
+        axios
+            .get(route("boards.filters.index", [teamId, boardId]), {
+                signal: controller.signal,
             })
-            .then((data: SavedFilter[]) => setSavedFilters(data))
+            .then(({ data }) => setSavedFilters(data as SavedFilter[]))
             .catch((err) => {
-                if (err instanceof DOMException && err.name === "AbortError")
-                    return;
+                if (axios.isCancel(err)) return;
                 showSnackbar("Failed to load saved filters", "error");
             });
         return controller;
@@ -219,22 +208,11 @@ export default function FilterBar({
 
     const handleSaveFilter = () => {
         if (!saveFilterName.trim()) return;
-        fetch(route("boards.filters.store", [teamId, boardId]), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-CSRF-TOKEN": getCsrfToken(),
-            },
-            body: JSON.stringify({
+        axios
+            .post(route("boards.filters.store", [teamId, boardId]), {
                 name: saveFilterName.trim(),
                 filter_config: filters,
                 is_default: saveFilterDefault,
-            }),
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
             })
             .then(() => {
                 fetchSavedFilters();
@@ -246,16 +224,10 @@ export default function FilterBar({
     };
 
     const handleDeleteFilter = (filterId: string) => {
-        fetch(route("boards.filters.destroy", [teamId, boardId, filterId]), {
-            method: "DELETE",
-            headers: {
-                Accept: "application/json",
-                "X-CSRF-TOKEN": getCsrfToken(),
-            },
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            })
+        axios
+            .delete(
+                route("boards.filters.destroy", [teamId, boardId, filterId]),
+            )
             .then(() => {
                 setSavedFilters((prev) =>
                     prev.filter((f) => f.id !== filterId),

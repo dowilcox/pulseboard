@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GitlabProject, Task, TaskGitlabRef } from "@/types";
+import axios from "axios";
 import { router } from "@inertiajs/react";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -64,36 +65,21 @@ export default function GitlabSection({
         setError(null);
 
         try {
-            const response = await fetch(
+            await axios.put(
                 route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        gitlab_project_id: project?.id ?? null,
-                    }),
-                },
+                { gitlab_project_id: project?.id ?? null },
             );
-
-            if (response.ok) {
-                if (onProjectChanged) {
-                    onProjectChanged(project);
-                } else {
-                    router.reload();
-                }
+            if (onProjectChanged) {
+                onProjectChanged(project);
             } else {
-                const data = await response.json();
-                setError(data.message ?? "Failed to set project");
+                router.reload();
             }
-        } catch {
-            setError("Network error");
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                setError(e.response.data?.message ?? "Failed to set project");
+            } else {
+                setError("Network error");
+            }
         } finally {
             setSettingProject(false);
         }
@@ -111,35 +97,21 @@ export default function GitlabSection({
                 : "tasks.gitlab.merge-request";
 
         try {
-            const response = await fetch(
+            const { data: ref } = await axios.post(
                 route(routeName, [teamId, boardId, task.slug]),
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({}),
-                },
+                {},
             );
-
-            if (response.ok) {
-                const ref = await response.json();
-                if (onRefCreated) {
-                    onRefCreated(ref);
-                } else {
-                    router.reload();
-                }
+            if (onRefCreated) {
+                onRefCreated(ref);
             } else {
-                const data = await response.json();
-                setError(data.error ?? "Failed to create");
+                router.reload();
             }
-        } catch {
-            setError("Network error");
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                setError(e.response.data?.error ?? "Failed to create");
+            } else {
+                setError("Network error");
+            }
         } finally {
             setCreating(false);
         }
@@ -147,30 +119,18 @@ export default function GitlabSection({
 
     const handleRemoveRef = async (refId: string) => {
         try {
-            const response = await fetch(
+            await axios.delete(
                 route("tasks.gitlab.destroy", [
                     teamId,
                     boardId,
                     task.slug,
                     refId,
                 ]),
-                {
-                    method: "DELETE",
-                    headers: {
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                },
             );
-            if (response.ok) {
-                if (onRefRemoved) {
-                    onRefRemoved(refId);
-                } else {
-                    router.reload();
-                }
+            if (onRefRemoved) {
+                onRefRemoved(refId);
+            } else {
+                router.reload();
             }
         } catch {
             // Silently fail

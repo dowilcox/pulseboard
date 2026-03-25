@@ -1,6 +1,7 @@
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm, router, usePage } from "@inertiajs/react";
+import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import type {
     Board,
@@ -90,31 +91,20 @@ export default function TeamsShow({ team, members, boards }: Props) {
 
     const fetchTemplates = useCallback(() => {
         setTemplatesLoading(true);
-        fetch(route("templates.index"), {
-            headers: { Accept: "application/json" },
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error("Failed to fetch templates");
-                return res.json();
-            })
-            .then((data: BoardTemplate[]) => {
-                setTemplates(data);
+        axios
+            .get(route("templates.index"))
+            .then(({ data }) => {
+                setTemplates(data as BoardTemplate[]);
                 setTemplatesLoading(false);
             })
             .catch(() => setTemplatesLoading(false));
     }, []);
 
     useEffect(() => {
-        fetch(route("teams.dashboard.stats", team.slug), {
-            headers: { Accept: "application/json" },
-        })
-            .then((res) => {
-                if (!res.ok)
-                    throw new Error(`Stats request failed: ${res.status}`);
-                return res.json();
-            })
-            .then((data: Stats) => {
-                setStats(data);
+        axios
+            .get(route("teams.dashboard.stats", team.slug))
+            .then(({ data }) => {
+                setStats(data as Stats);
                 setStatsLoading(false);
             })
             .catch(() => setStatsLoading(false));

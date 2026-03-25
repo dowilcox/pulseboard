@@ -1,3 +1,4 @@
+import axios from "axios";
 import ImageUpload from "@/Components/Common/ImageUpload";
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
@@ -152,19 +153,11 @@ export default function TeamSettings({
                 return;
             }
             setUserSearchLoading(true);
-            fetch(
-                route("teams.members.search", team.slug) +
-                    "?q=" +
-                    encodeURIComponent(query),
-                {
-                    headers: {
-                        Accept: "application/json",
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                },
-            )
-                .then((res) => res.json())
-                .then((data) => setUserSearchResults(data))
+            axios
+                .get(route("teams.members.search", team.slug), {
+                    params: { q: query },
+                })
+                .then(({ data }) => setUserSearchResults(data))
                 .finally(() => setUserSearchLoading(false));
         },
         [team.id],

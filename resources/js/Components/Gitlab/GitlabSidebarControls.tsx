@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GitlabProject, Task } from "@/types";
+import axios from "axios";
 import { router } from "@inertiajs/react";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -48,32 +49,17 @@ export default function GitlabSidebarControls({
         setError(null);
 
         try {
-            const response = await fetch(
+            await axios.put(
                 route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({
-                        gitlab_project_id: project?.id ?? null,
-                    }),
-                },
+                { gitlab_project_id: project?.id ?? null },
             );
-
-            if (response.ok) {
-                router.reload();
+            router.reload();
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                setError(e.response.data?.message ?? "Failed to set project");
             } else {
-                const data = await response.json();
-                setError(data.message ?? "Failed to set project");
+                setError("Network error");
             }
-        } catch {
-            setError("Network error");
         } finally {
             setSettingProject(false);
         }
@@ -91,30 +77,17 @@ export default function GitlabSidebarControls({
                 : "tasks.gitlab.merge-request";
 
         try {
-            const response = await fetch(
+            await axios.post(
                 route(routeName, [teamId, boardId, task.slug]),
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                    body: JSON.stringify({}),
-                },
+                {},
             );
-
-            if (response.ok) {
-                router.reload();
+            router.reload();
+        } catch (e) {
+            if (axios.isAxiosError(e) && e.response) {
+                setError(e.response.data?.error ?? "Failed to create");
             } else {
-                const data = await response.json();
-                setError(data.error ?? "Failed to create");
+                setError("Network error");
             }
-        } catch {
-            setError("Network error");
         } finally {
             setCreating(false);
         }

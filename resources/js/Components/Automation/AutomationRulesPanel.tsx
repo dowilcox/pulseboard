@@ -1,3 +1,4 @@
+import axios from "axios";
 import type { AutomationRule, Column, User } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -70,15 +71,10 @@ export default function AutomationRulesPanel({
     const [saving, setSaving] = useState(false);
 
     const fetchRules = useCallback(() => {
-        fetch(route("boards.automation-rules.index", [teamId, boardId]), {
-            headers: { Accept: "application/json" },
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                return res.json();
-            })
-            .then((data: AutomationRule[]) => {
-                setRules(Array.isArray(data) ? data : []);
+        axios
+            .get(route("boards.automation-rules.index", [teamId, boardId]))
+            .then(({ data }) => {
+                setRules(Array.isArray(data) ? (data as AutomationRule[]) : []);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
@@ -90,19 +86,11 @@ export default function AutomationRulesPanel({
 
     const handleCreate = () => {
         setSaving(true);
-        fetch(route("boards.automation-rules.store", [teamId, boardId]), {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                "X-CSRF-TOKEN":
-                    document.querySelector<HTMLMetaElement>(
-                        'meta[name="csrf-token"]',
-                    )?.content ?? "",
-            },
-            body: JSON.stringify(form),
-        })
-            .then((res) => res.json())
+        axios
+            .post(
+                route("boards.automation-rules.store", [teamId, boardId]),
+                form,
+            )
             .then(() => {
                 setDialogOpen(false);
                 setForm(EMPTY_FORM);
@@ -112,41 +100,28 @@ export default function AutomationRulesPanel({
     };
 
     const handleToggle = (rule: AutomationRule) => {
-        fetch(
-            route("boards.automation-rules.update", [teamId, boardId, rule.id]),
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-                body: JSON.stringify({ is_active: !rule.is_active }),
-            },
-        ).then(() => fetchRules());
+        axios
+            .put(
+                route("boards.automation-rules.update", [
+                    teamId,
+                    boardId,
+                    rule.id,
+                ]),
+                { is_active: !rule.is_active },
+            )
+            .then(() => fetchRules());
     };
 
     const handleDelete = (rule: AutomationRule) => {
-        fetch(
-            route("boards.automation-rules.destroy", [
-                teamId,
-                boardId,
-                rule.id,
-            ]),
-            {
-                method: "DELETE",
-                headers: {
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                },
-            },
-        ).then(() => fetchRules());
+        axios
+            .delete(
+                route("boards.automation-rules.destroy", [
+                    teamId,
+                    boardId,
+                    rule.id,
+                ]),
+            )
+            .then(() => fetchRules());
     };
 
     const triggerLabel = (type: string) =>

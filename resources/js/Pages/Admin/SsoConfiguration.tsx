@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -156,18 +157,9 @@ export default function SsoConfigurationPage({ configurations }: Props) {
         });
 
         try {
-            const response = await fetch(route("admin.sso.test", config.id), {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN":
-                        document.querySelector<HTMLMetaElement>(
-                            'meta[name="csrf-token"]',
-                        )?.content ?? "",
-                    Accept: "application/json",
-                },
-            });
-            const data = await response.json();
+            const { data } = await axios.post(
+                route("admin.sso.test", config.id),
+            );
             setTestResults((prev) => ({ ...prev, [config.id]: data }));
         } catch {
             setTestResults((prev) => ({

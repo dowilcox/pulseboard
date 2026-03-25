@@ -6,6 +6,7 @@ import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PRIORITY_OPTIONS, PRIORITY_COLORS } from "@/constants/priorities";
 import { Head, useForm, router } from "@inertiajs/react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import type { Board, Column, TaskTemplate, Team, User } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
@@ -115,17 +116,16 @@ export default function BoardSettings({ board, team, members }: Props) {
     useEffect(() => {
         const controller = new AbortController();
 
-        fetch(route("teams.task-templates.index", team.slug), {
-            signal: controller.signal,
-            headers: { Accept: "application/json" },
-        })
-            .then((res) => res.json())
-            .then((data: TaskTemplate[]) => {
-                setTaskTemplates(data);
+        axios
+            .get(route("teams.task-templates.index", team.slug), {
+                signal: controller.signal,
+            })
+            .then(({ data }) => {
+                setTaskTemplates(data as TaskTemplate[]);
                 setLoadingTemplates(false);
             })
             .catch((err) => {
-                if (err.name !== "AbortError") {
+                if (!axios.isCancel(err)) {
                     setLoadingTemplates(false);
                 }
             });
@@ -134,22 +134,15 @@ export default function BoardSettings({ board, team, members }: Props) {
     }, [team.id]);
 
     const handleDeleteTaskTemplate = (templateId: string) => {
-        fetch(route("teams.task-templates.destroy", [team.slug, templateId]), {
-            method: "DELETE",
-            headers: {
-                Accept: "application/json",
-                "X-CSRF-TOKEN":
-                    document.querySelector<HTMLMetaElement>(
-                        'meta[name="csrf-token"]',
-                    )?.content ?? "",
-            },
-        }).then((res) => {
-            if (res.ok) {
+        axios
+            .delete(
+                route("teams.task-templates.destroy", [team.slug, templateId]),
+            )
+            .then(() => {
                 setTaskTemplates((prev) =>
                     prev.filter((t) => t.id !== templateId),
                 );
-            }
-        });
+            });
     };
 
     const handleCreateTaskTemplate = () => {
@@ -185,11 +178,11 @@ export default function BoardSettings({ board, team, members }: Props) {
                         effort_estimate: "",
                     });
                     // Re-fetch templates after creation
-                    fetch(route("teams.task-templates.index", team.slug), {
-                        headers: { Accept: "application/json" },
-                    })
-                        .then((res) => res.json())
-                        .then((data: TaskTemplate[]) => setTaskTemplates(data));
+                    axios
+                        .get(route("teams.task-templates.index", team.slug))
+                        .then(({ data }) =>
+                            setTaskTemplates(data as TaskTemplate[]),
+                        );
                 },
                 onError: (errors) => {
                     setTemplateFormErrors(errors as Record<string, string>);

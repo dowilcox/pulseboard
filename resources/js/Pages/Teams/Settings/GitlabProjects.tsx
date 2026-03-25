@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
+import axios from "axios";
 import { useEffect, useState } from "react";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -167,24 +168,12 @@ export default function GitlabProjects({
         });
 
         try {
-            const response = await fetch(
+            const { data } = await axios.post(
                 route("teams.gitlab-connections.test", [
                     team.slug,
                     connection.id,
                 ]),
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN":
-                            document.querySelector<HTMLMetaElement>(
-                                'meta[name="csrf-token"]',
-                            )?.content ?? "",
-                        Accept: "application/json",
-                    },
-                },
             );
-            const data = await response.json();
             setTestResults((prev) => ({ ...prev, [connection.id]: data }));
         } catch {
             setTestResults((prev) => ({

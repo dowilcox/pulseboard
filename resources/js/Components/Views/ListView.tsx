@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import axios from "axios";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
@@ -380,23 +381,19 @@ export default function ListView({
                 direction: sortDir,
             });
 
-            const response = await fetch(
-                `${route("boards.tasks.index", [team.slug, board.slug])}?${params}`,
+            const { data } = await axios.get<PaginatedResponse<Task>>(
+                route("boards.tasks.index", [team.slug, board.slug]),
                 {
-                    headers: { Accept: "application/json" },
+                    params: Object.fromEntries(params),
                     signal: controller.signal,
                 },
             );
-
-            if (!response.ok) throw new Error("Failed to load tasks");
-
-            const data: PaginatedResponse<Task> = await response.json();
 
             setExtraTasks((prev) => [...prev, ...data.data]);
             setCurrentPage(nextPage);
             setHasMore(data.current_page < data.last_page);
         } catch (error) {
-            if ((error as Error).name === "AbortError") {
+            if (axios.isCancel(error)) {
                 // Ignore aborted requests
             }
         } finally {
