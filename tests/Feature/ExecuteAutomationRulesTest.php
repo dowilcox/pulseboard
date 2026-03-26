@@ -890,4 +890,478 @@ class ExecuteAutomationRulesTest extends TestCase
         $task->refresh();
         $this->assertEquals($this->doneColumn->id, $task->column_id);
     }
+
+    // ---------------------------------------------------------------
+    // New triggers: task_completed, task_uncompleted, priority_changed,
+    //               comment_added
+    // ---------------------------------------------------------------
+
+    public function test_task_completed_trigger_always_matches(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move to Done on complete',
+            'trigger_type' => 'task_completed',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_completed', ['task_id' => $task->id]);
+
+        $task->refresh();
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+    }
+
+    public function test_task_uncompleted_trigger_always_matches(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move back to To Do on reopen',
+            'trigger_type' => 'task_uncompleted',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->column->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_uncompleted', ['task_id' => $task->id]);
+
+        $task->refresh();
+        $this->assertEquals($this->column->id, $task->column_id);
+    }
+
+    public function test_priority_changed_trigger_matches_specific_priority(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move urgent tasks to top',
+            'trigger_type' => 'priority_changed',
+            'trigger_config' => ['priority' => 'urgent'],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'priority_changed', [
+            'task_id' => $task->id,
+            'priority' => ['from' => 'low', 'to' => 'urgent'],
+        ]);
+
+        $task->refresh();
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+    }
+
+    public function test_priority_changed_trigger_does_not_match_different_priority(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Should not fire',
+            'trigger_type' => 'priority_changed',
+            'trigger_config' => ['priority' => 'urgent'],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'priority_changed', [
+            'task_id' => $task->id,
+            'priority' => ['from' => 'low', 'to' => 'high'],
+        ]);
+
+        $task->refresh();
+        $this->assertEquals($this->column->id, $task->column_id);
+    }
+
+    public function test_priority_changed_with_no_config_matches_any(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Fire on any priority change',
+            'trigger_type' => 'priority_changed',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'priority_changed', [
+            'task_id' => $task->id,
+            'priority' => ['from' => 'low', 'to' => 'medium'],
+        ]);
+
+        $task->refresh();
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+    }
+
+    public function test_comment_added_trigger_always_matches(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move on comment',
+            'trigger_type' => 'comment_added',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'comment_added', ['task_id' => $task->id]);
+
+        $task->refresh();
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+    }
+
+    // ---------------------------------------------------------------
+    // New actions: mark_complete, mark_incomplete, remove_label,
+    //              unassign_user, send_notification
+    // ---------------------------------------------------------------
+
+    public function test_action_mark_complete(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Mark complete on move to Done',
+            'trigger_type' => 'task_moved',
+            'trigger_config' => ['to_column_id' => $this->doneColumn->id],
+            'action_type' => 'mark_complete',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_moved', [
+            'task_id' => $task->id,
+            'from_column_id' => $this->column->id,
+            'to_column_id' => $this->doneColumn->id,
+        ]);
+
+        $task->refresh();
+        $this->assertNotNull($task->completed_at);
+    }
+
+    public function test_action_mark_complete_is_idempotent(): void
+    {
+        $completedAt = now()->subDay();
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => $completedAt,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Mark complete',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'mark_complete',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $task->refresh();
+        // completed_at should remain unchanged (not overwritten with a new timestamp)
+        $this->assertEquals(
+            $completedAt->format('Y-m-d H:i:s'),
+            $task->completed_at->format('Y-m-d H:i:s'),
+        );
+    }
+
+    public function test_action_mark_incomplete(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => now(),
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Reopen on move back',
+            'trigger_type' => 'task_moved',
+            'trigger_config' => ['to_column_id' => $this->column->id],
+            'action_type' => 'mark_incomplete',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_moved', [
+            'task_id' => $task->id,
+            'from_column_id' => $this->doneColumn->id,
+            'to_column_id' => $this->column->id,
+        ]);
+
+        $task->refresh();
+        $this->assertNull($task->completed_at);
+    }
+
+    public function test_action_mark_incomplete_is_idempotent(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Mark incomplete',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'mark_incomplete',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $task->refresh();
+        $this->assertNull($task->completed_at);
+    }
+
+    public function test_action_remove_label(): void
+    {
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task->labels()->attach($label->id);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Remove In Progress label on complete',
+            'trigger_type' => 'task_completed',
+            'trigger_config' => [],
+            'action_type' => 'remove_label',
+            'action_config' => ['label_id' => $label->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_completed', ['task_id' => $task->id]);
+
+        $this->assertFalse($task->labels()->where('labels.id', $label->id)->exists());
+    }
+
+    public function test_action_remove_label_ignores_missing_label_id(): void
+    {
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task->labels()->attach($label->id);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Remove label (missing config)',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'remove_label',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        // Label should still be attached because action_config has no label_id
+        $this->assertTrue($task->labels()->where('labels.id', $label->id)->exists());
+    }
+
+    public function test_action_unassign_user(): void
+    {
+        $assignee = User::factory()->create();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task->assignees()->attach($assignee->id, ['assigned_at' => now(), 'assigned_by' => $this->user->id]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Unassign on complete',
+            'trigger_type' => 'task_completed',
+            'trigger_config' => [],
+            'action_type' => 'unassign_user',
+            'action_config' => ['user_id' => $assignee->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_completed', ['task_id' => $task->id]);
+
+        $this->assertFalse($task->assignees()->where('users.id', $assignee->id)->exists());
+    }
+
+    public function test_action_unassign_user_ignores_missing_user_id(): void
+    {
+        $assignee = User::factory()->create();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task->assignees()->attach($assignee->id, ['assigned_at' => now(), 'assigned_by' => $this->user->id]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Unassign (missing config)',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'unassign_user',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        // User should still be assigned
+        $this->assertTrue($task->assignees()->where('users.id', $assignee->id)->exists());
+    }
+
+    public function test_action_send_notification_to_assignees(): void
+    {
+        $assignee = User::factory()->create();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task->assignees()->attach($assignee->id, ['assigned_at' => now(), 'assigned_by' => $this->user->id]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Notify assignees on complete',
+            'trigger_type' => 'task_completed',
+            'trigger_config' => [],
+            'action_type' => 'send_notification',
+            'action_config' => [
+                'target' => 'assignees',
+                'message' => 'Task was completed automatically',
+            ],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_completed', ['task_id' => $task->id]);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $assignee->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
+
+    public function test_action_send_notification_to_specific_user(): void
+    {
+        $recipient = User::factory()->create();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Notify specific user',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'send_notification',
+            'action_config' => [
+                'target' => $recipient->id,
+                'message' => 'A new task was created',
+            ],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $recipient->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
+
+    public function test_action_send_notification_to_creator(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Notify creator on complete',
+            'trigger_type' => 'task_completed',
+            'trigger_config' => [],
+            'action_type' => 'send_notification',
+            'action_config' => [
+                'target' => 'creator',
+                'message' => 'Your task was completed',
+            ],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_completed', ['task_id' => $task->id]);
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $this->user->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
 }
