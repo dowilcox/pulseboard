@@ -42,6 +42,8 @@ class ToggleTaskCompletion
                     ActivityLogger::log($task, 'moved', [
                         'from_column' => $fromColumn?->name ?? 'Unknown',
                         'to_column' => $doneColumn->name,
+                        'from_column_id' => $fromColumn?->id,
+                        'to_column_id' => $doneColumn->id,
                         'auto_moved' => true,
                     ], $user);
                 }

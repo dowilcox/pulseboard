@@ -47,7 +47,7 @@ class ExecuteAutomationRules
 
     private function matchesTrigger(AutomationRule $rule, array $context): bool
     {
-        $config = $rule->trigger_config;
+        $config = $rule->trigger_config ?? [];
 
         return match ($rule->trigger_type) {
             'task_moved' => $this->matchTaskMoved($config, $context),
@@ -124,7 +124,7 @@ class ExecuteAutomationRules
             return;
         }
 
-        $config = $rule->action_config;
+        $config = $rule->action_config ?? [];
 
         match ($rule->action_type) {
             'move_to_column' => $this->actionMoveToColumn($task, $config),
@@ -165,7 +165,7 @@ class ExecuteAutomationRules
         if (! $task->assignees()->where('users.id', $userId)->exists()) {
             $task->assignees()->attach($userId, [
                 'assigned_at' => now(),
-                'assigned_by' => $userId,
+                'assigned_by' => null,
             ]);
         }
     }
@@ -239,7 +239,7 @@ class ExecuteAutomationRules
         $users = match ($target) {
             'assignees' => $task->assignees()->get(),
             'creator' => collect($task->created_by ? [User::find($task->created_by)] : [])->filter(),
-            default => collect(User::find($target) ? [User::find($target)] : [])->filter(),
+            default => collect([User::find($target)])->filter(),
         };
 
         foreach ($users as $user) {

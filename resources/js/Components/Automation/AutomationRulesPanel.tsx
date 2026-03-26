@@ -96,13 +96,39 @@ export default function AutomationRulesPanel({
         fetchRules();
     }, [fetchRules]);
 
+    /** Check whether the current action type has all its required config filled in. */
+    const isActionConfigValid = (): boolean => {
+        const c = form.action_config;
+        switch (form.action_type) {
+            case "move_to_column":
+                return !!c.column_id;
+            case "assign_user":
+            case "unassign_user":
+                return !!c.user_id;
+            case "add_label":
+            case "remove_label":
+                return !!c.label_id;
+            case "update_field":
+                return !!c.field && c.value !== undefined && c.value !== "";
+            // mark_complete, mark_incomplete, send_notification: no required config
+            default:
+                return true;
+        }
+    };
+
+    /** Strip empty-string values from a config object before submission. */
+    const stripEmpty = (obj: Record<string, string>): Record<string, string> =>
+        Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== ""));
+
     const handleCreate = () => {
+        if (!isActionConfigValid()) return;
         setSaving(true);
         axios
-            .post(
-                route("boards.automation-rules.store", [teamId, boardId]),
-                form,
-            )
+            .post(route("boards.automation-rules.store", [teamId, boardId]), {
+                ...form,
+                trigger_config: stripEmpty(form.trigger_config),
+                action_config: stripEmpty(form.action_config),
+            })
             .then(() => {
                 setDialogOpen(false);
                 setForm(EMPTY_FORM);
@@ -576,6 +602,7 @@ export default function AutomationRulesPanel({
                                         size="small"
                                         color="error"
                                         onClick={() => handleDelete(rule)}
+                                        aria-label={`Delete rule: ${rule.name}`}
                                     >
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
@@ -661,7 +688,9 @@ export default function AutomationRulesPanel({
                     <Button
                         variant="contained"
                         onClick={handleCreate}
-                        disabled={saving || !form.name}
+                        disabled={
+                            saving || !form.name || !isActionConfigValid()
+                        }
                     >
                         Create Rule
                     </Button>

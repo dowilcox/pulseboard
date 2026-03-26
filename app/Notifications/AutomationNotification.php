@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Task;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class AutomationNotification extends Notification
@@ -20,13 +19,9 @@ class AutomationNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_mentioned', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        return $channels;
+        // Automation notifications are always delivered in-app;
+        // they are opt-in by nature (the board admin creates the rule).
+        return ['database'];
     }
 
     public function toDatabase(object $notifiable): array
@@ -42,20 +37,6 @@ class AutomationNotification extends Notification
             'task_slug' => $this->task->slug,
             'message' => $this->message,
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Automation: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line($this->message)
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool
