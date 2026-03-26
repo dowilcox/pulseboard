@@ -9,6 +9,7 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Mention from "@tiptap/extension-mention";
 import { Markdown } from "tiptap-markdown";
 import { createLowlight, common } from "lowlight";
 import Box from "@mui/material/Box";
@@ -37,6 +38,7 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
             TableHeader,
             TableCell,
             CodeBlockLowlight.configure({ lowlight }),
+            Mention.configure({ HTMLAttributes: { class: "mention" } }),
             Markdown.configure({ html: true }),
         ],
         content,
@@ -119,6 +121,16 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
                     "& a": {
                         color: "primary.main",
                         textDecoration: "underline",
+                    },
+                    "& .mention": {
+                        color: "primary.main",
+                        bgcolor: "primary.50",
+                        borderRadius: "4px",
+                        px: 0.25,
+                        fontWeight: 600,
+                        ...(theme.palette.mode === "dark" && {
+                            bgcolor: "rgba(25, 118, 210, 0.15)",
+                        }),
                     },
                     "& blockquote": {
                         borderLeft: 3,

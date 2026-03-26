@@ -1,6 +1,6 @@
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
-import type { Activity, Comment, PageProps } from "@/types";
+import type { Activity, Comment, PageProps, User } from "@/types";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { router, usePage } from "@inertiajs/react";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -40,6 +40,7 @@ interface Props {
     taskId: string;
     currentUserId: string;
     uploadImageUrl?: string;
+    mentionableUsers?: User[];
 }
 
 function LabelChip({ name }: { name: string }) {
@@ -208,6 +209,7 @@ export default function ActivityFeed({
     taskId,
     currentUserId,
     uploadImageUrl,
+    mentionableUsers = [],
 }: Props) {
     const { auth } = usePage<PageProps>().props;
     const savedSort = auth.user.ui_preferences?.activity_sort_order ?? "desc";
@@ -435,6 +437,7 @@ export default function ActivityFeed({
                         placeholder="Edit comment..."
                         uploadImageUrl={uploadImageUrl}
                         minHeight={80}
+                        mentionableUsers={mentionableUsers}
                     />
                     <Box
                         sx={{
@@ -559,6 +562,7 @@ export default function ActivityFeed({
                                 placeholder="Edit reply..."
                                 uploadImageUrl={uploadImageUrl}
                                 minHeight={60}
+                                mentionableUsers={mentionableUsers}
                             />
                             <Box
                                 sx={{
@@ -653,6 +657,7 @@ export default function ActivityFeed({
                                     uploadImageUrl={uploadImageUrl}
                                     minHeight={80}
                                     autoFocus
+                                    mentionableUsers={mentionableUsers}
                                 />
                                 <Box
                                     sx={{
@@ -729,6 +734,7 @@ export default function ActivityFeed({
                     placeholder="Write a comment..."
                     uploadImageUrl={uploadImageUrl}
                     minHeight={100}
+                    mentionableUsers={mentionableUsers}
                 />
                 <Box
                     sx={{

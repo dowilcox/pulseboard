@@ -345,6 +345,7 @@ export default function TasksShow({
                                     )}
                                     minHeight={150}
                                     autoFocus
+                                    mentionableUsers={members}
                                 />
                                 <Box
                                     sx={{
@@ -501,6 +502,7 @@ export default function TasksShow({
                                 board.slug,
                                 task.slug,
                             ])}
+                            mentionableUsers={members}
                         />
                     </Box>
                 </Box>

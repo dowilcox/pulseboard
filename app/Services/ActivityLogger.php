@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Actions\Automation\ExecuteAutomationRules;
 use App\Events\BoardChanged;
 use App\Events\NotificationCreated;
 use App\Models\Activity;
+use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
@@ -13,6 +15,7 @@ use App\Notifications\TaskCommentedNotification;
 use App\Notifications\TaskCompletedNotification;
 use App\Notifications\TaskMentionedNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ActivityLogger
 {
@@ -128,29 +131,49 @@ class ActivityLogger
         }
 
         // Parse @mentions and notify mentioned users
-        preg_match_all("/@(\w+)/", $latestComment->body, $matches);
-        if (! empty($matches[1])) {
-            $mentionedUsers = User::whereIn('name', $matches[1])
-                ->where('id', '!=', $commenter->id)
-                ->get();
+        $alreadyNotified = $assignees->pluck('id')->toArray();
+        $alreadyNotified[] = $commenter->id;
 
-            // Exclude users already notified as assignees
-            $alreadyNotified = $assignees->pluck('id')->toArray();
+        $mentionedUsers = MentionParser::findMentionedUsers(
+            $latestComment->body,
+            $alreadyNotified,
+        );
 
-            foreach ($mentionedUsers as $user) {
-                if (in_array($user->id, $alreadyNotified)) {
-                    continue;
-                }
+        foreach ($mentionedUsers as $user) {
+            $notification = new TaskMentionedNotification(
+                $task,
+                $commenter,
+                $latestComment,
+            );
+            $user->notify($notification);
 
-                $notification = new TaskMentionedNotification(
-                    $task,
-                    $commenter,
-                    $latestComment,
-                );
-                $user->notify($notification);
+            static::broadcastNotification($user, $notification, $task);
+        }
+    }
 
-                static::broadcastNotification($user, $notification, $task);
-            }
+    /**
+     * Notify users mentioned in a specific comment (used for replies
+     * which don't go through the full ActivityLogger::log flow).
+     */
+    public static function notifyMentionsInComment(
+        Task $task,
+        Comment $comment,
+        User $commenter,
+    ): void {
+        $mentionedUsers = MentionParser::findMentionedUsers(
+            $comment->body,
+            [$commenter->id],
+        );
+
+        foreach ($mentionedUsers as $user) {
+            $notification = new TaskMentionedNotification(
+                $task,
+                $commenter,
+                $comment,
+            );
+            $user->notify($notification);
+
+            static::broadcastNotification($user, $notification, $task);
         }
     }
 
@@ -255,13 +278,13 @@ class ActivityLogger
         $context = array_merge($changes, ['task_id' => $task->id]);
 
         try {
-            \App\Actions\Automation\ExecuteAutomationRules::run(
+            ExecuteAutomationRules::run(
                 $task->board,
                 $triggerType,
                 $context,
             );
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning(
+            Log::warning(
                 'Automation execution failed',
                 [
                     'task_id' => $task->id,

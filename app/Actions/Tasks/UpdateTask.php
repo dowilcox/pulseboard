@@ -2,8 +2,13 @@
 
 namespace App\Actions\Tasks;
 
+use App\Events\NotificationCreated;
 use App\Models\Task;
+use App\Notifications\DescriptionMentionedNotification;
 use App\Services\ActivityLogger;
+use App\Services\MentionParser;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class UpdateTask
@@ -37,6 +42,9 @@ class UpdateTask
             }
         }
 
+        // Capture old description before update for mention diffing
+        $oldDescription = $task->description;
+
         $updateData = array_intersect_key($data, array_flip($fillable));
 
         // Compute recurrence_next_at when recurrence_config is provided
@@ -52,10 +60,46 @@ class UpdateTask
             ActivityLogger::log($task, 'field_changed', $changes);
         }
 
+        // Notify newly-mentioned users in description
+        if (isset($changes['description']) && $data['description']) {
+            $this->notifyDescriptionMentions($task, $oldDescription, $data['description']);
+        }
+
         return $task->fresh();
     }
 
-    private function computeNextRecurrence(?array $config): ?\Carbon\Carbon
+    private function notifyDescriptionMentions(Task $task, ?string $oldDescription, string $newDescription): void
+    {
+        $actor = Auth::user();
+        if (! $actor) {
+            return;
+        }
+
+        $newMentions = MentionParser::findNewMentions(
+            $oldDescription,
+            $newDescription,
+            [$actor->id],
+        );
+
+        $task->loadMissing('board.team');
+
+        foreach ($newMentions as $user) {
+            $notification = new DescriptionMentionedNotification($task, $actor);
+            $user->notify($notification);
+
+            $dbNotification = $user->notifications()->latest()->first();
+            if ($dbNotification) {
+                broadcast(new NotificationCreated(
+                    userId: $user->id,
+                    notificationId: $dbNotification->id,
+                    type: 'DescriptionMentionedNotification',
+                    message: "{$actor->name} mentioned you in the description of \"{$task->title}\"",
+                ));
+            }
+        }
+    }
+
+    private function computeNextRecurrence(?array $config): ?Carbon
     {
         if (! $config || empty($config['frequency'])) {
             return null;

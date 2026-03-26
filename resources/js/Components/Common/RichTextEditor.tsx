@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { ReactRenderer, useEditor, EditorContent } from "@tiptap/react";
 import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
@@ -12,10 +12,16 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Mention from "@tiptap/extension-mention";
 import { Markdown } from "tiptap-markdown";
 import { createLowlight, common } from "lowlight";
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
+import tippy, { type Instance as TippyInstance } from "tippy.js";
+import MentionList, {
+    type MentionListRef,
+} from "@/Components/Common/MentionList";
+import type { User } from "@/types";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -93,6 +99,87 @@ const MarkdownParagraph = Paragraph.extend({
     },
 });
 
+/**
+ * Custom Mention extension that serializes to HTML in markdown so mentions
+ * survive the save/reload roundtrip.  The default Mention extension's
+ * parseHTML rules recognise `<span data-type="mention">` which means the
+ * HTML embedded in the markdown is parsed back into proper mention nodes.
+ */
+const MentionWithMarkdown = Mention.extend({
+    addStorage() {
+        return {
+            markdown: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                serialize(state: any, node: any) {
+                    const id = node.attrs.id ?? "";
+                    const label = node.attrs.label ?? "";
+                    state.write(
+                        `<span data-type="mention" data-id="${id}" data-label="${label}">@${label}</span>`,
+                    );
+                },
+                parse: {
+                    // HTML parsing handled by Mention.parseHTML + html:true
+                },
+            },
+        };
+    },
+});
+
+function createMentionSuggestion(users: User[]) {
+    return {
+        items: ({ query }: { query: string }) =>
+            users
+                .filter((u) =>
+                    u.name.toLowerCase().includes(query.toLowerCase()),
+                )
+                .slice(0, 8),
+        render: () => {
+            let component: ReactRenderer<MentionListRef>;
+            let popup: TippyInstance[];
+
+            return {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onStart: (props: any) => {
+                    component = new ReactRenderer(MentionList, {
+                        props,
+                        editor: props.editor,
+                    });
+                    popup = tippy("body", {
+                        getReferenceClientRect: props.clientRect,
+                        appendTo: () => document.body,
+                        content: component.element,
+                        showOnCreate: true,
+                        interactive: true,
+                        trigger: "manual",
+                        placement: "bottom-start",
+                    });
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onUpdate: (props: any) => {
+                    component.updateProps(props);
+                    if (props.clientRect) {
+                        popup[0].setProps({
+                            getReferenceClientRect: props.clientRect,
+                        });
+                    }
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onKeyDown: (props: any) => {
+                    if (props.event.key === "Escape") {
+                        popup[0].hide();
+                        return true;
+                    }
+                    return component.ref?.onKeyDown(props) ?? false;
+                },
+                onExit: () => {
+                    popup[0].destroy();
+                    component.destroy();
+                },
+            };
+        },
+    };
+}
+
 interface RichTextEditorProps {
     content: string;
     onChange: (markdown: string) => void;
@@ -101,6 +188,7 @@ interface RichTextEditorProps {
     uploadImageUrl?: string;
     minHeight?: number;
     autoFocus?: boolean;
+    mentionableUsers?: User[];
 }
 
 export default function RichTextEditor({
@@ -111,6 +199,7 @@ export default function RichTextEditor({
     uploadImageUrl,
     minHeight = 200,
     autoFocus = false,
+    mentionableUsers = [],
 }: RichTextEditorProps) {
     const theme = useTheme();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,6 +233,14 @@ export default function RichTextEditor({
             TableHeader,
             TableCell,
             CodeBlockLowlight.configure({ lowlight }),
+            ...(mentionableUsers.length > 0
+                ? [
+                      MentionWithMarkdown.configure({
+                          HTMLAttributes: { class: "mention" },
+                          suggestion: createMentionSuggestion(mentionableUsers),
+                      }),
+                  ]
+                : []),
             Markdown.configure({
                 html: true,
                 transformPastedText: true,
@@ -425,6 +522,17 @@ export default function RichTextEditor({
                     "& a": {
                         color: "primary.main",
                         textDecoration: "underline",
+                    },
+                    "& .mention": {
+                        color: "primary.main",
+                        bgcolor: "primary.50",
+                        borderRadius: "4px",
+                        px: 0.25,
+                        fontWeight: 600,
+                        cursor: "default",
+                        ...(theme.palette.mode === "dark" && {
+                            bgcolor: "rgba(25, 118, 210, 0.15)",
+                        }),
                     },
                     "& blockquote": {
                         borderLeft: 3,
