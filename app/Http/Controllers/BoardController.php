@@ -10,6 +10,7 @@ use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
+use App\Models\Label;
 use App\Models\TaskTemplate;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
@@ -158,12 +159,14 @@ class BoardController extends Controller
         $board->load('columns');
 
         $members = $team->members()->whereNull('deactivated_at')->get();
+        $labels = Label::where('team_id', $team->id)->get();
 
         return Inertia::render('Boards/Settings', [
             'team' => $team,
             'board' => $board,
             'columns' => $board->columns,
             'members' => $members,
+            'labels' => $labels,
         ]);
     }
 

@@ -27,9 +27,9 @@ class AutomationRuleController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'trigger_type' => ['required', 'string', 'in:task_moved,task_created,task_assigned,label_added,due_date_reached,gitlab_mr_merged,gitlab_pipeline_status'],
+            'trigger_type' => ['required', 'string', 'in:task_moved,task_created,task_assigned,label_added,due_date_reached,gitlab_mr_merged,gitlab_pipeline_status,task_completed,task_uncompleted,priority_changed,comment_added'],
             'trigger_config' => ['sometimes', 'array'],
-            'action_type' => ['required', 'string', 'in:move_to_column,assign_user,add_label,send_notification,update_field'],
+            'action_type' => ['required', 'string', 'in:move_to_column,assign_user,add_label,update_field,mark_complete,mark_incomplete,remove_label,unassign_user,send_notification'],
             'action_config' => ['sometimes', 'array'],
         ]);
 
@@ -53,9 +53,9 @@ class AutomationRuleController extends Controller
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
-            'trigger_type' => ['sometimes', 'string', 'in:task_moved,task_created,task_assigned,label_added,due_date_reached,gitlab_mr_merged,gitlab_pipeline_status'],
+            'trigger_type' => ['sometimes', 'string', 'in:task_moved,task_created,task_assigned,label_added,due_date_reached,gitlab_mr_merged,gitlab_pipeline_status,task_completed,task_uncompleted,priority_changed,comment_added'],
             'trigger_config' => ['sometimes', 'array'],
-            'action_type' => ['sometimes', 'string', 'in:move_to_column,assign_user,add_label,send_notification,update_field'],
+            'action_type' => ['sometimes', 'string', 'in:move_to_column,assign_user,add_label,update_field,mark_complete,mark_incomplete,remove_label,unassign_user,send_notification'],
             'action_config' => ['sometimes', 'array'],
             'is_active' => ['sometimes', 'boolean'],
         ]);

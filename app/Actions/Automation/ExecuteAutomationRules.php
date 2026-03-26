@@ -2,10 +2,13 @@
 
 namespace App\Actions\Automation;
 
+use App\Events\NotificationCreated;
 use App\Models\AutomationRule;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
+use App\Models\User;
+use App\Notifications\AutomationNotification;
 use Illuminate\Support\Facades\Log;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -40,6 +43,8 @@ class ExecuteAutomationRules
         }
     }
 
+    // ── Trigger matchers ────────────────────────────────────────────────
+
     private function matchesTrigger(AutomationRule $rule, array $context): bool
     {
         $config = $rule->trigger_config;
@@ -52,6 +57,10 @@ class ExecuteAutomationRules
             'due_date_reached' => true,
             'gitlab_mr_merged' => true,
             'gitlab_pipeline_status' => $this->matchPipelineStatus($config, $context),
+            'task_completed' => true,
+            'task_uncompleted' => true,
+            'priority_changed' => $this->matchPriorityChanged($config, $context),
+            'comment_added' => true,
             default => false,
         };
     }
@@ -95,6 +104,19 @@ class ExecuteAutomationRules
         return true;
     }
 
+    private function matchPriorityChanged(array $config, array $context): bool
+    {
+        if (! empty($config['priority'])) {
+            $newPriority = $context['priority']['to'] ?? null;
+
+            return $newPriority === $config['priority'];
+        }
+
+        return true;
+    }
+
+    // ── Action executors ────────────────────────────────────────────────
+
     private function executeAction(AutomationRule $rule, array $context): void
     {
         $task = isset($context['task_id']) ? Task::find($context['task_id']) : null;
@@ -109,6 +131,11 @@ class ExecuteAutomationRules
             'assign_user' => $this->actionAssignUser($task, $config),
             'add_label' => $this->actionAddLabel($task, $config),
             'update_field' => $this->actionUpdateField($task, $config),
+            'mark_complete' => $this->actionMarkComplete($task),
+            'mark_incomplete' => $this->actionMarkIncomplete($task),
+            'remove_label' => $this->actionRemoveLabel($task, $config),
+            'unassign_user' => $this->actionUnassignUser($task, $config),
+            'send_notification' => $this->actionSendNotification($task, $config, $rule),
             default => null,
         };
     }
@@ -166,5 +193,68 @@ class ExecuteAutomationRules
         }
 
         $task->update([$field => $value]);
+    }
+
+    private function actionMarkComplete(Task $task): void
+    {
+        if (! $task->completed_at) {
+            $task->update(['completed_at' => now()]);
+        }
+    }
+
+    private function actionMarkIncomplete(Task $task): void
+    {
+        if ($task->completed_at) {
+            $task->update(['completed_at' => null]);
+        }
+    }
+
+    private function actionRemoveLabel(Task $task, array $config): void
+    {
+        $labelId = $config['label_id'] ?? null;
+        if (! $labelId) {
+            return;
+        }
+
+        $task->labels()->detach($labelId);
+    }
+
+    private function actionUnassignUser(Task $task, array $config): void
+    {
+        $userId = $config['user_id'] ?? null;
+        if (! $userId) {
+            return;
+        }
+
+        $task->assignees()->detach($userId);
+    }
+
+    private function actionSendNotification(Task $task, array $config, AutomationRule $rule): void
+    {
+        $target = $config['target'] ?? 'assignees';
+        $message = $config['message'] ?? "Automation \"{$rule->name}\" triggered on \"{$task->title}\"";
+
+        $task->loadMissing('board.team');
+
+        $users = match ($target) {
+            'assignees' => $task->assignees()->get(),
+            'creator' => collect($task->created_by ? [User::find($task->created_by)] : [])->filter(),
+            default => collect(User::find($target) ? [User::find($target)] : [])->filter(),
+        };
+
+        foreach ($users as $user) {
+            $notification = new AutomationNotification($task, $message);
+            $user->notify($notification);
+
+            $dbNotification = $user->notifications()->latest()->first();
+            if ($dbNotification) {
+                broadcast(new NotificationCreated(
+                    userId: $user->id,
+                    notificationId: $dbNotification->id,
+                    type: 'AutomationNotification',
+                    message: $message,
+                ));
+            }
+        }
     }
 }

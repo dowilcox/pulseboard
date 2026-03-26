@@ -268,30 +268,45 @@ class ActivityLogger
             'assigned' => 'task_assigned',
             'labels_changed' => 'label_added',
             'gitlab_mr_merged' => 'gitlab_mr_merged',
+            'completed' => 'task_completed',
+            'uncompleted' => 'task_uncompleted',
+            'commented' => 'comment_added',
         ];
 
-        $triggerType = $triggerMap[$action] ?? null;
-        if (! $triggerType) {
+        $triggers = [];
+
+        if (isset($triggerMap[$action])) {
+            $triggers[] = $triggerMap[$action];
+        }
+
+        // Field changes may fire additional triggers
+        if ($action === 'field_changed' && isset($changes['priority'])) {
+            $triggers[] = 'priority_changed';
+        }
+
+        if (empty($triggers)) {
             return;
         }
 
         $context = array_merge($changes, ['task_id' => $task->id]);
 
-        try {
-            ExecuteAutomationRules::run(
-                $task->board,
-                $triggerType,
-                $context,
-            );
-        } catch (\Throwable $e) {
-            Log::warning(
-                'Automation execution failed',
-                [
-                    'task_id' => $task->id,
-                    'trigger' => $triggerType,
-                    'error' => $e->getMessage(),
-                ],
-            );
+        foreach ($triggers as $triggerType) {
+            try {
+                ExecuteAutomationRules::run(
+                    $task->board,
+                    $triggerType,
+                    $context,
+                );
+            } catch (\Throwable $e) {
+                Log::warning(
+                    'Automation execution failed',
+                    [
+                        'task_id' => $task->id,
+                        'trigger' => $triggerType,
+                        'error' => $e->getMessage(),
+                    ],
+                );
+            }
         }
     }
 }

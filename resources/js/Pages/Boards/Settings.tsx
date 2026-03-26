@@ -8,7 +8,7 @@ import { PRIORITY_OPTIONS, PRIORITY_COLORS } from "@/constants/priorities";
 import { Head, useForm, router } from "@inertiajs/react";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import type { Board, Column, TaskTemplate, Team, User } from "@/types";
+import type { Board, Column, Label, TaskTemplate, Team, User } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -46,9 +46,10 @@ interface Props {
     board: Board;
     team: Team;
     members: User[];
+    labels: Label[];
 }
 
-export default function BoardSettings({ board, team, members }: Props) {
+export default function BoardSettings({ board, team, members, labels }: Props) {
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? "",
@@ -1079,6 +1080,7 @@ export default function BoardSettings({ board, team, members }: Props) {
                     boardId={board.slug}
                     columns={board.columns ?? []}
                     members={members}
+                    labels={labels}
                 />
 
                 {/* Save as Template */}
