@@ -88,6 +88,12 @@ class Task extends Model implements HasMedia
             ->using(TaskAssignee::class);
     }
 
+    public function watchers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'task_watchers')
+            ->withPivot('created_at');
+    }
+
     public function labels(): BelongsToMany
     {
         return $this->belongsToMany(Label::class, 'task_labels');

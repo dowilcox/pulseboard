@@ -136,6 +136,8 @@ class ExecuteAutomationRules
             'remove_label' => $this->actionRemoveLabel($task, $config),
             'unassign_user' => $this->actionUnassignUser($task, $config),
             'send_notification' => $this->actionSendNotification($task, $config, $rule),
+            'add_watcher' => $this->actionAddWatcher($task, $config),
+            'remove_watcher' => $this->actionRemoveWatcher($task, $config),
             default => null,
         };
     }
@@ -227,6 +229,30 @@ class ExecuteAutomationRules
         }
 
         $task->assignees()->detach($userId);
+    }
+
+    private function actionAddWatcher(Task $task, array $config): void
+    {
+        $userId = $config['user_id'] ?? null;
+        if (! $userId) {
+            return;
+        }
+
+        if (! $task->watchers()->where('users.id', $userId)->exists()) {
+            $task->watchers()->attach($userId, [
+                'created_at' => now(),
+            ]);
+        }
+    }
+
+    private function actionRemoveWatcher(Task $task, array $config): void
+    {
+        $userId = $config['user_id'] ?? null;
+        if (! $userId) {
+            return;
+        }
+
+        $task->watchers()->detach($userId);
     }
 
     private function actionSendNotification(Task $task, array $config, AutomationRule $rule): void

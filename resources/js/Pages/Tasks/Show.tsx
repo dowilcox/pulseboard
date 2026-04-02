@@ -46,6 +46,7 @@ interface Props {
     figmaConnections: FigmaConnection[];
     boardTasks: TaskSummary[];
     teamBoards: Board[];
+    isWatching: boolean;
 }
 
 export default function TasksShow({
@@ -58,6 +59,7 @@ export default function TasksShow({
     figmaConnections,
     boardTasks,
     teamBoards,
+    isWatching,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
 
@@ -537,6 +539,7 @@ export default function TasksShow({
                         boardTasks={boardTasks}
                         teamBoards={teamBoards}
                         gitlabProjects={gitlabProjects}
+                        isWatching={isWatching}
                     />
                 </Box>
             </Box>

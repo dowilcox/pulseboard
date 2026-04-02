@@ -22,6 +22,8 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DeleteIcon from "@mui/icons-material/Delete";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
@@ -43,6 +45,7 @@ interface Props {
     boardTasks: TaskSummary[];
     teamBoards: Board[];
     gitlabProjects?: GitlabProject[];
+    isWatching: boolean;
 }
 
 export default function TaskSidebar({
@@ -54,6 +57,7 @@ export default function TaskSidebar({
     boardTasks,
     teamBoards,
     gitlabProjects = [],
+    isWatching,
 }: Props) {
     const columns = board.columns ?? [];
     const isCompleted = task.completed_at != null;
@@ -116,6 +120,14 @@ export default function TaskSidebar({
     const handleToggleComplete = () => {
         router.patch(
             route("tasks.toggle-complete", [team.slug, board.slug, task.slug]),
+            {},
+            { preserveScroll: true },
+        );
+    };
+
+    const handleToggleWatch = () => {
+        router.patch(
+            route("tasks.toggle-watch", [team.slug, board.slug, task.slug]),
             {},
             { preserveScroll: true },
         );
@@ -217,6 +229,20 @@ export default function TaskSidebar({
                 aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
             >
                 {isCompleted ? "Completed" : "Mark Complete"}
+            </Button>
+
+            <Button
+                variant={isWatching ? "contained" : "outlined"}
+                color={isWatching ? "primary" : "inherit"}
+                startIcon={
+                    isWatching ? <VisibilityIcon /> : <VisibilityOffIcon />
+                }
+                onClick={handleToggleWatch}
+                fullWidth
+                size="small"
+                aria-label={isWatching ? "Unwatch task" : "Watch task"}
+            >
+                {isWatching ? "Watching" : "Watch"}
             </Button>
 
             {/* Board selector */}

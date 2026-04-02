@@ -43,6 +43,8 @@ const ACTION_TYPES = [
     { value: "remove_label", label: "Remove label" },
     { value: "update_field", label: "Update field" },
     { value: "send_notification", label: "Send notification" },
+    { value: "add_watcher", label: "Add watcher" },
+    { value: "remove_watcher", label: "Remove watcher" },
 ];
 
 interface Props {
@@ -104,6 +106,8 @@ export default function AutomationRulesPanel({
                 return !!c.column_id;
             case "assign_user":
             case "unassign_user":
+            case "add_watcher":
+            case "remove_watcher":
                 return !!c.user_id;
             case "add_label":
             case "remove_label":
@@ -365,6 +369,48 @@ export default function AutomationRulesPanel({
                     <TextField
                         select
                         label="Unassign User"
+                        fullWidth
+                        required
+                        value={form.action_config.user_id ?? ""}
+                        onChange={(e) =>
+                            updateActionConfig("user_id", e.target.value)
+                        }
+                        sx={{ mb: 2 }}
+                    >
+                        {members.map((m) => (
+                            <MenuItem key={m.id} value={m.id}>
+                                {m.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                );
+
+            case "add_watcher":
+                return (
+                    <TextField
+                        select
+                        label="Add Watcher"
+                        fullWidth
+                        required
+                        value={form.action_config.user_id ?? ""}
+                        onChange={(e) =>
+                            updateActionConfig("user_id", e.target.value)
+                        }
+                        sx={{ mb: 2 }}
+                    >
+                        {members.map((m) => (
+                            <MenuItem key={m.id} value={m.id}>
+                                {m.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                );
+
+            case "remove_watcher":
+                return (
+                    <TextField
+                        select
+                        label="Remove Watcher"
                         fullWidth
                         required
                         value={form.action_config.user_id ?? ""}

@@ -8,6 +8,7 @@ use App\Actions\Tasks\DeleteTask;
 use App\Actions\Tasks\MoveTask;
 use App\Actions\Tasks\SyncTaskLabels;
 use App\Actions\Tasks\ToggleTaskCompletion;
+use App\Actions\Tasks\ToggleTaskWatch;
 use App\Actions\Tasks\UpdateTask;
 use App\Actions\Tasks\UploadTaskImage;
 use App\Http\Requests\MoveTaskRequest;
@@ -62,6 +63,7 @@ class TaskController extends Controller
     }
 
     public function show(
+        Request $request,
         Team $team,
         Board $board,
         Task $task,
@@ -86,6 +88,7 @@ class TaskController extends Controller
             'dependencies',
             'blockedBy',
             'parentTask',
+            'watchers',
         ]);
         $task->loadCount([
             'comments',
@@ -125,6 +128,8 @@ class TaskController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'team_id']);
 
+        $isWatching = $task->watchers()->where('users.id', $request->user()->id)->exists();
+
         return Inertia::render('Tasks/Show', [
             'team' => $team,
             'board' => $board,
@@ -135,6 +140,7 @@ class TaskController extends Controller
             'figmaConnections' => $figmaConnections,
             'teamBoards' => $teamBoards,
             'boardTasks' => $boardTasks,
+            'isWatching' => $isWatching,
         ]);
     }
 
@@ -276,6 +282,22 @@ class TaskController extends Controller
         $this->authorize('update', $task);
 
         ToggleTaskCompletion::run($task, $request->user());
+
+        return Redirect::back();
+    }
+
+    /**
+     * Toggle watching a task.
+     */
+    public function toggleWatch(
+        Request $request,
+        Team $team,
+        Board $board,
+        Task $task,
+    ): RedirectResponse {
+        $this->authorize('view', $task);
+
+        ToggleTaskWatch::run($task, $request->user());
 
         return Redirect::back();
     }

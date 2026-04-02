@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
 
     /**
@@ -130,6 +131,15 @@ class User extends Authenticatable
         return $this->belongsToMany(Task::class, 'task_assignees')
             ->withPivot('assigned_at', 'assigned_by')
             ->using(TaskAssignee::class);
+    }
+
+    /**
+     * The tasks this user is watching.
+     */
+    public function watchedTasks(): BelongsToMany
+    {
+        return $this->belongsToMany(Task::class, 'task_watchers')
+            ->withPivot('created_at');
     }
 
     /**

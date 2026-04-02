@@ -130,9 +130,25 @@ class ActivityLogger
             static::broadcastNotification($user, $notification, $task);
         }
 
+        // Notify watchers (excluding commenter and already-notified assignees)
+        $alreadyNotified = $assignees->pluck('id')->push($commenter->id)->toArray();
+        $watchers = $task->watchers()
+            ->whereNotIn('users.id', $alreadyNotified)
+            ->get();
+
+        foreach ($watchers as $user) {
+            $notification = new TaskCommentedNotification(
+                $task,
+                $commenter,
+                $latestComment,
+            );
+            $user->notify($notification);
+
+            static::broadcastNotification($user, $notification, $task);
+        }
+
         // Parse @mentions and notify mentioned users
-        $alreadyNotified = $assignees->pluck('id')->toArray();
-        $alreadyNotified[] = $commenter->id;
+        $alreadyNotified = array_merge($alreadyNotified, $watchers->pluck('id')->toArray());
 
         $mentionedUsers = MentionParser::findMentionedUsers(
             $latestComment->body,
@@ -193,7 +209,15 @@ class ActivityLogger
             $notifyUserIds[] = $task->created_by;
         }
 
-        $users = User::whereIn('id', array_unique($notifyUserIds))->get();
+        // Also notify watchers
+        $watcherIds = $task->watchers()
+            ->where('users.id', '!=', $completedBy->id)
+            ->pluck('users.id')
+            ->toArray();
+
+        $notifyUserIds = array_unique(array_merge($notifyUserIds, $watcherIds));
+
+        $users = User::whereIn('id', $notifyUserIds)->get();
 
         foreach ($users as $user) {
             $notification = new TaskCompletedNotification($task, $completedBy);
@@ -217,6 +241,23 @@ class ActivityLogger
             ->get();
 
         foreach ($assignees as $user) {
+            $notification = new TaskAttachmentAddedNotification(
+                $task,
+                $uploader,
+                $filename,
+            );
+            $user->notify($notification);
+
+            static::broadcastNotification($user, $notification, $task);
+        }
+
+        // Notify watchers (excluding uploader and already-notified assignees)
+        $alreadyNotified = $assignees->pluck('id')->push($uploader->id)->toArray();
+        $watchers = $task->watchers()
+            ->whereNotIn('users.id', $alreadyNotified)
+            ->get();
+
+        foreach ($watchers as $user) {
             $notification = new TaskAttachmentAddedNotification(
                 $task,
                 $uploader,

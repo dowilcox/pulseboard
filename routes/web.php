@@ -493,6 +493,10 @@ Route::middleware('auth')->group(function () {
             '/{team}/{board}/tasks/{task}/toggle-complete',
             [TaskController::class, 'toggleComplete'],
         )->name('tasks.toggle-complete');
+        Route::patch(
+            '/{team}/{board}/tasks/{task}/toggle-watch',
+            [TaskController::class, 'toggleWatch'],
+        )->name('tasks.toggle-watch');
         Route::post('/{team}/{board}/tasks/{task}/images', [
             TaskController::class,
             'uploadImage',
