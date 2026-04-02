@@ -29,10 +29,10 @@ return [
     | UPLOAD_ATTACHMENT_TYPES=jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,7z,tar,gz,mp4,webm,mp3,ogg,wav,json,yaml,yml,md,rtf,odt,ods,odp,bmp,tiff,ico,avi,mov
     |
     */
-    'attachment_types' => explode(',', env(
+    'attachment_types' => array_map('trim', explode(',', env(
         'UPLOAD_ATTACHMENT_TYPES',
         'jpg,jpeg,png,gif,webp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,csv,zip,mp4,webm'
-    )),
+    ))),
 
     /*
     |--------------------------------------------------------------------------
