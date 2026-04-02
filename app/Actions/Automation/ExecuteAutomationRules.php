@@ -264,6 +264,7 @@ class ExecuteAutomationRules
 
         $users = match ($target) {
             'assignees' => $task->assignees()->get(),
+            'watchers' => $task->watchers()->get(),
             'creator' => collect($task->created_by ? [User::find($task->created_by)] : [])->filter(),
             default => collect([User::find($target)])->filter(),
         };

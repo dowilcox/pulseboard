@@ -530,6 +530,7 @@ export default function AutomationRulesPanel({
                             sx={{ mb: 2 }}
                         >
                             <MenuItem value="assignees">All assignees</MenuItem>
+                            <MenuItem value="watchers">All watchers</MenuItem>
                             <MenuItem value="creator">Task creator</MenuItem>
                             {members.map((m) => (
                                 <MenuItem key={m.id} value={m.id}>

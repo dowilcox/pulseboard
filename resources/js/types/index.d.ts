@@ -199,7 +199,6 @@ export interface Task {
     created_at: string;
     updated_at: string;
     assignees?: User[];
-    watchers?: User[];
     labels?: Label[];
     subtasks?: Task[];
     creator?: User;

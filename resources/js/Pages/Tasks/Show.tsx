@@ -145,7 +145,6 @@ export default function TasksShow({
 
     const handleDescriptionChange = (val: string) => {
         setDescription(val);
-        if (!editingDescription) setEditingDescription(true);
     };
 
     const saveDescription = () => {

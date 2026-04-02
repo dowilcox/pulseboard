@@ -70,6 +70,8 @@ class TaskController extends Controller
     ): JsonResponse|Response {
         $this->authorize('view', $task);
 
+        $isWatching = $task->watchers()->where('users.id', $request->user()->id)->exists();
+
         $task->load([
             'assignees',
             'labels',
@@ -88,7 +90,6 @@ class TaskController extends Controller
             'dependencies',
             'blockedBy',
             'parentTask',
-            'watchers',
         ]);
         $task->loadCount([
             'comments',
@@ -127,8 +128,6 @@ class TaskController extends Controller
             ->with('columns')
             ->orderBy('name')
             ->get(['id', 'name', 'team_id']);
-
-        $isWatching = $task->watchers()->where('users.id', $request->user()->id)->exists();
 
         return Inertia::render('Tasks/Show', [
             'team' => $team,
