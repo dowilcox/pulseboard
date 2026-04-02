@@ -332,8 +332,7 @@ export default function TasksShow({
                                 )}
                         </Box>
                         <Divider sx={{ mt: 0.5, mb: 2 }} />
-                        {editingDescription ||
-                        isDescriptionEmpty(description) ? (
+                        {editingDescription ? (
                             <>
                                 <RichTextEditor
                                     content={description}
@@ -355,19 +354,17 @@ export default function TasksShow({
                                         mt: 1,
                                     }}
                                 >
-                                    {editingDescription && (
-                                        <Button
-                                            size="small"
-                                            onClick={() => {
-                                                setDescription(
-                                                    task.description ?? "",
-                                                );
-                                                setEditingDescription(false);
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    )}
+                                    <Button
+                                        size="small"
+                                        onClick={() => {
+                                            setDescription(
+                                                task.description ?? "",
+                                            );
+                                            setEditingDescription(false);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
                                     <Button
                                         size="small"
                                         variant="contained"
@@ -385,7 +382,21 @@ export default function TasksShow({
                             <Box sx={{ px: 1 }}>
                                 <RichTextDisplay content={description} />
                             </Box>
-                        ) : null}
+                        ) : (
+                            <Typography
+                                color="text.secondary"
+                                sx={{
+                                    cursor: "pointer",
+                                    py: 1,
+                                    "&:hover": {
+                                        textDecoration: "underline",
+                                    },
+                                }}
+                                onClick={() => setEditingDescription(true)}
+                            >
+                                Add a description...
+                            </Typography>
+                        )}
                     </Box>
 
                     {/* Checklists */}
