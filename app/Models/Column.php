@@ -55,4 +55,18 @@ class Column extends Model
     {
         return $this->hasMany(Task::class)->orderBy('sort_order');
     }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $query = $this->newQuery();
+
+        $board = request()->route('board');
+        if ($board instanceof Board) {
+            $query->where('board_id', $board->id);
+        }
+
+        return $field
+            ? $query->where($field, $value)->first()
+            : $query->where('id', $value)->first();
+    }
 }

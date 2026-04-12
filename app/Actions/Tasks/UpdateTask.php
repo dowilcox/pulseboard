@@ -7,6 +7,7 @@ use App\Models\Task;
 use App\Notifications\DescriptionMentionedNotification;
 use App\Services\ActivityLogger;
 use App\Services\MentionParser;
+use App\Support\RichTextSanitizer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -47,6 +48,12 @@ class UpdateTask
 
         $updateData = array_intersect_key($data, array_flip($fillable));
 
+        if (array_key_exists('description', $updateData)) {
+            $updateData['description'] = RichTextSanitizer::sanitize(
+                $updateData['description'],
+            );
+        }
+
         // Compute recurrence_next_at when recurrence_config is provided
         if (array_key_exists('recurrence_config', $data)) {
             $updateData['recurrence_next_at'] = $this->computeNextRecurrence(
@@ -61,8 +68,15 @@ class UpdateTask
         }
 
         // Notify newly-mentioned users in description
-        if (isset($changes['description']) && $data['description']) {
-            $this->notifyDescriptionMentions($task, $oldDescription, $data['description']);
+        if (
+            isset($changes['description']) &&
+            ! empty($updateData['description'])
+        ) {
+            $this->notifyDescriptionMentions(
+                $task,
+                $oldDescription,
+                $updateData['description'],
+            );
         }
 
         return $task->fresh();

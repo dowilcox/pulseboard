@@ -11,11 +11,14 @@ use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
 use App\Models\Label;
+use App\Models\Task;
 use App\Models\TaskTemplate;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,37 +37,18 @@ class BoardController extends Controller
     {
         $this->authorize('view', $board);
 
+        $sidebarBoards = $this->sidebarBoards($team);
+
         $board->load([
-            'columns' => function ($query) {
-                $query->withCount('tasks');
-            },
+            'columns' => fn ($query) => $query->withCount('tasks'),
         ]);
 
-        // Load a limited number of tasks per column for the initial render
-        $board->columns->each(function ($column) {
+        $initialTasks = $this->initialTasksByColumn($board);
+
+        $board->columns->each(function ($column) use ($initialTasks) {
             $column->setRelation(
                 'tasks',
-                $column
-                    ->tasks()
-                    ->with([
-                        'assignees',
-                        'labels',
-                        'gitlabProject',
-                        'gitlabRefs',
-                        'blockedBy:id',
-                    ])
-                    ->withCount([
-                        'comments',
-                        'subtasks',
-                        'subtasks as completed_subtasks_count' => function (
-                            $query,
-                        ) {
-                            $query->whereNotNull('completed_at');
-                        },
-                    ])
-                    ->orderBy('sort_order')
-                    ->limit(self::INITIAL_TASKS_PER_COLUMN)
-                    ->get(),
+                $initialTasks->get($column->id, collect()),
             );
         });
 
@@ -86,6 +70,7 @@ class BoardController extends Controller
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
+            'sidebarBoards' => $sidebarBoards,
             'columns' => $board->columns,
             'members' => $members,
             'gitlabProjects' => $gitlabProjects,
@@ -156,6 +141,7 @@ class BoardController extends Controller
     {
         $this->authorize('update', $board);
 
+        $sidebarBoards = $this->sidebarBoards($team);
         $board->load('columns');
 
         $members = $team->members()->whereNull('deactivated_at')->get();
@@ -164,10 +150,61 @@ class BoardController extends Controller
         return Inertia::render('Boards/Settings', [
             'team' => $team,
             'board' => $board,
+            'sidebarBoards' => $sidebarBoards,
             'columns' => $board->columns,
             'members' => $members,
             'labels' => $labels,
         ]);
+    }
+
+    private function sidebarBoards(Team $team): Collection
+    {
+        return $team->boards()
+            ->active()
+            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
+            ->with('media')
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    private function initialTasksByColumn(Board $board): Collection
+    {
+        $limitedTaskIds = DB::query()
+            ->fromSub(function ($query) use ($board) {
+                $query->from('tasks')
+                    ->select([
+                        'id',
+                        'column_id',
+                        DB::raw(
+                            'ROW_NUMBER() OVER (PARTITION BY column_id ORDER BY sort_order) as row_num',
+                        ),
+                    ])
+                    ->where('board_id', $board->id);
+            }, 'ranked_tasks')
+            ->where('row_num', '<=', self::INITIAL_TASKS_PER_COLUMN)
+            ->pluck('id');
+
+        if ($limitedTaskIds->isEmpty()) {
+            return collect();
+        }
+
+        return Task::whereIn('id', $limitedTaskIds)
+            ->with([
+                'assignees',
+                'labels',
+                'gitlabProject',
+                'gitlabRefs',
+                'blockedBy:id',
+            ])
+            ->withCount([
+                'comments',
+                'subtasks',
+                'subtasks as completed_subtasks_count' => fn ($query) => $query->whereNotNull('completed_at'),
+            ])
+            ->orderBy('column_id')
+            ->orderBy('sort_order')
+            ->get()
+            ->groupBy('column_id');
     }
 
     public function uploadImage(Request $request, Team $team, Board $board): JsonResponse

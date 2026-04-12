@@ -99,6 +99,12 @@ class TeamController extends Controller
     {
         $this->authorize('view', $team);
 
+        $sidebarBoards = $team->boards()
+            ->active()
+            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
+            ->with('media')
+            ->orderBy('sort_order')
+            ->get();
         $labels = $team->labels()->orderBy('name')->get();
         $activeMembers = $team->members()->whereNull('deactivated_at')->orderBy('name')->get();
         $deactivatedMembers = $team->members()->whereNotNull('deactivated_at')->orderBy('name')->get();
@@ -107,6 +113,7 @@ class TeamController extends Controller
 
         return Inertia::render('Teams/Settings', [
             'team' => $team,
+            'sidebarBoards' => $sidebarBoards,
             'labels' => $labels,
             'members' => $activeMembers,
             'deactivatedMembers' => $deactivatedMembers,

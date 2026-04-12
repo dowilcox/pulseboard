@@ -21,6 +21,7 @@ import tippy, { type Instance as TippyInstance } from "tippy.js";
 import MentionList, {
     type MentionListRef,
 } from "@/Components/Common/MentionList";
+import { sanitizeRichText } from "@/utils/sanitizeRichText";
 import type { User } from "@/types";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -202,6 +203,10 @@ export default function RichTextEditor({
     mentionableUsers = [],
 }: RichTextEditorProps) {
     const theme = useTheme();
+    const sanitizedContent = useMemo(
+        () => sanitizeRichText(content),
+        [content],
+    );
     const fileInputRef = useRef<HTMLInputElement>(null);
     const turndown = useMemo(() => createTurndownService(), []);
     const [sourceMode, setSourceMode] = useState(false);
@@ -247,7 +252,7 @@ export default function RichTextEditor({
                 transformCopiedText: true,
             }),
         ],
-        content,
+        content: sanitizedContent,
         editable,
         autofocus: autoFocus ? "end" : false,
         onUpdate: ({ editor: ed }) => {
@@ -407,10 +412,11 @@ export default function RichTextEditor({
             const storage = editor?.storage as any;
             const md =
                 storage?.markdown?.getMarkdown?.() ?? editor?.getHTML() ?? "";
-            setSourceValue(md);
+            setSourceValue(sanitizeRichText(md));
         } else if (editor) {
-            editor.commands.setContent(sourceValue);
-            onChange(sourceValue);
+            const sanitizedSource = sanitizeRichText(sourceValue);
+            editor.commands.setContent(sanitizedSource);
+            onChange(sanitizedSource);
         }
         setSourceMode((prev) => !prev);
     }, [sourceMode, sourceValue, editor, onChange]);

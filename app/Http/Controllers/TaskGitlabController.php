@@ -42,6 +42,8 @@ class TaskGitlabController extends Controller
 
     public function index(Team $team, Board $board, Task $task): JsonResponse
     {
+        $this->authorize('view', $task);
+
         $refs = $task->gitlabRefs()
             ->orderByDesc('created_at')
             ->get();

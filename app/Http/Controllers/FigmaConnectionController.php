@@ -23,10 +23,17 @@ class FigmaConnectionController extends Controller
     {
         $this->authorize('update', $team);
 
+        $sidebarBoards = $team->boards()
+            ->active()
+            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
+            ->with('media')
+            ->orderBy('sort_order')
+            ->get();
         $connections = $team->figmaConnections()->orderBy('name')->get();
 
         return Inertia::render('Teams/Settings/FigmaIntegration', [
             'team' => $team,
+            'sidebarBoards' => $sidebarBoards,
             'connections' => $connections,
         ]);
     }

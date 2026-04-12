@@ -89,6 +89,29 @@ class CommentLabelTest extends TestCase
         $this->assertEquals('Updated body', $comment->body);
     }
 
+    public function test_comment_route_is_scoped_to_current_task(): void
+    {
+        $otherTask = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $comment = Comment::factory()->create([
+            'task_id' => $otherTask->id,
+            'user_id' => $this->user->id,
+            'body' => 'Original body',
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('comments.update', [$this->team, $this->board, $this->task, $comment]),
+            ['body' => 'Updated body']
+        );
+
+        $response->assertNotFound();
+        $comment->refresh();
+        $this->assertEquals('Original body', $comment->body);
+    }
+
     public function test_can_delete_comment(): void
     {
         $comment = Comment::factory()->create([
@@ -112,6 +135,25 @@ class CommentLabelTest extends TestCase
         );
 
         $response->assertSessionHasErrors('body');
+    }
+
+    public function test_comment_body_is_sanitized_on_create(): void
+    {
+        $body = 'Hello <script>alert(1)</script><img src="javascript:alert(1)" onerror="alert(1)"><span data-type="mention" data-id="'.$this->user->id.'" data-label="'.$this->user->name.'">@'.$this->user->name.'</span>';
+
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => $body]
+        );
+
+        $response->assertRedirect();
+
+        $comment = Comment::query()->latest()->first();
+        $this->assertNotNull($comment);
+        $this->assertStringNotContainsString('<script', $comment->body);
+        $this->assertStringNotContainsString('javascript:alert(1)', $comment->body);
+        $this->assertStringNotContainsString('onerror=', $comment->body);
+        $this->assertStringContainsString('data-type="mention"', $comment->body);
     }
 
     // ---------------------------------------------------------------

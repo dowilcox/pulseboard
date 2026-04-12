@@ -7,6 +7,7 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\RichTextSanitizer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -39,7 +40,7 @@ class CreateTask
                 'column_id' => $column->id,
                 'task_number' => $taskNumber + 1,
                 'title' => $data['title'],
-                'description' => $data['description'] ?? null,
+                'description' => RichTextSanitizer::sanitize($data['description'] ?? null),
                 'priority' => $data['priority'] ?? 'none',
                 'sort_order' => $maxSort + 1,
                 'due_date' => $data['due_date'] ?? null,

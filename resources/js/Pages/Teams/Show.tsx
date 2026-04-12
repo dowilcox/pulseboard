@@ -173,6 +173,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
     return (
         <AuthenticatedLayout
             currentTeam={team}
+            sidebarBoards={boards}
             header={
                 <PageHeader
                     title={team.name}

@@ -31,6 +31,7 @@ import { useCallback, useState } from "react";
 interface Props {
     board: Board;
     team: Team;
+    sidebarBoards?: Board[];
     members: User[];
     labels?: Label[];
     gitlabProjects?: GitlabProject[];
@@ -42,6 +43,7 @@ interface Props {
 export default function BoardsShow({
     board,
     team,
+    sidebarBoards = [],
     members,
     labels: teamLabels = [],
     gitlabProjects = [],
@@ -71,6 +73,8 @@ export default function BoardsShow({
 
                 // These don't affect the board view
                 case "commented":
+                case "comment.created":
+                case "comment.replied":
                 case "comment.updated":
                 case "comment.deleted":
                 case "attachment_added":
@@ -132,6 +136,7 @@ export default function BoardsShow({
     return (
         <AuthenticatedLayout
             currentTeam={team}
+            sidebarBoards={sidebarBoards}
             activeBoardId={board.id}
             header={
                 <PageHeader

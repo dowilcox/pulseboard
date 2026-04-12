@@ -7,6 +7,7 @@ use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\RichTextSanitizer;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateComment
@@ -17,7 +18,7 @@ class CreateComment
     {
         $comment = $task->comments()->create([
             'user_id' => $user->id,
-            'body' => $body,
+            'body' => RichTextSanitizer::sanitize($body),
             'parent_id' => $parentId,
         ]);
 

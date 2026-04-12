@@ -91,6 +91,30 @@ export default function TasksShow({
         };
     }, []);
 
+    useEffect(() => {
+        if (!titleTimeoutRef.current) {
+            setTitle(task.title);
+        }
+    }, [task.title]);
+
+    useEffect(() => {
+        if (!editingDescription) {
+            setDescription(task.description ?? "");
+        }
+    }, [task.description, editingDescription]);
+
+    useEffect(() => {
+        if (!checklistTimeoutRef.current) {
+            setChecklists(task.checklists ?? []);
+        }
+    }, [task.checklists]);
+
+    useEffect(() => {
+        if (!linksTimeoutRef.current) {
+            setLinks(task.links ?? []);
+        }
+    }, [task.links]);
+
     // Real-time: board channel listener
     const handleBoardEvent = useCallback(
         (event: BoardEvent) => {
@@ -137,10 +161,10 @@ export default function TasksShow({
         setTitle(newTitle);
         if (!newTitle.trim()) return;
         if (titleTimeoutRef.current) clearTimeout(titleTimeoutRef.current);
-        titleTimeoutRef.current = setTimeout(
-            () => saveField({ title: newTitle }),
-            600,
-        );
+        titleTimeoutRef.current = setTimeout(() => {
+            titleTimeoutRef.current = null;
+            saveField({ title: newTitle });
+        }, 600);
     };
 
     const handleDescriptionChange = (val: string) => {
@@ -156,19 +180,19 @@ export default function TasksShow({
         setChecklists(newChecklists);
         if (checklistTimeoutRef.current)
             clearTimeout(checklistTimeoutRef.current);
-        checklistTimeoutRef.current = setTimeout(
-            () => saveField({ checklists: newChecklists }),
-            800,
-        );
+        checklistTimeoutRef.current = setTimeout(() => {
+            checklistTimeoutRef.current = null;
+            saveField({ checklists: newChecklists });
+        }, 800);
     };
 
     const handleLinksChange = (newLinks: TaskLink[]) => {
         setLinks(newLinks);
         if (linksTimeoutRef.current) clearTimeout(linksTimeoutRef.current);
-        linksTimeoutRef.current = setTimeout(
-            () => saveField({ links: newLinks }),
-            800,
-        );
+        linksTimeoutRef.current = setTimeout(() => {
+            linksTimeoutRef.current = null;
+            saveField({ links: newLinks });
+        }, 800);
     };
 
     const handleSubtaskClick = (subtask: Task) => {
@@ -185,6 +209,7 @@ export default function TasksShow({
     return (
         <AuthenticatedLayout
             currentTeam={team as Team}
+            sidebarBoards={teamBoards}
             activeBoardId={board.id}
             header={
                 <PageHeader

@@ -35,6 +35,7 @@ import Typography from "@mui/material/Typography";
 
 interface Props extends PageProps {
     team: Team;
+    sidebarBoards?: Team["boards"];
     connections: FigmaConnection[];
 }
 
@@ -43,7 +44,11 @@ interface TestResult {
     message: string;
 }
 
-export default function FigmaIntegration({ team, connections }: Props) {
+export default function FigmaIntegration({
+    team,
+    sidebarBoards = [],
+    connections,
+}: Props) {
     const { flash } = usePage<PageProps>().props;
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
@@ -160,6 +165,7 @@ export default function FigmaIntegration({ team, connections }: Props) {
     return (
         <AuthenticatedLayout
             currentTeam={team}
+            sidebarBoards={sidebarBoards}
             header={
                 <PageHeader
                     title="Figma Integration"

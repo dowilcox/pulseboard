@@ -37,6 +37,7 @@ const COLLAPSED_WIDTH = 64;
 interface AuthenticatedLayoutProps {
     header?: ReactNode;
     currentTeam?: Team;
+    sidebarBoards?: Team["boards"];
     activeBoardId?: string;
 }
 
@@ -48,6 +49,7 @@ export default function AuthenticatedLayout(
             <SnackbarProvider>
                 <SidebarProvider
                     currentTeamOverride={props.currentTeam}
+                    sidebarBoardsOverride={props.sidebarBoards}
                     activeBoardId={props.activeBoardId}
                 >
                     <AuthenticatedLayoutInner {...props} />

@@ -45,6 +45,7 @@ import Typography from "@mui/material/Typography";
 
 interface Props {
     team: Team;
+    sidebarBoards?: Team["boards"];
     labels: Label[];
     members: UserWithTeamPivot[];
     canManageMembers: boolean;
@@ -56,6 +57,7 @@ const roleColor = (role: string) =>
 
 export default function TeamSettings({
     team,
+    sidebarBoards = [],
     labels,
     members,
     canManageMembers,
@@ -209,6 +211,7 @@ export default function TeamSettings({
     return (
         <AuthenticatedLayout
             currentTeam={team}
+            sidebarBoards={sidebarBoards}
             header={
                 <PageHeader
                     title="Settings"

@@ -30,4 +30,18 @@ class TaskGitlabRef extends Model
     {
         return $this->belongsTo(Task::class);
     }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $query = $this->newQuery();
+
+        $task = request()->route('task');
+        if ($task instanceof Task) {
+            $query->where('task_id', $task->id);
+        }
+
+        return $field
+            ? $query->where($field, $value)->first()
+            : $query->where('id', $value)->first();
+    }
 }

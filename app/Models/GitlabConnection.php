@@ -38,4 +38,18 @@ class GitlabConnection extends Model
     {
         return $this->hasMany(GitlabProject::class);
     }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $query = $this->newQuery();
+
+        $team = request()->route('team');
+        if ($team instanceof Team) {
+            $query->where('team_id', $team->id);
+        }
+
+        return $field
+            ? $query->where($field, $value)->first()
+            : $query->where('id', $value)->first();
+    }
 }

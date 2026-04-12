@@ -18,6 +18,7 @@ use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
@@ -131,7 +132,12 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'user_ids' => ['required', 'array'],
-            'user_ids.*' => ['uuid', 'exists:users,id'],
+            'user_ids.*' => [
+                'uuid',
+                Rule::exists('team_members', 'user_id')->where(
+                    fn ($query) => $query->where('team_id', $team->id),
+                ),
+            ],
         ]);
 
         $task = AssignTask::run($task, $validated['user_ids'], $request->user());
@@ -145,7 +151,12 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'label_ids' => ['required', 'array'],
-            'label_ids.*' => ['uuid', 'exists:labels,id'],
+            'label_ids.*' => [
+                'uuid',
+                Rule::exists('labels', 'id')->where(
+                    fn ($query) => $query->where('team_id', $team->id),
+                ),
+            ],
         ]);
 
         $task = SyncTaskLabels::run($task, $validated['label_ids']);

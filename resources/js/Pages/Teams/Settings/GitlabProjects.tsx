@@ -43,6 +43,7 @@ import Typography from "@mui/material/Typography";
 
 interface Props extends PageProps {
     team: Team;
+    sidebarBoards?: Team["boards"];
     gitlabProjects: (GitlabProject & { connection: GitlabConnection })[];
     connections: GitlabConnection[];
     activeConnections: Pick<GitlabConnection, "id" | "name" | "base_url">[];
@@ -55,6 +56,7 @@ interface TestResult {
 
 export default function GitlabProjects({
     team,
+    sidebarBoards = [],
     gitlabProjects,
     connections,
     activeConnections,
@@ -212,6 +214,7 @@ export default function GitlabProjects({
     return (
         <AuthenticatedLayout
             currentTeam={team}
+            sidebarBoards={sidebarBoards}
             header={
                 <PageHeader
                     title="GitLab Integration"

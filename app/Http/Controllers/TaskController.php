@@ -23,6 +23,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\MediaLibrary\MediaCollections\Exceptions\FileCannotBeAdded;
@@ -235,7 +236,12 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'user_ids' => ['present', 'array'],
-            'user_ids.*' => ['uuid', 'exists:users,id'],
+            'user_ids.*' => [
+                'uuid',
+                Rule::exists('team_members', 'user_id')->where(
+                    fn ($query) => $query->where('team_id', $team->id),
+                ),
+            ],
         ]);
 
         AssignTask::run($task, $validated['user_ids'], $request->user());
@@ -256,7 +262,12 @@ class TaskController extends Controller
 
         $validated = $request->validate([
             'label_ids' => ['present', 'array'],
-            'label_ids.*' => ['uuid', 'exists:labels,id'],
+            'label_ids.*' => [
+                'uuid',
+                Rule::exists('labels', 'id')->where(
+                    fn ($query) => $query->where('team_id', $team->id),
+                ),
+            ],
         ]);
 
         $validLabelIds = Label::where('team_id', $team->id)

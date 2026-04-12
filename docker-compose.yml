@@ -20,6 +20,8 @@ services:
         condition: service_healthy
     environment:
       - APP_ENV=${APP_ENV:-local}
+      - APP_PACKAGES_CACHE=/tmp/pulseboard-packages.php
+      - APP_SERVICES_CACHE=/tmp/pulseboard-services.php
       - DB_HOST=mysql
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE:-pulseboard}
@@ -89,6 +91,8 @@ services:
       - .:/var/www/html
     environment:
       - APP_ENV=testing
+      - APP_PACKAGES_CACHE=/tmp/pulseboard-packages.php
+      - APP_SERVICES_CACHE=/tmp/pulseboard-services.php
       - DB_CONNECTION=sqlite
       - "DB_DATABASE=:memory:"
       - CACHE_STORE=array

@@ -13,6 +13,13 @@ class SyncTaskLabels
 
     public function handle(Task $task, array $labelIds): Task
     {
+        $task->loadMissing('board');
+
+        $labelIds = Label::where('team_id', $task->board->team_id)
+            ->whereIn('id', $labelIds)
+            ->pluck('id')
+            ->toArray();
+
         $currentIds = $task->labels()->pluck('labels.id')->toArray();
 
         $task->labels()->sync($labelIds);

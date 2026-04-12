@@ -100,6 +100,23 @@ class TaskControllerTest extends TestCase
         $response->assertSessionHasErrors('title');
     }
 
+    public function test_cannot_create_task_in_column_from_another_board(): void
+    {
+        $otherBoard = Board::factory()->create(['team_id' => $this->team->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+
+        $response = $this->actingAs($this->user)->post(
+            route('tasks.store', [$this->team, $this->board, $otherColumn]),
+            ['title' => 'Cross-board task']
+        );
+
+        $response->assertNotFound();
+        $this->assertDatabaseMissing('tasks', [
+            'title' => 'Cross-board task',
+            'column_id' => $otherColumn->id,
+        ]);
+    }
+
     public function test_non_member_cannot_create_task(): void
     {
         $outsider = User::factory()->create();
@@ -130,6 +147,30 @@ class TaskControllerTest extends TestCase
         $task->refresh();
         $this->assertEquals('Updated title', $task->title);
         $this->assertEquals('urgent', $task->priority);
+    }
+
+    public function test_task_description_is_sanitized_on_update(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('tasks.update', [$this->team, $this->board, $task]),
+            [
+                'description' => 'Safe <script>alert(1)</script><img src="javascript:alert(1)" onerror="alert(1)"><span data-type="mention" data-id="'.$this->user->id.'" data-label="'.$this->user->name.'">@'.$this->user->name.'</span>',
+            ]
+        );
+
+        $response->assertRedirect();
+        $task->refresh();
+
+        $this->assertStringNotContainsString('<script', $task->description ?? '');
+        $this->assertStringNotContainsString('javascript:alert(1)', $task->description ?? '');
+        $this->assertStringNotContainsString('onerror=', $task->description ?? '');
+        $this->assertStringContainsString('data-type="mention"', $task->description ?? '');
     }
 
     public function test_task_creator_can_delete_task(): void

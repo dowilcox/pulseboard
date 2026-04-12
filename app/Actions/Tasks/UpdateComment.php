@@ -4,6 +4,7 @@ namespace App\Actions\Tasks;
 
 use App\Events\BoardChanged;
 use App\Models\Comment;
+use App\Support\RichTextSanitizer;
 use Illuminate\Support\Facades\Auth;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -13,7 +14,7 @@ class UpdateComment
 
     public function handle(Comment $comment, string $body): Comment
     {
-        $comment->update(['body' => $body]);
+        $comment->update(['body' => RichTextSanitizer::sanitize($body)]);
 
         $comment = $comment->fresh();
 

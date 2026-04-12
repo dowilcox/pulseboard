@@ -22,6 +22,12 @@ class GitlabProjectController extends Controller
     {
         $this->authorize('update', $team);
 
+        $sidebarBoards = $team->boards()
+            ->active()
+            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
+            ->with('media')
+            ->orderBy('sort_order')
+            ->get();
         $projects = $team->gitlabProjects()
             ->with('connection')
             ->orderBy('name')
@@ -35,6 +41,7 @@ class GitlabProjectController extends Controller
 
         return Inertia::render('Teams/Settings/GitlabProjects', [
             'team' => $team,
+            'sidebarBoards' => $sidebarBoards,
             'gitlabProjects' => $projects,
             'connections' => $connections,
             'activeConnections' => $activeConnections->map->only(['id', 'name', 'base_url']),

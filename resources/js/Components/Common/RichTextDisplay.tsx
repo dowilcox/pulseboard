@@ -12,6 +12,7 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import Mention from "@tiptap/extension-mention";
 import { Markdown } from "tiptap-markdown";
 import { createLowlight, common } from "lowlight";
+import { sanitizeRichText } from "@/utils/sanitizeRichText";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 
@@ -23,6 +24,7 @@ interface RichTextDisplayProps {
 
 export default function RichTextDisplay({ content }: RichTextDisplayProps) {
     const theme = useTheme();
+    const sanitizedContent = sanitizeRichText(content);
 
     const editor = useEditor({
         extensions: [
@@ -41,15 +43,15 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
             Mention.configure({ HTMLAttributes: { class: "mention" } }),
             Markdown.configure({ html: true }),
         ],
-        content,
+        content: sanitizedContent,
         editable: false,
     });
 
     useEffect(() => {
-        if (editor && content !== undefined) {
-            editor.commands.setContent(content);
+        if (editor && sanitizedContent !== undefined) {
+            editor.commands.setContent(sanitizedContent);
         }
-    }, [content, editor]);
+    }, [sanitizedContent, editor]);
 
     if (content == null) return null;
 

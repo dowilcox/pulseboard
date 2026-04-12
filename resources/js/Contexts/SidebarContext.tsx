@@ -40,12 +40,14 @@ const COLLAPSED_KEY = "pulseboard-sidebar-collapsed";
 interface SidebarProviderProps {
     children: ReactNode;
     currentTeamOverride?: Team;
+    sidebarBoardsOverride?: Board[];
     activeBoardId?: string;
 }
 
 export function SidebarProvider({
     children,
     currentTeamOverride,
+    sidebarBoardsOverride,
     activeBoardId,
 }: SidebarProviderProps) {
     const { teams: sharedTeams } = usePage<PageProps>().props;
@@ -121,7 +123,12 @@ export function SidebarProvider({
     }, [serverBoardOrder]);
 
     const boards = useMemo(() => {
-        const rawBoards = currentTeam?.boards ?? [];
+        const rawBoards =
+            sidebarBoardsOverride &&
+            currentTeamOverride &&
+            currentTeam?.id === currentTeamOverride.id
+                ? sidebarBoardsOverride
+                : (currentTeam?.boards ?? []);
         if (!currentTeam) return rawBoards;
         const order =
             localBoardOrder[currentTeam.id] ??
@@ -142,7 +149,13 @@ export function SidebarProvider({
             ordered.push(board);
         }
         return ordered;
-    }, [currentTeam, serverBoardOrder, localBoardOrder]);
+    }, [
+        currentTeam,
+        currentTeamOverride,
+        sidebarBoardsOverride,
+        serverBoardOrder,
+        localBoardOrder,
+    ]);
 
     const reorderBoards = useCallback(
         (teamId: string, orderedBoardIds: string[]) => {

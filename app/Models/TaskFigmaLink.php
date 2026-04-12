@@ -35,4 +35,18 @@ class TaskFigmaLink extends Model
     {
         return $this->belongsTo(FigmaConnection::class);
     }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        $query = $this->newQuery();
+
+        $task = request()->route('task');
+        if ($task instanceof Task) {
+            $query->where('task_id', $task->id);
+        }
+
+        return $field
+            ? $query->where($field, $value)->first()
+            : $query->where('id', $value)->first();
+    }
 }
