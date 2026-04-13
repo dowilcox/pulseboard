@@ -54,6 +54,24 @@ class NotificationControllerTest extends TestCase
         $response->assertJsonPath('unread_count', 1);
     }
 
+    public function test_unread_count_is_independent_of_pagination(): void
+    {
+        for ($i = 0; $i < 15; $i++) {
+            $this->createNotification($this->user);
+        }
+        for ($i = 0; $i < 10; $i++) {
+            $this->createNotification($this->user, now());
+        }
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('notifications.index'));
+
+        $response->assertOk();
+        $response->assertJsonCount(20, 'data');
+        $response->assertJsonPath('total', 25);
+        $response->assertJsonPath('unread_count', 15);
+    }
+
     public function test_can_mark_notification_as_read(): void
     {
         $id = $this->createNotification($this->user);

@@ -72,6 +72,9 @@ export default function TaskSidebar({
     const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
     const [templateName, setTemplateName] = useState("");
 
+    const dueDateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
     const effortTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const recurrenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
         null,
@@ -79,6 +82,8 @@ export default function TaskSidebar({
 
     useEffect(() => {
         return () => {
+            if (dueDateTimeoutRef.current)
+                clearTimeout(dueDateTimeoutRef.current);
             if (effortTimeoutRef.current)
                 clearTimeout(effortTimeoutRef.current);
             if (recurrenceTimeoutRef.current)
@@ -87,7 +92,9 @@ export default function TaskSidebar({
     }, []);
 
     useEffect(() => {
-        setDueDate(task.due_date ?? "");
+        if (!dueDateTimeoutRef.current) {
+            setDueDate(task.due_date ?? "");
+        }
     }, [task.due_date]);
 
     useEffect(() => {
@@ -164,7 +171,11 @@ export default function TaskSidebar({
 
     const handleDueDateChange = (newDate: string) => {
         setDueDate(newDate);
-        saveField({ due_date: newDate || null });
+        if (dueDateTimeoutRef.current) clearTimeout(dueDateTimeoutRef.current);
+        dueDateTimeoutRef.current = setTimeout(() => {
+            dueDateTimeoutRef.current = null;
+            saveField({ due_date: newDate || null });
+        }, 600);
     };
 
     const handleEffortChange = (value: string) => {

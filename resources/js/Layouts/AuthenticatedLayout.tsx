@@ -29,7 +29,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
-import { WebSocketProvider } from "@/Contexts/WebSocketContext";
+import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 64;
@@ -69,6 +69,7 @@ function AuthenticatedLayoutInner({
     const user = auth.user;
     const { collapsed } = useSidebar();
     const { setMode } = useThemeMode();
+    const { reconnectVersion } = useWebSocket();
     const themeSynced = useRef(false);
 
     const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
@@ -97,6 +98,16 @@ function AuthenticatedLayoutInner({
             removeFinish();
         };
     }, []);
+
+    // Fallback: any page mounted in this layout gets a refresh on reconnect
+    // so it picks up events missed during the disconnect. Pages that subscribe
+    // to reconnectVersion themselves (e.g. Boards/Show, Tasks/Show) may do
+    // narrower partial reloads in addition; both are idempotent. Inertia v2
+    // router.reload always preserves state and scroll.
+    useEffect(() => {
+        if (reconnectVersion === 0) return;
+        router.reload();
+    }, [reconnectVersion]);
 
     const menuOpen = Boolean(anchorEl);
 
