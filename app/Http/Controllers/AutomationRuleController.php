@@ -7,6 +7,8 @@ use App\Models\Board;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class AutomationRuleController extends Controller
 {
@@ -32,6 +34,17 @@ class AutomationRuleController extends Controller
             'action_type' => ['required', 'string', 'in:move_to_column,assign_user,add_label,update_field,mark_complete,mark_incomplete,remove_label,unassign_user,send_notification,add_watcher,remove_watcher'],
             'action_config' => ['sometimes', 'array'],
         ]);
+
+        $validated['trigger_config'] = $this->validateTriggerConfig(
+            $board,
+            $validated['trigger_type'],
+            $validated['trigger_config'] ?? [],
+        );
+        $validated['action_config'] = $this->validateActionConfig(
+            $board,
+            $validated['action_type'],
+            $validated['action_config'] ?? [],
+        );
 
         $rule = $board->automationRules()->create([
             'name' => $validated['name'],
@@ -60,6 +73,22 @@ class AutomationRuleController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
 
+        if (array_key_exists('trigger_config', $validated) || array_key_exists('trigger_type', $validated)) {
+            $validated['trigger_config'] = $this->validateTriggerConfig(
+                $board,
+                $validated['trigger_type'] ?? $automationRule->trigger_type,
+                $validated['trigger_config'] ?? $automationRule->trigger_config ?? [],
+            );
+        }
+
+        if (array_key_exists('action_config', $validated) || array_key_exists('action_type', $validated)) {
+            $validated['action_config'] = $this->validateActionConfig(
+                $board,
+                $validated['action_type'] ?? $automationRule->action_type,
+                $validated['action_config'] ?? $automationRule->action_config ?? [],
+            );
+        }
+
         $automationRule->update($validated);
 
         return response()->json($automationRule->fresh());
@@ -74,5 +103,100 @@ class AutomationRuleController extends Controller
         $automationRule->delete();
 
         return response()->json(['message' => 'Automation rule deleted']);
+    }
+
+    private function validateTriggerConfig(Board $board, string $triggerType, array $config): array
+    {
+        $teamId = $board->team_id;
+        $rules = match ($triggerType) {
+            'task_moved' => [
+                'from_column_id' => ['nullable', 'uuid', Rule::exists('columns', 'id')->where(fn ($query) => $query->where('board_id', $board->id))],
+                'to_column_id' => ['nullable', 'uuid', Rule::exists('columns', 'id')->where(fn ($query) => $query->where('board_id', $board->id))],
+            ],
+            'task_assigned' => [
+                'user_id' => ['nullable', 'uuid', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $teamId))],
+            ],
+            'label_added' => [
+                'label_id' => ['nullable', 'uuid', Rule::exists('labels', 'id')->where(fn ($query) => $query->where('team_id', $teamId))],
+            ],
+            'gitlab_pipeline_status' => [
+                'status' => ['nullable', 'string', 'max:50'],
+            ],
+            'priority_changed' => [
+                'priority' => ['nullable', 'string', Rule::in(['urgent', 'high', 'medium', 'low', 'none'])],
+            ],
+            default => [],
+        };
+
+        return $this->validateConfig($config, $rules);
+    }
+
+    private function validateActionConfig(Board $board, string $actionType, array $config): array
+    {
+        $teamId = $board->team_id;
+
+        $rules = match ($actionType) {
+            'move_to_column' => [
+                'column_id' => ['required', 'uuid', Rule::exists('columns', 'id')->where(fn ($query) => $query->where('board_id', $board->id))],
+            ],
+            'assign_user', 'unassign_user', 'add_watcher', 'remove_watcher' => [
+                'user_id' => ['required', 'uuid', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $teamId))],
+            ],
+            'add_label', 'remove_label' => [
+                'label_id' => ['required', 'uuid', Rule::exists('labels', 'id')->where(fn ($query) => $query->where('team_id', $teamId))],
+            ],
+            'send_notification' => [
+                'target' => [
+                    'required',
+                    'string',
+                    function (string $attribute, mixed $value, \Closure $fail) use ($teamId): void {
+                        if (in_array($value, ['assignees', 'watchers', 'creator'], true)) {
+                            return;
+                        }
+
+                        if (
+                            ! is_string($value)
+                            || ! Validator::make(
+                                ['target' => $value],
+                                ['target' => ['uuid', Rule::exists('team_members', 'user_id')->where(fn ($query) => $query->where('team_id', $teamId))]],
+                            )->passes()
+                        ) {
+                            $fail('The selected notification target is invalid.');
+                        }
+                    },
+                ],
+                'message' => ['nullable', 'string', 'max:1000'],
+            ],
+            'update_field' => $this->updateFieldRules($config),
+            default => [],
+        };
+
+        return $this->validateConfig($config, $rules);
+    }
+
+    private function updateFieldRules(array $config): array
+    {
+        $field = $config['field'] ?? null;
+
+        $valueRules = match ($field) {
+            'priority' => ['required', 'string', Rule::in(['urgent', 'high', 'medium', 'low', 'none'])],
+            'due_date' => ['required', 'date'],
+            'effort_estimate' => ['required', 'integer', 'min:0'],
+            default => ['required'],
+        };
+
+        return [
+            'field' => ['required', 'string', Rule::in(['priority', 'due_date', 'effort_estimate'])],
+            'value' => $valueRules,
+        ];
+    }
+
+    private function validateConfig(array $config, array $rules): array
+    {
+        if ($rules === []) {
+            return $config;
+        }
+
+        return Validator::make($config, $rules)->validate();
     }
 }

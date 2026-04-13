@@ -257,6 +257,59 @@ class ExecuteAutomationRulesTest extends TestCase
         $this->assertEquals('medium', $task->priority);
     }
 
+    public function test_assign_user_action_ignores_non_team_members(): void
+    {
+        $outsider = User::factory()->create();
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Invalid assignee',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'assign_user',
+            'action_config' => ['user_id' => $outsider->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $this->assertFalse($task->fresh()->assignees->contains($outsider));
+    }
+
+    public function test_send_notification_action_ignores_non_team_targets(): void
+    {
+        $outsider = User::factory()->create();
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Invalid notification target',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'send_notification',
+            'action_config' => [
+                'target' => $outsider->id,
+                'message' => 'Should stay inside the team',
+            ],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $outsider->id,
+        ]);
+    }
+
     public function test_pipeline_status_trigger_matches_status(): void
     {
         $task = Task::factory()->create([

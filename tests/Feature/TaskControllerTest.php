@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AutomationRule;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Label;
@@ -9,6 +10,7 @@ use App\Models\Task;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Notifications\DescriptionMentionedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -173,6 +175,45 @@ class TaskControllerTest extends TestCase
         $this->assertStringContainsString('data-type="mention"', $task->description ?? '');
     }
 
+    public function test_task_description_mentions_only_team_members(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $teammate = User::factory()->create();
+        $outsider = User::factory()->create();
+        $this->addTeamMember($teammate, $this->team);
+
+        $description = sprintf(
+            '<span data-type="mention" data-id="%s" data-label="%s">@%s</span> <span data-type="mention" data-id="%s" data-label="%s">@%s</span>',
+            $teammate->id,
+            $teammate->name,
+            $teammate->name,
+            $outsider->id,
+            $outsider->name,
+            $outsider->name,
+        );
+
+        $response = $this->actingAs($this->user)->put(
+            route('tasks.update', [$this->team, $this->board, $task]),
+            ['description' => $description]
+        );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $teammate->id,
+            'type' => DescriptionMentionedNotification::class,
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $outsider->id,
+            'type' => DescriptionMentionedNotification::class,
+        ]);
+    }
+
     public function test_task_creator_can_delete_task(): void
     {
         $task = Task::factory()->create([
@@ -266,6 +307,37 @@ class TaskControllerTest extends TestCase
         $this->assertTrue($task->fresh()->assignees->contains($assignee));
     }
 
+    public function test_assignment_automation_rules_fire_when_updating_task_assignees(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'priority' => 'medium',
+        ]);
+
+        $assignee = User::factory()->create();
+        $this->addTeamMember($assignee, $this->team);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Promote assigned tasks',
+            'trigger_type' => 'task_assigned',
+            'trigger_config' => ['user_id' => $assignee->id],
+            'action_type' => 'update_field',
+            'action_config' => ['field' => 'priority', 'value' => 'urgent'],
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('tasks.assignees.update', [$this->team, $this->board, $task]),
+            ['user_ids' => [$assignee->id]]
+        );
+
+        $response->assertRedirect();
+        $this->assertEquals('urgent', $task->fresh()->priority);
+    }
+
     public function test_update_task_labels(): void
     {
         $task = Task::factory()->create([
@@ -283,6 +355,36 @@ class TaskControllerTest extends TestCase
 
         $response->assertRedirect();
         $this->assertTrue($task->fresh()->labels->contains($label));
+    }
+
+    public function test_label_automation_rules_fire_when_updating_task_labels(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'priority' => 'medium',
+        ]);
+
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Prioritize labeled tasks',
+            'trigger_type' => 'label_added',
+            'trigger_config' => ['label_id' => $label->id],
+            'action_type' => 'update_field',
+            'action_config' => ['field' => 'priority', 'value' => 'urgent'],
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('tasks.labels.update', [$this->team, $this->board, $task]),
+            ['label_ids' => [$label->id]]
+        );
+
+        $response->assertRedirect();
+        $this->assertEquals('urgent', $task->fresh()->priority);
     }
 
     public function test_create_task_logs_activity(): void

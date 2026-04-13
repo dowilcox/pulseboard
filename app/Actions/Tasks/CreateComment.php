@@ -24,7 +24,9 @@ class CreateComment
 
         if (! $parentId) {
             // Top-level comments: full notification flow (assignees + mentions)
-            ActivityLogger::log($task, 'commented', [], $user);
+            ActivityLogger::log($task, 'commented', [
+                'comment_id' => $comment->id,
+            ], $user);
         } else {
             // Replies: only process @mentions (assignees are notified by
             // the parent comment's notification, not again for each reply)

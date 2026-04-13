@@ -10,6 +10,7 @@ use App\Models\Task;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Notifications\TaskMentionedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -154,6 +155,39 @@ class CommentLabelTest extends TestCase
         $this->assertStringNotContainsString('javascript:alert(1)', $comment->body);
         $this->assertStringNotContainsString('onerror=', $comment->body);
         $this->assertStringContainsString('data-type="mention"', $comment->body);
+    }
+
+    public function test_comment_mentions_only_team_members(): void
+    {
+        $teammate = User::factory()->create();
+        $outsider = User::factory()->create();
+        $this->addTeamMember($teammate, $this->team);
+
+        $body = sprintf(
+            '<span data-type="mention" data-id="%s" data-label="%s">@%s</span> <span data-type="mention" data-id="%s" data-label="%s">@%s</span>',
+            $teammate->id,
+            $teammate->name,
+            $teammate->name,
+            $outsider->id,
+            $outsider->name,
+            $outsider->name,
+        );
+
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => $body]
+        );
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $teammate->id,
+            'type' => TaskMentionedNotification::class,
+        ]);
+        $this->assertDatabaseMissing('notifications', [
+            'notifiable_id' => $outsider->id,
+            'type' => TaskMentionedNotification::class,
+        ]);
     }
 
     // ---------------------------------------------------------------

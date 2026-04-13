@@ -2,7 +2,6 @@
 
 namespace App\Actions\Tasks;
 
-use App\Events\NotificationCreated;
 use App\Models\Task;
 use App\Notifications\DescriptionMentionedNotification;
 use App\Services\ActivityLogger;
@@ -89,27 +88,25 @@ class UpdateTask
             return;
         }
 
+        $task->loadMissing('board.team');
+
         $newMentions = MentionParser::findNewMentions(
             $oldDescription,
             $newDescription,
             [$actor->id],
+            $task->board->team,
         );
-
-        $task->loadMissing('board.team');
 
         foreach ($newMentions as $user) {
             $notification = new DescriptionMentionedNotification($task, $actor);
             $user->notify($notification);
 
-            $dbNotification = $user->notifications()->latest()->first();
-            if ($dbNotification) {
-                broadcast(new NotificationCreated(
-                    userId: $user->id,
-                    notificationId: $dbNotification->id,
-                    type: 'DescriptionMentionedNotification',
-                    message: "{$actor->name} mentioned you in the description of \"{$task->title}\"",
-                ));
-            }
+            ActivityLogger::broadcastDatabaseNotification(
+                $user,
+                $notification,
+                "{$actor->name} mentioned you in the description of \"{$task->title}\"",
+                'DescriptionMentionedNotification',
+            );
         }
     }
 

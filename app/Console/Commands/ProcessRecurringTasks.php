@@ -14,23 +14,35 @@ class ProcessRecurringTasks extends Command
 
     public function handle(): int
     {
-        $tasks = Task::query()
+        $taskIds = Task::query()
             ->whereNotNull('recurrence_config')
             ->whereNotNull('recurrence_next_at')
             ->where('recurrence_next_at', '<=', now())
-            ->get();
+            ->pluck('id');
 
         $created = 0;
 
-        foreach ($tasks as $task) {
+        foreach ($taskIds as $taskId) {
             try {
-                DB::transaction(function () use ($task, &$created) {
+                DB::transaction(function () use ($taskId, &$created) {
+                    $task = Task::query()
+                        ->whereKey($taskId)
+                        ->whereNotNull('recurrence_config')
+                        ->whereNotNull('recurrence_next_at')
+                        ->where('recurrence_next_at', '<=', now())
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (! $task) {
+                        return;
+                    }
+
                     $this->createRecurringTask($task);
                     $this->advanceNextRecurrence($task);
                     $created++;
                 });
             } catch (\Throwable $e) {
-                $this->error("Failed to process recurring task {$task->id}: {$e->getMessage()}");
+                $this->error("Failed to process recurring task {$taskId}: {$e->getMessage()}");
             }
         }
 

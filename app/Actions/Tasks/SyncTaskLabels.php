@@ -31,6 +31,7 @@ class SyncTaskLabels
             $changes = [];
             if (! empty($added)) {
                 $changes['added'] = Label::whereIn('id', $added)->pluck('name')->toArray();
+                $changes['added_label_ids'] = array_values($added);
             }
             if (! empty($removed)) {
                 $changes['removed'] = Label::whereIn('id', $removed)->pluck('name')->toArray();

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -28,16 +29,31 @@ class MentionParser
     /**
      * Find User models for the mentioned IDs, excluding certain users.
      */
-    public static function findMentionedUsers(string $content, array $excludeIds = []): Collection
-    {
+    public static function findMentionedUsers(
+        string $content,
+        array $excludeIds = [],
+        ?Team $team = null,
+    ): Collection {
         $userIds = static::extractUserIds($content);
 
+        return static::queryMentionedUsers($userIds, $excludeIds, $team);
+    }
+
+    public static function queryMentionedUsers(
+        array $userIds,
+        array $excludeIds = [],
+        ?Team $team = null,
+    ): Collection {
         if (empty($userIds)) {
             return collect();
         }
 
         $query = User::whereIn('id', $userIds)
             ->whereNull('deactivated_at');
+
+        if ($team) {
+            $query->whereHas('teams', fn ($teamQuery) => $teamQuery->where('teams.id', $team->id));
+        }
 
         if (! empty($excludeIds)) {
             $query->whereNotIn('id', $excludeIds);
@@ -55,6 +71,7 @@ class MentionParser
         ?string $oldContent,
         string $newContent,
         array $excludeIds = [],
+        ?Team $team = null,
     ): Collection {
         $oldIds = $oldContent ? static::extractUserIds($oldContent) : [];
         $newIds = static::extractUserIds($newContent);
@@ -66,9 +83,10 @@ class MentionParser
 
         $allExclude = array_merge($excludeIds, $oldIds);
 
-        return User::whereIn('id', $addedIds)
-            ->whereNotIn('id', array_unique($allExclude))
-            ->whereNull('deactivated_at')
-            ->get();
+        return static::queryMentionedUsers(
+            array_values($addedIds),
+            array_unique($allExclude),
+            $team,
+        );
     }
 }

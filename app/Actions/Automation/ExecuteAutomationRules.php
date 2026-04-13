@@ -6,6 +6,7 @@ use App\Events\NotificationCreated;
 use App\Models\AutomationRule;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Label;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\AutomationNotification;
@@ -80,7 +81,11 @@ class ExecuteAutomationRules
     private function matchTaskAssigned(array $config, array $context): bool
     {
         if (! empty($config['user_id'])) {
-            return ($context['user_id'] ?? null) === $config['user_id'];
+            if (isset($context['user_id'])) {
+                return $context['user_id'] === $config['user_id'];
+            }
+
+            return in_array($config['user_id'], $context['user_ids'] ?? [], true);
         }
 
         return true;
@@ -89,7 +94,11 @@ class ExecuteAutomationRules
     private function matchLabelAdded(array $config, array $context): bool
     {
         if (! empty($config['label_id'])) {
-            return ($context['label_id'] ?? null) === $config['label_id'];
+            if (isset($context['label_id'])) {
+                return $context['label_id'] === $config['label_id'];
+            }
+
+            return in_array($config['label_id'], $context['added_label_ids'] ?? [], true);
         }
 
         return true;
@@ -123,6 +132,8 @@ class ExecuteAutomationRules
         if (! $task) {
             return;
         }
+
+        $task->loadMissing('board.team');
 
         $config = $rule->action_config ?? [];
 
@@ -159,28 +170,28 @@ class ExecuteAutomationRules
 
     private function actionAssignUser(Task $task, array $config): void
     {
-        $userId = $config['user_id'] ?? null;
-        if (! $userId) {
+        $user = $this->resolveTeamMember($task, $config['user_id'] ?? null);
+        if (! $user) {
             return;
         }
 
-        if (! $task->assignees()->where('users.id', $userId)->exists()) {
-            $task->assignees()->attach($userId, [
+        if (! $task->assignees()->where('users.id', $user->id)->exists()) {
+            $task->assignees()->attach($user->id, [
                 'assigned_at' => now(),
-                'assigned_by' => $userId,
+                'assigned_by' => $task->created_by ?? $user->id,
             ]);
         }
     }
 
     private function actionAddLabel(Task $task, array $config): void
     {
-        $labelId = $config['label_id'] ?? null;
-        if (! $labelId) {
+        $label = $this->resolveTeamLabel($task, $config['label_id'] ?? null);
+        if (! $label) {
             return;
         }
 
-        if (! $task->labels()->where('labels.id', $labelId)->exists()) {
-            $task->labels()->attach($labelId);
+        if (! $task->labels()->where('labels.id', $label->id)->exists()) {
+            $task->labels()->attach($label->id);
         }
     }
 
@@ -213,33 +224,33 @@ class ExecuteAutomationRules
 
     private function actionRemoveLabel(Task $task, array $config): void
     {
-        $labelId = $config['label_id'] ?? null;
-        if (! $labelId) {
+        $label = $this->resolveTeamLabel($task, $config['label_id'] ?? null);
+        if (! $label) {
             return;
         }
 
-        $task->labels()->detach($labelId);
+        $task->labels()->detach($label->id);
     }
 
     private function actionUnassignUser(Task $task, array $config): void
     {
-        $userId = $config['user_id'] ?? null;
-        if (! $userId) {
+        $user = $this->resolveTeamMember($task, $config['user_id'] ?? null);
+        if (! $user) {
             return;
         }
 
-        $task->assignees()->detach($userId);
+        $task->assignees()->detach($user->id);
     }
 
     private function actionAddWatcher(Task $task, array $config): void
     {
-        $userId = $config['user_id'] ?? null;
-        if (! $userId) {
+        $user = $this->resolveTeamMember($task, $config['user_id'] ?? null);
+        if (! $user) {
             return;
         }
 
-        if (! $task->watchers()->where('users.id', $userId)->exists()) {
-            $task->watchers()->attach($userId, [
+        if (! $task->watchers()->where('users.id', $user->id)->exists()) {
+            $task->watchers()->attach($user->id, [
                 'created_at' => now(),
             ]);
         }
@@ -247,12 +258,12 @@ class ExecuteAutomationRules
 
     private function actionRemoveWatcher(Task $task, array $config): void
     {
-        $userId = $config['user_id'] ?? null;
-        if (! $userId) {
+        $user = $this->resolveTeamMember($task, $config['user_id'] ?? null);
+        if (! $user) {
             return;
         }
 
-        $task->watchers()->detach($userId);
+        $task->watchers()->detach($user->id);
     }
 
     private function actionSendNotification(Task $task, array $config, AutomationRule $rule): void
@@ -265,23 +276,50 @@ class ExecuteAutomationRules
         $users = match ($target) {
             'assignees' => $task->assignees()->get(),
             'watchers' => $task->watchers()->get(),
-            'creator' => collect($task->created_by ? [User::find($task->created_by)] : [])->filter(),
-            default => collect([User::find($target)])->filter(),
+            'creator' => collect([$this->resolveTeamMember($task, $task->created_by)])->filter(),
+            default => collect([$this->resolveTeamMember($task, $target)])->filter(),
         };
 
         foreach ($users as $user) {
             $notification = new AutomationNotification($task, $message);
             $user->notify($notification);
 
-            $dbNotification = $user->notifications()->latest()->first();
-            if ($dbNotification) {
+            if (
+                method_exists($notification, 'via')
+                && in_array('database', $notification->via($user), true)
+                && ($notification->id ?? null)
+            ) {
                 broadcast(new NotificationCreated(
                     userId: $user->id,
-                    notificationId: $dbNotification->id,
+                    notificationId: $notification->id,
                     type: 'AutomationNotification',
                     message: $message,
                 ));
             }
         }
+    }
+
+    private function resolveTeamMember(Task $task, ?string $userId): ?User
+    {
+        if (! $userId) {
+            return null;
+        }
+
+        return $task->board->team
+            ->members()
+            ->where('users.id', $userId)
+            ->whereNull('users.deactivated_at')
+            ->first();
+    }
+
+    private function resolveTeamLabel(Task $task, ?string $labelId): ?Label
+    {
+        if (! $labelId) {
+            return null;
+        }
+
+        return Label::where('team_id', $task->board->team_id)
+            ->where('id', $labelId)
+            ->first();
     }
 }

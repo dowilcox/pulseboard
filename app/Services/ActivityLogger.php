@@ -72,7 +72,7 @@ class ActivityLogger
 
         match ($action) {
             'assigned' => static::notifyAssigned($task, $changes, $actor),
-            'commented' => static::notifyCommented($task, $actor),
+            'commented' => static::notifyCommented($task, $changes, $actor),
             'completed' => static::notifyCompleted($task, $actor),
             'attachment_added' => static::notifyAttachmentAdded(
                 $task,
@@ -106,10 +106,16 @@ class ActivityLogger
         }
     }
 
-    protected static function notifyCommented(Task $task, User $commenter): void
-    {
-        $latestComment = $task->comments()->latest()->first();
-        if (! $latestComment) {
+    protected static function notifyCommented(
+        Task $task,
+        array $changes,
+        User $commenter,
+    ): void {
+        $comment = isset($changes['comment_id'])
+            ? $task->comments()->find($changes['comment_id'])
+            : $task->comments()->latest()->first();
+
+        if (! $comment) {
             return;
         }
 
@@ -123,7 +129,7 @@ class ActivityLogger
             $notification = new TaskCommentedNotification(
                 $task,
                 $commenter,
-                $latestComment,
+                $comment,
             );
             $user->notify($notification);
 
@@ -140,7 +146,7 @@ class ActivityLogger
             $notification = new TaskCommentedNotification(
                 $task,
                 $commenter,
-                $latestComment,
+                $comment,
             );
             $user->notify($notification);
 
@@ -151,15 +157,16 @@ class ActivityLogger
         $alreadyNotified = array_merge($alreadyNotified, $watchers->pluck('id')->toArray());
 
         $mentionedUsers = MentionParser::findMentionedUsers(
-            $latestComment->body,
+            $comment->body,
             $alreadyNotified,
+            $task->board->team,
         );
 
         foreach ($mentionedUsers as $user) {
             $notification = new TaskMentionedNotification(
                 $task,
                 $commenter,
-                $latestComment,
+                $comment,
             );
             $user->notify($notification);
 
@@ -179,6 +186,7 @@ class ActivityLogger
         $mentionedUsers = MentionParser::findMentionedUsers(
             $comment->body,
             [$commenter->id],
+            $task->board->team,
         );
 
         foreach ($mentionedUsers as $user) {
@@ -283,19 +291,40 @@ class ActivityLogger
             default => 'New notification',
         };
 
-        // Get the notification ID from the database
-        $dbNotification = $user->notifications()->latest()->first();
+        static::broadcastDatabaseNotification(
+            $user,
+            $notification,
+            $message,
+        );
+    }
 
-        if ($dbNotification) {
-            broadcast(
-                new NotificationCreated(
-                    userId: $user->id,
-                    notificationId: $dbNotification->id,
-                    type: class_basename($notification),
-                    message: $message,
-                ),
-            );
+    public static function broadcastDatabaseNotification(
+        User $user,
+        object $notification,
+        string $message,
+        ?string $type = null,
+    ): void {
+        if (
+            ! method_exists($notification, 'via')
+            || ! in_array('database', $notification->via($user), true)
+        ) {
+            return;
         }
+
+        $notificationId = $notification->id ?? null;
+
+        if (! $notificationId) {
+            return;
+        }
+
+        broadcast(
+            new NotificationCreated(
+                userId: $user->id,
+                notificationId: $notificationId,
+                type: $type ?? class_basename($notification),
+                message: $message,
+            ),
+        );
     }
 
     protected static function executeAutomationRules(
@@ -314,39 +343,57 @@ class ActivityLogger
             'commented' => 'comment_added',
         ];
 
-        $triggers = [];
+        $baseContext = array_merge($changes, ['task_id' => $task->id]);
+        $triggerContexts = [];
 
-        if (isset($triggerMap[$action])) {
-            $triggers[] = $triggerMap[$action];
+        if ($action === 'assigned') {
+            $userIds = array_values($changes['user_ids'] ?? []);
+
+            if (! empty($userIds)) {
+                $triggerContexts['task_assigned'] = array_map(
+                    fn (string $userId) => array_merge($baseContext, ['user_id' => $userId]),
+                    $userIds,
+                );
+            }
+        } elseif ($action === 'labels_changed') {
+            $labelIds = array_values($changes['added_label_ids'] ?? []);
+
+            if (! empty($labelIds)) {
+                $triggerContexts['label_added'] = array_map(
+                    fn (string $labelId) => array_merge($baseContext, ['label_id' => $labelId]),
+                    $labelIds,
+                );
+            }
+        } elseif (isset($triggerMap[$action])) {
+            $triggerContexts[$triggerMap[$action]] = [$baseContext];
         }
 
-        // Field changes may fire additional triggers
         if ($action === 'field_changed' && isset($changes['priority'])) {
-            $triggers[] = 'priority_changed';
+            $triggerContexts['priority_changed'] = [$baseContext];
         }
 
-        if (empty($triggers)) {
+        if (empty($triggerContexts)) {
             return;
         }
 
-        $context = array_merge($changes, ['task_id' => $task->id]);
-
-        foreach ($triggers as $triggerType) {
-            try {
-                ExecuteAutomationRules::run(
-                    $task->board,
-                    $triggerType,
-                    $context,
-                );
-            } catch (\Throwable $e) {
-                Log::warning(
-                    'Automation execution failed',
-                    [
-                        'task_id' => $task->id,
-                        'trigger' => $triggerType,
-                        'error' => $e->getMessage(),
-                    ],
-                );
+        foreach ($triggerContexts as $triggerType => $contexts) {
+            foreach ($contexts as $context) {
+                try {
+                    ExecuteAutomationRules::run(
+                        $task->board,
+                        $triggerType,
+                        $context,
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning(
+                        'Automation execution failed',
+                        [
+                            'task_id' => $task->id,
+                            'trigger' => $triggerType,
+                            'error' => $e->getMessage(),
+                        ],
+                    );
+                }
             }
         }
     }

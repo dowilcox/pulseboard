@@ -105,6 +105,45 @@ class AutomationFilterTest extends TestCase
         ]);
     }
 
+    public function test_cannot_create_rule_with_cross_team_trigger_target(): void
+    {
+        $outsider = User::factory()->create();
+
+        $response = $this->actingAs($this->user)->postJson(
+            route('boards.automation-rules.store', [$this->team, $this->board]),
+            [
+                'name' => 'Invalid trigger target',
+                'trigger_type' => 'task_assigned',
+                'trigger_config' => ['user_id' => $outsider->id],
+                'action_type' => 'move_to_column',
+                'action_config' => ['column_id' => $this->column->id],
+            ]
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('trigger_config.user_id');
+    }
+
+    public function test_cannot_create_rule_with_cross_team_action_target(): void
+    {
+        $otherTeam = Team::factory()->create();
+        $otherBoard = Board::factory()->create(['team_id' => $otherTeam->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+
+        $response = $this->actingAs($this->user)->postJson(
+            route('boards.automation-rules.store', [$this->team, $this->board]),
+            [
+                'name' => 'Invalid action target',
+                'trigger_type' => 'task_created',
+                'action_type' => 'move_to_column',
+                'action_config' => ['column_id' => $otherColumn->id],
+            ]
+        );
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('action_config.column_id');
+    }
+
     public function test_can_update_automation_rule(): void
     {
         $rule = AutomationRule::create([
