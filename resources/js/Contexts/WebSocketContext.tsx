@@ -2,11 +2,11 @@ import {
     createContext,
     useContext,
     useEffect,
-    useState,
     useMemo,
+    useState,
     type ReactNode,
 } from "react";
-import { router, usePage } from "@inertiajs/react";
+import { usePage } from "@inertiajs/react";
 import { createEcho } from "@/echo";
 import type Echo from "laravel-echo";
 import type { PageProps } from "@/types";
@@ -16,11 +16,13 @@ type ConnectionStatus = "connected" | "connecting" | "disconnected";
 interface WebSocketContextValue {
     echo: Echo<"reverb"> | null;
     connectionStatus: ConnectionStatus;
+    reconnectVersion: number;
 }
 
 const WebSocketContext = createContext<WebSocketContextValue>({
     echo: null,
     connectionStatus: "disconnected",
+    reconnectVersion: 0,
 });
 
 export function useWebSocket() {
@@ -32,6 +34,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const [connectionStatus, setConnectionStatus] =
         useState<ConnectionStatus>("disconnected");
     const [echo, setEcho] = useState<Echo<"reverb"> | null>(null);
+    const [reconnectVersion, setReconnectVersion] = useState(0);
 
     useEffect(() => {
         if (!reverb?.key || !reverb?.host) {
@@ -75,10 +78,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             setConnectionStatus("connected");
         }
 
-        // On reconnect, reload to catch up on missed events.
-        // Guard against reload loops by tracking recent reload attempts.
         let wasDisconnected = false;
-        let lastReloadAt = 0;
         const handleStateChange = ({
             current,
             previous,
@@ -91,13 +91,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             }
             if (wasDisconnected && current === "connected") {
                 wasDisconnected = false;
-                const now = Date.now();
-                // Prevent reload if we just reloaded within the last 5 seconds
-                // (avoids loops when session is expired and 419 triggers another reload)
-                if (now - lastReloadAt > 5000) {
-                    lastReloadAt = now;
-                    router.reload();
-                }
+                setReconnectVersion((prev) => prev + 1);
             }
         };
         pusher.connection.bind("state_change", handleStateChange);
@@ -118,8 +112,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         () => ({
             echo,
             connectionStatus,
+            reconnectVersion,
         }),
-        [echo, connectionStatus],
+        [echo, connectionStatus, reconnectVersion],
     );
 
     return (

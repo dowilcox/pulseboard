@@ -8,6 +8,7 @@ import ChecklistEditor from "@/Components/Tasks/ChecklistEditor";
 import LinkEditor from "@/Components/Tasks/LinkEditor";
 import SubtaskList from "@/Components/Tasks/SubtaskList";
 import TaskSidebar from "@/Components/Tasks/TaskSidebar";
+import { useWebSocket } from "@/Contexts/WebSocketContext";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -62,6 +63,7 @@ export default function TasksShow({
     isWatching,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
+    const { reconnectVersion } = useWebSocket();
 
     // Local state for debounced fields
     const [title, setTitle] = useState(task.title);
@@ -128,6 +130,16 @@ export default function TasksShow({
                 event.action === "task.deleted" &&
                 event.data.task_id === task.id
             ) {
+                if (event.data.to_board_slug && event.data.task_slug) {
+                    router.visit(
+                        route("tasks.show", [
+                            team.slug,
+                            event.data.to_board_slug,
+                            event.data.task_slug,
+                        ]),
+                    );
+                    return;
+                }
                 router.visit(
                     route("teams.boards.show", [team.slug, board.slug]),
                 );
@@ -140,6 +152,12 @@ export default function TasksShow({
         [task.id, team.slug, board.slug],
     );
     useBoardChannel(board.id, handleBoardEvent);
+
+    useEffect(() => {
+        if (reconnectVersion === 0) return;
+
+        router.reload();
+    }, [reconnectVersion]);
 
     // Debounced save helpers
     const saveField = useCallback(

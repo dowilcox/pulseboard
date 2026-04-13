@@ -44,13 +44,14 @@ class NotificationControllerTest extends TestCase
     public function test_can_list_notifications(): void
     {
         $this->createNotification($this->user);
-        $this->createNotification($this->user);
+        $this->createNotification($this->user, now());
 
         $response = $this->actingAs($this->user)
             ->getJson(route('notifications.index'));
 
         $response->assertOk();
         $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('unread_count', 1);
     }
 
     public function test_can_mark_notification_as_read(): void

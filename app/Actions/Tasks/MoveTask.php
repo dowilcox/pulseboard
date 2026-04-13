@@ -66,7 +66,11 @@ class MoveTask
             broadcast(new BoardChanged(
                 boardId: $fromBoard->id,
                 action: 'task.deleted',
-                data: ['task_id' => $task->id],
+                data: [
+                    'task_id' => $task->id,
+                    'task_slug' => $task->slug,
+                    'to_board_slug' => $targetBoard->slug,
+                ],
                 userId: Auth::id(),
             ))->toOthers();
         } elseif ($fromColumn->id !== $column->id) {

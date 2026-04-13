@@ -6,6 +6,7 @@ import ViewSwitcher from "@/Components/Views/ViewSwitcher";
 import WorkloadView from "@/Components/Views/WorkloadView";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import { usePresence } from "@/hooks/usePresence";
+import { useWebSocket } from "@/Contexts/WebSocketContext";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type {
@@ -26,7 +27,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Props {
     board: Board;
@@ -61,6 +62,7 @@ export default function BoardsShow({
 
     // Real-time: presence
     const presenceUsers = usePresence(board.id);
+    const { reconnectVersion } = useWebSocket();
 
     // Real-time: board channel listener
     const handleBoardEvent = useCallback(
@@ -73,10 +75,11 @@ export default function BoardsShow({
 
                 // These don't affect the board view
                 case "commented":
-                case "comment.created":
                 case "comment.replied":
-                case "comment.updated":
                 case "comment.deleted":
+                    router.reload({ only: ["board"] });
+                    break;
+                case "comment.updated":
                 case "attachment_added":
                 case "attachment_removed":
                     break;
@@ -91,6 +94,12 @@ export default function BoardsShow({
     );
 
     useBoardChannel(board.id, handleBoardEvent);
+
+    useEffect(() => {
+        if (reconnectVersion === 0) return;
+
+        router.reload({ only: ["board"] });
+    }, [reconnectVersion]);
 
     const handleTaskClick = (task: Task) => {
         router.visit(route("tasks.show", [team.slug, board.slug, task.slug]));

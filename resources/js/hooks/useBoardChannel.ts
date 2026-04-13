@@ -5,9 +5,11 @@ export interface BoardEvent {
     action: string;
     data: {
         task_id?: string;
+        task_slug?: string;
         column_id?: string;
         sort_order?: number;
         comment_id?: string;
+        to_board_slug?: string;
         changes?: Record<string, unknown>;
     };
     user_id: string;

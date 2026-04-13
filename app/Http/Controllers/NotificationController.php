@@ -14,7 +14,10 @@ class NotificationController extends Controller
             ->latest()
             ->paginate(20);
 
-        return response()->json($notifications);
+        return response()->json([
+            ...$notifications->toArray(),
+            'unread_count' => $request->user()->unreadNotifications()->count(),
+        ]);
     }
 
     public function markRead(Request $request, string $id): JsonResponse

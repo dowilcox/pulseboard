@@ -34,7 +34,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
     task: Task;
@@ -76,6 +76,35 @@ export default function TaskSidebar({
     const recurrenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
         null,
     );
+
+    useEffect(() => {
+        return () => {
+            if (effortTimeoutRef.current)
+                clearTimeout(effortTimeoutRef.current);
+            if (recurrenceTimeoutRef.current)
+                clearTimeout(recurrenceTimeoutRef.current);
+        };
+    }, []);
+
+    useEffect(() => {
+        setDueDate(task.due_date ?? "");
+    }, [task.due_date]);
+
+    useEffect(() => {
+        if (!effortTimeoutRef.current) {
+            setEffortEstimate(
+                task.effort_estimate != null
+                    ? String(task.effort_estimate)
+                    : "",
+            );
+        }
+    }, [task.effort_estimate]);
+
+    useEffect(() => {
+        if (!recurrenceTimeoutRef.current) {
+            setRecurrenceConfig(task.recurrence_config ?? null);
+        }
+    }, [task.recurrence_config]);
 
     const saveField = useCallback(
         (data: Record<string, unknown>) => {
@@ -142,6 +171,7 @@ export default function TaskSidebar({
         setEffortEstimate(value);
         if (effortTimeoutRef.current) clearTimeout(effortTimeoutRef.current);
         effortTimeoutRef.current = setTimeout(() => {
+            effortTimeoutRef.current = null;
             const num = parseInt(value);
             saveField({ effort_estimate: isNaN(num) ? null : num });
         }, 600);
@@ -151,10 +181,10 @@ export default function TaskSidebar({
         setRecurrenceConfig(config);
         if (recurrenceTimeoutRef.current)
             clearTimeout(recurrenceTimeoutRef.current);
-        recurrenceTimeoutRef.current = setTimeout(
-            () => saveField({ recurrence_config: config }),
-            600,
-        );
+        recurrenceTimeoutRef.current = setTimeout(() => {
+            recurrenceTimeoutRef.current = null;
+            saveField({ recurrence_config: config });
+        }, 600);
     };
 
     const handleDelete = () => {

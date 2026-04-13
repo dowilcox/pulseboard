@@ -2,7 +2,11 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { usePage } from "@inertiajs/react";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
-import type { AppNotification, PageProps } from "@/types";
+import type {
+    AppNotification,
+    NotificationIndexResponse,
+    PageProps,
+} from "@/types";
 
 type NotificationError = "fetch" | "mark_read" | "mark_all_read" | "clear_all";
 
@@ -14,7 +18,7 @@ interface NotificationEvent {
 
 export function useNotifications() {
     const { auth, unreadNotificationsCount } = usePage<PageProps>().props;
-    const { echo } = useWebSocket();
+    const { echo, reconnectVersion } = useWebSocket();
     const [unreadCount, setUnreadCount] = useState(
         unreadNotificationsCount ?? 0,
     );
@@ -41,10 +45,14 @@ export function useNotifications() {
         fetchControllerRef.current = controller;
         try {
             setError(null);
-            const { data } = await axios.get(route("notifications.index"), {
-                signal: controller.signal,
-            });
+            const { data } = await axios.get<NotificationIndexResponse>(
+                route("notifications.index"),
+                {
+                    signal: controller.signal,
+                },
+            );
             setNotifications(data.data ?? []);
+            setUnreadCount(data.unread_count ?? 0);
             setLoaded(true);
         } catch (err) {
             if (axios.isCancel(err)) return;
@@ -74,6 +82,12 @@ export function useNotifications() {
             echo.leave(`user.${auth.user.id}`);
         };
     }, [auth.user?.id, echo, fetchNotifications]);
+
+    useEffect(() => {
+        if (!auth.user || reconnectVersion === 0) return;
+
+        fetchNotifications();
+    }, [auth.user?.id, reconnectVersion, fetchNotifications]);
 
     const markRead = useCallback(async (id: string) => {
         try {

@@ -33,16 +33,18 @@ class CreateComment
             ActivityLogger::notifyMentionsInComment($task, $comment, $user);
         }
 
-        broadcast(new BoardChanged(
-            boardId: $task->board_id,
-            action: $parentId ? 'comment.replied' : 'comment.created',
-            data: [
-                'task_id' => $task->id,
-                'comment_id' => $comment->id,
-                'parent_id' => $parentId,
-            ],
-            userId: $user->id,
-        ))->toOthers();
+        if ($parentId) {
+            broadcast(new BoardChanged(
+                boardId: $task->board_id,
+                action: 'comment.replied',
+                data: [
+                    'task_id' => $task->id,
+                    'comment_id' => $comment->id,
+                    'parent_id' => $parentId,
+                ],
+                userId: $user->id,
+            ))->toOthers();
+        }
 
         return $comment->load('user');
     }

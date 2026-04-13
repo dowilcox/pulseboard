@@ -14,7 +14,7 @@ export function usePresence(boardId: string) {
     useEffect(() => {
         if (!echo) return;
 
-        const channel = echo.join(`presence-board.${boardId}`);
+        const channel = echo.join(`board.${boardId}`);
 
         channel
             .here((members: PresenceUser[]) => {
@@ -31,7 +31,7 @@ export function usePresence(boardId: string) {
             });
 
         return () => {
-            echo.leave(`presence-board.${boardId}`);
+            echo.leave(`board.${boardId}`);
         };
     }, [boardId, echo]);
 

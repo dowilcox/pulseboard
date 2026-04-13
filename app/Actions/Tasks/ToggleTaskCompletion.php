@@ -2,7 +2,6 @@
 
 namespace App\Actions\Tasks;
 
-use App\Events\BoardChanged;
 use App\Models\Column;
 use App\Models\Task;
 use App\Models\User;
@@ -49,13 +48,6 @@ class ToggleTaskCompletion
                 }
             }
         }
-
-        BoardChanged::dispatch(
-            boardId: $task->board_id,
-            action: $task->completed_at ? 'task.completed' : 'task.uncompleted',
-            data: ['task_id' => $task->id],
-            userId: $user->id,
-        );
 
         return $task;
     }

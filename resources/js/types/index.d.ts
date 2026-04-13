@@ -126,6 +126,10 @@ export interface PaginatedResponse<T> {
     prev_page_url: string | null;
 }
 
+export interface NotificationIndexResponse extends PaginatedResponse<AppNotification> {
+    unread_count: number;
+}
+
 export interface ChecklistItem {
     id: string;
     text: string;
