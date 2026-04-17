@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class AutomationRuleController extends Controller
 {
@@ -128,7 +129,7 @@ class AutomationRuleController extends Controller
             default => [],
         };
 
-        return $this->validateConfig($config, $rules);
+        return $this->validateConfig($config, $rules, 'trigger_config');
     }
 
     private function validateActionConfig(Board $board, string $actionType, array $config): array
@@ -171,7 +172,7 @@ class AutomationRuleController extends Controller
             default => [],
         };
 
-        return $this->validateConfig($config, $rules);
+        return $this->validateConfig($config, $rules, 'action_config');
     }
 
     private function updateFieldRules(array $config): array
@@ -191,12 +192,20 @@ class AutomationRuleController extends Controller
         ];
     }
 
-    private function validateConfig(array $config, array $rules): array
+    private function validateConfig(array $config, array $rules, string $prefix): array
     {
         if ($rules === []) {
             return $config;
         }
 
-        return Validator::make($config, $rules)->validate();
+        try {
+            return Validator::make($config, $rules)->validate();
+        } catch (ValidationException $e) {
+            $prefixed = [];
+            foreach ($e->errors() as $key => $messages) {
+                $prefixed["{$prefix}.{$key}"] = $messages;
+            }
+            throw ValidationException::withMessages($prefixed);
+        }
     }
 }
