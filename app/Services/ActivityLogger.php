@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Log;
 
 class ActivityLogger
 {
+    private const MAX_AUTOMATION_DEPTH = 3;
+
+    private static int $automationDepth = 0;
+
     public static function log(
         Task $task,
         string $action,
@@ -328,6 +332,30 @@ class ActivityLogger
     }
 
     protected static function executeAutomationRules(
+        Task $task,
+        string $action,
+        array $changes,
+    ): void {
+        if (self::$automationDepth >= self::MAX_AUTOMATION_DEPTH) {
+            Log::warning('Automation cascade depth limit reached', [
+                'task_id' => $task->id,
+                'action' => $action,
+                'depth' => self::$automationDepth,
+            ]);
+
+            return;
+        }
+
+        self::$automationDepth++;
+
+        try {
+            static::runAutomationRules($task, $action, $changes);
+        } finally {
+            self::$automationDepth--;
+        }
+    }
+
+    protected static function runAutomationRules(
         Task $task,
         string $action,
         array $changes,
