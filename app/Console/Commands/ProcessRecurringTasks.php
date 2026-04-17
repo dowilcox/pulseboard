@@ -98,15 +98,22 @@ class ProcessRecurringTasks extends Command
     private function advanceNextRecurrence(Task $task): void
     {
         $config = $task->recurrence_config;
-        $interval = $config['interval'] ?? 1;
+        $interval = max(1, (int) ($config['interval'] ?? 1));
+        $frequency = $config['frequency'] ?? null;
 
-        $next = match ($config['frequency'] ?? null) {
-            'daily' => $task->recurrence_next_at->addDays($interval),
-            'weekly' => $task->recurrence_next_at->addWeeks($interval),
-            'monthly' => $task->recurrence_next_at->addMonths($interval),
-            'custom' => $task->recurrence_next_at->addDays($interval),
-            default => null,
-        };
+        $next = $task->recurrence_next_at;
+        $now = now();
+        do {
+            $next = match ($frequency) {
+                'daily', 'custom' => $next->addDays($interval),
+                'weekly' => $next->addWeeks($interval),
+                'monthly' => $next->addMonths($interval),
+                default => null,
+            };
+            if ($next === null) {
+                break;
+            }
+        } while ($next <= $now);
 
         $task->update(['recurrence_next_at' => $next]);
     }

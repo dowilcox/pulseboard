@@ -126,4 +126,24 @@ class RecurringTaskTest extends TestCase
 
         $this->assertDatabaseCount('tasks', 1);
     }
+
+    public function test_overdue_recurring_task_creates_single_copy_and_skips_forward(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Backlogged daily',
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 1],
+            'recurrence_next_at' => now()->subDays(5),
+        ]);
+
+        $this->artisan('tasks:process-recurring')
+            ->assertSuccessful();
+
+        $this->assertDatabaseCount('tasks', 2);
+
+        $task->refresh();
+        $this->assertTrue($task->recurrence_next_at->isFuture());
+    }
 }
