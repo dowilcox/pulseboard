@@ -23,6 +23,7 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .serena
+/.worktrees
 
 **/caddy
 frankenphp
