@@ -95,6 +95,45 @@ class AttachmentControllerTest extends TestCase
         $response->assertSessionHasErrors('file');
     }
 
+    public function test_upload_rejects_php_payload_masquerading_as_image(): void
+    {
+        Storage::fake('local');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'pulseboard-test-');
+        file_put_contents($tempPath, "<?php phpinfo(); ?>\n");
+
+        $file = new UploadedFile(
+            $tempPath,
+            'shell.jpg',
+            'image/jpeg',
+            null,
+            true
+        );
+
+        $response = $this->actingAs($this->user)->post(
+            route('attachments.store', [$this->team, $this->board, $this->task]),
+            ['file' => $file]
+        );
+
+        $response->assertSessionHasErrors('file');
+        $this->assertCount(0, $this->task->getMedia('attachments'));
+    }
+
+    public function test_upload_rejects_spoofed_extension_with_wrong_mime(): void
+    {
+        Storage::fake('local');
+
+        $file = UploadedFile::fake()->create('fake.jpg', 32, 'application/x-php');
+
+        $response = $this->actingAs($this->user)->post(
+            route('attachments.store', [$this->team, $this->board, $this->task]),
+            ['file' => $file]
+        );
+
+        $response->assertSessionHasErrors('file');
+        $this->assertCount(0, $this->task->getMedia('attachments'));
+    }
+
     public function test_non_member_cannot_upload_attachment(): void
     {
         Storage::fake('local');

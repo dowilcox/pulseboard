@@ -24,15 +24,28 @@ class AttachmentController extends Controller
         $this->authorize('update', $task);
 
         $maxSize = config('uploads.max_size.attachment');
-        $allowedTypes = implode(',', config('uploads.attachment_types'));
+        $attachmentTypes = config('uploads.attachment_types');
+        $mimeMap = config('uploads.mime_types');
+        $allowedTypes = implode(',', $attachmentTypes);
+        $allowedMimeTypes = implode(',', array_values(array_unique(array_filter(array_map(
+            fn (string $ext) => $mimeMap[$ext] ?? null,
+            $attachmentTypes
+        )))));
 
         $request->validate([
-            'file' => ['required', 'file', "max:{$maxSize}", "extensions:{$allowedTypes}"],
+            'file' => [
+                'required',
+                'file',
+                "max:{$maxSize}",
+                "extensions:{$allowedTypes}",
+                "mimetypes:{$allowedMimeTypes}",
+            ],
         ], [
             'file.required' => 'Please select a file to upload.',
             'file.file' => 'The upload failed. The file may be too large or the server rejected it.',
             'file.max' => 'The file is too large. Maximum size is '.round($maxSize / 1024).'MB.',
             'file.extensions' => 'This file type is not supported. Allowed types: '.$allowedTypes,
+            'file.mimetypes' => 'The file contents do not match its extension.',
         ]);
 
         try {
