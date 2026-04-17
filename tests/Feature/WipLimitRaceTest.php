@@ -42,6 +42,10 @@ class WipLimitRaceTest extends TestCase
 
     public function test_create_task_acquires_column_row_lock_before_wip_check(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $this->markTestSkipped('SQLite strips FOR UPDATE; lock emission is only observable on MySQL/Postgres.');
+        }
+
         Event::fake();
 
         $column = Column::factory()->create([
@@ -101,6 +105,10 @@ class WipLimitRaceTest extends TestCase
 
     public function test_move_task_acquires_column_row_lock_before_wip_check(): void
     {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $this->markTestSkipped('SQLite strips FOR UPDATE; lock emission is only observable on MySQL/Postgres.');
+        }
+
         Event::fake();
 
         $from = Column::factory()->create([
