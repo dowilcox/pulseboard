@@ -36,6 +36,56 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Extension -> MIME type map
+    |--------------------------------------------------------------------------
+    |
+    | Canonical MIME types used to enforce that the uploaded file's detected
+    | MIME type matches its extension. This is defense-in-depth on top of the
+    | extension whitelist: validation requires BOTH the extension AND the
+    | detected MIME type to appear in the allowed set for the request.
+    |
+    */
+    'mime_types' => [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'bmp' => 'image/bmp',
+        'tiff' => 'image/tiff',
+        'ico' => 'image/vnd.microsoft.icon',
+        'pdf' => 'application/pdf',
+        'doc' => 'application/msword',
+        'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls' => 'application/vnd.ms-excel',
+        'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt' => 'application/vnd.ms-powerpoint',
+        'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'odt' => 'application/vnd.oasis.opendocument.text',
+        'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+        'odp' => 'application/vnd.oasis.opendocument.presentation',
+        'rtf' => 'application/rtf',
+        'txt' => 'text/plain',
+        'md' => 'text/markdown',
+        'csv' => 'text/csv',
+        'json' => 'application/json',
+        'yaml' => 'application/yaml',
+        'yml' => 'application/yaml',
+        'zip' => 'application/zip',
+        '7z' => 'application/x-7z-compressed',
+        'tar' => 'application/x-tar',
+        'gz' => 'application/gzip',
+        'mp4' => 'video/mp4',
+        'webm' => 'video/webm',
+        'mov' => 'video/quicktime',
+        'avi' => 'video/x-msvideo',
+        'mp3' => 'audio/mpeg',
+        'ogg' => 'audio/ogg',
+        'wav' => 'audio/wav',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Max File Sizes (KB)
     |--------------------------------------------------------------------------
     |
