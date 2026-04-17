@@ -24,7 +24,8 @@ class MoveTask
 
         DB::transaction(function () use ($task, $column, $sortOrder, $targetBoard, $fromColumn, $crossBoard) {
             if ($fromColumn->id !== $column->id && $column->wip_limit !== null && $column->wip_limit > 0) {
-                $currentCount = Task::where('column_id', $column->id)->lockForUpdate()->count();
+                Column::whereKey($column->id)->lockForUpdate()->first();
+                $currentCount = Task::where('column_id', $column->id)->count();
                 if ($currentCount >= $column->wip_limit) {
                     throw ValidationException::withMessages([
                         'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
