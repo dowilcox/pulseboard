@@ -43,8 +43,46 @@ function escapeAttribute(value: string) {
         .replaceAll(">", "&gt;");
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+    nbsp: "\u00a0",
+    Tab: "\t",
+    NewLine: "\n",
+};
+
+function decodeHtmlEntities(value: string): string {
+    return value.replace(
+        /&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]+);/g,
+        (match, entity: string) => {
+            if (entity.charAt(0) === "#") {
+                const isHex = entity.charAt(1) === "x" || entity.charAt(1) === "X";
+                const codePoint = isHex
+                    ? parseInt(entity.slice(2), 16)
+                    : parseInt(entity.slice(1), 10);
+
+                if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
+                    return match;
+                }
+
+                try {
+                    return String.fromCodePoint(codePoint);
+                } catch {
+                    return match;
+                }
+            }
+
+            const named = NAMED_ENTITIES[entity];
+            return named !== undefined ? named : match;
+        },
+    );
+}
+
 function isSafeUrl(value: string) {
-    const normalized = value.trim();
+    const normalized = decodeHtmlEntities(value.trim()).trim();
 
     if (
         normalized === "" ||
