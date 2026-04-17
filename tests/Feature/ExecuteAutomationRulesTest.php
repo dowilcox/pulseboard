@@ -1361,6 +1361,11 @@ class ExecuteAutomationRulesTest extends TestCase
     public function test_action_send_notification_to_specific_user(): void
     {
         $recipient = User::factory()->create();
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $recipient->id,
+            'role' => 'member',
+        ]);
 
         $task = Task::factory()->create([
             'board_id' => $this->board->id,
