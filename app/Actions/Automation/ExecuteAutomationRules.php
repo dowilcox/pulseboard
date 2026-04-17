@@ -234,12 +234,12 @@ class ExecuteAutomationRules
 
     private function actionUnassignUser(Task $task, array $config): void
     {
-        $user = $this->resolveTeamMember($task, $config['user_id'] ?? null);
-        if (! $user) {
+        $userId = $config['user_id'] ?? null;
+        if (! $userId) {
             return;
         }
 
-        $task->assignees()->detach($user->id);
+        $task->assignees()->detach($userId);
     }
 
     private function actionAddWatcher(Task $task, array $config): void
