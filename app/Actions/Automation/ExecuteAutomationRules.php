@@ -2,6 +2,8 @@
 
 namespace App\Actions\Automation;
 
+use App\Actions\Tasks\MoveTask;
+use App\Actions\Tasks\ToggleTaskCompletion;
 use App\Events\NotificationCreated;
 use App\Models\AutomationRule;
 use App\Models\Board;
@@ -165,7 +167,11 @@ class ExecuteAutomationRules
             return;
         }
 
-        $task->update(['column_id' => $columnId]);
+        if ($task->column_id === $column->id) {
+            return;
+        }
+
+        MoveTask::run($task, $column, null);
     }
 
     private function actionAssignUser(Task $task, array $config): void
@@ -211,14 +217,14 @@ class ExecuteAutomationRules
     private function actionMarkComplete(Task $task): void
     {
         if (! $task->completed_at) {
-            $task->update(['completed_at' => now()]);
+            ToggleTaskCompletion::run($task);
         }
     }
 
     private function actionMarkIncomplete(Task $task): void
     {
         if ($task->completed_at) {
-            $task->update(['completed_at' => null]);
+            ToggleTaskCompletion::run($task);
         }
     }
 

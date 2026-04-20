@@ -112,6 +112,7 @@ COPY artisan ./
 COPY bootstrap ./bootstrap
 COPY config ./config
 COPY database ./database
+COPY frankenphp ./frankenphp
 COPY public ./public
 COPY resources/views ./resources/views
 COPY routes ./routes
@@ -133,6 +134,8 @@ RUN mkdir -p \
         storage/framework/views \
         storage/logs \
         bootstrap/cache \
+    && chmod +x frankenphp \
+    && ln -sf /var/www/html/frankenphp /usr/local/bin/frankenphp \
     && chmod -R 775 storage bootstrap/cache
 
 # ---- Caddy / FrankenPHP request body limit ---------------------------------

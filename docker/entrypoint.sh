@@ -96,9 +96,14 @@ if [ ! -f "/var/www/html/public/frankenphp-worker.php" ]; then
     php artisan octane:install --server=frankenphp --no-interaction
 fi
 
-# ---- Ensure FrankenPHP binary is in PATH ------------------------------------
-if [ ! -f "/usr/local/bin/frankenphp" ] && [ -f "/var/www/html/frankenphp" ]; then
-    ln -sf /var/www/html/frankenphp /usr/local/bin/frankenphp
+# ---- Ensure FrankenPHP binary is available at the path Octane / worker mode expect ----
+PROJECT_FRANKENPHP="/var/www/html/frankenphp"
+
+if [ -x "$PROJECT_FRANKENPHP" ]; then
+    echo "[entrypoint] Linking FrankenPHP binary into /usr/local/bin..."
+    ln -sf "$PROJECT_FRANKENPHP" /usr/local/bin/frankenphp
+elif ! command -v frankenphp >/dev/null 2>&1; then
+    echo "[entrypoint] WARNING: No FrankenPHP binary found in the image or project root."
 fi
 
 # ---- Verify APP_KEY is set before caching ------------------------------------

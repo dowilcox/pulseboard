@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Tasks\CreateTask;
 use App\Models\Task;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -53,43 +54,23 @@ class ProcessRecurringTasks extends Command
 
     private function createRecurringTask(Task $task): Task
     {
-        $maxSort = Task::where('column_id', $task->column_id)->max('sort_order') ?? 0;
+        $task->loadMissing('board', 'column', 'creator', 'assignees', 'labels');
 
-        $taskNumber = DB::table('tasks')
-            ->where('board_id', $task->board_id)
-            ->lockForUpdate()
-            ->max('task_number') ?? 0;
+        if (! $task->creator) {
+            throw new \RuntimeException("Recurring task {$task->id} has no creator.");
+        }
 
-        $newTask = Task::create([
-            'board_id' => $task->board_id,
-            'column_id' => $task->column_id,
-            'task_number' => $taskNumber + 1,
+        $newTask = CreateTask::run($task->board, $task->column, [
             'title' => $task->title,
             'description' => $task->description,
             'priority' => $task->priority,
             'effort_estimate' => $task->effort_estimate,
-            'checklists' => $task->checklists,
-            'sort_order' => $maxSort + 1,
-            'created_by' => $task->created_by,
-        ]);
+            'assignee_ids' => $task->assignees->pluck('id')->all(),
+            'label_ids' => $task->labels->pluck('id')->all(),
+        ], $task->creator);
 
-        // Sync assignees
-        $assignees = $task->assignees->mapWithKeys(fn ($user) => [
-            $user->id => [
-                'assigned_at' => now(),
-                'assigned_by' => $task->created_by,
-            ],
-        ]);
-
-        if ($assignees->isNotEmpty()) {
-            $newTask->assignees()->attach($assignees);
-        }
-
-        // Sync labels
-        $labelIds = $task->labels->pluck('id')->toArray();
-
-        if (! empty($labelIds)) {
-            $newTask->labels()->attach($labelIds);
+        if ($task->checklists) {
+            $newTask->update(['checklists' => $task->checklists]);
         }
 
         return $newTask;

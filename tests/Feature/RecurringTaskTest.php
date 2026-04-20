@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Label;
 use App\Models\Task;
 use App\Models\Team;
 use App\Models\TeamMember;
@@ -145,5 +146,66 @@ class RecurringTaskTest extends TestCase
 
         $task->refresh();
         $this->assertTrue($task->recurrence_next_at->isFuture());
+    }
+
+    public function test_recurring_task_command_filters_deactivated_assignees_and_copies_metadata(): void
+    {
+        $activeAssignee = User::factory()->create();
+        $inactiveAssignee = User::factory()->create(['deactivated_at' => now()]);
+        $label = Label::factory()->create(['team_id' => $this->team->id]);
+
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $activeAssignee->id,
+            'role' => 'member',
+        ]);
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $inactiveAssignee->id,
+            'role' => 'member',
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Recurring with metadata',
+            'checklists' => [[
+                'id' => 'checklist-1',
+                'title' => 'Prep',
+                'items' => [[
+                    'id' => 'item-1',
+                    'text' => 'Review docs',
+                    'completed' => false,
+                ]],
+            ]],
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 1],
+            'recurrence_next_at' => now()->subHour(),
+        ]);
+
+        $task->assignees()->attach([
+            $activeAssignee->id => [
+                'assigned_at' => now(),
+                'assigned_by' => $this->user->id,
+            ],
+            $inactiveAssignee->id => [
+                'assigned_at' => now(),
+                'assigned_by' => $this->user->id,
+            ],
+        ]);
+        $task->labels()->attach($label->id);
+
+        $this->artisan('tasks:process-recurring')
+            ->assertSuccessful();
+
+        $newTask = Task::query()
+            ->where('id', '!=', $task->id)
+            ->latest('created_at')
+            ->firstOrFail();
+
+        $this->assertTrue($newTask->assignees()->where('users.id', $activeAssignee->id)->exists());
+        $this->assertFalse($newTask->assignees()->where('users.id', $inactiveAssignee->id)->exists());
+        $this->assertTrue($newTask->labels()->where('labels.id', $label->id)->exists());
+        $this->assertEquals($task->checklists, $newTask->checklists);
     }
 }

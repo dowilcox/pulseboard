@@ -12,6 +12,7 @@ use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ToggleTaskCompletionAutoMoveTest extends TestCase
@@ -217,5 +218,44 @@ class ToggleTaskCompletionAutoMoveTest extends TestCase
         $result = ToggleTaskCompletion::run($task, $this->user);
 
         $this->assertEquals(11, $result->sort_order);
+    }
+
+    public function test_auto_move_rolls_back_completion_when_done_column_hits_wip_limit(): void
+    {
+        Event::fake();
+
+        $this->doneColumn->update(['wip_limit' => 1]);
+
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->todoColumn->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        try {
+            ToggleTaskCompletion::run($task, $this->user);
+            $this->fail('Expected auto-move to honor the done column WIP limit.');
+        } catch (ValidationException) {
+            // Expected.
+        }
+
+        $task->refresh();
+
+        $this->assertNull($task->completed_at);
+        $this->assertEquals($this->todoColumn->id, $task->column_id);
+        $this->assertDatabaseMissing('activities', [
+            'task_id' => $task->id,
+            'action' => 'completed',
+        ]);
+        $this->assertDatabaseMissing('activities', [
+            'task_id' => $task->id,
+            'action' => 'moved',
+        ]);
     }
 }

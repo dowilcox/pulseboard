@@ -30,6 +30,7 @@ class ActivityLogger
         ?User $user = null,
     ): Activity {
         $userId = $user?->id ?? Auth::id();
+        $broadcastUserId = $userId ?? 'system';
 
         $activity = Activity::create([
             'task_id' => $task->id,
@@ -47,7 +48,7 @@ class ActivityLogger
                     'task_id' => $task->id,
                     'changes' => $changes,
                 ],
-                userId: $userId,
+                userId: $broadcastUserId,
             ),
         )->toOthers();
 

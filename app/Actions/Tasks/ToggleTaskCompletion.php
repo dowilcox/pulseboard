@@ -6,49 +6,45 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class ToggleTaskCompletion
 {
     use AsAction;
 
-    public function handle(Task $task, User $user): Task
+    public function handle(Task $task, ?User $user = null): Task
     {
-        $task->completed_at = $task->completed_at ? null : now();
-        $task->save();
+        $markComplete = $task->completed_at === null;
+        $move = null;
 
-        ActivityLogger::log($task, $task->completed_at ? 'completed' : 'uncompleted', [], $user);
+        DB::transaction(function () use ($task, $markComplete, &$move) {
+            if ($markComplete) {
+                $task->loadMissing('board');
+                $board = $task->board;
 
-        // Auto-move to Done column if enabled and task was just completed
-        if ($task->completed_at) {
-            $task->loadMissing('board');
-            $board = $task->board;
+                if ($board->setting('auto_move_to_done')) {
+                    $doneColumn = Column::where('board_id', $board->id)
+                        ->where('is_done_column', true)
+                        ->orderBy('sort_order')
+                        ->first();
 
-            if ($board->setting('auto_move_to_done')) {
-                $doneColumn = Column::where('board_id', $board->id)
-                    ->where('is_done_column', true)
-                    ->orderBy('sort_order')
-                    ->first();
-
-                if ($doneColumn && $doneColumn->id !== $task->column_id) {
-                    $fromColumn = Column::find($task->column_id);
-                    $maxSort = Task::where('column_id', $doneColumn->id)->max('sort_order') ?? 0;
-
-                    $task->column_id = $doneColumn->id;
-                    $task->sort_order = $maxSort + 1;
-                    $task->save();
-
-                    ActivityLogger::log($task, 'moved', [
-                        'from_column' => $fromColumn?->name ?? 'Unknown',
-                        'to_column' => $doneColumn->name,
-                        'from_column_id' => $fromColumn?->id,
-                        'to_column_id' => $doneColumn->id,
-                        'auto_moved' => true,
-                    ], $user);
+                    if ($doneColumn && $doneColumn->id !== $task->column_id) {
+                        $move = app(MoveTask::class)->applyMove($task, $doneColumn, null);
+                    }
                 }
             }
+
+            $task->completed_at = $markComplete ? now() : null;
+            $task->save();
+        });
+
+        ActivityLogger::log($task, $markComplete ? 'completed' : 'uncompleted', [], $user);
+
+        if ($move) {
+            app(MoveTask::class)->recordMove($move, $user, ['auto_moved' => true]);
         }
 
-        return $task;
+        return $task->fresh();
     }
 }

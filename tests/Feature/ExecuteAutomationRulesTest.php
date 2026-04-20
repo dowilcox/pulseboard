@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Automation\ExecuteAutomationRules;
+use App\Models\Activity;
 use App\Models\AutomationRule;
 use App\Models\Board;
 use App\Models\Column;
@@ -464,6 +465,81 @@ class ExecuteAutomationRulesTest extends TestCase
 
         $task->refresh();
         $this->assertEquals($this->doneColumn->id, $task->column_id);
+    }
+
+    public function test_action_move_to_column_places_task_at_end_and_logs_activity(): void
+    {
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+            'sort_order' => 10,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'sort_order' => 1,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move to done',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $task->refresh();
+
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+        $this->assertEquals(11.0, $task->sort_order);
+        $this->assertDatabaseHas('activities', [
+            'task_id' => $task->id,
+            'action' => 'moved',
+        ]);
+    }
+
+    public function test_action_move_to_column_respects_wip_limit(): void
+    {
+        $this->doneColumn->update(['wip_limit' => 1]);
+
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->doneColumn->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Move to done',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'move_to_column',
+            'action_config' => ['column_id' => $this->doneColumn->id],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $task->refresh();
+
+        $this->assertEquals($this->column->id, $task->column_id);
+        $this->assertDatabaseMissing('activities', [
+            'task_id' => $task->id,
+            'action' => 'moved',
+        ]);
     }
 
     public function test_action_move_to_column_rejects_cross_board_column(): void
@@ -1134,6 +1210,40 @@ class ExecuteAutomationRulesTest extends TestCase
 
         $task->refresh();
         $this->assertNotNull($task->completed_at);
+    }
+
+    public function test_action_mark_complete_auto_moves_when_board_setting_is_enabled(): void
+    {
+        $this->board->update(['settings' => ['auto_move_to_done' => true]]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Mark complete',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'mark_complete',
+            'action_config' => [],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $task->refresh();
+        $movedActivity = Activity::where('task_id', $task->id)
+            ->where('action', 'moved')
+            ->first();
+
+        $this->assertNotNull($task->completed_at);
+        $this->assertEquals($this->doneColumn->id, $task->column_id);
+        $this->assertNotNull($movedActivity);
+        $this->assertTrue($movedActivity->changes['auto_moved']);
     }
 
     public function test_action_mark_complete_is_idempotent(): void
