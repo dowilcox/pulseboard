@@ -57,3 +57,6 @@ storage/app/*
 # Build artifacts
 public/build
 public/hot
+
+# Host-built FrankenPHP binary (base image provides the correct arch)
+/frankenphp
