@@ -29,6 +29,38 @@ chmod -R 775 /var/www/html/storage
 chmod -R 775 /var/www/html/bootstrap/cache
 
 # ---- Development-only: install dependencies and build frontend -------------
+frontend_build_is_stale() {
+    local manifest="/var/www/html/public/build/manifest.json"
+
+    if [ ! -f "$manifest" ]; then
+        return 0
+    fi
+
+    if find \
+        /var/www/html/resources/js \
+        /var/www/html/resources/css \
+        /var/www/html/public \
+        /var/www/html/app \
+        /var/www/html/bootstrap \
+        /var/www/html/config \
+        /var/www/html/database \
+        /var/www/html/routes \
+        /var/www/html/package.json \
+        /var/www/html/package-lock.json \
+        /var/www/html/tsconfig.json \
+        /var/www/html/vite.config.ts \
+        -newer "$manifest" \
+        -print -quit | grep -q .; then
+        return 0
+    fi
+
+    return 1
+}
+
+npm_dependencies_installed() {
+    [ -x "/var/www/html/node_modules/.bin/tsc" ] && [ -x "/var/www/html/node_modules/.bin/vite" ]
+}
+
 if [ "${APP_ENV}" = "local" ] || [ "${APP_ENV}" = "development" ]; then
     if [ ! -d "/var/www/html/vendor" ] || [ ! -f "/var/www/html/vendor/autoload.php" ]; then
         echo "[entrypoint] Installing Composer dependencies..."
@@ -37,13 +69,16 @@ if [ "${APP_ENV}" = "local" ] || [ "${APP_ENV}" = "development" ]; then
         echo "[entrypoint] Composer dependencies already installed."
     fi
 
-    if [ ! -d "/var/www/html/node_modules" ]; then
+    if ! npm_dependencies_installed; then
         echo "[entrypoint] Installing npm dependencies..."
         npm ci --no-audit --no-fund
         echo "[entrypoint] Building frontend assets..."
         npm run build
+    elif frontend_build_is_stale; then
+        echo "[entrypoint] Frontend sources changed; rebuilding assets..."
+        npm run build
     else
-        echo "[entrypoint] Node modules already installed."
+        echo "[entrypoint] Node modules and frontend assets are current."
     fi
 fi
 
