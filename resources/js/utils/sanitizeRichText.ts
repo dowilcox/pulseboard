@@ -98,6 +98,12 @@ function isSafeUrl(value: string) {
     return /^(https?:|mailto:|tel:)/i.test(normalized);
 }
 
+function isMarkdownAutolink(value: string) {
+    const match = value.match(/^<\s*([^<>\s]+)\s*>$/s);
+
+    return match !== null && isSafeUrl(match[1]);
+}
+
 function sanitizeAttributes(tag: string, rawAttributes: string) {
     const allowedAttributes = ALLOWED_TAGS[tag] ?? [];
     const attributes: string[] = [];
@@ -185,6 +191,10 @@ export function sanitizeRichText(content: string | null | undefined) {
             const tag = rawTag.toLowerCase();
 
             if (!(tag in ALLOWED_TAGS)) {
+                if (isMarkdownAutolink(_match)) {
+                    return _match;
+                }
+
                 return "";
             }
 

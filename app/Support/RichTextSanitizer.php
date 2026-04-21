@@ -62,6 +62,10 @@ class RichTextSanitizer
                 $tag = strtolower($matches[2]);
 
                 if (! isset(self::ALLOWED_TAGS[$tag])) {
+                    if (self::isMarkdownAutolink($matches[0])) {
+                        return $matches[0];
+                    }
+
                     return '';
                 }
 
@@ -76,6 +80,15 @@ class RichTextSanitizer
             },
             $content,
         ) ?? $content;
+    }
+
+    private static function isMarkdownAutolink(string $value): bool
+    {
+        if (! preg_match('/^<\s*([^<>\s]+)\s*>$/', $value, $matches)) {
+            return false;
+        }
+
+        return self::isSafeUrl($matches[1]);
     }
 
     private static function sanitizeAttributes(string $tag, string $rawAttributes): array

@@ -46,4 +46,14 @@ describe("sanitizeRichText", () => {
                 '<a href="?comment=1">thread</a>',
         );
     });
+
+    it("preserves markdown autolinks", () => {
+        expect(
+            sanitizeRichText(
+                "Visit <https://example.com/docs> or <http://localhost:8000/test>.",
+            ),
+        ).toBe(
+            "Visit <https://example.com/docs> or <http://localhost:8000/test>.",
+        );
+    });
 });

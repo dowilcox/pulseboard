@@ -180,6 +180,23 @@ class CommentLabelTest extends TestCase
         $this->assertStringNotContainsString('javascript:alert(1)', $comment->body);
     }
 
+    public function test_comment_markdown_autolinks_are_preserved_on_create(): void
+    {
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => 'See <https://example.com/docs> for details.']
+        );
+
+        $response->assertRedirect();
+
+        $comment = Comment::query()->latest()->first();
+        $this->assertNotNull($comment);
+        $this->assertStringContainsString(
+            '<https://example.com/docs>',
+            $comment->body,
+        );
+    }
+
     public function test_comment_mentions_only_team_members(): void
     {
         $teammate = User::factory()->create();
