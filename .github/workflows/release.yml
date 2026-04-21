@@ -39,11 +39,14 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      - name: Frontend tests
+        run: npm run test:run
+
       - name: PHP lint
         run: ./vendor/bin/pint --test
 
       - name: Build frontend
-        run: npx vite build
+        run: npm run build
 
       - name: Composer security audit
         run: composer audit --no-dev

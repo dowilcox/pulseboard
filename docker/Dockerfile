@@ -43,6 +43,8 @@ COPY routes ./routes
 COPY app ./app
 COPY database ./database
 
+RUN rm -f bootstrap/cache/*.php
+
 # Minimal .env for Vite build (only APP_NAME needed; Reverb config is runtime via Inertia)
 ARG VITE_APP_NAME=PulseBoard
 
@@ -121,8 +123,8 @@ COPY app ./app
 COPY --from=composer /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-# Clear any locally-cached package discovery (may reference dev-only packages)
-RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php
+# Clear any locally-generated Laravel bootstrap caches from the build context.
+RUN rm -f bootstrap/cache/*.php
 
 # ---- Storage directories ---------------------------------------------------
 RUN mkdir -p \
@@ -216,3 +218,17 @@ ENV CADDY_SERVER_EXTRA_DIRECTIVES="request_body { max_size 30MB }"
 EXPOSE 8000 8080
 
 ENTRYPOINT ["entrypoint.sh"]
+
+# ---------------------------------------------------------------------------
+# Stage 5: Test runner
+# ---------------------------------------------------------------------------
+FROM development AS test
+
+LABEL maintainer="PulseBoard Test Runner"
+
+COPY docker/test-entrypoint.sh /usr/local/bin/test-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/test-entrypoint.sh
+
+ENTRYPOINT ["test-entrypoint.sh"]
+CMD ["php", "artisan", "test"]

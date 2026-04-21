@@ -11,6 +11,7 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\TaskAutomationDispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
@@ -139,10 +140,6 @@ class AutomationDepthGuardTest extends TestCase
             'user_ids' => [$this->user->id],
         ], $this->user);
 
-        $reflection = new \ReflectionClass(ActivityLogger::class);
-        $prop = $reflection->getProperty('automationDepth');
-        $prop->setAccessible(true);
-
-        $this->assertSame(0, $prop->getValue());
+        $this->assertSame(0, TaskAutomationDispatcher::currentDepth());
     }
 }

@@ -85,12 +85,15 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-      target: development
-    container_name: pulseboard-test
+      target: test
     volumes:
       - .:/var/www/html
+      - /var/www/html/vendor
+      - /var/www/html/node_modules
     environment:
       - APP_ENV=testing
+      - APP_KEY=base64:dGVzdGluZ2tleWZvcmNpcGlwZWxpbmVydW4xMjM0NTY=
+      - APP_CONFIG_CACHE=/tmp/pulseboard-config.php
       - APP_PACKAGES_CACHE=/tmp/pulseboard-packages.php
       - APP_SERVICES_CACHE=/tmp/pulseboard-services.php
       - DB_CONNECTION=sqlite
@@ -99,13 +102,8 @@ services:
       - SESSION_DRIVER=array
       - QUEUE_CONNECTION=sync
     working_dir: /var/www/html
-    entrypoint:
-      [
-        "/bin/sh",
-        "-c",
-        'php artisan config:clear && php vendor/bin/phpunit "$@"',
-        "--",
-      ]
+    entrypoint: ["/usr/local/bin/test-entrypoint.sh"]
+    command: ["php", "artisan", "test"]
     profiles:
       - test
     networks:

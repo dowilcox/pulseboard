@@ -221,9 +221,12 @@ docker compose exec app php artisan octane:reload
 
 ## Testing
 
-Tests run inside a dedicated Docker container with an isolated environment (SQLite in-memory, array sessions, sync queue). **Do not** run tests directly on the host or in the `app` container — the `.env` overrides will cause CSRF (419) and connection errors.
+Tests run inside a dedicated Docker test container with an isolated environment (SQLite in-memory, array sessions, sync queue). The first run should build the test image, and the container will install Composer dependencies into a container-managed `vendor` volume. **Do not** run tests directly on the host or in the `app` container.
 
 ```bash
+# First run or after Dockerfile/test-runner changes
+docker compose --profile test build test
+
 # Full test suite
 docker compose --profile test run --rm test
 
@@ -235,6 +238,9 @@ docker compose --profile test run --rm test tests/Feature/Api/V1/ApiAuthTest.php
 
 # Verbose output
 docker compose --profile test run --rm test --verbose
+
+# Frontend test run inside the same test container
+docker compose --profile test run --rm test npm run test:run
 ```
 
 ## Architecture
