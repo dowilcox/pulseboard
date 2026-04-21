@@ -3,6 +3,7 @@ import { ReactRenderer, useEditor, EditorContent } from "@tiptap/react";
 import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
@@ -225,10 +226,15 @@ export default function RichTextEditor({
                 paragraph: false,
                 codeBlock: false,
                 underline: false,
-                link: { openOnClick: false },
             }),
             MarkdownParagraph,
             Image,
+            Link.configure({
+                openOnClick: false,
+                autolink: true,
+                linkOnPaste: true,
+                defaultProtocol: "https",
+            }),
             Placeholder.configure({ placeholder }),
             TaskList,
             TaskItem.configure({ nested: true }),

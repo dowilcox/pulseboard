@@ -32,4 +32,18 @@ describe("sanitizeRichText", () => {
                 '<input type="checkbox" checked disabled>',
         );
     });
+
+    it("preserves safe relative links", () => {
+        expect(
+            sanitizeRichText(
+                '<a href="./replies">replies</a>' +
+                    '<a href="../history">history</a>' +
+                    '<a href="?comment=1">thread</a>',
+            ),
+        ).toBe(
+            '<a href="./replies">replies</a>' +
+                '<a href="../history">history</a>' +
+                '<a href="?comment=1">thread</a>',
+        );
+    });
 });

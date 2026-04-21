@@ -140,7 +140,7 @@ class CommentLabelTest extends TestCase
 
     public function test_comment_body_is_sanitized_on_create(): void
     {
-        $body = 'Hello <script>alert(1)</script><img src="javascript:alert(1)" onerror="alert(1)"><span data-type="mention" data-id="'.$this->user->id.'" data-label="'.$this->user->name.'">@'.$this->user->name.'</span>';
+        $body = 'Hello <script>alert(1)</script><img src="javascript:alert(1)" onerror="alert(1)"><a href="https://example.com/docs" target="_blank">docs</a><a href="?comment=1">thread</a><span data-type="mention" data-id="'.$this->user->id.'" data-label="'.$this->user->name.'">@'.$this->user->name.'</span>';
 
         $response = $this->actingAs($this->user)->post(
             route('comments.store', [$this->team, $this->board, $this->task]),
@@ -154,7 +154,30 @@ class CommentLabelTest extends TestCase
         $this->assertStringNotContainsString('<script', $comment->body);
         $this->assertStringNotContainsString('javascript:alert(1)', $comment->body);
         $this->assertStringNotContainsString('onerror=', $comment->body);
+        $this->assertStringContainsString('href="https://example.com/docs"', $comment->body);
+        $this->assertStringContainsString('rel="noopener noreferrer"', $comment->body);
+        $this->assertStringContainsString('href="?comment=1"', $comment->body);
         $this->assertStringContainsString('data-type="mention"', $comment->body);
+    }
+
+    public function test_comment_links_are_preserved_on_update(): void
+    {
+        $comment = Comment::factory()->create([
+            'task_id' => $this->task->id,
+            'user_id' => $this->user->id,
+            'body' => 'Original body',
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('comments.update', [$this->team, $this->board, $this->task, $comment]),
+            ['body' => '<a href="./replies">Replies</a> <a href="javascript:alert(1)">bad</a>']
+        );
+
+        $response->assertRedirect();
+
+        $comment->refresh();
+        $this->assertStringContainsString('href="./replies"', $comment->body);
+        $this->assertStringNotContainsString('javascript:alert(1)', $comment->body);
     }
 
     public function test_comment_mentions_only_team_members(): void

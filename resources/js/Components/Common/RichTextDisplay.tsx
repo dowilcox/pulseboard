@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import { Table } from "@tiptap/extension-table";
@@ -30,9 +31,14 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
         extensions: [
             StarterKit.configure({
                 codeBlock: false,
-                link: { openOnClick: true },
             }),
             Image,
+            Link.configure({
+                openOnClick: true,
+                autolink: true,
+                linkOnPaste: true,
+                defaultProtocol: "https",
+            }),
             TaskList,
             TaskItem.configure({ nested: true }),
             Table,

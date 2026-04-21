@@ -87,7 +87,10 @@ function isSafeUrl(value: string) {
     if (
         normalized === "" ||
         normalized.startsWith("#") ||
-        normalized.startsWith("/")
+        normalized.startsWith("/") ||
+        normalized.startsWith("./") ||
+        normalized.startsWith("../") ||
+        normalized.startsWith("?")
     ) {
         return true;
     }

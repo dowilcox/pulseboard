@@ -169,6 +169,14 @@ class RichTextSanitizer
             return true;
         }
 
+        if (
+            str_starts_with($value, './')
+            || str_starts_with($value, '../')
+            || str_starts_with($value, '?')
+        ) {
+            return true;
+        }
+
         return preg_match('/^(https?:|mailto:|tel:)/i', $value) === 1;
     }
 }
