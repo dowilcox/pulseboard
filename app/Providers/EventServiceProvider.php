@@ -20,4 +20,9 @@ class EventServiceProvider extends ServiceProvider
             RunTaskActivityAutomations::class,
         ],
     ];
+
+    public function shouldDiscoverEvents(): bool
+    {
+        return false;
+    }
 }
