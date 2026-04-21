@@ -47,6 +47,27 @@ class DashboardTest extends TestCase
         $response->assertInertia(fn ($page) => $page->component('Dashboard'));
     }
 
+    public function test_dashboard_shares_reverb_client_config(): void
+    {
+        config()->set('reverb.client', [
+            'key' => 'client-key',
+            'host' => 'ws.local.test',
+            'port' => 9080,
+            'scheme' => 'http',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get(route('dashboard'));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('reverb.key', 'client-key')
+            ->where('reverb.host', 'ws.local.test')
+            ->where('reverb.port', 9080)
+            ->where('reverb.scheme', 'http'));
+    }
+
     /**
      * Skipped: the stats endpoint uses MySQL-only YEARWEEK() which doesn't work in SQLite.
      */
