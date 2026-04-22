@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -35,11 +36,21 @@ class NotificationDigest extends Mailable
     public function content(): Content
     {
         $appUrl = config('app.url');
+        $messages = $this->notifications->map(function ($notification): string {
+            $message = $notification->data['email_message']
+                ?? $notification->data['message']
+                ?? 'New notification';
+
+            $plainTextMessage = NotificationText::toPlainText($message);
+
+            return $plainTextMessage !== '' ? $plainTextMessage : 'New notification';
+        });
 
         return new Content(
             markdown: 'mail.notification-digest',
             with: [
                 'user' => $this->user,
+                'messages' => $messages,
                 'notifications' => $this->notifications,
                 'appUrl' => $appUrl,
                 'appDomain' => parse_url($appUrl, PHP_URL_HOST),

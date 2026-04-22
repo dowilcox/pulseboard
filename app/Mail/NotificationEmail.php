@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -25,7 +26,7 @@ class NotificationEmail extends Mailable
         public DatabaseNotification $notification,
     ) {
         $data = $notification->data;
-        $this->notificationMessage = $data['message'] ?? 'New notification';
+        $this->notificationMessage = $this->resolveMessage($data);
         $this->taskTitle = $data['task_title'] ?? 'Task';
 
         $teamSlug = $data['team_slug'] ?? '';
@@ -69,5 +70,13 @@ class NotificationEmail extends Mailable
                 'notificationSettingsUrl' => $appUrl.'/profile#notifications',
             ],
         );
+    }
+
+    private function resolveMessage(array $data): string
+    {
+        $message = $data['email_message'] ?? $data['message'] ?? 'New notification';
+        $plainTextMessage = NotificationText::toPlainText($message);
+
+        return $plainTextMessage !== '' ? $plainTextMessage : 'New notification';
     }
 }

@@ -2,8 +2,8 @@
 
 You have **{{ $notifications->count() }}** new notification{{ $notifications->count() !== 1 ? 's' : '' }}:
 
-@foreach ($notifications as $notification)
-- {{ $notification->data['message'] ?? 'New notification' }}
+@foreach ($messages as $message)
+- {{ $message }}
 @endforeach
 
 ---

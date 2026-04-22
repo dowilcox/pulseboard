@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -36,7 +37,9 @@ class TaskMentionedNotification extends Notification
 
     public function toDatabase(object $notifiable): array
     {
-        $preview = mb_strimwidth($this->comment->body, 0, 80, '...');
+        $summary = "{$this->mentioner->name} mentioned you in \"{$this->task->title}\"";
+        $preview = NotificationText::preview($this->comment->body, 80);
+        $fullComment = NotificationText::toPlainText($this->comment->body);
 
         return [
             'type' => 'task_mentioned',
@@ -49,7 +52,8 @@ class TaskMentionedNotification extends Notification
             'task_slug' => $this->task->slug,
             'mentioner_name' => $this->mentioner->name,
             'comment_preview' => $preview,
-            'message' => "{$this->mentioner->name} mentioned you in \"{$this->task->title}\": {$preview}",
+            'message' => $preview !== '' ? "{$summary}: {$preview}" : $summary,
+            'email_message' => $fullComment !== '' ? "{$summary}: {$fullComment}" : $summary,
         ];
     }
 
@@ -58,17 +62,21 @@ class TaskMentionedNotification extends Notification
         $url = url(
             "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
         );
-        $preview = mb_strimwidth($this->comment->body, 0, 200, '...');
+        $commentBody = NotificationText::toPlainText($this->comment->body);
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("You were mentioned in: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
             ->line(
                 "{$this->mentioner->name} mentioned you in \"{$this->task->title}\":",
             )
-            ->line("> {$preview}")
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
+            ->action('View Task', $url);
+
+        if ($commentBody !== '') {
+            $mail->line("> {$commentBody}");
+        }
+
+        return $mail->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool
