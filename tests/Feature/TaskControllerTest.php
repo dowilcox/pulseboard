@@ -151,6 +151,33 @@ class TaskControllerTest extends TestCase
         $this->assertEquals('urgent', $task->priority);
     }
 
+    public function test_task_show_includes_sidebar_board_slugs(): void
+    {
+        $this->board->update([
+            'name' => 'Alpha Board',
+            'slug' => 'alpha-board',
+            'sort_order' => 1,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(
+            route('tasks.show', [$this->team, $this->board, $task])
+        );
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Tasks/Show')
+            ->where('teamBoards.0.id', $this->board->id)
+            ->where('teamBoards.0.slug', 'alpha-board')
+            ->where('teamBoards.0.sort_order', 1)
+        );
+    }
+
     public function test_task_description_is_sanitized_on_update(): void
     {
         $task = Task::factory()->create([

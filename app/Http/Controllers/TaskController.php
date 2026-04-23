@@ -126,9 +126,11 @@ class TaskController extends Controller
         $teamBoards = $team
             ->boards()
             ->active()
+            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
+            ->with('media')
             ->with('columns')
-            ->orderBy('name')
-            ->get(['id', 'name', 'team_id']);
+            ->orderBy('sort_order')
+            ->get();
 
         return Inertia::render('Tasks/Show', [
             'team' => $team,
