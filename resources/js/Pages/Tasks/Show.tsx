@@ -1,5 +1,6 @@
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
+import CopyMarkdownButton from "@/Components/Common/CopyMarkdownButton";
 import FigmaSection from "@/Components/Figma/FigmaSection";
 import GitlabRefsList from "@/Components/Gitlab/GitlabRefsList";
 import ActivityFeed from "@/Components/Tasks/ActivityFeed";
@@ -362,17 +363,29 @@ export default function TasksShow({
                             </Typography>
                             {!editingDescription &&
                                 !isDescriptionEmpty(description) && (
-                                    <Button
-                                        size="small"
-                                        startIcon={
-                                            <EditIcon fontSize="small" />
-                                        }
-                                        onClick={() =>
-                                            setEditingDescription(true)
-                                        }
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                        }}
                                     >
-                                        Edit
-                                    </Button>
+                                        <CopyMarkdownButton
+                                            content={description}
+                                            aria-label="Copy description as Markdown"
+                                        />
+                                        <Button
+                                            size="small"
+                                            startIcon={
+                                                <EditIcon fontSize="small" />
+                                            }
+                                            onClick={() =>
+                                                setEditingDescription(true)
+                                            }
+                                        >
+                                            Edit
+                                        </Button>
+                                    </Box>
                                 )}
                         </Box>
                         <Divider sx={{ mt: 0.5, mb: 2 }} />

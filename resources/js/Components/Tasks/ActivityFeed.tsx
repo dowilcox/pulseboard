@@ -1,3 +1,4 @@
+import CopyMarkdownButton from "@/Components/Common/CopyMarkdownButton";
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
 import type { Activity, Comment, PageProps, User } from "@/types";
@@ -384,6 +385,12 @@ export default function ActivityFeed({
                 )}
                 <Box sx={{ flex: 1 }} />
                 {!isEditing && (
+                    <CopyMarkdownButton
+                        content={comment.body}
+                        aria-label="Copy comment as Markdown"
+                    />
+                )}
+                {!isEditing && (
                     <Tooltip title="Reply">
                         <IconButton
                             size="small"
@@ -528,6 +535,12 @@ export default function ActivityFeed({
                             </Typography>
                         )}
                         <Box sx={{ flex: 1 }} />
+                        {!isEditing && (
+                            <CopyMarkdownButton
+                                content={reply.body}
+                                aria-label="Copy reply as Markdown"
+                            />
+                        )}
                         {isOwn && !isEditing && (
                             <>
                                 <Tooltip title="Edit">
