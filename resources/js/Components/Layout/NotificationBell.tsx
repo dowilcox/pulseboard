@@ -86,7 +86,7 @@ export default function NotificationBell() {
                 aria-label={
                     unreadCount > 0
                         ? `Notifications (${unreadCount} unread)`
-                        : "Notifications"
+                        : "Notifications (0 unread)"
                 }
             >
                 <Badge badgeContent={unreadCount} color="error" max={99}>

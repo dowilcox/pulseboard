@@ -5,6 +5,7 @@ import { useTheme } from "@mui/material/styles";
 interface LogoProps {
     size?: "small" | "medium" | "large";
     showText?: boolean;
+    textColor?: string;
 }
 
 const sizeMap = {
@@ -19,7 +20,11 @@ const textVariantMap = {
     large: "h3",
 } as const;
 
-export default function Logo({ size = "medium", showText = false }: LogoProps) {
+export default function Logo({
+    size = "medium",
+    showText = false,
+    textColor = "text.primary",
+}: LogoProps) {
     const theme = useTheme();
     const iconSize = sizeMap[size];
     const primaryColor = theme.palette.primary.main;
@@ -75,7 +80,7 @@ export default function Logo({ size = "medium", showText = false }: LogoProps) {
                     variant={textVariantMap[size]}
                     component="span"
                     sx={{
-                        color: "text.primary",
+                        color: textColor,
                         fontWeight: 800,
                         letterSpacing: "-0.02em",
                         lineHeight: 1,

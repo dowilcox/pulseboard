@@ -22,6 +22,14 @@ import Logo from "@/Components/Common/Logo";
 import BoardList from "./BoardList";
 import type { ReactNode } from "react";
 
+const SIDEBAR_BG = "#08111f";
+const SIDEBAR_TEXT = "#f8fafc";
+const SIDEBAR_MUTED = "#a8b3c7";
+const SIDEBAR_SELECTED = "rgba(108, 92, 255, 0.30)";
+const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
+const SIDEBAR_FOCUS = "rgba(108, 92, 255, 0.38)";
+const SIDEBAR_DIVIDER = "rgba(148, 163, 184, 0.18)";
+
 interface SidebarProps {
     activeBoardId?: string;
     forceExpanded?: boolean;
@@ -59,15 +67,15 @@ function NavItem({
                 borderRadius: 1.25,
                 borderLeft: selected ? 3 : 0,
                 borderColor: "primary.main",
-                color: selected ? "text.primary" : "text.secondary",
-                bgcolor: selected ? "action.selected" : "transparent",
+                color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
+                bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
                 "&.Mui-selected": {
-                    bgcolor: "action.selected",
-                    color: "text.primary",
+                    bgcolor: SIDEBAR_SELECTED,
+                    color: SIDEBAR_TEXT,
                 },
                 "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? "action.focus" : "action.hover",
-                    color: "text.primary",
+                    bgcolor: selected ? SIDEBAR_FOCUS : SIDEBAR_HOVER,
+                    color: SIDEBAR_TEXT,
                 },
             }}
         >
@@ -97,7 +105,7 @@ function NavItem({
                                 px: 1,
                                 borderRadius: 999,
                                 bgcolor: "rgba(148, 163, 184, 0.14)",
-                                color: "text.primary",
+                                color: SIDEBAR_TEXT,
                                 display: "grid",
                                 placeItems: "center",
                                 fontSize: "0.8rem",
@@ -124,17 +132,17 @@ function NavItem({
                 borderRadius: 1.25,
                 borderLeft: selected ? 3 : 0,
                 borderColor: "primary.main",
-                color: selected ? "text.primary" : "text.secondary",
-                bgcolor: selected ? "action.selected" : "transparent",
+                color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
+                bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
                 width: "calc(100% - 16px)",
                 textAlign: "left",
                 "&.Mui-selected": {
-                    bgcolor: "action.selected",
-                    color: "text.primary",
+                    bgcolor: SIDEBAR_SELECTED,
+                    color: SIDEBAR_TEXT,
                 },
                 "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? "action.focus" : "action.hover",
-                    color: "text.primary",
+                    bgcolor: selected ? SIDEBAR_FOCUS : SIDEBAR_HOVER,
+                    color: SIDEBAR_TEXT,
                 },
             }}
         >
@@ -164,7 +172,7 @@ function NavItem({
                                 px: 1,
                                 borderRadius: 999,
                                 bgcolor: "rgba(148, 163, 184, 0.14)",
-                                color: "text.primary",
+                                color: SIDEBAR_TEXT,
                                 display: "grid",
                                 placeItems: "center",
                                 fontSize: "0.8rem",
@@ -212,7 +220,7 @@ export default function Sidebar({
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
-                bgcolor: "#08111f",
+                bgcolor: SIDEBAR_BG,
             }}
         >
             <Toolbar
@@ -232,11 +240,15 @@ export default function Sidebar({
                         justifyContent: "center",
                     }}
                 >
-                    <Logo size="medium" showText={!isCollapsed} />
+                    <Logo
+                        size="medium"
+                        showText={!isCollapsed}
+                        textColor={SIDEBAR_TEXT}
+                    />
                 </Link>
             </Toolbar>
 
-            <Divider />
+            <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
 
             <List component="nav" aria-label="Main navigation" sx={{ py: 1.5 }}>
                 <NavItem
@@ -251,13 +263,13 @@ export default function Sidebar({
             {!isCollapsed && (
                 <Typography
                     variant="overline"
-                    color="text.secondary"
                     sx={{
                         px: 2.5,
                         pb: 0.5,
                         fontSize: "0.7rem",
                         fontWeight: 800,
                         letterSpacing: "0.08em",
+                        color: SIDEBAR_MUTED,
                     }}
                 >
                     Boards
@@ -319,14 +331,14 @@ export default function Sidebar({
                                         overflow: "hidden",
                                         bgcolor: isActive
                                             ? "primary.main"
-                                            : "action.hover",
+                                            : SIDEBAR_HOVER,
                                         color: isActive
                                             ? "primary.contrastText"
-                                            : "text.secondary",
+                                            : SIDEBAR_MUTED,
                                         border: 1,
                                         borderColor: isActive
                                             ? "primary.light"
-                                            : "divider",
+                                            : SIDEBAR_DIVIDER,
                                     }}
                                 >
                                     {board.image_url ? (
@@ -350,7 +362,7 @@ export default function Sidebar({
                 </Box>
             )}
 
-            <Divider sx={{ my: 1.5 }} />
+            <Divider sx={{ my: 1.5, borderColor: SIDEBAR_DIVIDER }} />
 
             <List
                 component="nav"
@@ -399,7 +411,7 @@ export default function Sidebar({
 
             {!forceExpanded && (
                 <>
-                    <Divider />
+                    <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
                     <Box
                         sx={{
                             display: "flex",
@@ -422,6 +434,7 @@ export default function Sidebar({
                             <IconButton
                                 size="small"
                                 onClick={() => setCollapsed(!isCollapsed)}
+                                sx={{ color: SIDEBAR_MUTED }}
                                 aria-label={
                                     isCollapsed
                                         ? "Expand sidebar"
@@ -436,7 +449,7 @@ export default function Sidebar({
                             </IconButton>
                         </Tooltip>
                         {!isCollapsed && (
-                            <Typography color="text.secondary" fontWeight={600}>
+                            <Typography color={SIDEBAR_MUTED} fontWeight={600}>
                                 Collapse
                             </Typography>
                         )}

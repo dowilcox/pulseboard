@@ -98,7 +98,8 @@ export const lightTheme = createTheme({
     palette: {
         mode: "light",
         primary: {
-            main: "#6366f1",
+            main: "#5f61e8",
+            contrastText: "#ffffff",
         },
         secondary: {
             main: "#ec4899",
@@ -200,6 +201,13 @@ export const darkTheme = createTheme({
             styleOverrides: {
                 root: {
                     borderColor: "rgba(148, 163, 184, 0.16)",
+                },
+            },
+        },
+        MuiLink: {
+            styleOverrides: {
+                root: {
+                    color: "#9c8cff",
                 },
             },
         },

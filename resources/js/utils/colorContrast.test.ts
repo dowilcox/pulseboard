@@ -3,7 +3,7 @@ import { getContrastText } from "./colorContrast";
 
 describe("getContrastText", () => {
     it("returns dark text for light backgrounds", () => {
-        expect(getContrastText("#ffffff")).toBe("rgba(0,0,0,0.87)");
+        expect(getContrastText("#ffffff")).toBe("#000");
     });
 
     it("returns light text for dark backgrounds", () => {
@@ -11,6 +11,6 @@ describe("getContrastText", () => {
     });
 
     it("falls back to dark text for invalid values", () => {
-        expect(getContrastText("not-a-color")).toBe("rgba(0,0,0,0.87)");
+        expect(getContrastText("not-a-color")).toBe("#000");
     });
 });

@@ -1,8 +1,8 @@
 /**
  * Computes WCAG-compliant contrast text color for a given background.
  *
- * Uses the sRGB relative-luminance formula (WCAG 2.x) with a 0.179
- * threshold — the standard crossover point for AA-level contrast.
+ * Uses the sRGB relative-luminance formula (WCAG 2.x) and returns whichever
+ * of dark or light text has the stronger contrast against the background.
  */
 export function getContrastText(hexColor: string): string {
     const hex = hexColor.replace("#", "");
@@ -18,7 +18,7 @@ export function getContrastText(hexColor: string): string {
     const b = parseInt(fullHex.substring(4, 6), 16);
 
     // Return fallback for invalid input
-    if (isNaN(r) || isNaN(g) || isNaN(b)) return "rgba(0,0,0,0.87)";
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return "#000";
 
     const toLinear = (c: number) => {
         const srgb = c / 255;
@@ -30,5 +30,8 @@ export function getContrastText(hexColor: string): string {
     const luminance =
         0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 
-    return luminance > 0.179 ? "rgba(0,0,0,0.87)" : "#fff";
+    const contrastWithWhite = 1.05 / (luminance + 0.05);
+    const contrastWithDark = (luminance + 0.05) / 0.05;
+
+    return contrastWithDark > contrastWithWhite ? "#000" : "#fff";
 }

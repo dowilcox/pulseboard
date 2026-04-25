@@ -29,6 +29,12 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef } from "react";
 
+const SIDEBAR_TEXT = "#f8fafc";
+const SIDEBAR_MUTED = "#a8b3c7";
+const SIDEBAR_SELECTED = "rgba(108, 92, 255, 0.30)";
+const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
+const SIDEBAR_FOCUS = "rgba(108, 92, 255, 0.38)";
+
 interface BoardListProps {
     boards: Board[];
     teamId: string;
@@ -96,17 +102,17 @@ function SortableBoardItem({
                     borderRadius: 1.25,
                     borderLeft: isActive ? 3 : 0,
                     borderColor: "primary.main",
-                    color: isActive ? "text.primary" : "text.secondary",
+                    color: isActive ? SIDEBAR_TEXT : SIDEBAR_MUTED,
                     "&.Mui-selected": {
-                        bgcolor: "action.selected",
-                        color: "text.primary",
+                        bgcolor: SIDEBAR_SELECTED,
+                        color: SIDEBAR_TEXT,
                         "&:hover": {
-                            bgcolor: "action.focus",
+                            bgcolor: SIDEBAR_FOCUS,
                         },
                     },
                     "&:hover": {
-                        bgcolor: "action.hover",
-                        color: "text.primary",
+                        bgcolor: SIDEBAR_HOVER,
+                        color: SIDEBAR_TEXT,
                     },
                     cursor: isDragging ? "grabbing" : "grab",
                     "& .drag-handle": {
@@ -124,7 +130,7 @@ function SortableBoardItem({
                         display: "flex",
                         alignItems: "center",
                         mr: 0.5,
-                        color: "text.secondary",
+                        color: SIDEBAR_MUTED,
                     }}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`Drag to reorder ${board.name}`}
@@ -148,7 +154,11 @@ function SortableBoardItem({
                     ) : (
                         <ViewModuleOutlinedIcon
                             fontSize="small"
-                            color={isActive ? "primary" : "action"}
+                            sx={{
+                                color: isActive
+                                    ? "primary.light"
+                                    : SIDEBAR_MUTED,
+                            }}
                         />
                     )}
                 </ListItemIcon>
@@ -204,7 +214,7 @@ export default function BoardList({
         <Box sx={{ display: "flex", flexDirection: "column" }}>
             {boards.length === 0 ? (
                 <Box sx={{ px: 2, py: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color={SIDEBAR_MUTED}>
                         No boards yet
                     </Typography>
                 </Box>

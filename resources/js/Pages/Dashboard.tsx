@@ -180,7 +180,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                         height: 46,
                         borderRadius: 999,
                         bgcolor: color,
-                        color: "#fff",
+                        color: getContrastText(color),
                         display: "grid",
                         placeItems: "center",
                     }}
@@ -191,7 +191,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                     <Typography variant="body2" fontWeight={800}>
                         {label}
                     </Typography>
-                    <Typography variant="h4" fontWeight={900}>
+                    <Typography variant="h4" component="p" fontWeight={900}>
                         {value}
                     </Typography>
                     <Typography variant="caption" color="success.main">
@@ -313,6 +313,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                         height: 46,
                                         borderRadius: 999,
                                         bgcolor: "#3867d6",
+                                        color: "#fff",
                                         display: "grid",
                                         placeItems: "center",
                                     }}
@@ -326,18 +327,29 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                     >
                                         Team Workload
                                     </Typography>
-                                    <Typography variant="h4" fontWeight={900}>
+                                    <Typography
+                                        variant="h4"
+                                        component="p"
+                                        fontWeight={900}
+                                    >
                                         {workload.length > 0 ? "68%" : "0%"}
                                     </Typography>
                                     <Typography
                                         variant="caption"
-                                        color="primary.light"
+                                        sx={{
+                                            color: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? theme.palette.success.main
+                                                    : theme.palette.success
+                                                          .dark,
+                                        }}
                                     >
                                         On track
                                     </Typography>
                                 </Box>
                             </Box>
                             <LinearProgress
+                                aria-label="Team workload progress"
                                 variant="determinate"
                                 value={68}
                                 sx={{ height: 8, borderRadius: 999 }}
@@ -365,7 +377,11 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                     gap: 1,
                                 }}
                             >
-                                <Typography variant="h6" fontWeight={900}>
+                                <Typography
+                                    variant="h6"
+                                    component="h2"
+                                    fontWeight={900}
+                                >
                                     My Priority Tasks
                                 </Typography>
                                 <Chip label={myTasks.length} size="small" />
@@ -590,12 +606,13 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                 mb: 2,
                             }}
                         >
-                            <Typography variant="h6" fontWeight={900}>
+                            <Typography
+                                variant="h6"
+                                component="h2"
+                                fontWeight={900}
+                            >
                                 Board Progress
                             </Typography>
-                            <Button variant="outlined" size="small">
-                                View all boards
-                            </Button>
                         </Box>
                         <Box
                             sx={{
@@ -636,6 +653,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                             }}
                                         >
                                             <LinearProgress
+                                                aria-label={`${board.name} board progress`}
                                                 variant="determinate"
                                                 value={percent}
                                                 sx={{
@@ -675,6 +693,9 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                                     key={member.id}
                                                     src={member.avatar_url}
                                                     alt={member.name}
+                                                    imgProps={{
+                                                        alt: member.name,
+                                                    }}
                                                 >
                                                     {member.name.charAt(0)}
                                                 </Avatar>
@@ -707,11 +728,14 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                 <CalendarMonthIcon
                                     sx={{ color: "text.secondary" }}
                                 />
-                                <Typography fontWeight={900}>
+                                <Typography
+                                    component="h2"
+                                    variant="body1"
+                                    fontWeight={900}
+                                >
                                     Upcoming Deadlines
                                 </Typography>
                             </Box>
-                            <Button size="small">View calendar</Button>
                         </Box>
                         {upcomingTasks.map((task) => {
                             const overdue =
@@ -776,11 +800,16 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                     <Typography
                                         variant="caption"
                                         fontWeight={800}
-                                        color={
-                                            overdue
-                                                ? "error.main"
-                                                : "warning.main"
-                                        }
+                                        sx={{
+                                            color: (theme) =>
+                                                overdue
+                                                    ? theme.palette.error.main
+                                                    : theme.palette.mode ===
+                                                        "dark"
+                                                      ? theme.palette.warning
+                                                            .main
+                                                      : "#995300",
+                                        }}
                                     >
                                         {overdue ? "Overdue" : "Due soon"}
                                     </Typography>
@@ -790,7 +819,12 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                     </Paper>
 
                     <Paper variant="outlined" sx={{ p: 2.25 }}>
-                        <Typography fontWeight={900} sx={{ mb: 1.5 }}>
+                        <Typography
+                            component="h2"
+                            variant="body1"
+                            fontWeight={900}
+                            sx={{ mb: 1.5 }}
+                        >
                             Recent Activity
                         </Typography>
                         {myTasks.slice(0, 4).map((task) => (
@@ -805,6 +839,14 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                             >
                                 <Avatar
                                     src={task.assignees?.[0]?.avatar_url}
+                                    alt={
+                                        task.assignees?.[0]?.name ?? "Assignee"
+                                    }
+                                    imgProps={{
+                                        alt:
+                                            task.assignees?.[0]?.name ??
+                                            "Assignee",
+                                    }}
                                     sx={{ width: 34, height: 34 }}
                                 >
                                     {task.assignees?.[0]?.name.charAt(0) ?? "P"}
@@ -826,7 +868,12 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                     </Paper>
 
                     <Paper variant="outlined" sx={{ p: 2.25 }}>
-                        <Typography fontWeight={900} sx={{ mb: 1.5 }}>
+                        <Typography
+                            component="h2"
+                            variant="body1"
+                            fontWeight={900}
+                            sx={{ mb: 1.5 }}
+                        >
                             Team Workload
                         </Typography>
                         {workload.map(({ user, count }) => {
@@ -845,6 +892,8 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                 >
                                     <Avatar
                                         src={user.avatar_url}
+                                        alt={user.name}
+                                        imgProps={{ alt: user.name }}
                                         sx={{ width: 34, height: 34 }}
                                     >
                                         {user.name.charAt(0)}
@@ -853,6 +902,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                         {user.name}
                                     </Typography>
                                     <LinearProgress
+                                        aria-label={`${user.name} workload`}
                                         variant="determinate"
                                         value={value}
                                         color={
