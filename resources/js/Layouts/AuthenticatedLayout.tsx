@@ -31,7 +31,7 @@ import NotificationBell from "@/Components/Layout/NotificationBell";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 64;
 
 interface AuthenticatedLayoutProps {
@@ -50,7 +50,6 @@ export default function AuthenticatedLayout(
                 <SidebarProvider
                     currentTeamOverride={props.currentTeam}
                     sidebarBoardsOverride={props.sidebarBoards}
-                    activeBoardId={props.activeBoardId}
                 >
                     <AuthenticatedLayoutInner {...props} />
                 </SidebarProvider>
@@ -134,7 +133,14 @@ function AuthenticatedLayoutInner({
     };
 
     return (
-        <Box sx={{ display: "flex", minHeight: "100vh" }}>
+        <Box
+            sx={{
+                display: "flex",
+                minHeight: "100vh",
+                bgcolor: "background.default",
+                color: "text.primary",
+            }}
+        >
             {/* Skip navigation link */}
             <Box
                 component="a"
@@ -189,6 +195,8 @@ function AuthenticatedLayoutInner({
                         "& .MuiDrawer-paper": {
                             boxSizing: "border-box",
                             width: DRAWER_WIDTH,
+                            borderRight: 1,
+                            borderColor: "divider",
                         },
                     }}
                 >
@@ -233,9 +241,10 @@ function AuthenticatedLayoutInner({
                     color="default"
                     elevation={0}
                     sx={{
-                        bgcolor: "background.paper",
+                        bgcolor: "background.default",
                         borderBottom: 1,
                         borderColor: "divider",
+                        backdropFilter: "blur(18px)",
                     }}
                 >
                     <Box role="status" aria-live="polite">
@@ -260,21 +269,34 @@ function AuthenticatedLayoutInner({
                             </Typography>
                         )}
                     </Box>
-                    <Toolbar>
+                    <Toolbar
+                        sx={{
+                            alignItems: "flex-start",
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "auto 1fr auto",
+                                md: "minmax(0, 1fr) auto",
+                            },
+                            gap: 2,
+                            px: { xs: 2, lg: 4 },
+                            py: header ? 1.25 : 1.25,
+                        }}
+                    >
                         <IconButton
                             color="inherit"
                             edge="start"
                             onClick={handleDrawerToggle}
-                            sx={{ mr: 2, display: { md: "none" } }}
+                            sx={{ display: { md: "none" } }}
                             aria-label="Open navigation menu"
                         >
                             <MenuIcon />
                         </IconButton>
 
-                        {/* Page header */}
-                        {header && <Box sx={{ flexGrow: 1 }}>{header}</Box>}
-
-                        {!header && <Box sx={{ flexGrow: 1 }} />}
+                        {header ? (
+                            <Box sx={{ minWidth: 0 }}>{header}</Box>
+                        ) : (
+                            <Box />
+                        )}
 
                         {/* Connection status + User menu */}
                         <Box
@@ -282,19 +304,12 @@ function AuthenticatedLayoutInner({
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 1.5,
+                                justifySelf: "end",
+                                pt: header ? 0.5 : 0,
                             }}
                         >
                             <ConnectionStatus />
                             <NotificationBell />
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    display: { xs: "none", sm: "block" },
-                                    color: "text.secondary",
-                                }}
-                            >
-                                {user.name}
-                            </Typography>
                             <IconButton
                                 onClick={handleMenuOpen}
                                 size="small"
@@ -307,9 +322,19 @@ function AuthenticatedLayoutInner({
                                 <Avatar
                                     src={user.avatar_url}
                                     alt={user.name}
-                                    sx={{ width: 32, height: 32 }}
+                                    sx={{
+                                        width: 40,
+                                        height: 40,
+                                        bgcolor: "secondary.main",
+                                        fontWeight: 800,
+                                    }}
                                 >
-                                    {user.name.charAt(0).toUpperCase()}
+                                    {user.name
+                                        .split(/\s+/)
+                                        .slice(0, 2)
+                                        .map((part) => part.charAt(0))
+                                        .join("")
+                                        .toUpperCase()}
                                 </Avatar>
                             </IconButton>
                         </Box>
@@ -359,7 +384,10 @@ function AuthenticatedLayoutInner({
                     sx={{
                         flexGrow: 1,
                         bgcolor: "background.default",
-                        p: 3,
+                        px: { xs: 2, lg: 4 },
+                        pt: header ? 1.5 : 3,
+                        pb: 3,
+                        overflow: "hidden",
                     }}
                 >
                     {children}

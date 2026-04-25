@@ -5,6 +5,7 @@ import WorkIcon from "@mui/icons-material/Work";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
+import type { ReactElement } from "react";
 
 interface Props {
     value: BoardViewMode;
@@ -14,11 +15,11 @@ interface Props {
 const views: {
     value: BoardViewMode;
     label: string;
-    icon: React.ReactElement;
+    icon: ReactElement;
 }[] = [
     {
         value: "kanban",
-        label: "Kanban",
+        label: "Board view",
         icon: <ViewColumnIcon fontSize="small" />,
     },
     { value: "list", label: "List", icon: <TableRowsIcon fontSize="small" /> },
@@ -38,13 +39,30 @@ export default function ViewSwitcher({ value, onChange }: Props) {
                 if (newValue) onChange(newValue as BoardViewMode);
             }}
             size="small"
+            sx={{
+                border: 1,
+                borderColor: "divider",
+                borderRadius: 1.5,
+                bgcolor: "background.paper",
+                overflow: "hidden",
+            }}
         >
             {views.map((view) => (
                 <Tooltip key={view.value} title={view.label}>
                     <ToggleButton
                         value={view.value}
                         aria-label={view.label}
-                        sx={{ px: 1.5 }}
+                        sx={{
+                            gap: 1,
+                            px: 1.25,
+                            minWidth: 48,
+                            border: 0,
+                            color: "text.secondary",
+                            "&.Mui-selected": {
+                                bgcolor: "action.selected",
+                                color: "text.primary",
+                            },
+                        }}
                     >
                         {view.icon}
                     </ToggleButton>

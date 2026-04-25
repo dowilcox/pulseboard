@@ -49,7 +49,7 @@ export function ThemeContextProvider({ children }: { children: ReactNode }) {
                 return stored;
             }
         }
-        return "system";
+        return "dark";
     });
 
     const setMode = (newMode: ThemeMode) => {

@@ -82,6 +82,9 @@ const TaskRow = memo(function TaskRow({
             sx={{
                 cursor: "pointer",
                 "& .MuiTableCell-root": { py: 1.5 },
+                "&:hover": {
+                    bgcolor: "action.hover",
+                },
             }}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
@@ -450,14 +453,18 @@ export default function ListView({
     );
 
     return (
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer
+            component={Paper}
+            variant="outlined"
+            sx={{ borderRadius: 2, overflow: "hidden" }}
+        >
             <Table>
                 <TableHead>
                     <TableRow
                         sx={{
                             "& .MuiTableCell-head": {
                                 fontWeight: 600,
-                                bgcolor: "action.hover",
+                                bgcolor: "rgba(148, 163, 184, 0.08)",
                                 py: 1.5,
                             },
                         }}

@@ -246,7 +246,7 @@ export default function FilterBar({
         <Box
             sx={{
                 display: "flex",
-                gap: 2,
+                gap: 1.25,
                 alignItems: "center",
                 flexWrap: "wrap",
                 mb: 2.5,
@@ -415,7 +415,7 @@ export default function FilterBar({
                 placeholder="Search tasks..."
                 value={filters.search}
                 onChange={(e) => updateFilter("search", e.target.value)}
-                sx={{ minWidth: 200 }}
+                sx={{ minWidth: { xs: "100%", sm: 260 } }}
                 slotProps={{
                     input: {
                         startAdornment: (
@@ -458,7 +458,7 @@ export default function FilterBar({
                         />
                     ))
                 }
-                sx={{ minWidth: 160 }}
+                sx={{ minWidth: 170 }}
                 limitTags={1}
             />
 
@@ -493,7 +493,7 @@ export default function FilterBar({
                         />
                     ))
                 }
-                sx={{ minWidth: 140 }}
+                sx={{ minWidth: 150 }}
                 limitTags={1}
             />
 

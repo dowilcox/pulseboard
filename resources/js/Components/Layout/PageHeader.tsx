@@ -3,7 +3,6 @@ import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import HomeIcon from "@mui/icons-material/Home";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import type { ReactNode } from "react";
 
@@ -15,8 +14,10 @@ export interface BreadcrumbItem {
 interface PageHeaderProps {
     /** The current page title displayed as h1 */
     title: string;
-    /** Breadcrumb trail (excluding "Home" which is always first, and current page which uses title) */
+    /** Breadcrumb trail excluding "Home"; current page title is rendered below, not repeated in breadcrumbs. */
     breadcrumbs?: BreadcrumbItem[];
+    /** Optional custom title renderer, used for editable page titles. */
+    titleContent?: ReactNode;
     /** Optional actions (buttons, etc.) rendered on the right side */
     actions?: ReactNode;
 }
@@ -24,15 +25,18 @@ interface PageHeaderProps {
 export default function PageHeader({
     title,
     breadcrumbs = [],
+    titleContent,
     actions,
 }: PageHeaderProps) {
     return (
         <Box
             sx={{
                 display: "flex",
-                alignItems: "center",
+                alignItems: { xs: "flex-start", md: "center" },
                 justifyContent: "space-between",
                 width: "100%",
+                gap: 2,
+                flexDirection: { xs: "column", md: "row" },
             }}
         >
             <Box sx={{ minWidth: 0 }}>
@@ -47,9 +51,13 @@ export default function PageHeader({
                         underline="hover"
                         color="text.secondary"
                         variant="body2"
-                        sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            fontSize: "0.95rem",
+                        }}
                     >
-                        <HomeIcon sx={{ fontSize: 14 }} />
                         Home
                     </Link>
                     {breadcrumbs.map((crumb) =>
@@ -61,6 +69,7 @@ export default function PageHeader({
                                 underline="hover"
                                 color="text.secondary"
                                 variant="body2"
+                                sx={{ fontSize: "0.95rem" }}
                             >
                                 {crumb.label}
                             </Link>
@@ -69,22 +78,30 @@ export default function PageHeader({
                                 key={crumb.label}
                                 variant="body2"
                                 color="text.secondary"
+                                sx={{ fontSize: "0.95rem" }}
                             >
                                 {crumb.label}
                             </Typography>
                         ),
                     )}
-                    <Typography
-                        variant="body2"
-                        color="text.primary"
-                        fontWeight={500}
-                    >
-                        {title}
-                    </Typography>
                 </MuiBreadcrumbs>
-                <Typography variant="h6" component="h1" fontWeight={600} noWrap>
-                    {title}
-                </Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {titleContent ?? (
+                        <Typography
+                            variant="h4"
+                            component="h1"
+                            fontWeight={800}
+                            noWrap
+                            sx={{
+                                fontSize: { xs: "1.6rem", md: "1.85rem" },
+                                letterSpacing: "-0.04em",
+                                lineHeight: 1.12,
+                            }}
+                        >
+                            {title}
+                        </Typography>
+                    )}
+                </Box>
             </Box>
             {actions && (
                 <Box
@@ -92,8 +109,10 @@ export default function PageHeader({
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
-                        ml: 2,
                         flexShrink: 0,
+                        alignSelf: { xs: "stretch", md: "center" },
+                        justifyContent: { xs: "flex-start", md: "flex-end" },
+                        flexWrap: "wrap",
                     }}
                 >
                     {actions}

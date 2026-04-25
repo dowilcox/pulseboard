@@ -41,20 +41,21 @@ interface SidebarProviderProps {
     children: ReactNode;
     currentTeamOverride?: Team;
     sidebarBoardsOverride?: Board[];
-    activeBoardId?: string;
 }
 
 export function SidebarProvider({
     children,
     currentTeamOverride,
     sidebarBoardsOverride,
-    activeBoardId,
 }: SidebarProviderProps) {
     const { teams: sharedTeams } = usePage<PageProps>().props;
     const teams = sharedTeams ?? [];
 
     const [selectedTeamId, setSelectedTeamIdRaw] = useState<string | null>(
         () => {
+            if (currentTeamOverride) {
+                return currentTeamOverride.id;
+            }
             if (typeof window !== "undefined") {
                 return localStorage.getItem(TEAM_KEY);
             }
@@ -89,6 +90,14 @@ export function SidebarProvider({
         }
     }, [selectedTeamId, teams]);
 
+    useEffect(() => {
+        if (selectedTeamId || currentTeamOverride || teams.length === 0) return;
+
+        const fallbackTeamId = teams[0].id;
+        setSelectedTeamIdRaw(fallbackTeamId);
+        localStorage.setItem(TEAM_KEY, fallbackTeamId);
+    }, [currentTeamOverride, selectedTeamId, teams]);
+
     // Persist to localStorage
     const setSelectedTeamId = (id: string | null) => {
         setSelectedTeamIdRaw(id);
@@ -104,10 +113,23 @@ export function SidebarProvider({
         localStorage.setItem(COLLAPSED_KEY, String(value));
     };
 
-    const currentTeam = useMemo(
-        () => teams.find((t) => t.id === selectedTeamId),
-        [teams, selectedTeamId],
-    );
+    const currentTeam = useMemo(() => {
+        const sharedTeam =
+            teams.find(
+                (team) =>
+                    team.id === (currentTeamOverride?.id ?? selectedTeamId),
+            ) ?? teams[0];
+
+        if (!currentTeamOverride) {
+            return sharedTeam;
+        }
+
+        return {
+            ...sharedTeam,
+            ...currentTeamOverride,
+            boards: currentTeamOverride.boards ?? sharedTeam?.boards,
+        };
+    }, [currentTeamOverride, selectedTeamId, teams]);
 
     const { auth } = usePage<PageProps>().props;
     const serverBoardOrder = auth.user?.ui_preferences?.board_order;

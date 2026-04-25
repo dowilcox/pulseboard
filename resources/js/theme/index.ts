@@ -14,9 +14,17 @@ const commonOptions: ThemeOptions = {
         },
     },
     shape: {
-        borderRadius: 10,
+        borderRadius: 12,
     },
     components: {
+        MuiCssBaseline: {
+            styleOverrides: {
+                body: {
+                    background:
+                        "radial-gradient(circle at 28% -10%, rgba(78, 91, 232, 0.18), transparent 34%), #080f1d",
+                },
+            },
+        },
         MuiButton: {
             defaultProps: {
                 disableElevation: true,
@@ -24,6 +32,8 @@ const commonOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     textTransform: "none",
+                    borderRadius: 10,
+                    fontWeight: 700,
                 },
             },
         },
@@ -43,13 +53,20 @@ const commonOptions: ThemeOptions = {
         },
         MuiPaper: {
             styleOverrides: {
+                root: {
+                    backgroundImage: "none",
+                },
                 rounded: {
-                    borderRadius: 10,
+                    borderRadius: 14,
                 },
             },
         },
         MuiChip: {
             styleOverrides: {
+                root: {
+                    fontWeight: 700,
+                    borderRadius: 7,
+                },
                 sizeSmall: {
                     height: 22,
                 },
@@ -98,42 +115,91 @@ export const darkTheme = createTheme({
     palette: {
         mode: "dark",
         primary: {
-            main: "#818cf8",
+            main: "#6c5cff",
+            light: "#9c8cff",
+            dark: "#5142df",
+            contrastText: "#ffffff",
         },
         secondary: {
-            main: "#f472b6",
+            main: "#13c8e8",
+        },
+        success: {
+            main: "#43d18b",
+        },
+        warning: {
+            main: "#ffb020",
+        },
+        error: {
+            main: "#ff554a",
         },
         background: {
-            default: "#191919",
-            paper: "#262626",
+            default: "#080f1d",
+            paper: "#101827",
         },
         text: {
-            primary: "rgba(255,255,255,0.87)",
-            secondary: "rgba(255,255,255,0.55)",
+            primary: "#f8fafc",
+            secondary: "#a8b3c7",
         },
-        divider: "rgba(255,255,255,0.10)",
+        divider: "rgba(148, 163, 184, 0.18)",
+        action: {
+            hover: "rgba(148, 163, 184, 0.08)",
+            selected: "rgba(108, 92, 255, 0.16)",
+            focus: "rgba(108, 92, 255, 0.22)",
+            disabled: "rgba(148, 163, 184, 0.32)",
+            disabledBackground: "rgba(148, 163, 184, 0.10)",
+        },
     },
     components: {
         ...commonOptions.components,
+        MuiAppBar: {
+            styleOverrides: {
+                root: {
+                    backgroundImage: "none",
+                    backgroundColor: "#080f1d",
+                    borderColor: "rgba(148, 163, 184, 0.16)",
+                },
+            },
+        },
         MuiPaper: {
             ...commonOptions.components?.MuiPaper,
             styleOverrides: {
                 ...commonOptions.components?.MuiPaper?.styleOverrides,
                 root: {
                     backgroundImage: "none",
+                    backgroundColor: "#101827",
                 },
             },
         },
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    backgroundColor: "#1f1f1f",
+                    backgroundColor: "#0b1423",
+                    borderRadius: 10,
                     "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(255,255,255,0.16)",
+                        borderColor: "rgba(148, 163, 184, 0.22)",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(255,255,255,0.30)",
+                        borderColor: "rgba(148, 163, 184, 0.40)",
                     },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#6c5cff",
+                        boxShadow: "0 0 0 3px rgba(108, 92, 255, 0.18)",
+                    },
+                },
+            },
+        },
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    backgroundColor: "#08111f",
+                    backgroundImage: "none",
+                },
+            },
+        },
+        MuiTableCell: {
+            styleOverrides: {
+                root: {
+                    borderColor: "rgba(148, 163, 184, 0.16)",
                 },
             },
         },

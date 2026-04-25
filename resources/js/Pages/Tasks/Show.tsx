@@ -222,7 +222,6 @@ export default function TasksShow({
 
     const isCompleted = task.completed_at != null;
     const taskNumber = task.task_number ? `#${task.task_number}` : "";
-
     const gitlabPrefix = getGitlabPrefix(task);
 
     return (
@@ -235,6 +234,42 @@ export default function TasksShow({
                     title={[taskNumber, gitlabPrefix, task.title]
                         .filter(Boolean)
                         .join(" ")}
+                    titleContent={
+                        <TextField
+                            fullWidth
+                            variant="standard"
+                            value={title}
+                            onChange={(e) => handleTitleChange(e.target.value)}
+                            sx={{
+                                "& .MuiInputBase-root": {
+                                    alignItems: "baseline",
+                                    lineHeight: 1.12,
+                                },
+                                "& .MuiInputBase-input": {
+                                    py: 0,
+                                },
+                            }}
+                            slotProps={{
+                                input: {
+                                    sx: {
+                                        fontSize: {
+                                            xs: "1.6rem",
+                                            md: "1.85rem",
+                                        },
+                                        fontWeight: 800,
+                                        letterSpacing: "-0.04em",
+                                        lineHeight: 1.12,
+                                        color: "text.primary",
+                                        textDecoration: isCompleted
+                                            ? "line-through"
+                                            : "none",
+                                    },
+                                    disableUnderline: true,
+                                },
+                            }}
+                            aria-label="Task title"
+                        />
+                    }
                     breadcrumbs={[
                         { label: "Teams", href: route("teams.index") },
                         {
@@ -261,89 +296,58 @@ export default function TasksShow({
                     display: "flex",
                     gap: 3,
                     flexDirection: { xs: "column", md: "row" },
+                    alignItems: "flex-start",
                 }}
             >
                 {/* Left — main content */}
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                    {/* Task number + title */}
-                    <Box sx={{ mb: 2 }}>
-                        {(taskNumber || gitlabPrefix) && (
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                            >
-                                {taskNumber}
-                                {gitlabPrefix && taskNumber ? " " : ""}
-                                {gitlabPrefix}
-                            </Typography>
-                        )}
-                        <TextField
-                            fullWidth
-                            variant="standard"
-                            value={title}
-                            onChange={(e) => handleTitleChange(e.target.value)}
-                            slotProps={{
-                                input: {
-                                    sx: {
-                                        fontSize: "1.5rem",
-                                        fontWeight: 600,
-                                        textDecoration: isCompleted
-                                            ? "line-through"
-                                            : "none",
-                                    },
-                                    disableUnderline: true,
-                                },
-                            }}
-                            aria-label="Task title"
-                        />
-
-                        {/* GitLab project link */}
-                        {task.gitlab_project && (
-                            <Link
-                                href={task.gitlab_project.web_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                variant="caption"
-                                underline="hover"
-                                color="text.secondary"
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 0.5,
-                                    mt: 0.25,
-                                }}
-                            >
-                                {task.gitlab_project.path_with_namespace}
-                                <OpenInNewIcon sx={{ fontSize: 12 }} />
-                            </Link>
-                        )}
-
-                        {/* Parent task breadcrumb */}
-                        {task.parent_task && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ mt: 0.5 }}
-                            >
-                                Subtask of{" "}
+                    {(task.gitlab_project || task.parent_task) && (
+                        <Box sx={{ mb: 2 }}>
+                            {task.gitlab_project && (
                                 <Link
-                                    component={InertiaLink}
-                                    href={route("tasks.show", [
-                                        team.slug,
-                                        board.slug,
-                                        task.parent_task.slug,
-                                    ])}
+                                    href={task.gitlab_project.web_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="caption"
                                     underline="hover"
+                                    color="text.secondary"
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.5,
+                                        mt: 0.25,
+                                    }}
                                 >
-                                    {task.parent_task.task_number
-                                        ? `#${task.parent_task.task_number}`
-                                        : ""}{" "}
-                                    {task.parent_task.title}
+                                    {task.gitlab_project.path_with_namespace}
+                                    <OpenInNewIcon sx={{ fontSize: 12 }} />
                                 </Link>
-                            </Typography>
-                        )}
-                    </Box>
+                            )}
+
+                            {task.parent_task && (
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mt: 0.5 }}
+                                >
+                                    Subtask of{" "}
+                                    <Link
+                                        component={InertiaLink}
+                                        href={route("tasks.show", [
+                                            team.slug,
+                                            board.slug,
+                                            task.parent_task.slug,
+                                        ])}
+                                        underline="hover"
+                                    >
+                                        {task.parent_task.task_number
+                                            ? `#${task.parent_task.task_number}`
+                                            : ""}{" "}
+                                        {task.parent_task.title}
+                                    </Link>
+                                </Typography>
+                            )}
+                        </Box>
+                    )}
 
                     {/* Description */}
                     <Box sx={{ mb: 4 }}>
@@ -581,7 +585,7 @@ export default function TasksShow({
                         width: { xs: "100%", md: 280 },
                         flexShrink: 0,
                         position: { md: "sticky" },
-                        top: { md: 80 },
+                        top: { md: 16 },
                         alignSelf: "flex-start",
                     }}
                 >

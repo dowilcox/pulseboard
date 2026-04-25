@@ -462,8 +462,7 @@ export default function RichTextEditor({
                         : "divider",
                 borderRadius: 1,
                 overflow: "hidden",
-                bgcolor:
-                    theme.palette.mode === "dark" ? "#1f1f1f" : "transparent",
+                bgcolor: "background.paper",
                 "&:hover": {
                     borderColor:
                         theme.palette.mode === "dark"
@@ -583,7 +582,7 @@ export default function RichTextEditor({
                         flexWrap: "wrap",
                         gap: 0.25,
                         p: 0.5,
-                        bgcolor: "background.default",
+                        bgcolor: "background.paper",
                         borderBottom: 1,
                         borderColor: "divider",
                     }}

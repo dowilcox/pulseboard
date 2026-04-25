@@ -113,7 +113,7 @@ function DroppableColumnBody({
                 display: "flex",
                 flexDirection: "column",
                 gap: 1.25,
-                borderRadius: "0 0 12px 12px",
+                borderRadius: "0 0 16px 16px",
                 transition: "background-color 150ms ease",
                 bgcolor: isOver ? "action.selected" : "transparent",
             }}
@@ -635,17 +635,19 @@ export default function KanbanView({
                                 role="region"
                                 aria-label={`${column.name} column, ${totalCount} tasks${atWipLimit ? ", at WIP limit" : ""}`}
                                 sx={{
-                                    minWidth: 300,
-                                    maxWidth: 340,
-                                    flex: "0 0 300px",
-                                    bgcolor: "action.hover",
-                                    borderRadius: "12px",
+                                    minWidth: 330,
+                                    maxWidth: 360,
+                                    flex: "0 0 330px",
+                                    bgcolor: "rgba(12, 21, 36, 0.72)",
+                                    borderRadius: "16px",
                                     border: 1,
                                     borderColor: atWipLimit
                                         ? "warning.main"
                                         : "divider",
                                     display: "flex",
                                     flexDirection: "column",
+                                    boxShadow:
+                                        "0 18px 50px rgba(0, 0, 0, 0.12)",
                                     transition:
                                         "flex 200ms ease, min-width 200ms ease",
                                 }}
@@ -657,16 +659,17 @@ export default function KanbanView({
                                         alignItems: "center",
                                         gap: 1.25,
                                         px: 2,
-                                        py: 1.75,
+                                        py: 2,
                                     }}
                                 >
                                     <Box
                                         sx={{
-                                            width: 10,
-                                            height: 10,
+                                            width: 24,
+                                            height: 24,
                                             borderRadius: "50%",
                                             bgcolor: column.color || "#9e9e9e",
                                             flexShrink: 0,
+                                            boxShadow: `0 0 0 5px ${column.color || "#9e9e9e"}22`,
                                         }}
                                     />
                                     <Typography
@@ -693,6 +696,8 @@ export default function KanbanView({
                                             height: 22,
                                             fontSize: "0.7rem",
                                             minWidth: 28,
+                                            bgcolor:
+                                                "rgba(148, 163, 184, 0.12)",
                                         }}
                                     />
                                     <Tooltip title="Collapse column">
@@ -756,7 +761,7 @@ export default function KanbanView({
                                         {hasMore && !isLoading && (
                                             <Button
                                                 size="small"
-                                                variant="text"
+                                                variant="outlined"
                                                 onClick={() =>
                                                     loadMoreForColumn(column.id)
                                                 }

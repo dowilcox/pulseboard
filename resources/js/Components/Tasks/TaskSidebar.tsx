@@ -31,6 +31,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
+import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -252,7 +253,16 @@ export default function TaskSidebar({
     );
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Paper
+            variant="outlined"
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+                p: 1.75,
+                bgcolor: "rgba(16, 24, 39, 0.92)",
+            }}
+        >
             {/* Status — always visible */}
             <Button
                 variant={isCompleted ? "contained" : "outlined"}
@@ -637,6 +647,6 @@ export default function TaskSidebar({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+        </Paper>
     );
 }

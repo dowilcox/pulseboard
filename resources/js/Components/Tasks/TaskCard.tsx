@@ -44,19 +44,21 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                 }
             }}
             sx={{
-                p: 1.5,
+                p: 1.75,
                 cursor: "pointer",
                 borderLeft: `3px solid ${priorityColor}`,
-                borderRadius: "8px",
+                borderRadius: "12px",
+                bgcolor: "rgba(21, 31, 48, 0.92)",
                 opacity: isCompleted ? 0.7 : 1,
                 transition:
-                    "border-color 150ms ease, background-color 150ms ease",
+                    "border-color 150ms ease, background-color 150ms ease, transform 150ms ease",
                 display: "flex",
                 flexDirection: "column",
                 gap: 1,
                 "&:hover": {
-                    bgcolor: "action.hover",
-                    borderColor: "action.selected",
+                    bgcolor: "rgba(31, 42, 61, 0.98)",
+                    borderColor: "primary.main",
+                    transform: "translateY(-1px)",
                 },
                 "&:focus-visible": {
                     outline: "2px solid",
@@ -90,7 +92,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                 <Typography
                     variant="caption"
                     color="text.secondary"
-                    sx={{ lineHeight: 1 }}
+                    sx={{ lineHeight: 1, fontWeight: 700 }}
                 >
                     {task.task_number ? `#${task.task_number}` : ""}
                     {gitlabPrefixLabel && task.task_number ? " " : ""}
@@ -126,10 +128,11 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                 )}
                 <Typography
                     variant="body2"
-                    fontWeight={500}
+                    fontWeight={800}
                     sx={{
                         textDecoration: isCompleted ? "line-through" : "none",
                         color: isCompleted ? "text.disabled" : "text.primary",
+                        lineHeight: 1.45,
                     }}
                 >
                     {task.title}

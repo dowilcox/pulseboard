@@ -1,15 +1,18 @@
 import { Link, router, usePage } from "@inertiajs/react";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import AssignmentIcon from "@mui/icons-material/Assignment";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import ViewModuleOutlinedIcon from "@mui/icons-material/ViewModuleOutlined";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -17,11 +20,174 @@ import type { PageProps } from "@/types";
 import { useSidebar } from "@/Contexts/SidebarContext";
 import Logo from "@/Components/Common/Logo";
 import BoardList from "./BoardList";
-import TeamSelector from "./TeamSelector";
+import type { ReactNode } from "react";
 
 interface SidebarProps {
     activeBoardId?: string;
     forceExpanded?: boolean;
+}
+
+interface NavItemProps {
+    href?: string;
+    icon: ReactNode;
+    label: string;
+    selected?: boolean;
+    collapsed: boolean;
+    badge?: number;
+}
+
+function NavItem({
+    href,
+    icon,
+    label,
+    selected = false,
+    collapsed,
+    badge,
+}: NavItemProps) {
+    const content = href ? (
+        <ListItemButton
+            component={Link}
+            href={href}
+            selected={selected}
+            aria-current={selected ? "page" : undefined}
+            sx={{
+                minHeight: 46,
+                mx: 1,
+                mb: 0.5,
+                px: collapsed ? 1 : 1.75,
+                justifyContent: collapsed ? "center" : "flex-start",
+                borderRadius: 1.25,
+                borderLeft: selected ? 3 : 0,
+                borderColor: "primary.main",
+                color: selected ? "text.primary" : "text.secondary",
+                bgcolor: selected ? "action.selected" : "transparent",
+                "&.Mui-selected": {
+                    bgcolor: "action.selected",
+                    color: "text.primary",
+                },
+                "&.Mui-selected:hover, &:hover": {
+                    bgcolor: selected ? "action.focus" : "action.hover",
+                    color: "text.primary",
+                },
+            }}
+        >
+            <ListItemIcon
+                sx={{
+                    minWidth: collapsed ? 0 : 38,
+                    color: "inherit",
+                    justifyContent: "center",
+                }}
+            >
+                {icon}
+            </ListItemIcon>
+            {!collapsed && (
+                <>
+                    <ListItemText
+                        primary={label}
+                        primaryTypographyProps={{
+                            fontWeight: selected ? 800 : 600,
+                            fontSize: "0.95rem",
+                        }}
+                    />
+                    {badge != null && badge > 0 && (
+                        <Box
+                            sx={{
+                                minWidth: 26,
+                                height: 26,
+                                px: 1,
+                                borderRadius: 999,
+                                bgcolor: "rgba(148, 163, 184, 0.14)",
+                                color: "text.primary",
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: "0.8rem",
+                                fontWeight: 800,
+                            }}
+                        >
+                            {badge}
+                        </Box>
+                    )}
+                </>
+            )}
+        </ListItemButton>
+    ) : (
+        <ListItemButton
+            component="button"
+            selected={selected}
+            aria-current={selected ? "page" : undefined}
+            sx={{
+                minHeight: 46,
+                mx: 1,
+                mb: 0.5,
+                px: collapsed ? 1 : 1.75,
+                justifyContent: collapsed ? "center" : "flex-start",
+                borderRadius: 1.25,
+                borderLeft: selected ? 3 : 0,
+                borderColor: "primary.main",
+                color: selected ? "text.primary" : "text.secondary",
+                bgcolor: selected ? "action.selected" : "transparent",
+                width: "calc(100% - 16px)",
+                textAlign: "left",
+                "&.Mui-selected": {
+                    bgcolor: "action.selected",
+                    color: "text.primary",
+                },
+                "&.Mui-selected:hover, &:hover": {
+                    bgcolor: selected ? "action.focus" : "action.hover",
+                    color: "text.primary",
+                },
+            }}
+        >
+            <ListItemIcon
+                sx={{
+                    minWidth: collapsed ? 0 : 38,
+                    color: "inherit",
+                    justifyContent: "center",
+                }}
+            >
+                {icon}
+            </ListItemIcon>
+            {!collapsed && (
+                <>
+                    <ListItemText
+                        primary={label}
+                        primaryTypographyProps={{
+                            fontWeight: selected ? 800 : 600,
+                            fontSize: "0.95rem",
+                        }}
+                    />
+                    {badge != null && badge > 0 && (
+                        <Box
+                            sx={{
+                                minWidth: 26,
+                                height: 26,
+                                px: 1,
+                                borderRadius: 999,
+                                bgcolor: "rgba(148, 163, 184, 0.14)",
+                                color: "text.primary",
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: "0.8rem",
+                                fontWeight: 800,
+                            }}
+                        >
+                            {badge}
+                        </Box>
+                    )}
+                </>
+            )}
+        </ListItemButton>
+    );
+
+    if (collapsed) {
+        return (
+            <Tooltip title={label} placement="right">
+                {content}
+            </Tooltip>
+        );
+    }
+
+    return content;
 }
 
 export default function Sidebar({
@@ -32,16 +198,30 @@ export default function Sidebar({
     const { collapsed, setCollapsed, currentTeam, boards } = useSidebar();
     const isCollapsed = forceExpanded ? false : collapsed;
 
+    const teamHomeHref = currentTeam
+        ? route("teams.show", currentTeam.slug)
+        : route("teams.index");
+
+    const settingsHref = currentTeam
+        ? route("teams.settings", currentTeam.slug)
+        : route("profile.edit");
+
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            {/* Logo */}
+        <Box
+            sx={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                bgcolor: "#08111f",
+            }}
+        >
             <Toolbar
                 sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: isCollapsed ? "center" : "center",
-                    px: isCollapsed ? 0 : 2,
-                    minHeight: 64,
+                    justifyContent: isCollapsed ? "center" : "flex-start",
+                    px: isCollapsed ? 0 : 2.5,
+                    minHeight: 82,
                 }}
             >
                 <Link
@@ -52,140 +232,38 @@ export default function Sidebar({
                         justifyContent: "center",
                     }}
                 >
-                    <Logo size="small" showText={!isCollapsed} />
+                    <Logo size="medium" showText={!isCollapsed} />
                 </Link>
             </Toolbar>
 
             <Divider />
 
-            {/* Navigation links */}
-            <Box component="nav" aria-label="Main navigation" sx={{ pt: 1 }}>
-                {isCollapsed ? (
-                    <>
-                        <Tooltip title="My Tasks" placement="right">
-                            <MenuItem
-                                component={Link}
-                                href={route("dashboard")}
-                                selected={route().current("dashboard")}
-                                aria-current={
-                                    route().current("dashboard")
-                                        ? "page"
-                                        : undefined
-                                }
-                                sx={{
-                                    py: 1.5,
-                                    px: 0,
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <AssignmentIcon fontSize="small" />
-                            </MenuItem>
-                        </Tooltip>
-                        <Tooltip title="Teams" placement="right">
-                            <MenuItem
-                                component={Link}
-                                href={route("teams.index")}
-                                selected={route().current("teams.index")}
-                                aria-current={
-                                    route().current("teams.index")
-                                        ? "page"
-                                        : undefined
-                                }
-                                sx={{
-                                    py: 1.5,
-                                    px: 0,
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <GroupsIcon fontSize="small" />
-                            </MenuItem>
-                        </Tooltip>
-                        {auth.user.is_admin && (
-                            <Tooltip title="Admin" placement="right">
-                                <MenuItem
-                                    component={Link}
-                                    href={route("admin.dashboard")}
-                                    selected={route().current("admin.*")}
-                                    aria-current={
-                                        route().current("admin.*")
-                                            ? "page"
-                                            : undefined
-                                    }
-                                    sx={{
-                                        py: 1.5,
-                                        px: 0,
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <AdminPanelSettingsIcon fontSize="small" />
-                                </MenuItem>
-                            </Tooltip>
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <MenuItem
-                            component={Link}
-                            href={route("dashboard")}
-                            selected={route().current("dashboard")}
-                            aria-current={
-                                route().current("dashboard")
-                                    ? "page"
-                                    : undefined
-                            }
-                            sx={{ py: 1.5, px: 2 }}
-                        >
-                            <ListItemIcon>
-                                <AssignmentIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText primary="My Tasks" />
-                        </MenuItem>
+            <List component="nav" aria-label="Main navigation" sx={{ py: 1.5 }}>
+                <NavItem
+                    href={route("dashboard")}
+                    icon={<DashboardOutlinedIcon fontSize="small" />}
+                    label="Dashboard"
+                    selected={route().current("dashboard")}
+                    collapsed={isCollapsed}
+                />
+            </List>
 
-                        <MenuItem
-                            component={Link}
-                            href={route("teams.index")}
-                            selected={route().current("teams.index")}
-                            aria-current={
-                                route().current("teams.index")
-                                    ? "page"
-                                    : undefined
-                            }
-                            sx={{ py: 1.5, px: 2 }}
-                        >
-                            <ListItemIcon>
-                                <GroupsIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText primary="Teams" />
-                        </MenuItem>
+            {!isCollapsed && (
+                <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{
+                        px: 2.5,
+                        pb: 0.5,
+                        fontSize: "0.7rem",
+                        fontWeight: 800,
+                        letterSpacing: "0.08em",
+                    }}
+                >
+                    Boards
+                </Typography>
+            )}
 
-                        {auth.user.is_admin && (
-                            <MenuItem
-                                component={Link}
-                                href={route("admin.dashboard")}
-                                selected={route().current("admin.*")}
-                                aria-current={
-                                    route().current("admin.*")
-                                        ? "page"
-                                        : undefined
-                                }
-                                sx={{ py: 1.5, px: 2 }}
-                            >
-                                <ListItemIcon>
-                                    <AdminPanelSettingsIcon fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText primary="Admin" />
-                            </MenuItem>
-                        )}
-                    </>
-                )}
-            </Box>
-
-            <Divider sx={{ my: 1.5 }} />
-
-            {/* Team selector */}
-            <TeamSelector collapsed={isCollapsed} />
-
-            {/* Board list */}
             {currentTeam && !isCollapsed && (
                 <BoardList
                     boards={boards}
@@ -194,24 +272,25 @@ export default function Sidebar({
                 />
             )}
 
-            {/* Collapsed board list — inline initials with tooltips */}
             {currentTeam && isCollapsed && boards.length > 0 && (
                 <Box
                     sx={{
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
-                        gap: 1.5,
+                        gap: 1.25,
                         mt: 1,
                     }}
                 >
                     {boards.map((board) => {
                         const isActive = board.id === activeBoardId;
-                        const words = board.name.trim().split(/\s+/);
-                        const initials =
-                            words.length >= 2
-                                ? (words[0][0] + words[1][0]).toUpperCase()
-                                : board.name.slice(0, 2).toUpperCase();
+                        const initials = board.name
+                            .trim()
+                            .split(/\s+/)
+                            .slice(0, 2)
+                            .map((word) => word.charAt(0))
+                            .join("")
+                            .toUpperCase();
                         return (
                             <Tooltip
                                 key={board.id}
@@ -228,15 +307,14 @@ export default function Sidebar({
                                         )
                                     }
                                     sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: "8px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: 1.25,
+                                        display: "grid",
+                                        placeItems: "center",
                                         cursor: "pointer",
-                                        fontSize: "0.7rem",
-                                        fontWeight: 600,
+                                        fontSize: "0.72rem",
+                                        fontWeight: 800,
                                         overflow: "hidden",
                                         bgcolor: isActive
                                             ? "primary.main"
@@ -244,12 +322,10 @@ export default function Sidebar({
                                         color: isActive
                                             ? "primary.contrastText"
                                             : "text.secondary",
-                                        transition: "all 0.15s",
-                                        "&:hover": {
-                                            bgcolor: isActive
-                                                ? "primary.dark"
-                                                : "action.selected",
-                                        },
+                                        border: 1,
+                                        borderColor: isActive
+                                            ? "primary.light"
+                                            : "divider",
                                     }}
                                 >
                                     {board.image_url ? (
@@ -273,17 +349,65 @@ export default function Sidebar({
                 </Box>
             )}
 
+            <Divider sx={{ my: 1.5 }} />
+
+            <List
+                component="nav"
+                aria-label="Secondary navigation"
+                sx={{ py: 0 }}
+            >
+                <NavItem
+                    href={teamHomeHref}
+                    icon={<ViewModuleOutlinedIcon fontSize="small" />}
+                    label="All Boards"
+                    selected={route().current("teams.show")}
+                    collapsed={isCollapsed}
+                />
+                <NavItem
+                    href={route("teams.index")}
+                    icon={<GroupsIcon fontSize="small" />}
+                    label="Teams"
+                    selected={route().current("teams.index")}
+                    collapsed={isCollapsed}
+                />
+                <NavItem
+                    href={settingsHref}
+                    icon={<SettingsOutlinedIcon fontSize="small" />}
+                    label="Settings"
+                    selected={
+                        route().current("teams.settings") ||
+                        route().current("teams.bots.*") ||
+                        route().current("teams.figma.*") ||
+                        route().current("teams.gitlab-projects.*") ||
+                        route().current("profile.*")
+                    }
+                    collapsed={isCollapsed}
+                />
+                {auth.user.is_admin && (
+                    <NavItem
+                        href={route("admin.dashboard")}
+                        icon={<AdminPanelSettingsIcon fontSize="small" />}
+                        label="Admin"
+                        selected={route().current("admin.*")}
+                        collapsed={isCollapsed}
+                    />
+                )}
+            </List>
+
             <Box sx={{ flex: 1 }} />
 
-            {/* Collapse toggle — only on desktop (not in forceExpanded mobile drawer) */}
             {!forceExpanded && (
                 <>
                     <Divider />
                     <Box
                         sx={{
                             display: "flex",
-                            justifyContent: isCollapsed ? "center" : "flex-end",
-                            p: 0.5,
+                            alignItems: "center",
+                            justifyContent: isCollapsed
+                                ? "center"
+                                : "flex-start",
+                            gap: 1,
+                            p: 1.5,
                         }}
                     >
                         <Tooltip
@@ -310,6 +434,11 @@ export default function Sidebar({
                                 )}
                             </IconButton>
                         </Tooltip>
+                        {!isCollapsed && (
+                            <Typography color="text.secondary" fontWeight={600}>
+                                Collapse
+                            </Typography>
+                        )}
                     </Box>
                 </>
             )}

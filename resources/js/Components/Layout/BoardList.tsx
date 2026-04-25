@@ -18,7 +18,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { router } from "@inertiajs/react";
-import DashboardIcon from "@mui/icons-material/Dashboard";
+import ViewModuleOutlinedIcon from "@mui/icons-material/ViewModuleOutlined";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
@@ -71,13 +71,24 @@ function SortableBoardItem({
                 selected={isActive}
                 onClick={handleBoardClick}
                 sx={{
-                    px: 2,
+                    mx: 1,
+                    mb: 0.5,
+                    px: 1.75,
                     py: 1,
+                    borderRadius: 1.25,
+                    borderLeft: isActive ? 3 : 0,
+                    borderColor: "primary.main",
+                    color: isActive ? "text.primary" : "text.secondary",
                     "&.Mui-selected": {
                         bgcolor: "action.selected",
+                        color: "text.primary",
                         "&:hover": {
-                            bgcolor: "action.selected",
+                            bgcolor: "action.focus",
                         },
+                    },
+                    "&:hover": {
+                        bgcolor: "action.hover",
+                        color: "text.primary",
                     },
                     "& .drag-handle": {
                         opacity: 0,
@@ -121,7 +132,7 @@ function SortableBoardItem({
                             }}
                         />
                     ) : (
-                        <DashboardIcon
+                        <ViewModuleOutlinedIcon
                             fontSize="small"
                             color={isActive ? "primary" : "action"}
                         />
@@ -132,7 +143,7 @@ function SortableBoardItem({
                     primaryTypographyProps={{
                         variant: "body2",
                         noWrap: true,
-                        fontWeight: isActive ? 600 : 400,
+                        fontWeight: isActive ? 800 : 600,
                     }}
                 />
             </ListItemButton>
@@ -175,21 +186,7 @@ export default function BoardList({
     );
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <Box sx={{ px: 2, py: 0.75 }}>
-                <Typography
-                    variant="overline"
-                    color="text.secondary"
-                    sx={{
-                        fontSize: "0.65rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.1em",
-                    }}
-                >
-                    Boards
-                </Typography>
-            </Box>
-
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
             {boards.length === 0 ? (
                 <Box sx={{ px: 2, py: 1 }}>
                     <Typography variant="body2" color="text.secondary">
