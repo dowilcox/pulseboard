@@ -267,7 +267,8 @@ export default function Sidebar({
             {currentTeam && !isCollapsed && (
                 <BoardList
                     boards={boards}
-                    teamId={currentTeam.slug}
+                    teamId={currentTeam.id}
+                    teamSlug={currentTeam.slug}
                     activeBoardId={activeBoardId}
                 />
             )}

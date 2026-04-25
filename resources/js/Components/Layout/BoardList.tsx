@@ -27,23 +27,24 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 interface BoardListProps {
     boards: Board[];
     teamId: string;
+    teamSlug: string;
     activeBoardId?: string;
 }
 
 interface SortableBoardItemProps {
     board: Board;
-    teamId: string;
+    teamSlug: string;
     isActive: boolean;
 }
 
 function SortableBoardItem({
     board,
-    teamId,
+    teamSlug,
     isActive,
 }: SortableBoardItemProps) {
     const {
@@ -54,6 +55,13 @@ function SortableBoardItem({
         transition,
         isDragging,
     } = useSortable({ id: board.id });
+    const draggedRef = useRef(false);
+
+    useEffect(() => {
+        if (isDragging) {
+            draggedRef.current = true;
+        }
+    }, [isDragging]);
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -62,14 +70,24 @@ function SortableBoardItem({
     };
 
     const handleBoardClick = () => {
-        router.get(route("teams.boards.show", [teamId, board.slug]));
+        if (draggedRef.current) {
+            draggedRef.current = false;
+            return;
+        }
+
+        router.get(route("teams.boards.show", [teamSlug, board.slug]));
     };
 
     return (
         <ListItem ref={setNodeRef} style={style} disablePadding>
             <ListItemButton
+                {...attributes}
+                {...listeners}
                 selected={isActive}
                 onClick={handleBoardClick}
+                onPointerDownCapture={() => {
+                    draggedRef.current = false;
+                }}
                 sx={{
                     mx: 1,
                     mb: 0.5,
@@ -90,8 +108,9 @@ function SortableBoardItem({
                         bgcolor: "action.hover",
                         color: "text.primary",
                     },
+                    cursor: isDragging ? "grabbing" : "grab",
                     "& .drag-handle": {
-                        opacity: 0,
+                        opacity: isDragging ? 1 : 0,
                         transition: "opacity 0.15s",
                     },
                     "&:hover .drag-handle": {
@@ -101,20 +120,15 @@ function SortableBoardItem({
             >
                 <Box
                     className="drag-handle"
-                    {...attributes}
-                    {...listeners}
                     sx={{
                         display: "flex",
                         alignItems: "center",
                         mr: 0.5,
-                        cursor: "grab",
                         color: "text.secondary",
-                        "&:active": { cursor: "grabbing" },
                     }}
                     onClick={(e) => e.stopPropagation()}
                     aria-label={`Drag to reorder ${board.name}`}
-                    role="button"
-                    tabIndex={0}
+                    aria-hidden="true"
                 >
                     <DragIndicatorIcon sx={{ fontSize: 16 }} />
                 </Box>
@@ -154,6 +168,7 @@ function SortableBoardItem({
 export default function BoardList({
     boards,
     teamId,
+    teamSlug,
     activeBoardId,
 }: BoardListProps) {
     const { reorderBoards } = useSidebar();
@@ -208,7 +223,7 @@ export default function BoardList({
                                 <SortableBoardItem
                                     key={board.id}
                                     board={board}
-                                    teamId={teamId}
+                                    teamSlug={teamSlug}
                                     isActive={board.id === activeBoardId}
                                 />
                             ))}
