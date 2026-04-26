@@ -9,6 +9,12 @@ interface Props {
     onClick?: (task: Task) => void;
 }
 
+function getVisibleTaskLabel(task: Task): string {
+    return [task.task_number ? `#${task.task_number}` : null, task.title]
+        .filter(Boolean)
+        .join(" ");
+}
+
 const SortableTaskCard = memo(function SortableTaskCard({
     task,
     onClick,
@@ -35,7 +41,7 @@ const SortableTaskCard = memo(function SortableTaskCard({
             {...attributes}
             {...listeners}
             aria-roledescription="sortable item"
-            aria-label={`Draggable task: ${task.title}`}
+            aria-label={`Draggable task: ${getVisibleTaskLabel(task)}`}
         >
             <TaskCard task={task} onClick={onClick} />
         </div>

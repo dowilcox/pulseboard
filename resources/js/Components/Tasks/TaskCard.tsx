@@ -22,6 +22,12 @@ interface Props {
     onClick?: (task: Task) => void;
 }
 
+const CARD_TEXT = "#f8fafc";
+const CARD_MUTED = "#cbd5e1";
+const CARD_SUBTLE = "#a8b3c7";
+const CARD_SURFACE = "rgba(21, 31, 48, 0.92)";
+const CARD_SURFACE_HOVER = "rgba(31, 42, 61, 0.98)";
+
 const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
     const priorityColor = PRIORITY_COLORS[task.priority] ?? "transparent";
     const isCompleted = task.completed_at != null;
@@ -29,13 +35,20 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
     const checklistProgress = task.checklist_progress;
 
     const gitlabPrefixLabel = getGitlabPrefix(task);
+    const visibleTaskLabel = [
+        task.task_number ? `#${task.task_number}` : null,
+        gitlabPrefixLabel,
+        task.title,
+    ]
+        .filter(Boolean)
+        .join(" ");
 
     return (
         <Paper
             variant="outlined"
             role="button"
             tabIndex={0}
-            aria-label={`${task.title}${task.priority !== "none" ? `, ${task.priority} priority` : ""}${isCompleted ? ", completed" : ""}${isBlocked ? ", blocked" : ""}`}
+            aria-label={`${visibleTaskLabel}${task.priority !== "none" ? `, ${task.priority} priority` : ""}${isCompleted ? ", completed" : ""}${isBlocked ? ", blocked" : ""}`}
             onClick={() => onClick?.(task)}
             onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -48,15 +61,15 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                 cursor: "pointer",
                 borderLeft: `3px solid ${priorityColor}`,
                 borderRadius: "12px",
-                bgcolor: "rgba(21, 31, 48, 0.92)",
-                opacity: isCompleted ? 0.7 : 1,
+                bgcolor: CARD_SURFACE,
+                color: CARD_TEXT,
                 transition:
                     "border-color 150ms ease, background-color 150ms ease, transform 150ms ease",
                 display: "flex",
                 flexDirection: "column",
                 gap: 1,
                 "&:hover": {
-                    bgcolor: "rgba(31, 42, 61, 0.98)",
+                    bgcolor: CARD_SURFACE_HOVER,
                     borderColor: "primary.main",
                     transform: "translateY(-1px)",
                 },
@@ -91,8 +104,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
             {(gitlabPrefixLabel || task.task_number) && (
                 <Typography
                     variant="caption"
-                    color="text.secondary"
-                    sx={{ lineHeight: 1, fontWeight: 700 }}
+                    sx={{ lineHeight: 1, fontWeight: 700, color: CARD_MUTED }}
                 >
                     {task.task_number ? `#${task.task_number}` : ""}
                     {gitlabPrefixLabel && task.task_number ? " " : ""}
@@ -131,7 +143,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                     fontWeight={800}
                     sx={{
                         textDecoration: isCompleted ? "line-through" : "none",
-                        color: isCompleted ? "text.disabled" : "text.primary",
+                        color: isCompleted ? CARD_SUBTLE : CARD_TEXT,
                         lineHeight: 1.45,
                     }}
                 >
@@ -162,6 +174,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
             {checklistProgress && checklistProgress.total > 0 && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <LinearProgress
+                        aria-label={`${visibleTaskLabel} checklist progress`}
                         variant="determinate"
                         value={
                             (checklistProgress.completed /
@@ -170,7 +183,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                         }
                         sx={{ flex: 1, height: 4, borderRadius: 2 }}
                     />
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: CARD_MUTED }}>
                         {checklistProgress.completed}/{checklistProgress.total}
                     </Typography>
                 </Box>
@@ -193,7 +206,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                         {task.due_date && (
                             <Typography
                                 variant="caption"
-                                color="text.secondary"
+                                sx={{ color: CARD_MUTED }}
                             >
                                 {new Date(task.due_date).toLocaleDateString(
                                     undefined,
@@ -216,12 +229,12 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                                 <ChatBubbleOutlineIcon
                                     sx={{
                                         fontSize: 14,
-                                        color: "text.secondary",
+                                        color: CARD_MUTED,
                                     }}
                                 />
                                 <Typography
                                     variant="caption"
-                                    color="text.secondary"
+                                    sx={{ color: CARD_MUTED }}
                                 >
                                     {task.comments_count}
                                 </Typography>
@@ -230,7 +243,7 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                         {(task.subtasks_count ?? 0) > 0 && (
                             <Typography
                                 variant="caption"
-                                color="text.secondary"
+                                sx={{ color: CARD_MUTED }}
                                 aria-label={`${task.completed_subtasks_count ?? 0} of ${task.subtasks_count} subtasks completed`}
                             >
                                 {task.completed_subtasks_count ?? 0}/

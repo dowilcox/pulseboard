@@ -49,6 +49,13 @@ interface Props {
     isWatching: boolean;
 }
 
+const SIDEBAR_SURFACE = "rgba(16, 24, 39, 0.92)";
+const SIDEBAR_TEXT = "#f8fafc";
+const SIDEBAR_MUTED = "#cbd5e1";
+const SIDEBAR_SUBTLE = "#a8b3c7";
+const SIDEBAR_BORDER = "rgba(148, 163, 184, 0.24)";
+const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
+
 export default function TaskSidebar({
     task,
     team,
@@ -230,10 +237,9 @@ export default function TaskSidebar({
         <Typography
             variant="caption"
             fontWeight={700}
-            color="text.secondary"
             textTransform="uppercase"
             letterSpacing={0.5}
-            sx={{ pt: 0.5 }}
+            sx={{ pt: 0.5, color: SIDEBAR_SUBTLE }}
         >
             {label}
         </Typography>
@@ -243,8 +249,8 @@ export default function TaskSidebar({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Typography
                 variant="caption"
-                color="text.secondary"
                 fontWeight={600}
+                sx={{ color: SIDEBAR_MUTED }}
             >
                 {label}
             </Typography>
@@ -260,7 +266,18 @@ export default function TaskSidebar({
                 flexDirection: "column",
                 gap: 1.5,
                 p: 1.75,
-                bgcolor: "rgba(16, 24, 39, 0.92)",
+                bgcolor: SIDEBAR_SURFACE,
+                color: SIDEBAR_TEXT,
+                borderColor: SIDEBAR_BORDER,
+                "& .MuiOutlinedInput-root": {
+                    color: SIDEBAR_TEXT,
+                    "& fieldset": { borderColor: SIDEBAR_BORDER },
+                    "&:hover fieldset": { borderColor: SIDEBAR_MUTED },
+                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
+                },
+                "& .MuiSvgIcon-root": {
+                    color: SIDEBAR_MUTED,
+                },
             }}
         >
             {/* Status — always visible */}
@@ -278,6 +295,14 @@ export default function TaskSidebar({
                 fullWidth
                 size="small"
                 aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
+                sx={{
+                    color: isCompleted ? undefined : SIDEBAR_TEXT,
+                    borderColor: isCompleted ? undefined : SIDEBAR_BORDER,
+                    "&:hover": {
+                        borderColor: isCompleted ? undefined : SIDEBAR_MUTED,
+                        bgcolor: isCompleted ? undefined : SIDEBAR_HOVER,
+                    },
+                }}
             >
                 {isCompleted ? "Completed" : "Mark Complete"}
             </Button>
@@ -292,6 +317,14 @@ export default function TaskSidebar({
                 fullWidth
                 size="small"
                 aria-label={isWatching ? "Unwatch task" : "Watch task"}
+                sx={{
+                    color: isWatching ? undefined : SIDEBAR_TEXT,
+                    borderColor: isWatching ? undefined : SIDEBAR_BORDER,
+                    "&:hover": {
+                        borderColor: isWatching ? undefined : SIDEBAR_MUTED,
+                        bgcolor: isWatching ? undefined : SIDEBAR_HOVER,
+                    },
+                }}
             >
                 {isWatching ? "Watching" : "Watch"}
             </Button>
@@ -303,6 +336,7 @@ export default function TaskSidebar({
                     fullWidth
                     value={board.id}
                     onChange={(e) => handleBoardChange(e.target.value)}
+                    inputProps={{ "aria-label": "Board" }}
                     renderValue={(value) => {
                         const b = teamBoards.find((tb) => tb.id === value);
                         return (
@@ -316,7 +350,7 @@ export default function TaskSidebar({
                                 <DashboardIcon
                                     sx={{
                                         fontSize: 14,
-                                        color: "text.secondary",
+                                        color: SIDEBAR_MUTED,
                                     }}
                                 />
                                 {b?.name ?? "Unknown"}
@@ -352,6 +386,7 @@ export default function TaskSidebar({
                 fullWidth
                 value={task.column_id}
                 onChange={(e) => handleColumnChange(e.target.value)}
+                inputProps={{ "aria-label": "Column" }}
                 renderValue={(value) => {
                     const col = columns.find((c) => c.id === value);
                     return (
@@ -451,13 +486,16 @@ export default function TaskSidebar({
                         value={dueDate}
                         onChange={(e) => handleDueDateChange(e.target.value)}
                         slotProps={{
+                            htmlInput: {
+                                "aria-label": "Due date",
+                            },
                             input: {
                                 startAdornment: (
                                     <CalendarTodayIcon
                                         sx={{
                                             fontSize: 16,
                                             mr: 1,
-                                            color: "text.secondary",
+                                            color: SIDEBAR_MUTED,
                                         }}
                                     />
                                 ),
@@ -509,19 +547,25 @@ export default function TaskSidebar({
                 }}
             >
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="caption" color="text.disabled">
+                    <Typography
+                        variant="caption"
+                        sx={{ color: SIDEBAR_SUBTLE }}
+                    >
                         Created
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: SIDEBAR_MUTED }}>
                         {formatTimestamp(task.created_at)}
                         {task.creator && ` by ${task.creator.name}`}
                     </Typography>
                 </Box>
                 <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography variant="caption" color="text.disabled">
+                    <Typography
+                        variant="caption"
+                        sx={{ color: SIDEBAR_SUBTLE }}
+                    >
                         Updated
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: SIDEBAR_MUTED }}>
                         {formatTimestamp(task.updated_at)}
                     </Typography>
                 </Box>
@@ -548,11 +592,11 @@ export default function TaskSidebar({
                     sx={{
                         flex: 1,
                         textTransform: "none",
-                        color: "text.secondary",
+                        color: SIDEBAR_MUTED,
                         fontSize: "0.75rem",
                         "&:hover": {
-                            color: "text.primary",
-                            bgcolor: "action.hover",
+                            color: SIDEBAR_TEXT,
+                            bgcolor: SIDEBAR_HOVER,
                         },
                     }}
                 >
@@ -568,11 +612,11 @@ export default function TaskSidebar({
                     sx={{
                         flex: 1,
                         textTransform: "none",
-                        color: "text.secondary",
+                        color: SIDEBAR_MUTED,
                         fontSize: "0.75rem",
                         "&:hover": {
                             color: "error.main",
-                            bgcolor: "action.hover",
+                            bgcolor: SIDEBAR_HOVER,
                         },
                     }}
                 >

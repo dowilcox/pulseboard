@@ -28,6 +28,7 @@ export default function PrioritySelector({ task, teamId, boardId }: Props) {
             onChange={handleChange}
             size="small"
             fullWidth
+            inputProps={{ "aria-label": "Priority" }}
             renderValue={(value) => {
                 const p = PRIORITY_OPTIONS.find((pr) => pr.value === value);
                 return (

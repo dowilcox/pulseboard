@@ -48,6 +48,13 @@ function buildColumnTasksMap(columns: Column[]): Record<string, Task[]> {
     return map;
 }
 
+const KANBAN_PANEL = "rgba(12, 21, 36, 0.72)";
+const KANBAN_PANEL_HOVER = "rgba(31, 42, 61, 0.76)";
+const KANBAN_PANEL_SELECTED = "rgba(108, 92, 255, 0.20)";
+const KANBAN_TEXT = "#f8fafc";
+const KANBAN_MUTED = "#cbd5e1";
+const KANBAN_DIVIDER = "rgba(148, 163, 184, 0.20)";
+
 function findColumnForTask(
     columnTasks: Record<string, Task[]>,
     taskId: string,
@@ -115,7 +122,7 @@ function DroppableColumnBody({
                 gap: 1.25,
                 borderRadius: "0 0 16px 16px",
                 transition: "background-color 150ms ease",
-                bgcolor: isOver ? "action.selected" : "transparent",
+                bgcolor: isOver ? KANBAN_PANEL_SELECTED : "transparent",
             }}
         >
             {children}
@@ -175,10 +182,11 @@ function CollapsedColumn({
                 width: 48,
                 minWidth: 48,
                 flex: "0 0 48px",
-                bgcolor: isOver ? "action.selected" : "action.hover",
+                bgcolor: isOver ? KANBAN_PANEL_SELECTED : KANBAN_PANEL,
                 borderRadius: "12px",
                 border: 1,
-                borderColor: isOver ? "primary.main" : "divider",
+                borderColor: isOver ? "primary.main" : KANBAN_DIVIDER,
+                color: KANBAN_TEXT,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -188,7 +196,7 @@ function CollapsedColumn({
                 minHeight: 200,
                 "&:hover": {
                     borderColor: "primary.main",
-                    bgcolor: "action.focus",
+                    bgcolor: KANBAN_PANEL_HOVER,
                 },
             }}
             onClick={onExpand}
@@ -203,7 +211,7 @@ function CollapsedColumn({
             aria-label={`Expand ${column.name} column`}
         >
             <Tooltip title="Expand column" placement="right">
-                <IconButton size="small" sx={{ mb: 1 }}>
+                <IconButton size="small" sx={{ mb: 1, color: KANBAN_MUTED }}>
                     <ChevronRightIcon fontSize="small" />
                 </IconButton>
             </Tooltip>
@@ -235,7 +243,7 @@ function CollapsedColumn({
                     textOverflow: "ellipsis",
                     maxHeight: "calc(100vh - 360px)",
                     letterSpacing: "0.05em",
-                    color: "text.secondary",
+                    color: KANBAN_MUTED,
                     userSelect: "none",
                 }}
             >
@@ -570,6 +578,7 @@ export default function KanbanView({
                     >
                         <Typography
                             variant="h6"
+                            component="h2"
                             color="text.secondary"
                             gutterBottom
                         >
@@ -638,12 +647,13 @@ export default function KanbanView({
                                     minWidth: 330,
                                     maxWidth: 360,
                                     flex: "0 0 330px",
-                                    bgcolor: "rgba(12, 21, 36, 0.72)",
+                                    bgcolor: KANBAN_PANEL,
                                     borderRadius: "16px",
                                     border: 1,
                                     borderColor: atWipLimit
                                         ? "warning.main"
-                                        : "divider",
+                                        : KANBAN_DIVIDER,
+                                    color: KANBAN_TEXT,
                                     display: "flex",
                                     flexDirection: "column",
                                     boxShadow:
@@ -674,8 +684,9 @@ export default function KanbanView({
                                     />
                                     <Typography
                                         variant="subtitle2"
+                                        component="h2"
                                         fontWeight={700}
-                                        sx={{ flex: 1 }}
+                                        sx={{ flex: 1, color: KANBAN_TEXT }}
                                         noWrap
                                     >
                                         {column.name}
@@ -698,6 +709,8 @@ export default function KanbanView({
                                             minWidth: 28,
                                             bgcolor:
                                                 "rgba(148, 163, 184, 0.12)",
+                                            color: KANBAN_TEXT,
+                                            borderColor: KANBAN_DIVIDER,
                                         }}
                                     />
                                     <Tooltip title="Collapse column">
@@ -712,6 +725,7 @@ export default function KanbanView({
                                                 width: 26,
                                                 height: 26,
                                                 opacity: 0.6,
+                                                color: KANBAN_MUTED,
                                                 "&:hover": { opacity: 1 },
                                             }}
                                         >
@@ -768,7 +782,7 @@ export default function KanbanView({
                                                 sx={{
                                                     fontSize: "0.7rem",
                                                     textTransform: "none",
-                                                    color: "text.secondary",
+                                                    color: KANBAN_MUTED,
                                                     alignSelf: "center",
                                                 }}
                                             >

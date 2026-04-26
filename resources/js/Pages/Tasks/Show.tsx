@@ -250,6 +250,9 @@ export default function TasksShow({
                                 },
                             }}
                             slotProps={{
+                                htmlInput: {
+                                    "aria-label": "Task title",
+                                },
                                 input: {
                                     sx: {
                                         fontSize: {
@@ -267,7 +270,6 @@ export default function TasksShow({
                                     disableUnderline: true,
                                 },
                             }}
-                            aria-label="Task title"
                         />
                     }
                     breadcrumbs={[
@@ -360,6 +362,7 @@ export default function TasksShow({
                         >
                             <Typography
                                 variant="subtitle1"
+                                component="h2"
                                 fontWeight={700}
                                 sx={{ letterSpacing: "0.01em" }}
                             >
@@ -441,7 +444,10 @@ export default function TasksShow({
                             </>
                         ) : !isDescriptionEmpty(description) ? (
                             <Box sx={{ px: 1 }}>
-                                <RichTextDisplay content={description} />
+                                <RichTextDisplay
+                                    content={description}
+                                    ariaLabel="Task description"
+                                />
                             </Box>
                         ) : (
                             <Typography
@@ -464,6 +470,7 @@ export default function TasksShow({
                     <Box sx={{ mb: 4 }}>
                         <Typography
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={700}
                             sx={{ letterSpacing: "0.01em" }}
                         >
@@ -480,6 +487,7 @@ export default function TasksShow({
                     <Box sx={{ mb: 4 }}>
                         <Typography
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={700}
                             sx={{ letterSpacing: "0.01em" }}
                         >
@@ -496,6 +504,7 @@ export default function TasksShow({
                     <Box sx={{ mb: 4 }}>
                         <Typography
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={700}
                             sx={{ letterSpacing: "0.01em" }}
                         >
@@ -538,6 +547,7 @@ export default function TasksShow({
                     <Box sx={{ mb: 4 }}>
                         <Typography
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={700}
                             sx={{ letterSpacing: "0.01em" }}
                         >
@@ -556,6 +566,7 @@ export default function TasksShow({
                     <Box>
                         <Typography
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={700}
                             sx={{ letterSpacing: "0.01em" }}
                         >

@@ -18,6 +18,10 @@ interface Props {
     disabled?: boolean;
 }
 
+const KANBAN_TEXT_MUTED = "#cbd5e1";
+const KANBAN_HOVER = "rgba(148, 163, 184, 0.14)";
+const KANBAN_INPUT = "rgba(8, 17, 31, 0.72)";
+
 export default function QuickCreateTask({
     teamId,
     boardId,
@@ -102,9 +106,9 @@ export default function QuickCreateTask({
                     sx={{
                         flex: 1,
                         justifyContent: "flex-start",
-                        color: "text.secondary",
+                        color: KANBAN_TEXT_MUTED,
                         textTransform: "none",
-                        "&:hover": { bgcolor: "action.hover" },
+                        "&:hover": { bgcolor: KANBAN_HOVER },
                     }}
                 >
                     {disabled ? "WIP limit reached" : "Add task"}
@@ -116,8 +120,8 @@ export default function QuickCreateTask({
                             onClick={(e) => setAnchorEl(e.currentTarget)}
                             sx={{
                                 minWidth: "auto",
-                                color: "text.secondary",
-                                "&:hover": { bgcolor: "action.hover" },
+                                color: KANBAN_TEXT_MUTED,
+                                "&:hover": { bgcolor: KANBAN_HOVER },
                             }}
                             aria-label="Create from template"
                         >
@@ -177,7 +181,7 @@ export default function QuickCreateTask({
                 disabled={processing}
                 sx={{
                     "& .MuiOutlinedInput-root": {
-                        bgcolor: "background.paper",
+                        bgcolor: KANBAN_INPUT,
                         ...(selectedTemplate && {
                             borderColor: "primary.main",
                             "& fieldset": { borderColor: "primary.main" },

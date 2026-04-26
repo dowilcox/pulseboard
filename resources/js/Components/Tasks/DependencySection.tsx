@@ -17,6 +17,11 @@ interface Props {
     boardId: string;
 }
 
+const DEPENDENCY_TEXT = "#f8fafc";
+const DEPENDENCY_MUTED = "#cbd5e1";
+const DEPENDENCY_SUBTLE = "#a8b3c7";
+const DEPENDENCY_HOVER = "rgba(148, 163, 184, 0.14)";
+
 export default function DependencySection({
     task,
     boardTasks,
@@ -107,7 +112,7 @@ export default function DependencySection({
                 <Typography
                     variant="caption"
                     fontWeight={600}
-                    color="text.secondary"
+                    sx={{ color: DEPENDENCY_MUTED }}
                 >
                     {label}
                 </Typography>
@@ -120,12 +125,15 @@ export default function DependencySection({
                         onClick={() => setAdding(true)}
                         sx={{
                             textTransform: "none",
-                            color: "text.secondary",
+                            color: DEPENDENCY_MUTED,
                             fontSize: "0.7rem",
                             minWidth: 0,
                             py: 0,
                             px: 0.5,
-                            "&:hover": { color: "text.primary" },
+                            "&:hover": {
+                                color: DEPENDENCY_TEXT,
+                                bgcolor: DEPENDENCY_HOVER,
+                            },
                         }}
                     >
                         Add
@@ -160,8 +168,7 @@ export default function DependencySection({
             ) : !adding ? (
                 <Typography
                     variant="caption"
-                    color="text.disabled"
-                    sx={{ fontStyle: "italic" }}
+                    sx={{ color: DEPENDENCY_SUBTLE, fontStyle: "italic" }}
                 >
                     None
                 </Typography>

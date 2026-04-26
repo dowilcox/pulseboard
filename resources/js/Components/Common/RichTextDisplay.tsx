@@ -21,9 +21,13 @@ const lowlight = createLowlight(common);
 
 interface RichTextDisplayProps {
     content: string;
+    ariaLabel?: string;
 }
 
-export default function RichTextDisplay({ content }: RichTextDisplayProps) {
+export default function RichTextDisplay({
+    content,
+    ariaLabel = "Rich text content",
+}: RichTextDisplayProps) {
     const theme = useTheme();
     const sanitizedContent = sanitizeRichText(content);
 
@@ -51,6 +55,11 @@ export default function RichTextDisplay({ content }: RichTextDisplayProps) {
         ],
         content: sanitizedContent,
         editable: false,
+        editorProps: {
+            attributes: {
+                "aria-label": ariaLabel,
+            },
+        },
     });
 
     useEffect(() => {

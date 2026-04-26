@@ -418,6 +418,7 @@ export default function FilterBar({
                 sx={{ minWidth: { xs: "100%", sm: 260 } }}
                 slotProps={{
                     input: {
+                        inputProps: { "aria-label": "Search tasks" },
                         startAdornment: (
                             <InputAdornment position="start">
                                 <SearchIcon
@@ -446,7 +447,14 @@ export default function FilterBar({
                     )
                 }
                 renderInput={(params) => (
-                    <TextField {...params} placeholder="Assignees" />
+                    <TextField
+                        {...params}
+                        placeholder="Assignees"
+                        inputProps={{
+                            ...params.inputProps,
+                            "aria-label": "Filter by assignees",
+                        }}
+                    />
                 )}
                 renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
@@ -476,7 +484,14 @@ export default function FilterBar({
                     )
                 }
                 renderInput={(params) => (
-                    <TextField {...params} placeholder="Labels" />
+                    <TextField
+                        {...params}
+                        placeholder="Labels"
+                        inputProps={{
+                            ...params.inputProps,
+                            "aria-label": "Filter by labels",
+                        }}
+                    />
                 )}
                 renderTags={(value, getTagProps) =>
                     value.map((option, index) => (
@@ -506,6 +521,7 @@ export default function FilterBar({
                 onChange={(e) =>
                     updateFilter("priorities", e.target.value as string[])
                 }
+                inputProps={{ "aria-label": "Filter by priority" }}
                 renderValue={(selected) =>
                     selected.length === 0 ? (
                         <Box component="span" sx={{ color: "text.secondary" }}>

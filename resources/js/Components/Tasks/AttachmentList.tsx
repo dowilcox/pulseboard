@@ -229,7 +229,7 @@ export default function AttachmentList({
                 <Typography variant="body2" color="text.secondary">
                     Drop files here or click to upload
                 </Typography>
-                <Typography variant="caption" color="text.disabled">
+                <Typography variant="caption" color="text.secondary">
                     Max 15MB per file
                 </Typography>
                 <input
