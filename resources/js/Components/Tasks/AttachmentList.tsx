@@ -200,6 +200,9 @@ export default function AttachmentList({
         <Box>
             {/* Drop zone */}
             <Box
+                role="button"
+                tabIndex={0}
+                aria-label="Drop files here or click to upload Max 15MB per file"
                 onDragOver={(e) => {
                     e.preventDefault();
                     setDragOver(true);
@@ -207,6 +210,12 @@ export default function AttachmentList({
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        fileInputRef.current?.click();
+                    }
+                }}
                 sx={{
                     border: "2px dashed",
                     borderColor: dragOver ? "primary.main" : "divider",
@@ -220,6 +229,11 @@ export default function AttachmentList({
                     "&:hover": {
                         borderColor: "primary.light",
                         bgcolor: "action.hover",
+                    },
+                    "&:focus-visible": {
+                        outline: "2px solid",
+                        outlineColor: "primary.light",
+                        outlineOffset: 2,
                     },
                 }}
             >
@@ -288,6 +302,7 @@ export default function AttachmentList({
                                     overflow: "hidden",
                                     cursor: "pointer",
                                     "&:hover .overlay": { opacity: 1 },
+                                    "&:focus-within .overlay": { opacity: 1 },
                                 }}
                                 onClick={() => setLightboxIndex(index)}
                             >
@@ -348,6 +363,7 @@ export default function AttachmentList({
                                             <IconButton
                                                 size="small"
                                                 sx={{ color: "white" }}
+                                                aria-label={`Download ${attachment.filename}`}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     handleDownload(attachment);
@@ -360,6 +376,7 @@ export default function AttachmentList({
                                             <IconButton
                                                 size="small"
                                                 sx={{ color: "white" }}
+                                                aria-label={`Delete ${attachment.filename}`}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setDeleteTarget(attachment);

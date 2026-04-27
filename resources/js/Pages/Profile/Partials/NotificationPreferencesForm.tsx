@@ -63,7 +63,12 @@ export default function NotificationPreferencesForm() {
 
     return (
         <Box>
-            <Typography variant="h6" fontWeight={600} gutterBottom>
+            <Typography
+                variant="h6"
+                component="h2"
+                fontWeight={600}
+                gutterBottom
+            >
                 Notification Preferences
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

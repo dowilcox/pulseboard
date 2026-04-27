@@ -154,6 +154,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 }}
                             >
                                 <LinearProgress
+                                    aria-label={`${checklist.title} checklist progress`}
                                     variant="determinate"
                                     value={progress}
                                     sx={{ flex: 1, height: 6, borderRadius: 3 }}
@@ -184,7 +185,11 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                     onChange={() =>
                                         handleToggleItem(checklist.id, item.id)
                                     }
-                                    aria-label={`Toggle ${item.text}`}
+                                    slotProps={{
+                                        input: {
+                                            "aria-label": `Toggle ${item.text}`,
+                                        },
+                                    }}
                                 />
                                 <TextField
                                     variant="standard"
@@ -199,6 +204,9 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                         )
                                     }
                                     slotProps={{
+                                        htmlInput: {
+                                            "aria-label": `Checklist item: ${item.text}`,
+                                        },
                                         input: {
                                             disableUnderline: true,
                                             sx: {

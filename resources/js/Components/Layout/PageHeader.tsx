@@ -6,6 +6,18 @@ import Box from "@mui/material/Box";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import type { ReactNode } from "react";
 
+const VISUALLY_HIDDEN = {
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    p: 0,
+    m: -1,
+    overflow: "hidden",
+    clip: "rect(0 0 0 0)",
+    whiteSpace: "nowrap",
+    border: 0,
+};
+
 export interface BreadcrumbItem {
     label: string;
     href?: string;
@@ -86,7 +98,14 @@ export default function PageHeader({
                     )}
                 </MuiBreadcrumbs>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    {titleContent ?? (
+                    {titleContent ? (
+                        <>
+                            <Typography component="h1" sx={VISUALLY_HIDDEN}>
+                                {title}
+                            </Typography>
+                            {titleContent}
+                        </>
+                    ) : (
                         <Typography
                             variant="h4"
                             component="h1"

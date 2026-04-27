@@ -35,6 +35,27 @@ const commonOptions: ThemeOptions = {
                     borderRadius: 10,
                     fontWeight: 700,
                 },
+                outlinedPrimary: {
+                    color: "#9c8cff",
+                    borderColor: "rgba(156, 140, 255, 0.62)",
+                    "&:hover": {
+                        borderColor: "#9c8cff",
+                        backgroundColor: "rgba(156, 140, 255, 0.08)",
+                    },
+                },
+                textPrimary: {
+                    color: "#9c8cff",
+                    "&:hover": {
+                        backgroundColor: "rgba(156, 140, 255, 0.08)",
+                    },
+                },
+                containedError: {
+                    backgroundColor: "#d32f2f",
+                    color: "#ffffff",
+                    "&:hover": {
+                        backgroundColor: "#b91c1c",
+                    },
+                },
             },
         },
         MuiCard: {
@@ -67,6 +88,10 @@ const commonOptions: ThemeOptions = {
                     fontWeight: 700,
                     borderRadius: 7,
                 },
+                outlinedPrimary: {
+                    color: "#9c8cff",
+                    borderColor: "rgba(156, 140, 255, 0.62)",
+                },
                 sizeSmall: {
                     height: 22,
                 },
@@ -92,24 +117,6 @@ const commonOptions: ThemeOptions = {
         },
     },
 };
-
-export const lightTheme = createTheme({
-    ...commonOptions,
-    palette: {
-        mode: "light",
-        primary: {
-            main: "#5f61e8",
-            contrastText: "#ffffff",
-        },
-        secondary: {
-            main: "#ec4899",
-        },
-        background: {
-            default: "#fafafa",
-            paper: "#ffffff",
-        },
-    },
-});
 
 export const darkTheme = createTheme({
     ...commonOptions,
@@ -185,6 +192,15 @@ export const darkTheme = createTheme({
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#6c5cff",
                         boxShadow: "0 0 0 3px rgba(108, 92, 255, 0.18)",
+                    },
+                },
+            },
+        },
+        MuiInputLabel: {
+            styleOverrides: {
+                root: {
+                    "&.Mui-focused": {
+                        color: "#9c8cff",
                     },
                 },
             },

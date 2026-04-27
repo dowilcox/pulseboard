@@ -15,6 +15,7 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
             <Head title="Welcome" />
 
             <Box
+                component="main"
                 sx={{
                     display: "flex",
                     flexDirection: "column",

@@ -495,6 +495,7 @@ export default function ActivityFeed({
                 }}
             >
                 <Avatar
+                    alt=""
                     sx={{
                         width: 28,
                         height: 28,
@@ -853,6 +854,7 @@ export default function ActivityFeed({
                                         }}
                                     >
                                         <Avatar
+                                            alt=""
                                             sx={{
                                                 width: 32,
                                                 height: 32,

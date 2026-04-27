@@ -37,6 +37,9 @@ export default function LabelSelector({
             onChange={handleChange}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+            slotProps={{
+                popupIndicator: { "aria-label": "Open label options" },
+            }}
             renderInput={(params) => (
                 <TextField
                     {...params}

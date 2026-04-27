@@ -156,7 +156,7 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                                             </Avatar>
                                             <Typography
                                                 variant="h6"
-                                                component="h3"
+                                                component="h2"
                                                 fontWeight={600}
                                                 noWrap
                                                 sx={{ flex: 1 }}

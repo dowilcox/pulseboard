@@ -513,7 +513,12 @@ export default function TaskSidebar({
                         value={effortEstimate}
                         onChange={(e) => handleEffortChange(e.target.value)}
                         placeholder="Points"
-                        slotProps={{ htmlInput: { min: 0 } }}
+                        slotProps={{
+                            htmlInput: {
+                                min: 0,
+                                "aria-label": "Effort points",
+                            },
+                        }}
                     />,
                 )}
             </Box>

@@ -67,7 +67,6 @@ export default function Login({
                         error={!!errors.email}
                         helperText={errors.email}
                         autoComplete="username"
-                        autoFocus
                         fullWidth
                         margin="normal"
                     />

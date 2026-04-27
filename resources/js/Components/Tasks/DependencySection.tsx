@@ -123,6 +123,7 @@ export default function DependencySection({
                             <AddIcon sx={{ fontSize: "14px !important" }} />
                         }
                         onClick={() => setAdding(true)}
+                        aria-label={`Add ${label.toLowerCase()} task`}
                         sx={{
                             textTransform: "none",
                             color: DEPENDENCY_MUTED,

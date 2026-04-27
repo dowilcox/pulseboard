@@ -25,7 +25,7 @@ return new class extends Migration
             $table->uuid('created_by_team_id')->nullable();
             $table->json('email_notification_prefs')->nullable();
             $table->json('ui_preferences')->nullable();
-            $table->string('theme_preference')->default('system');
+            $table->string('theme_preference')->default('dark');
             $table->timestamp('deactivated_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

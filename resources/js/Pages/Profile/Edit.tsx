@@ -8,7 +8,6 @@ import Paper from "@mui/material/Paper";
 import AuthProviderInfo from "./Partials/AuthProviderInfo";
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import NotificationPreferencesForm from "./Partials/NotificationPreferencesForm";
-import ThemePreferenceForm from "./Partials/ThemePreferenceForm";
 import UpdatePasswordForm from "./Partials/UpdatePasswordForm";
 import UpdateProfileInformationForm from "./Partials/UpdateProfileInformationForm";
 
@@ -42,10 +41,6 @@ export default function Edit({
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <UpdatePasswordForm />
-                </Paper>
-
-                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
-                    <ThemePreferenceForm />
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>

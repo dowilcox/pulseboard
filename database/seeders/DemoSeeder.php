@@ -34,7 +34,7 @@ class DemoSeeder extends Seeder
             'email' => 'alice@demo.test',
             'password' => Hash::make('password'),
             'is_admin' => true,
-            'theme_preference' => 'light',
+            'theme_preference' => 'dark',
             'email_notification_prefs' => [
                 'task_assigned' => true,
                 'task_commented' => true,

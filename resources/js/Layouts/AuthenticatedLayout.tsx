@@ -3,12 +3,10 @@ import {
     type PropsWithChildren,
     type ReactNode,
     useEffect,
-    useRef,
     useState,
 } from "react";
 import type { PageProps, Team } from "@/types";
 import { SidebarProvider, useSidebar } from "@/Contexts/SidebarContext";
-import { useThemeMode } from "@/Contexts/ThemeContext";
 import Sidebar from "@/Components/Layout/Sidebar";
 import AppBar from "@mui/material/AppBar";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -67,26 +65,13 @@ function AuthenticatedLayoutInner({
     const { auth } = pageProps;
     const user = auth.user;
     const { collapsed } = useSidebar();
-    const { setMode } = useThemeMode();
     const { reconnectVersion } = useWebSocket();
-    const themeSynced = useRef(false);
 
     const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [navigating, setNavigating] = useState(false);
-
-    // Sync server-side theme preference to ThemeContext on first load
-    useEffect(() => {
-        if (!themeSynced.current && user.theme_preference) {
-            const stored = localStorage.getItem("pulseboard-theme");
-            if (!stored) {
-                setMode(user.theme_preference);
-            }
-            themeSynced.current = true;
-        }
-    }, [user.theme_preference, setMode]);
 
     useEffect(() => {
         const removeStart = router.on("start", () => setNavigating(true));

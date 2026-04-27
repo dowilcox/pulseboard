@@ -38,6 +38,9 @@ export default function AssigneeSelector({
             onChange={handleChange}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.id === value.id}
+            slotProps={{
+                popupIndicator: { "aria-label": "Open assignee options" },
+            }}
             renderInput={(params) => (
                 <TextField
                     {...params}
@@ -57,6 +60,7 @@ export default function AssigneeSelector({
                     sx={{ display: "flex", alignItems: "center", gap: 1 }}
                 >
                     <Avatar
+                        alt=""
                         sx={{ width: 24, height: 24, fontSize: "0.7rem" }}
                         src={option.avatar_url}
                     >
@@ -74,6 +78,7 @@ export default function AssigneeSelector({
                             {...rest}
                             avatar={
                                 <Avatar
+                                    alt=""
                                     sx={{
                                         width: 20,
                                         height: 20,

@@ -2,17 +2,11 @@ import TaskCard from "@/Components/Tasks/TaskCard";
 import type { Task } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { memo } from "react";
+import { memo, type KeyboardEvent } from "react";
 
 interface Props {
     task: Task;
     onClick?: (task: Task) => void;
-}
-
-function getVisibleTaskLabel(task: Task): string {
-    return [task.task_number ? `#${task.task_number}` : null, task.title]
-        .filter(Boolean)
-        .join(" ");
 }
 
 const SortableTaskCard = memo(function SortableTaskCard({
@@ -34,16 +28,25 @@ const SortableTaskCard = memo(function SortableTaskCard({
         opacity: isDragging ? 0.4 : 1,
     };
 
+    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        listeners?.onKeyDown?.(event);
+        if (!event.defaultPrevented && event.key === "Enter") {
+            event.preventDefault();
+            onClick?.(task);
+        }
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             {...attributes}
             {...listeners}
+            onClick={() => onClick?.(task)}
+            onKeyDown={handleKeyDown}
             aria-roledescription="sortable item"
-            aria-label={`Draggable task: ${getVisibleTaskLabel(task)}`}
         >
-            <TaskCard task={task} onClick={onClick} />
+            <TaskCard task={task} interactive={false} />
         </div>
     );
 });

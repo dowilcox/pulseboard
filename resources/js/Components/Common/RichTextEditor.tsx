@@ -535,14 +535,14 @@ export default function RichTextEditor({
                         textDecoration: "underline",
                     },
                     "& .mention": {
-                        color: "primary.main",
+                        color: "primary.light",
                         bgcolor: "primary.50",
                         borderRadius: "4px",
                         px: 0.25,
                         fontWeight: 600,
                         cursor: "default",
                         ...(theme.palette.mode === "dark" && {
-                            bgcolor: "rgba(25, 118, 210, 0.15)",
+                            bgcolor: "rgba(156, 140, 255, 0.14)",
                         }),
                     },
                     "& blockquote": {

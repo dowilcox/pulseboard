@@ -16,7 +16,12 @@ export default function AuthProviderInfo() {
 
     return (
         <Box>
-            <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+            <Typography
+                variant="subtitle1"
+                component="h2"
+                fontWeight={600}
+                gutterBottom
+            >
                 Account Information
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -33,7 +38,9 @@ export default function AuthProviderInfo() {
                 </Avatar>
 
                 <Box>
-                    <Typography variant="h6">{user.name}</Typography>
+                    <Typography variant="h6" component="p">
+                        {user.name}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                         {user.email}
                     </Typography>

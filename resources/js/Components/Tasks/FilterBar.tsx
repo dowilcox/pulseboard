@@ -446,6 +446,11 @@ export default function FilterBar({
                         value.map((v) => v.id),
                     )
                 }
+                slotProps={{
+                    popupIndicator: {
+                        "aria-label": "Open assignee filter options",
+                    },
+                }}
                 renderInput={(params) => (
                     <TextField
                         {...params}
@@ -483,6 +488,11 @@ export default function FilterBar({
                         value.map((v) => v.id),
                     )
                 }
+                slotProps={{
+                    popupIndicator: {
+                        "aria-label": "Open label filter options",
+                    },
+                }}
                 renderInput={(params) => (
                     <TextField
                         {...params}

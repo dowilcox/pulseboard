@@ -20,66 +20,6 @@ class ProfilePreferencesTest extends TestCase
     }
 
     // ---------------------------------------------------------------
-    // Theme preferences
-    // ---------------------------------------------------------------
-
-    public function test_can_update_theme_to_dark(): void
-    {
-        $response = $this->actingAs($this->user)->patch(
-            route('profile.theme.update'),
-            ['theme_preference' => 'dark']
-        );
-
-        $response->assertRedirect(route('profile.edit'));
-        $this->user->refresh();
-        $this->assertEquals('dark', $this->user->theme_preference);
-    }
-
-    public function test_can_update_theme_to_light(): void
-    {
-        $response = $this->actingAs($this->user)->patch(
-            route('profile.theme.update'),
-            ['theme_preference' => 'light']
-        );
-
-        $response->assertRedirect(route('profile.edit'));
-        $this->user->refresh();
-        $this->assertEquals('light', $this->user->theme_preference);
-    }
-
-    public function test_can_update_theme_to_system(): void
-    {
-        $response = $this->actingAs($this->user)->patch(
-            route('profile.theme.update'),
-            ['theme_preference' => 'system']
-        );
-
-        $response->assertRedirect(route('profile.edit'));
-        $this->user->refresh();
-        $this->assertEquals('system', $this->user->theme_preference);
-    }
-
-    public function test_theme_rejects_invalid_value(): void
-    {
-        $response = $this->actingAs($this->user)->patch(
-            route('profile.theme.update'),
-            ['theme_preference' => 'neon']
-        );
-
-        $response->assertSessionHasErrors('theme_preference');
-    }
-
-    public function test_theme_required(): void
-    {
-        $response = $this->actingAs($this->user)->patch(
-            route('profile.theme.update'),
-            []
-        );
-
-        $response->assertSessionHasErrors('theme_preference');
-    }
-
-    // ---------------------------------------------------------------
     // Notification preferences
     // ---------------------------------------------------------------
 

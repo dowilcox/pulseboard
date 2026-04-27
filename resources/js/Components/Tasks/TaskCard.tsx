@@ -20,6 +20,7 @@ import { memo } from "react";
 interface Props {
     task: Task;
     onClick?: (task: Task) => void;
+    interactive?: boolean;
 }
 
 const CARD_TEXT = "#f8fafc";
@@ -27,8 +28,23 @@ const CARD_MUTED = "#cbd5e1";
 const CARD_SUBTLE = "#a8b3c7";
 const CARD_SURFACE = "rgba(21, 31, 48, 0.92)";
 const CARD_SURFACE_HOVER = "rgba(31, 42, 61, 0.98)";
+const SR_ONLY = {
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    p: 0,
+    m: -1,
+    overflow: "hidden",
+    clip: "rect(0 0 0 0)",
+    whiteSpace: "nowrap",
+    border: 0,
+};
 
-const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
+const TaskCard = memo(function TaskCard({
+    task,
+    onClick,
+    interactive = true,
+}: Props) {
     const priorityColor = PRIORITY_COLORS[task.priority] ?? "transparent";
     const isCompleted = task.completed_at != null;
     const isBlocked = (task.blocked_by ?? []).length > 0;
@@ -46,16 +62,19 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
     return (
         <Paper
             variant="outlined"
-            role="button"
-            tabIndex={0}
-            aria-label={`${visibleTaskLabel}${task.priority !== "none" ? `, ${task.priority} priority` : ""}${isCompleted ? ", completed" : ""}${isBlocked ? ", blocked" : ""}`}
-            onClick={() => onClick?.(task)}
-            onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onClick?.(task);
-                }
-            }}
+            role={interactive ? "button" : undefined}
+            tabIndex={interactive ? 0 : undefined}
+            onClick={interactive ? () => onClick?.(task) : undefined}
+            onKeyDown={
+                interactive
+                    ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onClick?.(task);
+                          }
+                      }
+                    : undefined
+            }
             sx={{
                 p: 1.75,
                 cursor: "pointer",
@@ -80,6 +99,16 @@ const TaskCard = memo(function TaskCard({ task, onClick }: Props) {
                 },
             }}
         >
+            {(task.priority !== "none" || isCompleted || isBlocked) && (
+                <Box component="span" sx={SR_ONLY}>
+                    {task.priority !== "none"
+                        ? `${task.priority} priority`
+                        : ""}
+                    {isCompleted ? " completed" : ""}
+                    {isBlocked ? " blocked" : ""}
+                </Box>
+            )}
+
             {/* Labels */}
             {task.labels && task.labels.length > 0 && (
                 <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>

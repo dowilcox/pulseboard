@@ -9,10 +9,6 @@ Route::get('/profile', [ProfileController::class, 'edit'])->name(
 Route::patch('/profile', [ProfileController::class, 'update'])->name(
     'profile.update',
 );
-Route::patch('/profile/theme', [
-    ProfileController::class,
-    'updateTheme',
-])->name('profile.theme.update');
 Route::patch('/profile/notifications', [
     ProfileController::class,
     'updateNotifications',
