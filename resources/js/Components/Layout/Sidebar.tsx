@@ -5,7 +5,6 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import ViewModuleOutlinedIcon from "@mui/icons-material/ViewModuleOutlined";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -206,10 +205,6 @@ export default function Sidebar({
     const { collapsed, setCollapsed, currentTeam, boards } = useSidebar();
     const isCollapsed = forceExpanded ? false : collapsed;
 
-    const teamHomeHref = currentTeam
-        ? route("teams.show", currentTeam.slug)
-        : route("teams.index");
-
     const settingsHref = currentTeam
         ? route("teams.settings", currentTeam.slug)
         : route("profile.edit");
@@ -369,13 +364,6 @@ export default function Sidebar({
                 aria-label="Secondary navigation"
                 sx={{ py: 0 }}
             >
-                <NavItem
-                    href={teamHomeHref}
-                    icon={<ViewModuleOutlinedIcon fontSize="small" />}
-                    label="All Boards"
-                    selected={route().current("teams.show")}
-                    collapsed={isCollapsed}
-                />
                 <NavItem
                     href={route("teams.index")}
                     icon={<GroupsIcon fontSize="small" />}

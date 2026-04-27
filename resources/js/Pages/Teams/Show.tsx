@@ -73,6 +73,7 @@ interface Props {
 export default function TeamsShow({ team, members, boards }: Props) {
     const { teams: sharedTeams } = usePage<PageProps>().props;
     const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
+    const canCreateBoards = Boolean(userRole);
     const canManage = userRole === "owner" || userRole === "admin";
 
     const [createOpen, setCreateOpen] = useState(false);
@@ -238,14 +239,14 @@ export default function TeamsShow({ team, members, boards }: Props) {
                                     Settings
                                 </Button>
                             )}
-                            {canManage && (
+                            {canCreateBoards && (
                                 <Button
                                     variant="contained"
                                     startIcon={<AddIcon />}
                                     size="small"
                                     onClick={handleOpenCreate}
                                 >
-                                    Create Board
+                                    Add Board
                                 </Button>
                             )}
                         </>
@@ -472,13 +473,15 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     >
                         Create your first board to start organizing tasks.
                     </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={handleOpenCreate}
-                    >
-                        Create Board
-                    </Button>
+                    {canCreateBoards && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={handleOpenCreate}
+                        >
+                            Add Board
+                        </Button>
+                    )}
                 </Box>
             ) : (
                 <Grid container spacing={2}>

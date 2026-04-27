@@ -5,7 +5,6 @@ import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, router } from "@inertiajs/react";
-import AddIcon from "@mui/icons-material/Add";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -14,7 +13,6 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
@@ -145,10 +143,6 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
         }
     };
 
-    const firstWritableBoard = myTasks.find(
-        (task) => task.board?.team?.slug && task.board?.slug,
-    )?.board;
-
     const formatDueDate = (date: string) =>
         new Date(date).toLocaleDateString(undefined, {
             month: "short",
@@ -227,31 +221,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
     );
 
     return (
-        <AuthenticatedLayout
-            header={
-                <PageHeader
-                    title="Dashboard"
-                    actions={
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            disabled={!firstWritableBoard?.team?.slug}
-                            onClick={() => {
-                                if (!firstWritableBoard?.team?.slug) return;
-                                router.get(
-                                    route("teams.boards.show", [
-                                        firstWritableBoard.team.slug,
-                                        firstWritableBoard.slug,
-                                    ]),
-                                );
-                            }}
-                        >
-                            Add task
-                        </Button>
-                    }
-                />
-            }
-        >
+        <AuthenticatedLayout header={<PageHeader title="Dashboard" />}>
             <Head title="Dashboard" />
 
             <Box
