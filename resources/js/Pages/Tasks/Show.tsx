@@ -237,6 +237,9 @@ export default function TasksShow({
                     titleContent={
                         <TextField
                             fullWidth
+                            multiline
+                            minRows={1}
+                            maxRows={4}
                             variant="standard"
                             value={title}
                             onChange={(e) => handleTitleChange(e.target.value)}
@@ -247,6 +250,10 @@ export default function TasksShow({
                                 },
                                 "& .MuiInputBase-input": {
                                     py: 0,
+                                    overflow: "hidden",
+                                    overflowWrap: "anywhere",
+                                    resize: "none",
+                                    whiteSpace: "pre-wrap",
                                 },
                             }}
                             slotProps={{

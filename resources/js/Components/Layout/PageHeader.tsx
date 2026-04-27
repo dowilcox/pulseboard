@@ -51,7 +51,7 @@ export default function PageHeader({
                 flexDirection: { xs: "column", md: "row" },
             }}
         >
-            <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ minWidth: 0, flex: "1 1 auto", maxWidth: "100%" }}>
                 <MuiBreadcrumbs
                     separator={<NavigateNextIcon sx={{ fontSize: 14 }} />}
                     sx={{ mb: 0.25 }}
@@ -97,7 +97,15 @@ export default function PageHeader({
                         ),
                     )}
                 </MuiBreadcrumbs>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        minWidth: 0,
+                        width: "100%",
+                    }}
+                >
                     {titleContent ? (
                         <>
                             <Typography component="h1" sx={VISUALLY_HIDDEN}>
