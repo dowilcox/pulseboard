@@ -12,6 +12,7 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use App\Notifications\TaskCommentedNotification;
+use App\Notifications\TaskCommentReplyNotification;
 use App\Notifications\TaskMentionedNotification;
 use App\Support\NotificationText;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -69,6 +70,8 @@ class NotificationEmailFormattingTest extends TestCase
             ->toDatabase($this->recipient);
         $commentedData = (new TaskCommentedNotification($this->task, $this->actor, $comment))
             ->toDatabase($this->recipient);
+        $replyData = (new TaskCommentReplyNotification($this->task, $this->actor, $comment, $comment))
+            ->toDatabase($this->recipient);
 
         $fullComment = NotificationText::toPlainText($body);
         $preview = NotificationText::preview($body, 80);
@@ -93,12 +96,24 @@ class NotificationEmailFormattingTest extends TestCase
             $commentedData['email_message'],
         );
 
+        $this->assertSame($preview, $replyData['comment_preview']);
+        $this->assertSame(
+            "{$this->actor->name} replied to your comment on \"{$this->task->title}\": {$preview}",
+            $replyData['message'],
+        );
+        $this->assertSame(
+            "{$this->actor->name} replied to your comment on \"{$this->task->title}\": {$fullComment}",
+            $replyData['email_message'],
+        );
+
         $this->assertStringNotContainsString('<span', $mentionedData['message']);
         $this->assertStringNotContainsString('<a', $mentionedData['message']);
         $this->assertStringNotContainsString('<span', $commentedData['email_message']);
+        $this->assertStringNotContainsString('<span', $replyData['email_message']);
         $this->assertStringContainsString("@{$this->recipient->name}", $mentionedData['email_message']);
         $this->assertStringContainsString('https://example.com/release-notes', $mentionedData['email_message']);
         $this->assertStringContainsString('Tail end for email readability.', $commentedData['email_message']);
+        $this->assertStringContainsString('Tail end for email readability.', $replyData['email_message']);
     }
 
     public function test_single_notification_email_renders_full_plain_text_message(): void

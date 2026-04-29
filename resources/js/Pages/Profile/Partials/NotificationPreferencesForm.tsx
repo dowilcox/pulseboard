@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 const NOTIFICATION_TYPES = [
     { key: "task_assigned", label: "Task Assigned" },
     { key: "task_commented", label: "Comment on Task" },
+    { key: "task_comment_replied", label: "Reply to Comment" },
     { key: "task_mentioned", label: "Mentioned in Comment" },
     { key: "task_completed", label: "Task Completed" },
     { key: "task_attachment_added", label: "Attachment Added" },
@@ -26,6 +27,7 @@ type NotificationType = (typeof NOTIFICATION_TYPES)[number]["key"];
 const DEFAULT_PREFS: NotificationPreferences = {
     task_assigned: { in_app: true, email: true },
     task_commented: { in_app: true, email: false },
+    task_comment_replied: { in_app: true, email: true },
     task_mentioned: { in_app: true, email: true },
     task_completed: { in_app: true, email: false },
     task_attachment_added: { in_app: true, email: false },

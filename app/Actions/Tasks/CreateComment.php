@@ -16,6 +16,8 @@ class CreateComment
 
     public function handle(Task $task, string $body, User $user, ?string $parentId = null): Comment
     {
+        $parent = $parentId ? $task->comments()->findOrFail($parentId) : null;
+
         $comment = $task->comments()->create([
             'user_id' => $user->id,
             'body' => RichTextSanitizer::sanitize($body),
@@ -28,9 +30,7 @@ class CreateComment
                 'comment_id' => $comment->id,
             ], $user);
         } else {
-            // Replies: only process @mentions (assignees are notified by
-            // the parent comment's notification, not again for each reply)
-            ActivityLogger::notifyMentionsInComment($task, $comment, $user);
+            ActivityLogger::notifyCommentReply($task, $comment, $parent, $user);
         }
 
         if ($parentId) {

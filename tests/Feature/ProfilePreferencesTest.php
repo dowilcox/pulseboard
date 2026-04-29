@@ -31,6 +31,7 @@ class ProfilePreferencesTest extends TestCase
                 'prefs' => [
                     'task_assigned' => ['in_app' => true, 'email' => false],
                     'task_commented' => ['in_app' => true, 'email' => true],
+                    'task_comment_replied' => ['in_app' => true, 'email' => true],
                 ],
             ]
         );
@@ -39,6 +40,7 @@ class ProfilePreferencesTest extends TestCase
         $this->user->refresh();
         $this->assertFalse($this->user->email_notification_prefs['task_assigned']['email']);
         $this->assertTrue($this->user->email_notification_prefs['task_commented']['email']);
+        $this->assertTrue($this->user->email_notification_prefs['task_comment_replied']['email']);
     }
 
     public function test_notification_preferences_filter_invalid_types(): void

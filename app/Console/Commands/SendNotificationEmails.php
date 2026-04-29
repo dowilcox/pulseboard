@@ -23,6 +23,7 @@ class SendNotificationEmails extends Command
     private const EMAIL_TYPES = [
         'task_assigned' => 'task_assigned',
         'task_commented' => 'task_commented',
+        'task_comment_replied' => 'task_comment_replied',
         'task_mentioned' => 'task_mentioned',
         'task_due_soon' => 'task_due_soon',
         'task_overdue' => 'task_overdue',

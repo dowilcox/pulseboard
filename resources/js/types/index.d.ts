@@ -6,6 +6,7 @@ export interface NotificationPreferenceChannels {
 export interface NotificationPreferences {
     task_assigned?: NotificationPreferenceChannels;
     task_commented?: NotificationPreferenceChannels;
+    task_comment_replied?: NotificationPreferenceChannels;
     task_mentioned?: NotificationPreferenceChannels;
     task_due_soon?: NotificationPreferenceChannels;
     task_overdue?: NotificationPreferenceChannels;

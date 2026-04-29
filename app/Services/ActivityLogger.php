@@ -40,18 +40,33 @@ class ActivityLogger
     }
 
     /**
-     * Notify users mentioned in a specific comment (used for replies
-     * which don't go through the full ActivityLogger::log flow).
+     * Notify users mentioned in a specific comment without sending duplicate notifications.
      */
     public static function notifyMentionsInComment(
         Task $task,
         Comment $comment,
         User $commenter,
+        array $excludedUserIds = [],
     ): void {
         app(TaskActivityNotifier::class)->notifyMentionsInComment(
             $task,
             $comment,
             $commenter,
+            $excludedUserIds,
+        );
+    }
+
+    public static function notifyCommentReply(
+        Task $task,
+        Comment $reply,
+        Comment $parentComment,
+        User $replier,
+    ): void {
+        app(TaskActivityNotifier::class)->notifyCommentReply(
+            $task,
+            $reply,
+            $parentComment,
+            $replier,
         );
     }
 

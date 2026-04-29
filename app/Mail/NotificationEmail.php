@@ -45,6 +45,7 @@ class NotificationEmail extends Mailable
         $subject = match ($data['type'] ?? '') {
             'task_assigned' => "Task Assigned: {$this->taskTitle}",
             'task_commented' => "New Comment on: {$this->taskTitle}",
+            'task_comment_replied' => "New Reply on: {$this->taskTitle}",
             'task_mentioned' => "You were mentioned in: {$this->taskTitle}",
             'task_due_soon' => "Due Soon: {$this->taskTitle}",
             'task_overdue' => "Overdue: {$this->taskTitle}",

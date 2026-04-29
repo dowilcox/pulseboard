@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\TaskAssignedNotification;
 use App\Notifications\TaskAttachmentAddedNotification;
 use App\Notifications\TaskCommentedNotification;
+use App\Notifications\TaskCommentReplyNotification;
 use App\Notifications\TaskCompletedNotification;
 use App\Notifications\TaskMentionedNotification;
 
@@ -41,10 +42,11 @@ class TaskActivityNotifier
         Task $task,
         Comment $comment,
         User $commenter,
+        array $excludedUserIds = [],
     ): void {
         $mentionedUsers = MentionParser::findMentionedUsers(
             $comment->body,
-            [$commenter->id],
+            array_values(array_unique([...$excludedUserIds, $commenter->id])),
             $task->board->team,
         );
 
@@ -58,6 +60,39 @@ class TaskActivityNotifier
 
             $this->broadcastNotification($user, $notification, $task);
         }
+    }
+
+    public function notifyCommentReply(
+        Task $task,
+        Comment $reply,
+        Comment $parentComment,
+        User $replier,
+    ): void {
+        $alreadyNotified = [$replier->id];
+
+        if ($parentComment->user_id !== $replier->id) {
+            $recipient = $parentComment->user;
+
+            if ($recipient) {
+                $notification = new TaskCommentReplyNotification(
+                    $task,
+                    $replier,
+                    $reply,
+                    $parentComment,
+                );
+                $recipient->notify($notification);
+
+                $this->broadcastNotification($recipient, $notification, $task);
+                $alreadyNotified[] = $recipient->id;
+            }
+        }
+
+        $this->notifyMentionsInComment(
+            $task,
+            $reply,
+            $replier,
+            $alreadyNotified,
+        );
     }
 
     public function broadcastDatabaseNotification(
@@ -258,6 +293,7 @@ class TaskActivityNotifier
         $message = match (true) {
             $notification instanceof TaskAssignedNotification => "{$notification->assigner->name} assigned you to \"{$task->title}\"",
             $notification instanceof TaskCommentedNotification => "{$notification->commenter->name} commented on \"{$task->title}\"",
+            $notification instanceof TaskCommentReplyNotification => "{$notification->replier->name} replied to your comment on \"{$task->title}\"",
             $notification instanceof TaskMentionedNotification => "{$notification->mentioner->name} mentioned you in \"{$task->title}\"",
             $notification instanceof TaskCompletedNotification => "{$notification->completedBy->name} completed \"{$task->title}\"",
             $notification instanceof TaskAttachmentAddedNotification => "{$notification->uploader->name} added \"{$notification->filename}\" to \"{$task->title}\"",

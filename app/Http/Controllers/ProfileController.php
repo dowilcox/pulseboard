@@ -48,6 +48,7 @@ class ProfileController extends Controller
         $validTypes = [
             'task_assigned',
             'task_commented',
+            'task_comment_replied',
             'task_mentioned',
             'task_due_soon',
             'task_overdue',
