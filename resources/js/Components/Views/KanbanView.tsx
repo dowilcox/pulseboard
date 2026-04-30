@@ -562,7 +562,10 @@ export default function KanbanView({
                     overflowX: "auto",
                     pb: 2,
                     minHeight: columns.length === 0 ? "calc(100vh - 200px)" : 0,
+                    width: "100%",
                     maxWidth: "100%",
+                    contain: "layout",
+                    overscrollBehaviorX: "contain",
                     alignItems: "flex-start",
                 }}
             >
