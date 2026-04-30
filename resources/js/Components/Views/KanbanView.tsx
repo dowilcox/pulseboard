@@ -561,7 +561,8 @@ export default function KanbanView({
                     gap: 2.5,
                     overflowX: "auto",
                     pb: 2,
-                    minHeight: "calc(100vh - 200px)",
+                    minHeight: columns.length === 0 ? "calc(100vh - 200px)" : 0,
+                    maxWidth: "100%",
                     alignItems: "flex-start",
                 }}
             >
