@@ -36,7 +36,9 @@ class TaskCommentReplyNotification extends Notification
 
     public function toDatabase(object $notifiable): array
     {
-        $summary = "{$this->replier->name} replied to your comment on \"{$this->task->title}\"";
+        $summary = $notifiable instanceof User
+            ? $this->summaryFor($notifiable)
+            : "{$this->replier->name} replied to your comment on \"{$this->task->title}\"";
         $preview = NotificationText::preview($this->reply->body, 80);
         $fullReply = NotificationText::toPlainText($this->reply->body);
 
@@ -58,19 +60,29 @@ class TaskCommentReplyNotification extends Notification
         ];
     }
 
+    public function summaryFor(User $notifiable): string
+    {
+        if ($notifiable->id === $this->parentComment->user_id) {
+            return "{$this->replier->name} replied to your comment on \"{$this->task->title}\"";
+        }
+
+        return "{$this->replier->name} replied in a thread you participated in on \"{$this->task->title}\"";
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $url = url(
             "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
         );
+        $summary = $notifiable instanceof User
+            ? $this->summaryFor($notifiable)
+            : "{$this->replier->name} replied to your comment on \"{$this->task->title}\"";
         $replyBody = NotificationText::toPlainText($this->reply->body);
 
         $mail = (new MailMessage)
             ->subject("New Reply on: {$this->task->title}")
             ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "{$this->replier->name} replied to your comment on \"{$this->task->title}\":",
-            )
+            ->line("{$summary}:")
             ->action('View Task', $url);
 
         if ($replyBody !== '') {

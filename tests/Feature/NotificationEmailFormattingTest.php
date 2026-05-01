@@ -65,12 +65,17 @@ class NotificationEmailFormattingTest extends TestCase
             'user_id' => $this->actor->id,
             'body' => $body,
         ]);
+        $parentComment = Comment::factory()->create([
+            'task_id' => $this->task->id,
+            'user_id' => $this->recipient->id,
+            'body' => 'Parent comment',
+        ]);
 
         $mentionedData = (new TaskMentionedNotification($this->task, $this->actor, $comment))
             ->toDatabase($this->recipient);
         $commentedData = (new TaskCommentedNotification($this->task, $this->actor, $comment))
             ->toDatabase($this->recipient);
-        $replyData = (new TaskCommentReplyNotification($this->task, $this->actor, $comment, $comment))
+        $replyData = (new TaskCommentReplyNotification($this->task, $this->actor, $comment, $parentComment))
             ->toDatabase($this->recipient);
 
         $fullComment = NotificationText::toPlainText($body);

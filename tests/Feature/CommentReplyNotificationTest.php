@@ -134,6 +134,52 @@ class CommentReplyNotificationTest extends TestCase
         );
     }
 
+    public function test_thread_participant_receives_reply_notification(): void
+    {
+        $participant = User::factory()->create();
+        $this->addTeamMember($participant, $this->team);
+        $parent = $this->createParentComment();
+        Comment::factory()->create([
+            'task_id' => $this->task->id,
+            'user_id' => $participant->id,
+            'parent_id' => $parent->id,
+            'body' => 'Earlier reply',
+        ]);
+        $body = sprintf(
+            '<span data-type="mention" data-id="%s" data-label="%s">@%s</span> new reply.',
+            $participant->id,
+            $participant->name,
+            $participant->name,
+        );
+
+        $response = $this->actingAs($this->replier)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            [
+                'body' => $body,
+                'parent_id' => $parent->id,
+            ],
+        );
+
+        $response->assertRedirect();
+
+        $notification = $participant->notifications()
+            ->where('type', TaskCommentReplyNotification::class)
+            ->first();
+
+        $this->assertNotNull($notification);
+        $this->assertSame($parent->id, $notification->data['parent_comment_id']);
+        $this->assertStringContainsString(
+            "{$this->replier->name} replied in a thread you participated in on \"Threaded Task\"",
+            $notification->data['message'],
+        );
+        $this->assertSame(
+            0,
+            $participant->notifications()
+                ->where('type', TaskMentionedNotification::class)
+                ->count(),
+        );
+    }
+
     public function test_reply_notification_respects_in_app_preference(): void
     {
         $this->parentAuthor->update([
