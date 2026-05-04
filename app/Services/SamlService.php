@@ -87,18 +87,20 @@ class SamlService
         $mapping = $this->defaultMapping($config);
 
         $attributes = $auth->getAttributes();
+        $friendlyAttributes = $auth->getAttributesWithFriendlyName();
         $nameId = $auth->getNameId();
 
         Log::info('SAML authentication successful', [
             'name_id' => $nameId,
             'attributes' => array_keys($attributes),
+            'friendly_attributes' => array_keys($friendlyAttributes),
             'config_name' => $config->name,
         ]);
 
         return [
             'name_id' => $nameId,
-            'email' => $this->getAttribute($attributes, $mapping['email'] ?? '', $nameId),
-            'name' => $this->getAttribute($attributes, $mapping['name'] ?? '', $nameId),
+            'email' => $this->getAttribute($attributes, $friendlyAttributes, $mapping['email'] ?? '', $nameId),
+            'name' => $this->getAttribute($attributes, $friendlyAttributes, $mapping['name'] ?? '', $nameId, ', '),
         ];
     }
 
@@ -131,12 +133,51 @@ class SamlService
         return trim($cert);
     }
 
-    private function getAttribute(array $attributes, string $key, string $fallback): string
-    {
-        if (! empty($key) && isset($attributes[$key])) {
-            return is_array($attributes[$key]) ? $attributes[$key][0] : $attributes[$key];
+    private function getAttribute(
+        array $attributes,
+        array $friendlyAttributes,
+        string $key,
+        string $fallback,
+        ?string $multiValueSeparator = null,
+    ): string {
+        if (empty($key)) {
+            return $fallback;
+        }
+
+        foreach ([$attributes, $friendlyAttributes] as $attributeSet) {
+            if (! array_key_exists($key, $attributeSet)) {
+                continue;
+            }
+
+            $value = $this->stringifyAttributeValue($attributeSet[$key], $multiValueSeparator);
+
+            if ($value !== '') {
+                return $value;
+            }
         }
 
         return $fallback;
+    }
+
+    private function stringifyAttributeValue(mixed $value, ?string $multiValueSeparator = null): string
+    {
+        if (! is_array($value)) {
+            return trim((string) $value);
+        }
+
+        $values = array_values(array_filter(
+            array_map(fn ($item) => trim((string) $item), $value),
+            fn ($item) => $item !== '',
+        ));
+
+        if ($values === []) {
+            return '';
+        }
+
+        if ($multiValueSeparator === null) {
+            return $values[0];
+        }
+
+        return implode($multiValueSeparator, $values);
     }
 }
