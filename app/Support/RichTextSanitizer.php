@@ -48,6 +48,7 @@ class RichTextSanitizer
         }
 
         $content = str_replace("\0", '', $content);
+        [$content, $protectedSegments] = self::protectMarkdownCode($content);
         $content = preg_replace(
             '/<\s*(script|style|iframe|object|embed|meta|link|base)\b[^>]*>.*?<\s*\/\s*\1\s*>/is',
             '',
@@ -55,7 +56,7 @@ class RichTextSanitizer
         ) ?? $content;
         $content = preg_replace('/<!--.*?-->/s', '', $content) ?? $content;
 
-        return preg_replace_callback(
+        $content = preg_replace_callback(
             '/<\s*(\/?)\s*([a-zA-Z0-9:-]+)([^>]*)>/s',
             static function (array $matches): string {
                 $closing = $matches[1] === '/';
@@ -80,6 +81,51 @@ class RichTextSanitizer
             },
             $content,
         ) ?? $content;
+
+        return self::restoreProtectedSegments($content, $protectedSegments);
+    }
+
+    /**
+     * Markdown code is text, so HTML examples inside it should not be
+     * interpreted as live HTML by the sanitizer.
+     *
+     * @return array{0: string, 1: array<string, string>}
+     */
+    private static function protectMarkdownCode(string $content): array
+    {
+        $protectedSegments = [];
+        $protect = static function (string $value) use (&$protectedSegments): string {
+            $token = '@@PULSEBOARD_RICH_TEXT_PROTECTED_'.count($protectedSegments).'_'.sha1($value).'@@';
+            $protectedSegments[$token] = $value;
+
+            return $token;
+        };
+
+        $content = preg_replace_callback(
+            '/(^|\R)([ \t]{0,3})(`{3,}|~{3,})[^\r\n]*(?:\r?\n[\s\S]*?(?:(?:\r?\n)[ \t]{0,3}\3[ \t]*(?=\r?\n|$)|$)|(?=\r?\n|$))/',
+            static fn (array $matches): string => $protect($matches[0]),
+            $content,
+        ) ?? $content;
+
+        $content = preg_replace_callback(
+            '/(^|[^`])(`+)([^\r\n]*?)\2(?!`)/',
+            static function (array $matches) use ($protect): string {
+                $prefix = $matches[1];
+
+                return $prefix.$protect(substr($matches[0], strlen($prefix)));
+            },
+            $content,
+        ) ?? $content;
+
+        return [$content, $protectedSegments];
+    }
+
+    /**
+     * @param  array<string, string>  $protectedSegments
+     */
+    private static function restoreProtectedSegments(string $content, array $protectedSegments): string
+    {
+        return strtr($content, $protectedSegments);
     }
 
     private static function isMarkdownAutolink(string $value): bool

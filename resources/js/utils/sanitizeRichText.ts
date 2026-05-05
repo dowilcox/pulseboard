@@ -59,12 +59,17 @@ function decodeHtmlEntities(value: string): string {
         /&(#[xX][0-9a-fA-F]+|#[0-9]+|[a-zA-Z][a-zA-Z0-9]+);/g,
         (match, entity: string) => {
             if (entity.charAt(0) === "#") {
-                const isHex = entity.charAt(1) === "x" || entity.charAt(1) === "X";
+                const isHex =
+                    entity.charAt(1) === "x" || entity.charAt(1) === "X";
                 const codePoint = isHex
                     ? parseInt(entity.slice(2), 16)
                     : parseInt(entity.slice(1), 10);
 
-                if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
+                if (
+                    !Number.isFinite(codePoint) ||
+                    codePoint < 0 ||
+                    codePoint > 0x10ffff
+                ) {
                     return match;
                 }
 
@@ -102,6 +107,53 @@ function isMarkdownAutolink(value: string) {
     const match = value.match(/^<\s*([^<>\s]+)\s*>$/s);
 
     return match !== null && isSafeUrl(match[1]);
+}
+
+function protectedToken(index: number, value: string) {
+    let hash = 0;
+
+    for (let i = 0; i < value.length; i += 1) {
+        hash = (hash * 31 + value.charCodeAt(i)) | 0;
+    }
+
+    return `@@PULSEBOARD_RICH_TEXT_PROTECTED_${index}_${Math.abs(hash)}@@`;
+}
+
+function protectMarkdownCode(content: string) {
+    const protectedSegments: Record<string, string> = {};
+    const protect = (value: string) => {
+        const token = protectedToken(
+            Object.keys(protectedSegments).length,
+            value,
+        );
+        protectedSegments[token] = value;
+
+        return token;
+    };
+
+    const withCodeBlocks = content.replace(
+        /(^|\r?\n)([ \t]{0,3})(`{3,}|~{3,})[^\r\n]*(?:\r?\n[\s\S]*?(?:(?:\r?\n)[ \t]{0,3}\3[ \t]*(?=\r?\n|$)|$)|(?=\r?\n|$))/g,
+        (match) => protect(match),
+    );
+
+    const protectedContent = withCodeBlocks.replace(
+        /(^|[^`])(`+)([^\r\n]*?)\2(?!`)/g,
+        (match, prefix: string) => {
+            return `${prefix}${protect(match.slice(prefix.length))}`;
+        },
+    );
+
+    return { content: protectedContent, protectedSegments };
+}
+
+function restoreProtectedSegments(
+    content: string,
+    protectedSegments: Record<string, string>,
+) {
+    return Object.entries(protectedSegments).reduce(
+        (result, [token, value]) => result.replaceAll(token, value),
+        content,
+    );
 }
 
 function sanitizeAttributes(tag: string, rawAttributes: string) {
@@ -177,15 +229,16 @@ export function sanitizeRichText(content: string | null | undefined) {
         return content ?? "";
     }
 
-    const withoutDangerousBlocks = content
-        .replace(/\0/g, "")
+    const sanitizedInput = content.replace(/\0/g, "");
+    const protectedMarkdown = protectMarkdownCode(sanitizedInput);
+    const withoutDangerousBlocks = protectedMarkdown.content
         .replace(
             /<\s*(script|style|iframe|object|embed|meta|link|base)\b[^>]*>.*?<\s*\/\s*\1\s*>/gis,
             "",
         )
         .replace(/<!--.*?-->/gs, "");
 
-    return withoutDangerousBlocks.replace(
+    const sanitizedContent = withoutDangerousBlocks.replace(
         /<\s*(\/?)\s*([a-zA-Z0-9:-]+)([^>]*)>/gs,
         (_match, closing: string, rawTag: string, rawAttributes: string) => {
             const tag = rawTag.toLowerCase();
@@ -208,5 +261,10 @@ export function sanitizeRichText(content: string | null | undefined) {
 
             return `<${tag}${attributeString}>`;
         },
+    );
+
+    return restoreProtectedSegments(
+        sanitizedContent,
+        protectedMarkdown.protectedSegments,
     );
 }

@@ -56,4 +56,14 @@ describe("sanitizeRichText", () => {
             "Visit <https://example.com/docs> or <http://localhost:8000/test>.",
         );
     });
+
+    it("preserves html attributes inside markdown code", () => {
+        expect(
+            sanitizeRichText(
+                '```html\n<div class="card" id="main" data-state="open" aria-label="Dashboard">\n    <button type="button" disabled>Save</button>\n</div>\n```\n\nUse `<input class="toggle" aria-label="Done">`.',
+            ),
+        ).toBe(
+            '```html\n<div class="card" id="main" data-state="open" aria-label="Dashboard">\n    <button type="button" disabled>Save</button>\n</div>\n```\n\nUse `<input class="toggle" aria-label="Done">`.',
+        );
+    });
 });

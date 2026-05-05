@@ -197,6 +197,35 @@ class CommentLabelTest extends TestCase
         );
     }
 
+    public function test_comment_markdown_code_preserves_html_attributes(): void
+    {
+        $body = <<<'MARKDOWN'
+```html
+<div class="card" id="main" data-state="open" aria-label="Dashboard">
+    <button type="button" disabled>Save</button>
+</div>
+```
+
+Use `<input class="toggle" aria-label="Done">` for inline examples.
+MARKDOWN;
+
+        $response = $this->actingAs($this->user)->post(
+            route('comments.store', [$this->team, $this->board, $this->task]),
+            ['body' => $body]
+        );
+
+        $response->assertRedirect();
+
+        $comment = Comment::query()->latest()->first();
+        $this->assertNotNull($comment);
+        $this->assertStringContainsString('class="card"', $comment->body);
+        $this->assertStringContainsString('id="main"', $comment->body);
+        $this->assertStringContainsString('data-state="open"', $comment->body);
+        $this->assertStringContainsString('aria-label="Dashboard"', $comment->body);
+        $this->assertStringContainsString('<button type="button" disabled>Save</button>', $comment->body);
+        $this->assertStringContainsString('`<input class="toggle" aria-label="Done">`', $comment->body);
+    }
+
     public function test_comment_mentions_only_team_members(): void
     {
         $teammate = User::factory()->create();
