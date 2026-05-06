@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    type ClipboardEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import { ReactRenderer, useEditor, EditorContent } from "@tiptap/react";
 import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
@@ -22,6 +29,7 @@ import tippy, { type Instance as TippyInstance } from "tippy.js";
 import MentionList, {
     type MentionListRef,
 } from "@/Components/Common/MentionList";
+import { htmlSourceToMarkdownCode } from "@/utils/htmlCodePaste";
 import { sanitizeRichText } from "@/utils/sanitizeRichText";
 import type { User } from "@/types";
 import Box from "@mui/material/Box";
@@ -296,7 +304,9 @@ export default function RichTextEditor({
                 const text = clipboard.getData("text/plain");
                 let md: string | null = null;
 
-                if (html) {
+                md = text ? htmlSourceToMarkdownCode(text) : null;
+
+                if (!md && html) {
                     const hasRichContent =
                         /<(h[1-6]|ul|ol|li|pre|code|table|blockquote|img|a\s|strong|em|del|s)\b/i.test(
                             html,
@@ -411,6 +421,36 @@ export default function RichTextEditor({
         setLinkAnchor(null);
         editor.commands.focus();
     }, [linkUrl, editor]);
+
+    const handleSourcePaste = useCallback(
+        (event: ClipboardEvent<HTMLTextAreaElement>) => {
+            const markdownCode = htmlSourceToMarkdownCode(
+                event.clipboardData.getData("text/plain"),
+            );
+
+            if (!markdownCode) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const target = event.currentTarget;
+            const start = target.selectionStart ?? sourceValue.length;
+            const end = target.selectionEnd ?? start;
+            const nextValue =
+                sourceValue.slice(0, start) +
+                markdownCode +
+                sourceValue.slice(end);
+
+            setSourceValue(nextValue);
+
+            window.requestAnimationFrame(() => {
+                target.selectionStart = start + markdownCode.length;
+                target.selectionEnd = start + markdownCode.length;
+            });
+        },
+        [sourceValue],
+    );
 
     const handleToggleSource = useCallback(() => {
         if (!sourceMode) {
@@ -817,6 +857,9 @@ export default function RichTextEditor({
                                 alignItems: "flex-start",
                                 p: 2,
                             },
+                        },
+                        htmlInput: {
+                            onPaste: handleSourcePaste,
                         },
                     }}
                     sx={{
