@@ -58,32 +58,19 @@ class SamlController extends Controller
         $samlName = trim($samlUser['name']) ?: $samlUser['email'];
 
         if (! $user) {
-            $existingUser = User::where('email', $samlUser['email'])->first();
+            $user = User::firstOrNew(['email' => $samlUser['email']]);
 
-            if ($existingUser) {
-                // Auto-link: the IdP has verified the email, so trust it
-                $existingUser->update([
-                    'auth_provider' => 'saml2',
-                    'auth_provider_id' => $samlUser['name_id'],
-                    'name' => $samlName,
-                ]);
-                $user = $existingUser;
-            } else {
-                // JIT provisioning
-                $user = User::create([
-                    'name' => $samlName,
-                    'email' => $samlUser['email'],
-                    'auth_provider' => 'saml2',
-                    'auth_provider_id' => $samlUser['name_id'],
-                    'email_verified_at' => now(),
-                ]);
+            if (! $user->exists) {
+                $user->email_verified_at = now();
             }
-        } else {
-            $user->update([
-                'name' => $samlName,
-                'email' => $samlUser['email'],
-            ]);
         }
+
+        $user->forceFill([
+            'name' => $samlName,
+            'email' => $samlUser['email'],
+            'auth_provider' => 'saml2',
+            'auth_provider_id' => $samlUser['name_id'],
+        ])->save();
 
         if ($user->deactivated_at) {
             return redirect()->route('login')->with('error', 'Your account has been deactivated.');

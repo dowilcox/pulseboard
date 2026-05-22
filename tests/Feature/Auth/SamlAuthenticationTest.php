@@ -82,6 +82,45 @@ class SamlAuthenticationTest extends TestCase
         $this->assertSame('Wilcox, Dow', $user->name);
     }
 
+    public function test_saml_login_updates_email_matched_user_name_when_auto_linking(): void
+    {
+        SsoConfiguration::create([
+            'name' => 'Corporate SSO',
+            'entity_id' => 'https://idp.example.com/metadata',
+            'login_url' => 'https://idp.example.com/login',
+            'certificate' => 'test-certificate',
+            'attribute_mapping' => [
+                'email' => 'email',
+                'name' => 'displayName',
+            ],
+            'is_active' => true,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Dow Wilcox',
+            'email' => 'dowilcox@example.com',
+            'auth_provider' => 'local',
+            'auth_provider_id' => null,
+        ]);
+
+        $this->mockSamlResponse([
+            'name_id' => 'idp-123',
+            'email' => 'dowilcox@example.com',
+            'name' => 'Wilcox, Dow',
+        ]);
+
+        $response = $this->post(route('saml.acs'));
+
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertAuthenticated();
+
+        $user = User::where('email', 'dowilcox@example.com')->firstOrFail();
+
+        $this->assertSame('Wilcox, Dow', $user->name);
+        $this->assertSame('saml2', $user->auth_provider);
+        $this->assertSame('idp-123', $user->auth_provider_id);
+    }
+
     private function mockSamlResponse(array $payload): void
     {
         $mock = Mockery::mock(SamlService::class);

@@ -57,6 +57,75 @@ class SamlServiceTest extends TestCase
         $this->assertSame('Wilcox, Donald', $result['name']);
     }
 
+    public function test_process_response_uses_default_mapping_when_saved_mapping_values_are_blank(): void
+    {
+        $service = $this->serviceWithAuth($this->mockSamlAuth(
+            attributes: [
+                'urn:oid:0.9.2342.19200300.100.1.3' => ['dowilcox@example.com'],
+                'urn:oid:2.16.840.1.113730.3.1.241' => ['Wilcox, Donald'],
+            ],
+            friendlyAttributes: [],
+            nameId: 'Wilcox',
+        ));
+
+        $result = $service->processResponse(new SsoConfiguration([
+            'name' => 'Corporate SSO',
+            'attribute_mapping' => [
+                'email' => '',
+                'name' => '',
+            ],
+        ]));
+
+        $this->assertSame('dowilcox@example.com', $result['email']);
+        $this->assertSame('Wilcox, Donald', $result['name']);
+    }
+
+    public function test_process_response_uses_display_name_alias_before_name_id_fallback(): void
+    {
+        $service = $this->serviceWithAuth($this->mockSamlAuth(
+            attributes: [
+                'urn:oid:0.9.2342.19200300.100.1.3' => ['dowilcox@example.com'],
+            ],
+            friendlyAttributes: [
+                'displayName' => ['Wilcox, Donald'],
+            ],
+            nameId: 'Wilcox',
+        ));
+
+        $result = $service->processResponse(new SsoConfiguration([
+            'name' => 'Corporate SSO',
+        ]));
+
+        $this->assertSame('dowilcox@example.com', $result['email']);
+        $this->assertSame('Wilcox, Donald', $result['name']);
+    }
+
+    public function test_process_response_prefers_display_name_alias_over_surname_mapping(): void
+    {
+        $service = $this->serviceWithAuth($this->mockSamlAuth(
+            attributes: [
+                'urn:oid:0.9.2342.19200300.100.1.3' => ['dowilcox@example.com'],
+                'sn' => ['Wilcox'],
+            ],
+            friendlyAttributes: [
+                'displayName' => ['Wilcox, Donald'],
+                'sn' => ['Wilcox'],
+            ],
+            nameId: 'Wilcox',
+        ));
+
+        $result = $service->processResponse(new SsoConfiguration([
+            'name' => 'Corporate SSO',
+            'attribute_mapping' => [
+                'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
+                'name' => 'sn',
+            ],
+        ]));
+
+        $this->assertSame('dowilcox@example.com', $result['email']);
+        $this->assertSame('Wilcox, Donald', $result['name']);
+    }
+
     private function mockSamlAuth(array $attributes, array $friendlyAttributes, string $nameId): SamlAuth
     {
         $auth = Mockery::mock(SamlAuth::class);

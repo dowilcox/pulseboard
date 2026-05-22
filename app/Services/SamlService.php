@@ -10,6 +10,26 @@ use OneLogin\Saml2\Utils as SamlUtils;
 
 class SamlService
 {
+    private const DEFAULT_ATTRIBUTE_MAPPING = [
+        'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
+        'name' => 'urn:oid:2.16.840.1.113730.3.1.241',
+    ];
+
+    private const ATTRIBUTE_ALIASES = [
+        'email' => ['email', 'mail'],
+        'name' => ['displayName', 'urn:oid:2.16.840.1.113730.3.1.241', 'cn', 'name'],
+    ];
+
+    private const SURNAME_ATTRIBUTE_KEYS = [
+        'sn',
+        'surname',
+        'lastname',
+        'last_name',
+        'familyname',
+        'family_name',
+        'urn:oid:2.5.4.4',
+    ];
+
     public function buildSettings(SsoConfiguration $config): array
     {
         return [
@@ -99,8 +119,8 @@ class SamlService
 
         return [
             'name_id' => $nameId,
-            'email' => $this->getAttribute($attributes, $friendlyAttributes, $mapping['email'] ?? '', $nameId),
-            'name' => $this->getAttribute($attributes, $friendlyAttributes, $mapping['name'] ?? '', $nameId, ', '),
+            'email' => $this->getAttribute($attributes, $friendlyAttributes, $this->attributeKeys($mapping, 'email'), $nameId),
+            'name' => $this->getAttribute($attributes, $friendlyAttributes, $this->attributeKeys($mapping, 'name'), $nameId, ', '),
         ];
     }
 
@@ -113,10 +133,21 @@ class SamlService
 
     private function defaultMapping(SsoConfiguration $config): array
     {
-        return $config->attribute_mapping ?? [
-            'email' => 'urn:oid:0.9.2342.19200300.100.1.3',
-            'name' => 'urn:oid:2.16.840.1.113730.3.1.241',
-        ];
+        $mapping = self::DEFAULT_ATTRIBUTE_MAPPING;
+
+        foreach ($config->attribute_mapping ?? [] as $field => $key) {
+            if (! array_key_exists($field, $mapping) || ! is_string($key)) {
+                continue;
+            }
+
+            $key = trim($key);
+
+            if ($key !== '') {
+                $mapping[$field] = $key;
+            }
+        }
+
+        return $mapping;
     }
 
     private function normalizeCertificate(string $cert): string
@@ -136,27 +167,53 @@ class SamlService
     private function getAttribute(
         array $attributes,
         array $friendlyAttributes,
-        string $key,
+        array $keys,
         string $fallback,
         ?string $multiValueSeparator = null,
     ): string {
-        if (empty($key)) {
-            return $fallback;
-        }
+        foreach ($keys as $key) {
+            foreach ([$attributes, $friendlyAttributes] as $attributeSet) {
+                if (! array_key_exists($key, $attributeSet)) {
+                    continue;
+                }
 
-        foreach ([$attributes, $friendlyAttributes] as $attributeSet) {
-            if (! array_key_exists($key, $attributeSet)) {
-                continue;
-            }
+                $value = $this->stringifyAttributeValue($attributeSet[$key], $multiValueSeparator);
 
-            $value = $this->stringifyAttributeValue($attributeSet[$key], $multiValueSeparator);
-
-            if ($value !== '') {
-                return $value;
+                if ($value !== '') {
+                    return $value;
+                }
             }
         }
 
         return $fallback;
+    }
+
+    private function attributeKeys(array $mapping, string $field): array
+    {
+        $mappedKey = trim((string) ($mapping[$field] ?? ''));
+        $aliases = self::ATTRIBUTE_ALIASES[$field] ?? [];
+        $keys = [$mappedKey, ...$aliases];
+
+        if ($field === 'name' && $this->isSurnameAttributeKey($mappedKey)) {
+            $keys = [...$aliases, $mappedKey];
+        }
+
+        $normalized = [];
+
+        foreach ($keys as $key) {
+            $key = trim((string) $key);
+
+            if ($key !== '' && ! in_array($key, $normalized, true)) {
+                $normalized[] = $key;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function isSurnameAttributeKey(string $key): bool
+    {
+        return in_array(strtolower($key), self::SURNAME_ATTRIBUTE_KEYS, true);
     }
 
     private function stringifyAttributeValue(mixed $value, ?string $multiValueSeparator = null): string
