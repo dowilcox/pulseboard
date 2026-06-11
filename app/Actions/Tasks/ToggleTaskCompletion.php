@@ -30,7 +30,15 @@ class ToggleTaskCompletion
                         ->first();
 
                     if ($doneColumn && $doneColumn->id !== $task->column_id) {
-                        $move = app(MoveTask::class)->applyMove($task, $doneColumn, null);
+                        // This action manages completed_at itself, so opt out
+                        // of MoveTask's done-column completion sync to avoid a
+                        // duplicate 'completed' activity.
+                        $move = app(MoveTask::class)->applyMove(
+                            $task,
+                            $doneColumn,
+                            null,
+                            syncCompletion: false,
+                        );
                     }
                 }
             }

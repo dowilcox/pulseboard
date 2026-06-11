@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskAttachmentAddedNotification extends Notification
@@ -46,22 +45,6 @@ class TaskAttachmentAddedNotification extends Notification
             'filename' => $this->filename,
             'message' => "{$this->uploader->name} added \"{$this->filename}\" to \"{$this->task->title}\"",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Attachment Added: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "{$this->uploader->name} added \"{$this->filename}\" to \"{$this->task->title}\".",
-            )
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

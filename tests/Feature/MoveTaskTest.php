@@ -257,6 +257,135 @@ class MoveTaskTest extends TestCase
         $this->assertEquals($zeroLimitColumn->id, $result->column_id);
     }
 
+    public function test_moving_into_done_column_sets_completed_at(): void
+    {
+        Event::fake();
+
+        $doneColumn = Column::factory()->create([
+            'board_id' => $this->board->id,
+            'name' => 'Really Done',
+            'is_done_column' => true,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->todoColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($this->user);
+        $result = MoveTask::run($task, $doneColumn, 1.0);
+
+        $this->assertNotNull($result->completed_at);
+        $this->assertDatabaseHas('activities', [
+            'task_id' => $task->id,
+            'action' => 'completed',
+        ]);
+    }
+
+    public function test_moving_out_of_done_column_clears_completed_at(): void
+    {
+        Event::fake();
+
+        $doneColumn = Column::factory()->create([
+            'board_id' => $this->board->id,
+            'name' => 'Really Done',
+            'is_done_column' => true,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $doneColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($this->user);
+        $result = MoveTask::run($task, $this->todoColumn, 1.0);
+
+        $this->assertNull($result->completed_at);
+        $this->assertDatabaseHas('activities', [
+            'task_id' => $task->id,
+            'action' => 'uncompleted',
+        ]);
+    }
+
+    public function test_moving_between_non_done_columns_preserves_completed_at(): void
+    {
+        Event::fake();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->todoColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($this->user);
+        $result = MoveTask::run($task, $this->doneColumn, 1.0);
+
+        // doneColumn from setUp is NOT flagged is_done_column, so the
+        // manually-set completion must survive the move.
+        $this->assertNotNull($result->completed_at);
+        $this->assertDatabaseMissing('activities', [
+            'task_id' => $task->id,
+            'action' => 'uncompleted',
+        ]);
+    }
+
+    public function test_reorder_within_done_column_keeps_completed_at(): void
+    {
+        Event::fake();
+
+        $doneColumn = Column::factory()->create([
+            'board_id' => $this->board->id,
+            'name' => 'Really Done',
+            'is_done_column' => true,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $doneColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($this->user);
+        $result = MoveTask::run($task, $doneColumn, 9.0);
+
+        $this->assertNotNull($result->completed_at);
+    }
+
+    public function test_cross_board_move_into_done_column_sets_completed_at(): void
+    {
+        Event::fake();
+
+        $otherBoard = Board::factory()->create(['team_id' => $this->team->id]);
+        $otherDoneColumn = Column::factory()->create([
+            'board_id' => $otherBoard->id,
+            'name' => 'Done',
+            'is_done_column' => true,
+        ]);
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->todoColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+        ]);
+
+        $this->actingAs($this->user);
+        $result = MoveTask::run($task, $otherDoneColumn, 1.0, $otherBoard);
+
+        $this->assertEquals($otherBoard->id, $result->board_id);
+        $this->assertNotNull($result->completed_at);
+        $this->assertDatabaseHas('activities', [
+            'task_id' => $task->id,
+            'action' => 'completed',
+        ]);
+    }
+
     public function test_sort_order_is_updated(): void
     {
         Event::fake();

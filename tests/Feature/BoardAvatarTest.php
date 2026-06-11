@@ -106,7 +106,8 @@ class BoardAvatarTest extends TestCase
             ['image' => $file]
         );
 
-        $this->board->refresh();
+        // The accessor only resolves when media is eager-loaded (N+1 guard)
+        $this->board->refresh()->load('media');
         $this->assertNotNull($this->board->image_url);
         $this->assertStringContainsString('avatar', $this->board->image_url);
     }

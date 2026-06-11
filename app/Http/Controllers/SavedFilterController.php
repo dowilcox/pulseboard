@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Boards\CreateSavedFilter;
+use App\Actions\Boards\UpdateSavedFilter;
 use App\Models\Board;
 use App\Models\SavedFilter;
 use App\Models\Team;
@@ -12,7 +14,7 @@ class SavedFilterController extends Controller
 {
     public function index(Team $team, Board $board): JsonResponse
     {
-        abort_unless($board->team_id === $team->id, 404);
+        $this->authorize('view', $board);
 
         $filters = SavedFilter::where('board_id', $board->id)
             ->where('user_id', auth()->id())
@@ -24,36 +26,24 @@ class SavedFilterController extends Controller
 
     public function store(Request $request, Team $team, Board $board): JsonResponse
     {
-        abort_unless($board->team_id === $team->id, 404);
+        $this->authorize('view', $board);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'filter_config' => ['required', 'array'],
             'is_default' => ['boolean'],
         ]);
 
-        // If setting as default, unset other defaults
-        if ($validated['is_default'] ?? false) {
-            SavedFilter::where('board_id', $board->id)
-                ->where('user_id', auth()->id())
-                ->update(['is_default' => false]);
-        }
-
-        $filter = SavedFilter::create([
-            'board_id' => $board->id,
-            'user_id' => auth()->id(),
-            'name' => $validated['name'],
-            'filter_config' => $validated['filter_config'],
-            'is_default' => $validated['is_default'] ?? false,
-        ]);
+        $filter = CreateSavedFilter::run($board, $request->user(), $validated);
 
         return response()->json($filter, 201);
     }
 
     public function update(Request $request, Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
-        abort_unless($board->team_id === $team->id, 404);
         abort_unless($savedFilter->board_id === $board->id, 404);
         abort_unless($savedFilter->user_id === auth()->id(), 403);
+        $this->authorize('view', $board);
 
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
@@ -61,23 +51,16 @@ class SavedFilterController extends Controller
             'is_default' => ['sometimes', 'boolean'],
         ]);
 
-        if ($validated['is_default'] ?? false) {
-            SavedFilter::where('board_id', $board->id)
-                ->where('user_id', auth()->id())
-                ->where('id', '!=', $savedFilter->id)
-                ->update(['is_default' => false]);
-        }
+        $filter = UpdateSavedFilter::run($savedFilter, $validated);
 
-        $savedFilter->update($validated);
-
-        return response()->json($savedFilter);
+        return response()->json($filter);
     }
 
     public function destroy(Team $team, Board $board, SavedFilter $savedFilter): JsonResponse
     {
-        abort_unless($board->team_id === $team->id, 404);
         abort_unless($savedFilter->board_id === $board->id, 404);
         abort_unless($savedFilter->user_id === auth()->id(), 403);
+        $this->authorize('view', $board);
 
         $savedFilter->delete();
 

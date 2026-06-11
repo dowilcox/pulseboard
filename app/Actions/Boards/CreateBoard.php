@@ -4,7 +4,7 @@ namespace App\Actions\Boards;
 
 use App\Models\Board;
 use App\Models\Team;
-use Illuminate\Support\Str;
+use App\Support\UniqueSlug;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateBoard
@@ -24,44 +24,34 @@ class CreateBoard
     ];
 
     /**
-     * Create a new board for the given team with default columns.
+     * Create a new board for the given team.
+     *
+     * Pass $columns to create those instead of the default columns.
      *
      * @param  array{name: string, description?: string|null}  $data
+     * @param  array<int, array{name: string, color: string, wip_limit?: int|null, is_done_column?: bool}>|null  $columns
      */
-    public function handle(Team $team, array $data): Board
+    public function handle(Team $team, array $data, ?array $columns = null): Board
     {
         $nextSortOrder = $team->boards()->max('sort_order') + 1;
 
         $board = $team->boards()->create([
             'name' => $data['name'],
-            'slug' => $this->generateUniqueSlug($team, $data['name']),
+            'slug' => UniqueSlug::forBoard($team, $data['name']),
             'description' => $data['description'] ?? null,
             'sort_order' => $nextSortOrder,
         ]);
 
-        foreach (self::DEFAULT_COLUMNS as $index => $column) {
+        foreach ($columns ?? self::DEFAULT_COLUMNS as $index => $column) {
             $board->columns()->create([
                 'name' => $column['name'],
                 'color' => $column['color'],
-                'is_done_column' => $column['is_done_column'],
+                'wip_limit' => $column['wip_limit'] ?? null,
+                'is_done_column' => $column['is_done_column'] ?? false,
                 'sort_order' => $index,
             ]);
         }
 
         return $board->load('columns');
-    }
-
-    private function generateUniqueSlug(Team $team, string $name): string
-    {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        while ($team->boards()->where('slug', $slug)->exists()) {
-            $slug = "{$originalSlug}-{$counter}";
-            $counter++;
-        }
-
-        return $slug;
     }
 }

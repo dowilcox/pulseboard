@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskCompletedNotification extends Notification
@@ -42,22 +41,6 @@ class TaskCompletedNotification extends Notification
             'completed_by_name' => $this->completedBy->name,
             'message' => "{$this->completedBy->name} completed \"{$this->task->title}\"",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Task Completed: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "{$this->completedBy->name} completed \"{$this->task->title}\".",
-            )
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

@@ -19,11 +19,11 @@ import PipelineBadge from "./PipelineBadge";
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
 }
 
-export default function GitlabRefsList({ task, teamId, boardId }: Props) {
+export default function GitlabRefsList({ task, teamSlug, boardSlug }: Props) {
     const refs = task.gitlab_refs ?? [];
     const branches = refs.filter((r) => r.ref_type === "branch");
     const mergeRequests = refs.filter((r) => r.ref_type === "merge_request");
@@ -32,8 +32,8 @@ export default function GitlabRefsList({ task, teamId, boardId }: Props) {
         try {
             await axios.delete(
                 route("tasks.gitlab.destroy", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     task.id,
                     refId,
                 ]),

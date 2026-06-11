@@ -4,12 +4,13 @@ namespace App\Policies;
 
 use App\Models\Board;
 use App\Models\Task;
-use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
+use App\Policies\Concerns\ChecksTeamRoles;
 
 class TaskPolicy
 {
+    use ChecksTeamRoles;
+
     /**
      * Any team member can view tasks.
      */
@@ -52,18 +53,5 @@ class TaskPolicy
     public function assign(User $user, Task $task): bool
     {
         return $this->isTeamMember($user, $task->board->team);
-    }
-
-    private function isTeamMember(User $user, Team $team): bool
-    {
-        return $team->hasUser($user);
-    }
-
-    private function isOwnerOrAdmin(User $user, Team $team): bool
-    {
-        return TeamMember::where('team_id', $team->id)
-            ->where('user_id', $user->id)
-            ->whereIn('role', ['owner', 'admin'])
-            ->exists();
     }
 }

@@ -1,6 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { type FormEvent } from "react";
+import { type FormEvent, type ReactElement } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -26,7 +26,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Reset Password" />
 
             <Box component="form" onSubmit={submit} noValidate>
@@ -91,6 +91,10 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     </Button>
                 </Box>
             </Box>
-        </GuestLayout>
+        </>
     );
 }
+
+ResetPassword.layout = (page: ReactElement) => (
+    <GuestLayout>{page}</GuestLayout>
+);

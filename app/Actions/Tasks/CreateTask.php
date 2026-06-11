@@ -2,44 +2,35 @@
 
 namespace App\Actions\Tasks;
 
+use App\Actions\Tasks\Concerns\ManagesTaskPlacement;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Label;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use App\Support\RichTextSanitizer;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateTask
 {
     use AsAction;
+    use ManagesTaskPlacement;
 
     public function handle(Board $board, Column $column, array $data, User $creator): Task
     {
+        $data = $this->applyDefaultTemplate($board, $data);
+
         $task = DB::transaction(function () use ($board, $column, $data, $creator) {
-            if ($column->wip_limit !== null && $column->wip_limit > 0) {
-                Column::whereKey($column->id)->lockForUpdate()->first();
-                $currentCount = Task::where('column_id', $column->id)->count();
-                if ($currentCount >= $column->wip_limit) {
-                    throw ValidationException::withMessages([
-                        'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
-                    ]);
-                }
-            }
+            $this->assertWipCapacity($column);
 
             $maxSort = Task::where('column_id', $column->id)->max('sort_order') ?? 0;
-
-            $taskNumber = DB::table('tasks')
-                ->where('board_id', $board->id)
-                ->lockForUpdate()
-                ->max('task_number') ?? 0;
 
             $task = Task::create([
                 'board_id' => $board->id,
                 'column_id' => $column->id,
-                'task_number' => $taskNumber + 1,
+                'task_number' => $this->nextTaskNumber($board),
                 'title' => $data['title'],
                 'description' => RichTextSanitizer::sanitize($data['description'] ?? null),
                 'priority' => $data['priority'] ?? 'none',
@@ -70,6 +61,15 @@ class CreateTask
             }
 
             if (! empty($data['label_ids'])) {
+                // Filter out labels that no longer exist or belong to another team
+                // (e.g. stale template label_ids referencing deleted labels)
+                $data['label_ids'] = Label::whereIn('id', $data['label_ids'])
+                    ->where('team_id', $board->team_id)
+                    ->pluck('id')
+                    ->toArray();
+            }
+
+            if (! empty($data['label_ids'])) {
                 $task->labels()->attach($data['label_ids']);
             }
 
@@ -79,5 +79,28 @@ class CreateTask
         ActivityLogger::log($task, 'created', [], $creator);
 
         return $task->load(['assignees', 'labels']);
+    }
+
+    /**
+     * Merge the board's default task template values under the provided data.
+     * Explicitly provided values always win over template defaults.
+     */
+    private function applyDefaultTemplate(Board $board, array $data): array
+    {
+        if (! $board->default_task_template_id || ! $board->defaultTaskTemplate) {
+            return $data;
+        }
+
+        $template = $board->defaultTaskTemplate;
+
+        return array_merge(
+            [
+                'description' => $template->description_template,
+                'priority' => $template->priority,
+                'effort_estimate' => $template->effort_estimate,
+                'label_ids' => $template->label_ids ?? [],
+            ],
+            $data,
+        );
     }
 }

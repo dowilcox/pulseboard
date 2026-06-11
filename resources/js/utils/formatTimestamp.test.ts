@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatTimestamp } from "./formatTimestamp";
+import { formatDueDate, formatTimestamp } from "./formatTimestamp";
 
 describe("formatTimestamp", () => {
     beforeEach(() => {
@@ -21,6 +21,29 @@ describe("formatTimestamp", () => {
     it("falls back to locale dates after a week", () => {
         expect(formatTimestamp("2026-04-01T16:00:00.000Z")).toBe(
             new Date("2026-04-01T16:00:00.000Z").toLocaleDateString(),
+        );
+    });
+});
+
+describe("formatDueDate", () => {
+    it("formats as short month and day by default", () => {
+        expect(formatDueDate("2026-04-01T16:00:00.000Z")).toBe(
+            new Date("2026-04-01T16:00:00.000Z").toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+            }),
+        );
+    });
+
+    it("includes the year when requested", () => {
+        expect(
+            formatDueDate("2026-04-01T16:00:00.000Z", { includeYear: true }),
+        ).toBe(
+            new Date("2026-04-01T16:00:00.000Z").toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }),
         );
     });
 });

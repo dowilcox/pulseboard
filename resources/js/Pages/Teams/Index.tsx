@@ -1,7 +1,8 @@
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { useState } from "react";
+import { type ReactElement, useState } from "react";
 import type { Team } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -54,8 +55,9 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="Teams" />
+            <LayoutHeader>
                 <PageHeader
                     title="Teams"
                     actions={
@@ -69,9 +71,7 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                         </Button>
                     }
                 />
-            }
-        >
-            <Head title="Teams" />
+            </LayoutHeader>
 
             {teams.length === 0 ? (
                 <Box
@@ -287,6 +287,10 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                     </DialogActions>
                 </form>
             </Dialog>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+TeamsIndex.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

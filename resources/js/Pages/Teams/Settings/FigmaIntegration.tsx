@@ -1,6 +1,7 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { type ReactElement, useState } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { FigmaConnection, PageProps, Team } from "@/types";
@@ -27,7 +28,6 @@ import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
-import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
@@ -49,13 +49,6 @@ export default function FigmaIntegration({
     sidebarBoards = [],
     connections,
 }: Props) {
-    const { flash } = usePage<PageProps>().props;
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({ open: false, message: "", severity: "success" });
-
     const [connDialogOpen, setConnDialogOpen] = useState(false);
     const [editingConnection, setEditingConnection] =
         useState<FigmaConnection | null>(null);
@@ -64,22 +57,6 @@ export default function FigmaIntegration({
         {},
     );
     const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
-
-    useEffect(() => {
-        if (flash?.success) {
-            setSnackbar({
-                open: true,
-                message: flash.success,
-                severity: "success",
-            });
-        } else if (flash?.error) {
-            setSnackbar({
-                open: true,
-                message: flash.error,
-                severity: "error",
-            });
-        }
-    }, [flash?.success, flash?.error]);
 
     const connForm = useForm({
         name: "",
@@ -163,10 +140,9 @@ export default function FigmaIntegration({
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={sidebarBoards}
-            header={
+        <>
+            <Head title={`${team.name} — Figma`} />
+            <LayoutHeader>
                 <PageHeader
                     title="Figma Integration"
                     breadcrumbs={[
@@ -177,9 +153,7 @@ export default function FigmaIntegration({
                         },
                     ]}
                 />
-            }
-        >
-            <Head title={`${team.name} — Figma`} />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <Card variant="outlined">
@@ -505,23 +479,15 @@ export default function FigmaIntegration({
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    severity={snackbar.severity}
-                    variant="filled"
-                    role="status"
-                    sx={{ width: "100%" }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+FigmaIntegration.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.sidebarBoards ?? []}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

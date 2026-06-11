@@ -12,6 +12,8 @@ class NotificationCreated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public bool $afterCommit = true;
+
     public function __construct(
         public string $userId,
         public string $notificationId,

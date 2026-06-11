@@ -17,6 +17,7 @@ import Typography from "@mui/material/Typography";
 import type { TaskTemplateFormData } from "./types";
 
 interface TaskTemplatesSectionProps {
+    canManageTemplates: boolean;
     loadingTemplates: boolean;
     savingTaskTemplate: boolean;
     showTemplateForm: boolean;
@@ -34,6 +35,7 @@ interface TaskTemplatesSectionProps {
 }
 
 export default function TaskTemplatesSection({
+    canManageTemplates,
     loadingTemplates,
     savingTaskTemplate,
     showTemplateForm,
@@ -60,7 +62,7 @@ export default function TaskTemplatesSection({
                     <Typography variant="subtitle1" fontWeight={600}>
                         Task Templates
                     </Typography>
-                    {!showTemplateForm && (
+                    {canManageTemplates && !showTemplateForm && (
                         <Button
                             startIcon={<AddIcon />}
                             size="small"
@@ -85,8 +87,9 @@ export default function TaskTemplatesSection({
                         color="text.secondary"
                         sx={{ py: 2 }}
                     >
-                        No task templates yet. Create one to quickly add
-                        pre-configured tasks.
+                        No task templates yet.
+                        {canManageTemplates &&
+                            " Create one to quickly add pre-configured tasks."}
                     </Typography>
                 ) : (
                     <Box
@@ -146,26 +149,28 @@ export default function TaskTemplatesSection({
                                             by {template.creator.name}
                                         </Typography>
                                     )}
-                                    <Tooltip title="Delete template">
-                                        <IconButton
-                                            size="small"
-                                            color="error"
-                                            onClick={() =>
-                                                onDeleteTaskTemplate(
-                                                    template.id,
-                                                )
-                                            }
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {canManageTemplates && (
+                                        <Tooltip title="Delete template">
+                                            <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() =>
+                                                    onDeleteTaskTemplate(
+                                                        template.id,
+                                                    )
+                                                }
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </Box>
                             </Paper>
                         ))}
                     </Box>
                 )}
 
-                <Collapse in={showTemplateForm}>
+                <Collapse in={canManageTemplates && showTemplateForm}>
                     <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
                         <Typography
                             variant="body2"

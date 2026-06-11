@@ -4,6 +4,7 @@ import { Head, Link as InertiaLink, usePage } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import type { ReactElement } from "react";
 
 interface Props {
     status: number;
@@ -28,70 +29,65 @@ export default function Error({ status }: Props) {
     const title = titles[status] ?? "Error";
     const description = descriptions[status] ?? "An unexpected error occurred.";
 
-    const content = (
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "60vh",
-                textAlign: "center",
-                px: 3,
-            }}
-        >
-            <Typography
-                variant="h1"
-                sx={{
-                    fontSize: { xs: "4rem", md: "6rem" },
-                    fontWeight: 700,
-                    color: "text.disabled",
-                    lineHeight: 1,
-                }}
-            >
-                {status}
-            </Typography>
-            <Typography variant="h5" sx={{ mt: 2, fontWeight: 600 }}>
-                {title}
-            </Typography>
-            <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mt: 1, maxWidth: 400 }}
-            >
-                {description}
-            </Typography>
-            <Box sx={{ display: "flex", gap: 2, mt: 4 }}>
-                <Button
-                    variant="outlined"
-                    onClick={() => window.history.back()}
-                >
-                    Go Back
-                </Button>
-                <Button
-                    variant="contained"
-                    component={InertiaLink}
-                    href={auth?.user ? "/dashboard" : "/"}
-                >
-                    {auth?.user ? "Dashboard" : "Home"}
-                </Button>
-            </Box>
-        </Box>
-    );
-
-    if (auth?.user) {
-        return (
-            <AuthenticatedLayout>
-                <Head title={title} />
-                {content}
-            </AuthenticatedLayout>
-        );
-    }
-
     return (
         <>
             <Head title={title} />
-            {content}
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: "60vh",
+                    textAlign: "center",
+                    px: 3,
+                }}
+            >
+                <Typography
+                    variant="h1"
+                    sx={{
+                        fontSize: { xs: "4rem", md: "6rem" },
+                        fontWeight: 700,
+                        color: "text.disabled",
+                        lineHeight: 1,
+                    }}
+                >
+                    {status}
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 2, fontWeight: 600 }}>
+                    {title}
+                </Typography>
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ mt: 1, maxWidth: 400 }}
+                >
+                    {description}
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, mt: 4 }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => window.history.back()}
+                    >
+                        Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        component={InertiaLink}
+                        href={auth?.user ? "/dashboard" : "/"}
+                    >
+                        {auth?.user ? "Dashboard" : "Home"}
+                    </Button>
+                </Box>
+            </Box>
         </>
     );
 }
+
+// Authenticated users get the persistent app layout; guests render bare.
+Error.layout = (page: ReactElement<Props & PageProps>) =>
+    page.props.auth?.user ? (
+        <AuthenticatedLayout>{page}</AuthenticatedLayout>
+    ) : (
+        page
+    );

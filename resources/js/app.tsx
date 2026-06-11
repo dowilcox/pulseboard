@@ -4,7 +4,7 @@ import "./bootstrap";
 import { createInertiaApp } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { createRoot } from "react-dom/client";
-import { ThemeContextProvider } from "@/Contexts/ThemeContext";
+import { AppThemeProvider } from "@/theme/AppThemeProvider";
 
 import ErrorBoundary from "@/Components/Common/ErrorBoundary";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -22,12 +22,12 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(
-            <ThemeContextProvider>
+            <AppThemeProvider>
                 <CssBaseline />
                 <ErrorBoundary>
                     <App {...props} />
                 </ErrorBoundary>
-            </ThemeContextProvider>,
+            </AppThemeProvider>,
         );
     },
     progress: {

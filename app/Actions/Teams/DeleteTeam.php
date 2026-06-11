@@ -2,9 +2,9 @@
 
 namespace App\Actions\Teams;
 
+use App\Actions\Gitlab\RemoveProjectWebhook;
 use App\Models\Team;
-use App\Services\GitlabApiService;
-use Illuminate\Support\Facades\Log;
+use App\Models\User;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class DeleteTeam
@@ -17,16 +17,8 @@ class DeleteTeam
         $connections = $team->gitlabConnections()->with('projects')->get();
 
         foreach ($connections as $connection) {
-            $api = GitlabApiService::for($connection);
-
             foreach ($connection->projects as $project) {
-                if ($project->webhook_id) {
-                    try {
-                        $api->deleteWebhook($project->gitlab_project_id, $project->webhook_id);
-                    } catch (\Exception $e) {
-                        Log::warning("Failed to remove webhook for project {$project->path_with_namespace}: {$e->getMessage()}");
-                    }
-                }
+                RemoveProjectWebhook::run($project->setRelation('connection', $connection));
             }
         }
 
@@ -36,6 +28,14 @@ class DeleteTeam
                 $task->delete();
             });
             $board->delete();
+        });
+
+        // Delete bot users owned by this team (users.created_by_team_id is
+        // nullOnDelete, so they would otherwise be orphaned forever) and
+        // revoke their API tokens.
+        $team->bots()->get()->each(function (User $bot) {
+            $bot->tokens()->delete();
+            $bot->delete();
         });
 
         // FK cascades handle remaining DB records

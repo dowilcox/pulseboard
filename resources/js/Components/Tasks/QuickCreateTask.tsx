@@ -11,8 +11,8 @@ import Typography from "@mui/material/Typography";
 import { type FormEvent, type KeyboardEvent, useRef, useState } from "react";
 
 interface Props {
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     columnId: string;
     templates?: TaskTemplate[];
     disabled?: boolean;
@@ -23,8 +23,8 @@ const KANBAN_HOVER = "rgba(148, 163, 184, 0.14)";
 const KANBAN_INPUT = "rgba(8, 17, 31, 0.72)";
 
 export default function QuickCreateTask({
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     columnId,
     templates = [],
     disabled = false,
@@ -46,8 +46,8 @@ export default function QuickCreateTask({
         if (selectedTemplate) {
             router.post(
                 route("tasks.from-template", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     columnId,
                     selectedTemplate.id,
                 ]),
@@ -62,7 +62,7 @@ export default function QuickCreateTask({
                 },
             );
         } else {
-            post(route("tasks.store", [teamId, boardId, columnId]), {
+            post(route("tasks.store", [teamSlug, boardSlug, columnId]), {
                 preserveScroll: true,
                 onSuccess: () => {
                     reset("title");

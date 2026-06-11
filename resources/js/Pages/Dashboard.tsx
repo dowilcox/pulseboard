@@ -1,8 +1,10 @@
 import { PRIORITY_COLORS } from "@/constants/priorities";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, router } from "@inertiajs/react";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -23,7 +25,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
-import { type ReactNode, useMemo } from "react";
+import { type ReactElement, type ReactNode, useMemo } from "react";
 
 interface MyTask extends Task {
     board?: {
@@ -143,12 +145,6 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
         }
     };
 
-    const formatDueDate = (date: string) =>
-        new Date(date).toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-        });
-
     const metricCard = (
         label: string,
         value: string | number,
@@ -221,8 +217,11 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
     );
 
     return (
-        <AuthenticatedLayout header={<PageHeader title="Dashboard" />}>
+        <>
             <Head title="Dashboard" />
+            <LayoutHeader>
+                <PageHeader title="Dashboard" />
+            </LayoutHeader>
 
             <Box
                 sx={{
@@ -896,6 +895,10 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                     </Paper>
                 </Box>
             </Box>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Dashboard.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

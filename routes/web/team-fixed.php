@@ -77,9 +77,9 @@ Route::get('/{team}/export/csv', [
 Route::get('/{team}/bots', [TeamBotController::class, 'index'])->name(
     'teams.bots.index',
 );
-Route::post('/{team}/bots', [TeamBotController::class, 'storeBot'])->name(
-    'teams.bots.store',
-);
+Route::post('/{team}/bots', [TeamBotController::class, 'storeBot'])
+    ->middleware('throttle:10,1')
+    ->name('teams.bots.store');
 Route::delete('/{team}/bots/{user}', [
     TeamBotController::class,
     'destroyBot',
@@ -87,7 +87,9 @@ Route::delete('/{team}/bots/{user}', [
 Route::post('/{team}/bots/{user}/tokens', [
     TeamBotController::class,
     'createToken',
-])->name('teams.bots.create-token');
+])
+    ->middleware('throttle:10,1')
+    ->name('teams.bots.create-token');
 Route::delete('/{team}/bots/{user}/tokens/{tokenId}', [
     TeamBotController::class,
     'revokeToken',
@@ -164,4 +166,6 @@ Route::delete('/{team}/labels/{label}', [
 Route::post('/{team}/templates/{boardTemplate}/create-board', [
     BoardTemplateController::class,
     'createBoardFromTemplate',
-])->name('teams.templates.create-board');
+])
+    ->middleware('throttle:10,1')
+    ->name('teams.templates.create-board');

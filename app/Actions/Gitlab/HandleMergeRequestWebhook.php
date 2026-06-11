@@ -5,6 +5,7 @@ namespace App\Actions\Gitlab;
 use App\Events\BoardChanged;
 use App\Models\GitlabProject;
 use App\Models\TaskGitlabRef;
+use App\Services\TaskAutomationDispatcher;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class HandleMergeRequestWebhook
@@ -30,7 +31,7 @@ class HandleMergeRequestWebhook
         $searchText = implode(' ', [$title, $description, $sourceBranch]);
 
         // Try to auto-link using #{number} pattern
-        AutoLinkTask::run(
+        $createdRefs = AutoLinkTask::run(
             gitlabProject: $gitlabProject,
             text: $searchText,
             refType: 'merge_request',
@@ -52,9 +53,15 @@ class HandleMergeRequestWebhook
         })
             ->where('ref_type', 'merge_request')
             ->where('gitlab_iid', $iid)
+            ->with('task')
             ->get();
 
+        $dispatcher = app(TaskAutomationDispatcher::class);
+        $createdRefIds = array_map(fn (TaskGitlabRef $ref) => $ref->id, $createdRefs);
+
         foreach ($existingRefs as $ref) {
+            $previousState = $ref->state;
+
             $ref->update([
                 'title' => $title,
                 'state' => $state,
@@ -84,6 +91,20 @@ class HandleMergeRequestWebhook
                 ],
                 userId: 'system',
             ));
+
+            // Fire board automations when the MR transitions to merged.
+            // Refs just created by AutoLinkTask were stored with the merged
+            // state already, so treat them as a fresh transition.
+            $justMerged = $state === 'merged'
+                && ($previousState !== 'merged' || in_array($ref->id, $createdRefIds, true));
+
+            if ($justMerged) {
+                $dispatcher->dispatchTrigger($ref->task, 'gitlab_mr_merged', [
+                    'mr_iid' => $iid,
+                    'mr_title' => $title,
+                    'mr_url' => $url,
+                ]);
+            }
         }
     }
 }

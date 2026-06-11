@@ -23,7 +23,7 @@ class DeleteBoard
             boardId: $board->id,
             action: 'board.deleted',
             data: ['board_id' => $board->id],
-            userId: Auth::id(),
+            userId: Auth::id() ?? 'system',
         ))->toOthers();
 
         $board->delete();

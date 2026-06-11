@@ -16,15 +16,15 @@ import Typography from "@mui/material/Typography";
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     gitlabProjects: GitlabProject[];
 }
 
 export default function GitlabSidebarControls({
     task,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     gitlabProjects,
 }: Props) {
     const [settingProject, setSettingProject] = useState(false);
@@ -50,7 +50,11 @@ export default function GitlabSidebarControls({
 
         try {
             await axios.put(
-                route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
+                route("tasks.gitlab.set-project", [
+                    teamSlug,
+                    boardSlug,
+                    task.slug,
+                ]),
                 { gitlab_project_id: project?.id ?? null },
             );
             router.reload();
@@ -78,7 +82,7 @@ export default function GitlabSidebarControls({
 
         try {
             await axios.post(
-                route(routeName, [teamId, boardId, task.slug]),
+                route(routeName, [teamSlug, boardSlug, task.slug]),
                 {},
             );
             router.reload();

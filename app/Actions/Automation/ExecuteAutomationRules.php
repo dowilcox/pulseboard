@@ -2,8 +2,10 @@
 
 namespace App\Actions\Automation;
 
+use App\Actions\Tasks\AssignTask;
 use App\Actions\Tasks\MoveTask;
 use App\Actions\Tasks\ToggleTaskCompletion;
+use App\Actions\Tasks\UpdateTask;
 use App\Events\NotificationCreated;
 use App\Models\AutomationRule;
 use App\Models\Board;
@@ -181,12 +183,17 @@ class ExecuteAutomationRules
             return;
         }
 
-        if (! $task->assignees()->where('users.id', $user->id)->exists()) {
-            $task->assignees()->attach($user->id, [
-                'assigned_at' => now(),
-                'assigned_by' => $task->created_by ?? $user->id,
-            ]);
+        if ($task->assignees()->where('users.id', $user->id)->exists()) {
+            return;
         }
+
+        // Route through AssignTask so the assignment logs activity, sends
+        // notifications and can chain further automations (depth-guarded by
+        // TaskAutomationDispatcher).
+        $assigner = $this->resolveTeamMember($task, $task->created_by) ?? $user;
+        $currentIds = $task->assignees()->pluck('users.id')->all();
+
+        AssignTask::run($task, array_merge($currentIds, [$user->id]), $assigner);
     }
 
     private function actionAddLabel(Task $task, array $config): void
@@ -211,7 +218,10 @@ class ExecuteAutomationRules
             return;
         }
 
-        $task->update([$field => $value]);
+        // Route through UpdateTask so the change logs activity and can chain
+        // further automations (e.g. priority_changed), depth-guarded by
+        // TaskAutomationDispatcher.
+        UpdateTask::run($task, [$field => $value]);
     }
 
     private function actionMarkComplete(Task $task): void

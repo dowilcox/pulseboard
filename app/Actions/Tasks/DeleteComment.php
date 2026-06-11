@@ -26,7 +26,7 @@ class DeleteComment
                 'task_id' => $taskId,
                 'comment_id' => $commentId,
             ],
-            userId: Auth::id(),
+            userId: Auth::id() ?? 'system',
         ))->toOthers();
     }
 }

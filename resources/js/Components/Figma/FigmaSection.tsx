@@ -53,8 +53,8 @@ function buildAppUrl(link: TaskFigmaLink): string {
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     figmaConnections: FigmaConnection[];
     onLinkCreated?: (link: TaskFigmaLink) => void;
     onLinkRemoved?: (linkId: string) => void;
@@ -62,8 +62,8 @@ interface Props {
 
 export default function FigmaSection({
     task,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     figmaConnections,
     onLinkCreated,
     onLinkRemoved,
@@ -87,7 +87,7 @@ export default function FigmaSection({
 
         try {
             const { data: link } = await axios.post(
-                route("tasks.figma.store", [teamId, boardId, task.slug]),
+                route("tasks.figma.store", [teamSlug, boardSlug, task.slug]),
                 {
                     figma_connection_id: selectedConnectionId,
                     url: figmaUrl,
@@ -115,8 +115,8 @@ export default function FigmaSection({
         try {
             await axios.delete(
                 route("tasks.figma.destroy", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     task.slug,
                     linkId,
                 ]),

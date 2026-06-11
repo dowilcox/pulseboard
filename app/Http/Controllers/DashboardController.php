@@ -24,15 +24,16 @@ class DashboardController extends Controller
 
         // Count completed tasks for the stat card
         $completedCount = (clone $baseQuery)
-            ->whereHas('column', fn ($q) => $q->where('is_done_column', true))
+            ->completed()
             ->count();
 
-        // Active tasks only, sorted by last updated
+        // Active tasks only, sorted by last updated (capped to keep the payload bounded)
         $myTasks = (clone $baseQuery)
-            ->whereHas('column', fn ($q) => $q->where('is_done_column', false))
-            ->with(['board.team', 'column', 'assignees', 'labels', 'gitlabProject'])
+            ->open()
+            ->with(['board.media', 'board.team.media', 'column', 'assignees', 'labels', 'gitlabProject'])
             ->withCount(['comments', 'subtasks'])
             ->orderBy('updated_at', 'desc')
+            ->limit(100)
             ->get();
 
         return Inertia::render('Dashboard', [
@@ -64,8 +65,8 @@ class DashboardController extends Controller
         $overdueTasks = Task::whereIn('board_id', $boardIds)
             ->whereNotNull('due_date')
             ->where('due_date', '<', now()->startOfDay())
-            ->whereHas('column', fn ($q) => $q->where('is_done_column', false))
-            ->with(['board', 'column', 'assignees'])
+            ->open()
+            ->with(['board.media', 'column', 'assignees'])
             ->orderBy('due_date')
             ->limit(20)
             ->get();
@@ -121,7 +122,7 @@ class DashboardController extends Controller
         $boardIds = $team->boards()->pluck('id');
 
         $tasks = Task::whereIn('board_id', $boardIds)
-            ->with(['board', 'column', 'assignees', 'labels'])
+            ->with(['board.media', 'column', 'assignees', 'labels'])
             ->orderBy('board_id')
             ->orderBy('sort_order')
             ->get();

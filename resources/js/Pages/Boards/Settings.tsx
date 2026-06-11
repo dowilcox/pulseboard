@@ -1,6 +1,7 @@
 import AutomationRulesPanel from "@/Components/Automation/AutomationRulesPanel";
 import BoardImageUpload from "@/Components/Boards/BoardImageUpload";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import BoardColumnsSection from "@/Pages/Boards/Settings/BoardColumnsSection";
@@ -8,8 +9,16 @@ import TaskTemplatesSection from "@/Pages/Boards/Settings/TaskTemplatesSection";
 import type { ColumnFormData } from "@/Pages/Boards/Settings/types";
 import { useBoardColumnsForm } from "@/Pages/Boards/Settings/useBoardColumnsForm";
 import { useTaskTemplates } from "@/Pages/Boards/Settings/useTaskTemplates";
-import { Head, useForm, router } from "@inertiajs/react";
-import type { Board, Column, Label, TaskTemplate, Team, User } from "@/types";
+import { Head, useForm, router, usePage } from "@inertiajs/react";
+import type {
+    Board,
+    Column,
+    Label,
+    PageProps,
+    TaskTemplate,
+    Team,
+    User,
+} from "@/types";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -24,7 +33,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useState } from "react";
+import { type ReactElement, useState } from "react";
 
 interface Props {
     board: Board;
@@ -41,6 +50,10 @@ export default function BoardSettings({
     members,
     labels,
 }: Props) {
+    const { teams: sharedTeams } = usePage<PageProps>().props;
+    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
+    const canManageTemplates = userRole === "owner" || userRole === "admin";
+
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? "",
@@ -146,11 +159,9 @@ export default function BoardSettings({
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={sidebarBoards}
-            activeBoardId={board.id}
-            header={
+        <>
+            <Head title={`Settings - ${board.name}`} />
+            <LayoutHeader>
                 <PageHeader
                     title="Settings"
                     breadcrumbs={[
@@ -168,9 +179,7 @@ export default function BoardSettings({
                         },
                     ]}
                 />
-            }
-        >
-            <Head title={`Settings - ${board.name}`} />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {/* Board details */}
@@ -277,7 +286,7 @@ export default function BoardSettings({
                 </Card>
 
                 {/* Board Image */}
-                <BoardImageUpload board={board} teamId={team.slug} />
+                <BoardImageUpload board={board} teamSlug={team.slug} />
 
                 <BoardColumnsSection
                     columns={columns}
@@ -294,6 +303,7 @@ export default function BoardSettings({
                 />
 
                 <TaskTemplatesSection
+                    canManageTemplates={canManageTemplates}
                     loadingTemplates={loadingTemplates}
                     savingTaskTemplate={savingTaskTemplate}
                     showTemplateForm={showTemplateForm}
@@ -309,8 +319,8 @@ export default function BoardSettings({
 
                 {/* Automation Rules */}
                 <AutomationRulesPanel
-                    teamId={team.slug}
-                    boardId={board.slug}
+                    teamSlug={team.slug}
+                    boardSlug={board.slug}
                     columns={board.columns ?? []}
                     members={members}
                     labels={labels}
@@ -421,6 +431,16 @@ export default function BoardSettings({
                     {templateSnackbar.message}
                 </Alert>
             </Snackbar>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+BoardSettings.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.sidebarBoards ?? []}
+        activeBoardId={page.props.board.id}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

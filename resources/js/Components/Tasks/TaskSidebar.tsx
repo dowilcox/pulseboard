@@ -1,3 +1,4 @@
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import GitlabSidebarControls from "@/Components/Gitlab/GitlabSidebarControls";
 import AssigneeSelector from "@/Components/Tasks/AssigneeSelector";
 import DependencySection from "@/Components/Tasks/DependencySection";
@@ -9,13 +10,14 @@ import type {
     Board,
     GitlabProject,
     Label,
+    PageProps,
     RecurrenceConfig as RecurrenceConfigType,
     Task,
     TaskSummary,
     User,
 } from "@/types";
 import type { RequestPayload } from "@inertiajs/core";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import BookmarkAddIcon from "@mui/icons-material/BookmarkAdd";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -67,6 +69,10 @@ export default function TaskSidebar({
     gitlabProjects = [],
     isWatching,
 }: Props) {
+    const { teams: sharedTeams } = usePage<PageProps>().props;
+    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
+    const canManageTemplates = userRole === "owner" || userRole === "admin";
+
     const columns = board.columns ?? [];
     const isCompleted = task.completed_at != null;
 
@@ -441,8 +447,8 @@ export default function TaskSidebar({
                     {sectionLabel("GitLab")}
                     <GitlabSidebarControls
                         task={task}
-                        teamId={team.slug}
-                        boardId={board.slug}
+                        teamSlug={team.slug}
+                        boardSlug={board.slug}
                         gitlabProjects={gitlabProjects}
                     />
                 </>
@@ -455,8 +461,8 @@ export default function TaskSidebar({
                     "Priority",
                     <PrioritySelector
                         task={task}
-                        teamId={team.slug}
-                        boardId={board.slug}
+                        teamSlug={team.slug}
+                        boardSlug={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -464,8 +470,8 @@ export default function TaskSidebar({
                     <AssigneeSelector
                         task={task}
                         members={members}
-                        teamId={team.slug}
-                        boardId={board.slug}
+                        teamSlug={team.slug}
+                        boardSlug={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -473,8 +479,8 @@ export default function TaskSidebar({
                     <LabelSelector
                         task={task}
                         labels={labels}
-                        teamId={team.slug}
-                        boardId={board.slug}
+                        teamSlug={team.slug}
+                        boardSlug={board.slug}
                     />,
                 )}
                 {fieldRow(
@@ -529,8 +535,8 @@ export default function TaskSidebar({
                 <DependencySection
                     task={task}
                     boardTasks={boardTasks}
-                    teamId={team.slug}
-                    boardId={board.slug}
+                    teamSlug={team.slug}
+                    boardSlug={board.slug}
                 />
 
                 {fieldRow(
@@ -587,26 +593,30 @@ export default function TaskSidebar({
                     mt: 0.5,
                 }}
             >
-                <Button
-                    variant="text"
-                    startIcon={
-                        <BookmarkAddIcon sx={{ fontSize: "16px !important" }} />
-                    }
-                    onClick={() => setTemplateDialogOpen(true)}
-                    size="small"
-                    sx={{
-                        flex: 1,
-                        textTransform: "none",
-                        color: SIDEBAR_MUTED,
-                        fontSize: "0.75rem",
-                        "&:hover": {
-                            color: SIDEBAR_TEXT,
-                            bgcolor: SIDEBAR_HOVER,
-                        },
-                    }}
-                >
-                    Template
-                </Button>
+                {canManageTemplates && (
+                    <Button
+                        variant="text"
+                        startIcon={
+                            <BookmarkAddIcon
+                                sx={{ fontSize: "16px !important" }}
+                            />
+                        }
+                        onClick={() => setTemplateDialogOpen(true)}
+                        size="small"
+                        sx={{
+                            flex: 1,
+                            textTransform: "none",
+                            color: SIDEBAR_MUTED,
+                            fontSize: "0.75rem",
+                            "&:hover": {
+                                color: SIDEBAR_TEXT,
+                                bgcolor: SIDEBAR_HOVER,
+                            },
+                        }}
+                    >
+                        Template
+                    </Button>
+                )}
                 <Button
                     variant="text"
                     startIcon={
@@ -630,38 +640,19 @@ export default function TaskSidebar({
             </Box>
 
             {/* Delete confirmation dialog */}
-            <Dialog
+            <ConfirmDialog
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
-                aria-labelledby="delete-task-dialog-title"
-            >
-                <DialogTitle id="delete-task-dialog-title">
-                    Delete Task
-                </DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        Are you sure you want to delete "{task.title}"? This
-                        will also delete all subtasks, comments, and
-                        attachments. This action cannot be undone.
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleDelete}
-                        color="error"
-                        variant="contained"
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleDelete}
+                title="Delete Task"
+                message={`Are you sure you want to delete "${task.title}"? This will also delete all subtasks, comments, and attachments. This action cannot be undone.`}
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
 
             {/* Save as template dialog */}
             <Dialog
-                open={templateDialogOpen}
+                open={canManageTemplates && templateDialogOpen}
                 onClose={() => setTemplateDialogOpen(false)}
                 maxWidth="xs"
                 fullWidth

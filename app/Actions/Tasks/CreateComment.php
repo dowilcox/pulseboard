@@ -16,7 +16,19 @@ class CreateComment
 
     public function handle(Task $task, string $body, User $user, ?string $parentId = null): Comment
     {
-        $parent = $parentId ? $task->comments()->findOrFail($parentId) : null;
+        $parent = null;
+
+        if ($parentId) {
+            $parent = $task->comments()->findOrFail($parentId);
+
+            // Flatten threads to one level: replying to a reply attaches the
+            // new comment to the root parent instead.
+            if ($parent->parent_id) {
+                $parent = $task->comments()->findOrFail($parent->parent_id);
+            }
+
+            $parentId = $parent->id;
+        }
 
         $comment = $task->comments()->create([
             'user_id' => $user->id,

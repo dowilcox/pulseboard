@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskAssignedNotification extends Notification
@@ -44,22 +43,6 @@ class TaskAssignedNotification extends Notification
             'assigner_name' => $this->assigner->name,
             'message' => "{$this->assigner->name} assigned you to \"{$this->task->title}\"",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Task Assigned: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "{$this->assigner->name} assigned you to \"{$this->task->title}\".",
-            )
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

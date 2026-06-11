@@ -9,14 +9,14 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
 }
 
-export default function PrioritySelector({ task, teamId, boardId }: Props) {
+export default function PrioritySelector({ task, teamSlug, boardSlug }: Props) {
     const handleChange = (e: SelectChangeEvent) => {
         router.put(
-            route("tasks.update", [teamId, boardId, task.slug]),
+            route("tasks.update", [teamSlug, boardSlug, task.slug]),
             { priority: e.target.value },
             { preserveScroll: true },
         );

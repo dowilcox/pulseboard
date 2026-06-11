@@ -11,6 +11,7 @@ import SubtaskList from "@/Components/Tasks/SubtaskList";
 import TaskSidebar from "@/Components/Tasks/TaskSidebar";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type {
@@ -36,7 +37,13 @@ import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    type ReactElement,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 interface Props {
     task: Task;
@@ -46,8 +53,10 @@ interface Props {
     labels: Label[];
     gitlabProjects: GitlabProject[];
     figmaConnections: FigmaConnection[];
-    boardTasks: TaskSummary[];
-    teamBoards: Board[];
+    /** Deferred prop — undefined until Inertia fetches it after first paint. */
+    boardTasks?: TaskSummary[];
+    /** Deferred prop — undefined until Inertia fetches it after first paint. */
+    teamBoards?: Board[];
     isWatching: boolean;
 }
 
@@ -59,8 +68,8 @@ export default function TasksShow({
     labels,
     gitlabProjects,
     figmaConnections,
-    boardTasks,
-    teamBoards,
+    boardTasks = [],
+    teamBoards = [],
     isWatching,
 }: Props) {
     const { auth } = usePage<PageProps>().props;
@@ -225,11 +234,11 @@ export default function TasksShow({
     const gitlabPrefix = getGitlabPrefix(task);
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team as Team}
-            sidebarBoards={teamBoards}
-            activeBoardId={board.id}
-            header={
+        <>
+            <Head
+                title={`${[taskNumber, gitlabPrefix, task.title].filter(Boolean).join(" ")} - ${board.name}`}
+            />
+            <LayoutHeader>
                 <PageHeader
                     title={[taskNumber, gitlabPrefix, task.title]
                         .filter(Boolean)
@@ -294,11 +303,7 @@ export default function TasksShow({
                         },
                     ]}
                 />
-            }
-        >
-            <Head
-                title={`${[taskNumber, gitlabPrefix, task.title].filter(Boolean).join(" ")} - ${board.name}`}
-            />
+            </LayoutHeader>
 
             <Box
                 sx={{
@@ -520,8 +525,8 @@ export default function TasksShow({
                         <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <SubtaskList
                             task={task}
-                            teamId={team.slug}
-                            boardId={board.slug}
+                            teamSlug={team.slug}
+                            boardSlug={board.slug}
                             columnId={task.column_id}
                             onSubtaskClick={handleSubtaskClick}
                         />
@@ -532,8 +537,8 @@ export default function TasksShow({
                         <Box sx={{ mb: 4 }}>
                             <GitlabRefsList
                                 task={task}
-                                teamId={team.slug}
-                                boardId={board.slug}
+                                teamSlug={team.slug}
+                                boardSlug={board.slug}
                             />
                         </Box>
                     )}
@@ -543,8 +548,8 @@ export default function TasksShow({
                         <Box sx={{ mb: 4 }}>
                             <FigmaSection
                                 task={task}
-                                teamId={team.slug}
-                                boardId={board.slug}
+                                teamSlug={team.slug}
+                                boardSlug={board.slug}
                                 figmaConnections={figmaConnections}
                             />
                         </Box>
@@ -563,8 +568,8 @@ export default function TasksShow({
                         <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <AttachmentList
                             attachments={task.attachments ?? []}
-                            teamId={team.slug}
-                            boardId={board.slug}
+                            teamSlug={team.slug}
+                            boardSlug={board.slug}
                             taskId={task.id}
                         />
                     </Box>
@@ -583,8 +588,8 @@ export default function TasksShow({
                         <ActivityFeed
                             comments={task.comments ?? []}
                             activities={task.activities ?? []}
-                            teamId={team.slug}
-                            boardId={board.slug}
+                            teamSlug={team.slug}
+                            boardSlug={board.slug}
                             taskId={task.id}
                             currentUserId={auth.user.id}
                             uploadImageUrl={route("tasks.images.store", [
@@ -620,6 +625,16 @@ export default function TasksShow({
                     />
                 </Box>
             </Box>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+TasksShow.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team as Team}
+        sidebarBoards={page.props.teamBoards}
+        activeBoardId={page.props.board.id}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

@@ -6,6 +6,8 @@ use App\Actions\Boards\ArchiveBoard;
 use App\Actions\Boards\CreateBoard;
 use App\Actions\Boards\DeleteBoard;
 use App\Actions\Boards\UpdateBoard;
+use App\Actions\Media\DeleteModelAvatar;
+use App\Actions\Media\UploadModelAvatar;
 use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
@@ -22,8 +24,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
-use Spatie\MediaLibrary\MediaCollections\Exceptions\FileCannotBeAdded;
-use Spatie\MediaLibrary\MediaCollections\Exceptions\FileIsTooBig;
 
 class BoardController extends Controller
 {
@@ -211,33 +211,13 @@ class BoardController extends Controller
     {
         $this->authorize('update', $board);
 
-        $maxSize = config('uploads.max_size.avatar');
-        $allowedTypes = implode(',', config('uploads.image_types'));
-
-        $request->validate([
-            'image' => ['required', 'image', "max:{$maxSize}", "mimes:{$allowedTypes}"],
-        ]);
-
-        try {
-            $board->addMedia($request->file('image'))
-                ->toMediaCollection('avatar');
-        } catch (FileIsTooBig) {
-            return response()->json(['message' => 'The image is too large. Maximum size is 2MB.'], 422);
-        } catch (FileCannotBeAdded $e) {
-            return response()->json(['message' => 'The image could not be uploaded: '.$e->getMessage()], 422);
-        }
-
-        return response()->json([
-            'image_url' => $board->getFirstMediaUrl('avatar', 'avatar'),
-        ]);
+        return UploadModelAvatar::run($request, $board);
     }
 
     public function deleteImage(Team $team, Board $board): JsonResponse
     {
         $this->authorize('update', $board);
 
-        $board->clearMediaCollection('avatar');
-
-        return response()->json(['message' => 'Image removed']);
+        return DeleteModelAvatar::run($board);
     }
 }

@@ -3,6 +3,7 @@ import axios from "axios";
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
 import Avatar from "@mui/material/Avatar";
@@ -167,11 +168,7 @@ const TaskRow = memo(function TaskRow({
                                 : "text.secondary"
                         }
                     >
-                        {new Date(task.due_date).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                        })}
+                        {formatDueDate(task.due_date, { includeYear: true })}
                     </Typography>
                 )}
             </TableCell>

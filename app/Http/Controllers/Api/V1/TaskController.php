@@ -111,8 +111,23 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
-        $column = $board->columns()->findOrFail($request->validated('column_id'));
-        $task = MoveTask::run($task, $column, $request->validated('sort_order'));
+        [$targetBoard, $column] = app(MoveTask::class)->resolveTarget(
+            $team,
+            $board,
+            $request->validated('board_id'),
+            $request->validated('column_id'),
+        );
+
+        if ($targetBoard) {
+            $this->authorize('update', $targetBoard);
+        }
+
+        $task = MoveTask::run(
+            $task,
+            $column,
+            $request->validated('sort_order'),
+            $targetBoard,
+        );
 
         return response()->json(['data' => $task]);
     }
@@ -128,7 +143,7 @@ class TaskController extends Controller
 
     public function assignees(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
-        $this->authorize('update', $task);
+        $this->authorize('assign', $task);
 
         $validated = $request->validate([
             'user_ids' => ['required', 'array'],

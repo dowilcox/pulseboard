@@ -16,7 +16,7 @@ class DeleteColumn
      * If a target column is provided, tasks will be moved to it first (Phase 2).
      * Cannot delete the last column on a board.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function handle(Column $column, ?Column $targetColumn = null): void
     {
@@ -31,6 +31,9 @@ class DeleteColumn
         // Move tasks to target column if provided (for Phase 2 when tasks exist).
         if ($targetColumn !== null) {
             $column->tasks()->update(['column_id' => $targetColumn->id]);
+        } else {
+            // Delete tasks via Eloquent to trigger media library cleanup
+            $column->tasks()->each(fn ($task) => $task->delete());
         }
 
         $column->delete();

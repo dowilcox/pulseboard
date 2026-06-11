@@ -3,11 +3,13 @@
 namespace App\Policies;
 
 use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
+use App\Policies\Concerns\ChecksTeamRoles;
 
 class TeamPolicy
 {
+    use ChecksTeamRoles;
+
     /**
      * Determine whether the user can view any teams.
      */
@@ -62,27 +64,5 @@ class TeamPolicy
     public function manageAdmin(User $user, Team $team): bool
     {
         return $this->isOwner($user, $team);
-    }
-
-    /**
-     * Check if the user is an owner of the team.
-     */
-    private function isOwner(User $user, Team $team): bool
-    {
-        return TeamMember::where('team_id', $team->id)
-            ->where('user_id', $user->id)
-            ->where('role', 'owner')
-            ->exists();
-    }
-
-    /**
-     * Check if the user is an owner or admin of the team.
-     */
-    private function isOwnerOrAdmin(User $user, Team $team): bool
-    {
-        return TeamMember::where('team_id', $team->id)
-            ->where('user_id', $user->id)
-            ->whereIn('role', ['owner', 'admin'])
-            ->exists();
     }
 }

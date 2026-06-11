@@ -1,6 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { type FormEvent } from "react";
+import { type FormEvent, type ReactElement } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -22,7 +22,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Forgot Password" />
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -74,6 +74,10 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                     </Button>
                 </Box>
             </Box>
-        </GuestLayout>
+        </>
     );
 }
+
+ForgotPassword.layout = (page: ReactElement) => (
+    <GuestLayout>{page}</GuestLayout>
+);

@@ -71,6 +71,11 @@ class UserController extends Controller
             'is_admin' => ['boolean'],
         ]);
 
+        if ($user->id === auth()->id() && array_key_exists('is_admin', $validated) && ! $validated['is_admin']) {
+            return Redirect::route('admin.users.index')
+                ->with('error', 'You cannot remove your own admin access.');
+        }
+
         $user->update($validated);
 
         return Redirect::route('admin.users.index')

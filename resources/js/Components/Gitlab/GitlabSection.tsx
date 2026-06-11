@@ -26,8 +26,8 @@ import PipelineBadge from "./PipelineBadge";
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     gitlabProjects: GitlabProject[];
     onProjectChanged?: (project: GitlabProject | null) => void;
     onRefCreated?: (ref: TaskGitlabRef) => void;
@@ -36,8 +36,8 @@ interface Props {
 
 export default function GitlabSection({
     task,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     gitlabProjects,
     onProjectChanged,
     onRefCreated,
@@ -66,7 +66,11 @@ export default function GitlabSection({
 
         try {
             await axios.put(
-                route("tasks.gitlab.set-project", [teamId, boardId, task.slug]),
+                route("tasks.gitlab.set-project", [
+                    teamSlug,
+                    boardSlug,
+                    task.slug,
+                ]),
                 { gitlab_project_id: project?.id ?? null },
             );
             if (onProjectChanged) {
@@ -98,7 +102,7 @@ export default function GitlabSection({
 
         try {
             const { data: ref } = await axios.post(
-                route(routeName, [teamId, boardId, task.slug]),
+                route(routeName, [teamSlug, boardSlug, task.slug]),
                 {},
             );
             if (onRefCreated) {
@@ -121,8 +125,8 @@ export default function GitlabSection({
         try {
             await axios.delete(
                 route("tasks.gitlab.destroy", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     task.slug,
                     refId,
                 ]),

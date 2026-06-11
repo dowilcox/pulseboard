@@ -1,5 +1,6 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { type ReactElement, useState } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
@@ -23,7 +24,6 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -63,7 +63,6 @@ interface EditFormData {
 }
 
 export default function Users({ users, filters }: Props) {
-    const { flash } = usePage<PageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [search, setSearch] = useState(filters.search ?? "");
@@ -71,27 +70,6 @@ export default function Users({ users, filters }: Props) {
         user: User;
         action: "toggle" | "reset";
     } | null>(null);
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({ open: false, message: "", severity: "success" });
-
-    useEffect(() => {
-        if (flash?.success) {
-            setSnackbar({
-                open: true,
-                message: flash.success,
-                severity: "success",
-            });
-        } else if (flash?.error) {
-            setSnackbar({
-                open: true,
-                message: flash.error,
-                severity: "error",
-            });
-        }
-    }, [flash?.success, flash?.error]);
 
     const createForm = useForm<UserFormData>({
         name: "",
@@ -191,17 +169,16 @@ export default function Users({ users, filters }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="User Management" />
+            <LayoutHeader>
                 <PageHeader
                     title="User Management"
                     breadcrumbs={[
                         { label: "Admin", href: route("admin.dashboard") },
                     ]}
                 />
-            }
-        >
-            <Head title="User Management" />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex" }}>
                 <AdminNav />
@@ -628,23 +605,10 @@ export default function Users({ users, filters }: Props) {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    severity={snackbar.severity}
-                    variant="filled"
-                    role="status"
-                    sx={{ width: "100%" }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Users.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

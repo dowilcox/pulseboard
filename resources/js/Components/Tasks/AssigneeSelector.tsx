@@ -10,21 +10,21 @@ import Typography from "@mui/material/Typography";
 interface Props {
     task: Task;
     members: User[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
 }
 
 export default function AssigneeSelector({
     task,
     members,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
 }: Props) {
     const currentAssignees = task.assignees ?? [];
 
     const handleChange = (_: unknown, newValue: User[]) => {
         router.put(
-            route("tasks.assignees.update", [teamId, boardId, task.slug]),
+            route("tasks.assignees.update", [teamSlug, boardSlug, task.slug]),
             { user_ids: newValue.map((u) => u.id) },
             { preserveScroll: true },
         );

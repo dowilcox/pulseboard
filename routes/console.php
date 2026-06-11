@@ -9,6 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('tasks:send-due-reminders')->hourly();
+Schedule::command('automations:run-due-date')->hourly();
 Schedule::command('tasks:send-overdue-reminders')->dailyAt('09:00');
 Schedule::command('gitlab:sync-refs')->everyFifteenMinutes();
 Schedule::command('tasks:process-recurring')->daily()->withoutOverlapping();

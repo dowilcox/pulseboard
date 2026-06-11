@@ -60,49 +60,56 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         };
         const pusher = connector?.pusher;
 
-        if (!pusher) {
-            return;
+        let unbindPusherListeners: (() => void) | undefined;
+
+        if (pusher) {
+            const handleConnected = () => setConnectionStatus("connected");
+            const handleConnecting = () => setConnectionStatus("connecting");
+            const handleDisconnected = () =>
+                setConnectionStatus("disconnected");
+
+            pusher.connection.bind("connected", handleConnected);
+            pusher.connection.bind("connecting", handleConnecting);
+            pusher.connection.bind("unavailable", handleDisconnected);
+            pusher.connection.bind("failed", handleDisconnected);
+            pusher.connection.bind("disconnected", handleDisconnected);
+
+            if (pusher.connection.state === "connected") {
+                setConnectionStatus("connected");
+            }
+
+            let wasDisconnected = false;
+            const handleStateChange = ({
+                current,
+                previous,
+            }: {
+                current: string;
+                previous: string;
+            }) => {
+                if (previous === "connected" && current !== "connected") {
+                    wasDisconnected = true;
+                }
+                if (wasDisconnected && current === "connected") {
+                    wasDisconnected = false;
+                    setReconnectVersion((prev) => prev + 1);
+                }
+            };
+            pusher.connection.bind("state_change", handleStateChange);
+
+            unbindPusherListeners = () => {
+                pusher.connection.unbind("connected", handleConnected);
+                pusher.connection.unbind("connecting", handleConnecting);
+                pusher.connection.unbind("unavailable", handleDisconnected);
+                pusher.connection.unbind("failed", handleDisconnected);
+                pusher.connection.unbind("disconnected", handleDisconnected);
+                pusher.connection.unbind("state_change", handleStateChange);
+            };
         }
 
-        const handleConnected = () => setConnectionStatus("connected");
-        const handleConnecting = () => setConnectionStatus("connecting");
-        const handleDisconnected = () => setConnectionStatus("disconnected");
-
-        pusher.connection.bind("connected", handleConnected);
-        pusher.connection.bind("connecting", handleConnecting);
-        pusher.connection.bind("unavailable", handleDisconnected);
-        pusher.connection.bind("failed", handleDisconnected);
-        pusher.connection.bind("disconnected", handleDisconnected);
-
-        if (pusher.connection.state === "connected") {
-            setConnectionStatus("connected");
-        }
-
-        let wasDisconnected = false;
-        const handleStateChange = ({
-            current,
-            previous,
-        }: {
-            current: string;
-            previous: string;
-        }) => {
-            if (previous === "connected" && current !== "connected") {
-                wasDisconnected = true;
-            }
-            if (wasDisconnected && current === "connected") {
-                wasDisconnected = false;
-                setReconnectVersion((prev) => prev + 1);
-            }
-        };
-        pusher.connection.bind("state_change", handleStateChange);
-
+        // Cleanup must run even when the pusher connector is unavailable,
+        // otherwise the Echo instance leaks on unmount/config change.
         return () => {
-            pusher.connection.unbind("connected", handleConnected);
-            pusher.connection.unbind("connecting", handleConnecting);
-            pusher.connection.unbind("unavailable", handleDisconnected);
-            pusher.connection.unbind("failed", handleDisconnected);
-            pusher.connection.unbind("disconnected", handleDisconnected);
-            pusher.connection.unbind("state_change", handleStateChange);
+            unbindPusherListeners?.();
             echoInstance.disconnect();
             setEcho(null);
         };

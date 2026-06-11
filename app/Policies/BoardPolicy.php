@@ -4,11 +4,13 @@ namespace App\Policies;
 
 use App\Models\Board;
 use App\Models\Team;
-use App\Models\TeamMember;
 use App\Models\User;
+use App\Policies\Concerns\ChecksTeamRoles;
 
 class BoardPolicy
 {
+    use ChecksTeamRoles;
+
     /**
      * Determine whether the user can view the board.
      * Any team member can view boards.
@@ -52,24 +54,5 @@ class BoardPolicy
     public function manageColumns(User $user, Board $board): bool
     {
         return $this->isOwnerOrAdmin($user, $board->team);
-    }
-
-    /**
-     * Check if the user is a member of the team.
-     */
-    private function isTeamMember(User $user, Team $team): bool
-    {
-        return $team->hasUser($user);
-    }
-
-    /**
-     * Check if the user is an owner or admin of the team.
-     */
-    private function isOwnerOrAdmin(User $user, Team $team): bool
-    {
-        return TeamMember::where('team_id', $team->id)
-            ->where('user_id', $user->id)
-            ->whereIn('role', ['owner', 'admin'])
-            ->exists();
     }
 }

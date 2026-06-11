@@ -27,7 +27,8 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactElement, useCallback, useEffect, useState } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 
 interface Props {
     board: Board;
@@ -101,9 +102,19 @@ export default function BoardsShow({
         router.reload({ only: ["board"] });
     }, [reconnectVersion]);
 
-    const handleTaskClick = (task: Task) => {
-        router.visit(route("tasks.show", [team.slug, board.slug, task.slug]));
-    };
+    const handleTaskClick = useCallback(
+        (task: Task) => {
+            router.visit(
+                route("tasks.show", [team.slug, board.slug, task.slug]),
+            );
+        },
+        [team.slug, board.slug],
+    );
+
+    const handleFilterChange = useCallback(
+        (fn: (task: Task) => boolean) => setTaskFilter(() => fn),
+        [],
+    );
 
     const renderView = () => {
         switch (viewMode) {
@@ -143,11 +154,9 @@ export default function BoardsShow({
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={sidebarBoards}
-            activeBoardId={board.id}
-            header={
+        <>
+            <Head title={`${board.name} - ${team.name}`} />
+            <LayoutHeader>
                 <PageHeader
                     title={board.name}
                     breadcrumbs={[
@@ -186,22 +195,30 @@ export default function BoardsShow({
                         </>
                     }
                 />
-            }
-        >
-            <Head title={`${board.name} - ${team.name}`} />
+            </LayoutHeader>
 
             {/* Filter bar */}
             {columns.length > 0 && (
                 <FilterBar
                     members={members}
                     labels={teamLabels}
-                    teamId={team.slug}
-                    boardId={board.slug}
-                    onFilterChange={(fn) => setTaskFilter(() => fn)}
+                    teamSlug={team.slug}
+                    boardSlug={board.slug}
+                    onFilterChange={handleFilterChange}
                 />
             )}
 
             {renderView()}
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+BoardsShow.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.sidebarBoards ?? []}
+        activeBoardId={page.props.board.id}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

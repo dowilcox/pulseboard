@@ -288,6 +288,16 @@ export default function KanbanView({
     >({});
     const abortControllers = useRef<Record<string, AbortController>>({});
 
+    // Abort all in-flight "load more" requests on unmount
+    useEffect(() => {
+        const controllers = abortControllers.current;
+        return () => {
+            for (const controller of Object.values(controllers)) {
+                controller.abort();
+            }
+        };
+    }, []);
+
     // Collapsed columns state, persisted to localStorage per board
     const [collapsedColumns, setCollapsedColumns] = useState<Set<string>>(() =>
         loadCollapsedColumns(board.id),
@@ -797,8 +807,8 @@ export default function KanbanView({
                                         )}
 
                                         <QuickCreateTask
-                                            teamId={team.slug}
-                                            boardId={board.slug}
+                                            teamSlug={team.slug}
+                                            boardSlug={board.slug}
                                             columnId={column.id}
                                             templates={taskTemplates}
                                             disabled={atWipLimit}

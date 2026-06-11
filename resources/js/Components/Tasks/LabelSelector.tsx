@@ -9,21 +9,21 @@ import TextField from "@mui/material/TextField";
 interface Props {
     task: Task;
     labels: Label[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
 }
 
 export default function LabelSelector({
     task,
     labels,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
 }: Props) {
     const currentLabels = task.labels ?? [];
 
     const handleChange = (_: unknown, newValue: Label[]) => {
         router.put(
-            route("tasks.labels.update", [teamId, boardId, task.slug]),
+            route("tasks.labels.update", [teamSlug, boardSlug, task.slug]),
             { label_ids: newValue.map((l) => l.id) },
             { preserveScroll: true },
         );

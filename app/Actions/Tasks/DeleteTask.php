@@ -26,7 +26,7 @@ class DeleteTask
                 'task_id' => $taskId,
                 'column_id' => $columnId,
             ],
-            userId: Auth::id(),
+            userId: Auth::id() ?? 'system',
         ))->toOthers();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasAvatarMedia;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,13 +10,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Symfony\Component\Mime\MimeTypes;
 
 class Team extends Model implements HasMedia
 {
-    use HasFactory, HasUuids, InteractsWithMedia;
+    use HasAvatarMedia, HasFactory, HasUuids;
 
     /**
      * The primary key type.
@@ -49,55 +47,6 @@ class Team extends Model implements HasMedia
     protected $appends = ['image_url'];
 
     protected $hidden = ['media'];
-
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('avatar')
-            ->singleFile()
-            ->useDisk('public')
-            ->acceptsMimeTypes(self::imageMimeTypes());
-    }
-
-    /**
-     * Derive MIME types from the configured image extensions.
-     */
-    public static function imageMimeTypes(): array
-    {
-        $guesser = MimeTypes::getDefault();
-
-        return array_unique(array_merge(...array_map(
-            fn (string $ext) => $guesser->getMimeTypes($ext),
-            config('uploads.image_types'),
-        )));
-    }
-
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('avatar')
-            ->width(128)
-            ->height(128)
-            ->sharpen(10)
-            ->nonQueued()
-            ->performOnCollections('avatar');
-
-        $this->addMediaConversion('avatar-lg')
-            ->width(256)
-            ->height(256)
-            ->sharpen(10)
-            ->nonQueued()
-            ->performOnCollections('avatar');
-    }
-
-    public function getImageUrlAttribute(): ?string
-    {
-        $media = $this->getFirstMedia('avatar');
-
-        if (! $media) {
-            return null;
-        }
-
-        return $media->getUrl('avatar');
-    }
 
     public function members(): BelongsToMany
     {

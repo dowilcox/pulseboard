@@ -15,13 +15,13 @@ interface GitlabSearchResult {
 
 interface Props {
     connectionId: string;
-    teamId: string;
+    teamSlug: string;
     onSelect: (project: GitlabSearchResult) => void;
 }
 
 export default function GitlabProjectSearch({
     connectionId,
-    teamId,
+    teamSlug,
     onSelect,
 }: Props) {
     const [options, setOptions] = useState<GitlabSearchResult[]>([]);
@@ -43,7 +43,7 @@ export default function GitlabProjectSearch({
                 setLoading(true);
                 try {
                     const { data } = await axios.get(
-                        route("teams.gitlab-projects.search", teamId),
+                        route("teams.gitlab-projects.search", teamSlug),
                         {
                             params: {
                                 connection_id: connectionId,
@@ -59,7 +59,7 @@ export default function GitlabProjectSearch({
                 }
             }, 400);
         },
-        [connectionId, teamId],
+        [connectionId, teamSlug],
     );
 
     return (

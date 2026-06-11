@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateBoardRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class UpdateBoardRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -26,7 +28,14 @@ class UpdateBoardRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'settings' => ['sometimes', 'array'],
             'settings.auto_move_to_done' => ['sometimes', 'boolean'],
-            'default_task_template_id' => ['sometimes', 'nullable', 'uuid', 'exists:task_templates,id'],
+            'default_task_template_id' => [
+                'sometimes',
+                'nullable',
+                'uuid',
+                Rule::exists('task_templates', 'id')->where(
+                    fn ($query) => $query->where('team_id', $this->route('team')?->id),
+                ),
+            ],
         ];
     }
 }

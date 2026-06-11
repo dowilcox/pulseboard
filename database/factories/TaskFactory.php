@@ -17,7 +17,10 @@ class TaskFactory extends Factory
     {
         return [
             'board_id' => Board::factory(),
-            'column_id' => Column::factory(),
+            // Derive the column from the task's board so board_id and column.board_id agree
+            'column_id' => fn (array $attributes) => Column::factory()->state([
+                'board_id' => $attributes['board_id'],
+            ]),
             'title' => fake()->sentence(4),
             'task_number' => fake()->unique()->numberBetween(1, 99999),
             'description' => fake()->optional(0.7)->paragraph(),

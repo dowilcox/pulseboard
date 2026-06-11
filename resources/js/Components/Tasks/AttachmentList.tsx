@@ -1,3 +1,4 @@
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import type { Attachment } from "@/types";
 import { router } from "@inertiajs/react";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -5,12 +6,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
@@ -31,8 +26,8 @@ import "yet-another-react-lightbox/plugins/thumbnails.css";
 
 interface Props {
     attachments: Attachment[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     taskId: string;
 }
 
@@ -48,8 +43,8 @@ function isImage(mimeType: string): boolean {
 
 export default function AttachmentList({
     attachments,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     taskId,
 }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,15 +68,15 @@ export default function AttachmentList({
         () =>
             imageAttachments.map((a) => ({
                 src: route("attachments.download", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     taskId,
                     a.id,
                 ]),
                 alt: a.filename,
                 title: a.filename,
             })),
-        [imageAttachments, teamId, boardId, taskId],
+        [imageAttachments, teamSlug, boardSlug, taskId],
     );
 
     const uploadFiles = useCallback(
@@ -100,7 +95,11 @@ export default function AttachmentList({
 
                 try {
                     await axios.post(
-                        route("attachments.store", [teamId, boardId, taskId]),
+                        route("attachments.store", [
+                            teamSlug,
+                            boardSlug,
+                            taskId,
+                        ]),
                         formData,
                         {
                             headers: { "Content-Type": "multipart/form-data" },
@@ -154,7 +153,7 @@ export default function AttachmentList({
             setUploadProgress(0);
             router.reload();
         },
-        [teamId, boardId, taskId],
+        [teamSlug, boardSlug, taskId],
     );
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,8 +172,8 @@ export default function AttachmentList({
     const handleDownload = (attachment: Attachment) => {
         window.open(
             route("attachments.download", [
-                teamId,
-                boardId,
+                teamSlug,
+                boardSlug,
                 taskId,
                 attachment.id,
             ]),
@@ -186,8 +185,8 @@ export default function AttachmentList({
         if (!deleteTarget) return;
         router.delete(
             route("attachments.destroy", [
-                teamId,
-                boardId,
+                teamSlug,
+                boardSlug,
                 taskId,
                 deleteTarget.id,
             ]),
@@ -309,8 +308,8 @@ export default function AttachmentList({
                                 <Box
                                     component="img"
                                     src={route("attachments.download", [
-                                        teamId,
-                                        boardId,
+                                        teamSlug,
+                                        boardSlug,
                                         taskId,
                                         attachment.id,
                                     ])}
@@ -339,8 +338,8 @@ export default function AttachmentList({
                                 >
                                     <Link
                                         href={route("attachments.view", [
-                                            teamId,
-                                            boardId,
+                                            teamSlug,
+                                            boardSlug,
                                             taskId,
                                             attachment.id,
                                         ])}
@@ -457,8 +456,8 @@ export default function AttachmentList({
                                     primary={
                                         <Link
                                             href={route("attachments.view", [
-                                                teamId,
-                                                boardId,
+                                                teamSlug,
+                                                boardSlug,
                                                 taskId,
                                                 attachment.id,
                                             ])}
@@ -494,33 +493,15 @@ export default function AttachmentList({
             )}
 
             {/* Delete confirmation dialog */}
-            <Dialog
+            <ConfirmDialog
                 open={deleteTarget !== null}
                 onClose={() => setDeleteTarget(null)}
-                aria-labelledby="delete-attachment-dialog-title"
-            >
-                <DialogTitle id="delete-attachment-dialog-title">
-                    Delete Attachment
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Are you sure you want to delete "
-                        {deleteTarget?.filename}"? This action cannot be undone.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteTarget(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleDeleteConfirm}
-                        color="error"
-                        variant="contained"
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleDeleteConfirm}
+                title="Delete Attachment"
+                message={`Are you sure you want to delete "${deleteTarget?.filename}"? This action cannot be undone.`}
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
         </Box>
     );
 }

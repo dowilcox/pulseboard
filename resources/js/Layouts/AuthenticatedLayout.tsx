@@ -1,11 +1,13 @@
 import { Link, usePage, router } from "@inertiajs/react";
 import {
     type PropsWithChildren,
-    type ReactNode,
+    useCallback,
     useEffect,
+    useMemo,
     useState,
 } from "react";
 import type { PageProps, Team } from "@/types";
+import { LayoutHeaderSlotProvider } from "@/Components/Layout/LayoutHeader";
 import { SidebarProvider, useSidebar } from "@/Contexts/SidebarContext";
 import Sidebar from "@/Components/Layout/Sidebar";
 import AppBar from "@mui/material/AppBar";
@@ -33,12 +35,29 @@ const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 64;
 
 interface AuthenticatedLayoutProps {
-    header?: ReactNode;
     currentTeam?: Team;
     sidebarBoards?: Team["boards"];
     activeBoardId?: string;
 }
 
+/**
+ * Persistent layout for all authenticated pages.
+ *
+ * Pages must NOT render this inline; instead they assign it via Inertia's
+ * persistent layout pattern:
+ *
+ *     Page.layout = (page) => (
+ *         <AuthenticatedLayout currentTeam={page.props.team}>
+ *             {page}
+ *         </AuthenticatedLayout>
+ *     );
+ *
+ * Because the layout element type stays identical across navigations, React
+ * preserves this subtree — keeping WebSocketProvider (Echo connection),
+ * SnackbarProvider and SidebarProvider mounted instead of tearing them down
+ * and reconnecting on every page visit. Per-page header content is portalled
+ * in via the <LayoutHeader> component rather than passed as a prop.
+ */
 export default function AuthenticatedLayout(
     props: PropsWithChildren<AuthenticatedLayoutProps>,
 ) {
@@ -57,7 +76,6 @@ export default function AuthenticatedLayout(
 }
 
 function AuthenticatedLayoutInner({
-    header,
     children,
     activeBoardId,
 }: PropsWithChildren<AuthenticatedLayoutProps>) {
@@ -73,13 +91,35 @@ function AuthenticatedLayoutInner({
     const [mobileOpen, setMobileOpen] = useState(false);
     const [navigating, setNavigating] = useState(false);
 
+    // Header slot: pages portal their header content here via <LayoutHeader>
+    // so the layout never remounts when the header changes between pages.
+    const [headerContainer, setHeaderContainer] = useState<HTMLElement | null>(
+        null,
+    );
+    const [headerCount, setHeaderCount] = useState(0);
+    const registerHeader = useCallback(() => {
+        setHeaderCount((count) => count + 1);
+        return () => setHeaderCount((count) => count - 1);
+    }, []);
+    const headerSlot = useMemo(
+        () => ({ container: headerContainer, registerHeader }),
+        [headerContainer, registerHeader],
+    );
+    const hasHeader = headerCount > 0;
+
     useEffect(() => {
         const removeStart = router.on("start", () => setNavigating(true));
         const removeFinish = router.on("finish", () => setNavigating(false));
+        // The layout persists across navigations, so close the mobile drawer
+        // explicitly (it previously closed as a side effect of remounting).
+        const removeNavigate = router.on("navigate", () =>
+            setMobileOpen(false),
+        );
 
         return () => {
             removeStart();
             removeFinish();
+            removeNavigate();
         };
     }, []);
 
@@ -264,7 +304,7 @@ function AuthenticatedLayoutInner({
                             },
                             gap: 2,
                             px: { xs: 2, lg: 4 },
-                            py: header ? 1.25 : 1.25,
+                            py: 1.25,
                         }}
                     >
                         <IconButton
@@ -277,11 +317,8 @@ function AuthenticatedLayoutInner({
                             <MenuIcon />
                         </IconButton>
 
-                        {header ? (
-                            <Box sx={{ minWidth: 0 }}>{header}</Box>
-                        ) : (
-                            <Box />
-                        )}
+                        {/* Header slot — pages portal content here via <LayoutHeader> */}
+                        <Box sx={{ minWidth: 0 }} ref={setHeaderContainer} />
 
                         {/* Connection status + User menu */}
                         <Box
@@ -290,7 +327,7 @@ function AuthenticatedLayoutInner({
                                 alignItems: "center",
                                 gap: 1.5,
                                 justifySelf: "end",
-                                pt: header ? 0.5 : 0,
+                                pt: hasHeader ? 0.5 : 0,
                             }}
                         >
                             <ConnectionStatus />
@@ -370,12 +407,14 @@ function AuthenticatedLayoutInner({
                         flexGrow: 1,
                         bgcolor: "background.default",
                         px: { xs: 2, lg: 4 },
-                        pt: header ? 1.5 : 3,
+                        pt: hasHeader ? 1.5 : 3,
                         pb: 3,
                         overflow: "hidden",
                     }}
                 >
-                    {children}
+                    <LayoutHeaderSlotProvider value={headerSlot}>
+                        {children}
+                    </LayoutHeaderSlotProvider>
                 </Box>
             </Box>
         </Box>

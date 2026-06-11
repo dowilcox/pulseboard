@@ -11,3 +11,14 @@ export function formatTimestamp(ts: string): string {
     if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString();
 }
+
+export function formatDueDate(
+    date: string,
+    options: { includeYear?: boolean } = {},
+): string {
+    return new Date(date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        ...(options.includeYear ? { year: "numeric" as const } : {}),
+    });
+}

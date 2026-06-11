@@ -19,16 +19,16 @@ import { type FormEvent, useRef, useState } from "react";
 
 interface Props {
     task: Task;
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     columnId: string;
     onSubtaskClick?: (subtask: Task) => void;
 }
 
 export default function SubtaskList({
     task,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     columnId,
     onSubtaskClick,
 }: Props) {
@@ -51,7 +51,7 @@ export default function SubtaskList({
         e.preventDefault();
         if (!data.title.trim()) return;
 
-        post(route("tasks.store", [teamId, boardId, columnId]), {
+        post(route("tasks.store", [teamSlug, boardSlug, columnId]), {
             preserveScroll: true,
             onSuccess: () => {
                 reset("title");
@@ -63,7 +63,7 @@ export default function SubtaskList({
     const handleToggleComplete = (subtask: Task, e: React.MouseEvent) => {
         e.stopPropagation();
         router.patch(
-            route("tasks.toggle-complete", [teamId, boardId, subtask.slug]),
+            route("tasks.toggle-complete", [teamSlug, boardSlug, subtask.slug]),
             {},
             { preserveScroll: true },
         );

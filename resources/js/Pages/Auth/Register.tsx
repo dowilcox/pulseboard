@@ -1,6 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { type FormEvent } from "react";
+import { type FormEvent, type ReactElement } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import MuiLink from "@mui/material/Link";
@@ -22,7 +22,7 @@ export default function Register() {
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Register" />
 
             <Box component="form" onSubmit={submit} noValidate>
@@ -115,6 +115,8 @@ export default function Register() {
                     </Button>
                 </Box>
             </Box>
-        </GuestLayout>
+        </>
     );
 }
+
+Register.layout = (page: ReactElement) => <GuestLayout>{page}</GuestLayout>;

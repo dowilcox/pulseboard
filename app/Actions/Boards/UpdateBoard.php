@@ -3,7 +3,7 @@
 namespace App\Actions\Boards;
 
 use App\Models\Board;
-use Illuminate\Support\Str;
+use App\Support\UniqueSlug;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class UpdateBoard
@@ -18,32 +18,13 @@ class UpdateBoard
     public function handle(Board $board, array $data): Board
     {
         if (isset($data['slug'])) {
-            $data['slug'] = Str::slug($data['slug']);
+            $data['slug'] = UniqueSlug::forBoard($board->team_id, $data['slug'], $board->id);
         } elseif (isset($data['name'])) {
-            $data['slug'] = $this->generateUniqueSlug($board, $data['name']);
+            $data['slug'] = UniqueSlug::forBoard($board->team_id, $data['name'], $board->id);
         }
 
         $board->update($data);
 
         return $board->refresh();
-    }
-
-    private function generateUniqueSlug(Board $board, string $name): string
-    {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        while (
-            Board::where('team_id', $board->team_id)
-                ->where('slug', $slug)
-                ->where('id', '!=', $board->id)
-                ->exists()
-        ) {
-            $slug = "{$originalSlug}-{$counter}";
-            $counter++;
-        }
-
-        return $slug;
     }
 }

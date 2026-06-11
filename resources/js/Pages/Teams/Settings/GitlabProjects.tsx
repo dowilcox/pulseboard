@@ -1,6 +1,7 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import GitlabProjectSearch from "@/Components/Gitlab/GitlabProjectSearch";
@@ -35,7 +36,6 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
-import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
@@ -61,13 +61,6 @@ export default function GitlabProjects({
     connections,
     activeConnections,
 }: Props) {
-    const { flash } = usePage<PageProps>().props;
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({ open: false, message: "", severity: "success" });
-
     // Connection state
     const [connDialogOpen, setConnDialogOpen] = useState(false);
     const [editingConnection, setEditingConnection] =
@@ -90,22 +83,6 @@ export default function GitlabProjects({
             setSelectedConnectionId(activeConnections[0].id);
         }
     }, [activeConnections, selectedConnectionId]);
-
-    useEffect(() => {
-        if (flash?.success) {
-            setSnackbar({
-                open: true,
-                message: flash.success,
-                severity: "success",
-            });
-        } else if (flash?.error) {
-            setSnackbar({
-                open: true,
-                message: flash.error,
-                severity: "error",
-            });
-        }
-    }, [flash?.success, flash?.error]);
 
     const connForm = useForm({
         name: "",
@@ -212,10 +189,9 @@ export default function GitlabProjects({
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={sidebarBoards}
-            header={
+        <>
+            <Head title={`${team.name} — GitLab`} />
+            <LayoutHeader>
                 <PageHeader
                     title="GitLab Integration"
                     breadcrumbs={[
@@ -226,9 +202,7 @@ export default function GitlabProjects({
                         },
                     ]}
                 />
-            }
-        >
-            <Head title={`${team.name} — GitLab`} />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {/* Connections */}
@@ -727,7 +701,7 @@ export default function GitlabProjects({
                         {selectedConnectionId && (
                             <GitlabProjectSearch
                                 connectionId={selectedConnectionId}
-                                teamId={team.slug}
+                                teamSlug={team.slug}
                                 onSelect={handleLinkProject}
                             />
                         )}
@@ -771,23 +745,15 @@ export default function GitlabProjects({
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    severity={snackbar.severity}
-                    variant="filled"
-                    role="status"
-                    sx={{ width: "100%" }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+GitlabProjects.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.sidebarBoards ?? []}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

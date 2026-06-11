@@ -42,23 +42,9 @@ class TaskController extends Controller
     ): RedirectResponse {
         $this->authorize('create', [Task::class, $board]);
 
-        $data = $request->validated();
-
-        // Apply default task template if set and no template was explicitly used
-        if ($board->default_task_template_id && $board->defaultTaskTemplate) {
-            $template = $board->defaultTaskTemplate;
-            $data = array_merge(
-                [
-                    'description' => $template->description_template,
-                    'priority' => $template->priority,
-                    'effort_estimate' => $template->effort_estimate,
-                    'label_ids' => $template->label_ids ?? [],
-                ],
-                $data,
-            );
-        }
-
-        CreateTask::run($board, $column, $data, $request->user());
+        // Board default task template (if any) is applied inside CreateTask
+        // so web and API task creation behave identically.
+        CreateTask::run($board, $column, $request->validated(), $request->user());
 
         return Redirect::back();
     }
@@ -117,20 +103,21 @@ class TaskController extends Controller
             ->where('is_active', true)
             ->get();
 
-        // Get all tasks in this board for dependency autocomplete
-        $boardTasks = Task::where('board_id', $board->id)
+        // Deferred: all tasks in this board for the dependency autocomplete.
+        // Can be thousands of rows on big boards, so it loads after first paint.
+        $boardTasks = Inertia::defer(fn () => Task::where('board_id', $board->id)
             ->select('id', 'task_number', 'title', 'column_id')
-            ->get();
+            ->get());
 
-        // Get all boards in this team for cross-board move
-        $teamBoards = $team
+        // Deferred: all boards in this team (with columns) for cross-board move.
+        $teamBoards = Inertia::defer(fn () => $team
             ->boards()
             ->active()
             ->select('id', 'team_id', 'name', 'slug', 'sort_order')
             ->with('media')
             ->with('columns')
             ->orderBy('sort_order')
-            ->get();
+            ->get());
 
         return Inertia::render('Tasks/Show', [
             'team' => $team,
@@ -188,23 +175,15 @@ class TaskController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $task);
 
-        $targetBoardId = $request->validated('board_id');
-        $targetBoard = null;
+        [$targetBoard, $column] = app(MoveTask::class)->resolveTarget(
+            $team,
+            $board,
+            $request->validated('board_id'),
+            $request->validated('column_id'),
+        );
 
-        if ($targetBoardId && $targetBoardId !== $board->id) {
-            // Cross-board move: validate target board belongs to same team
-            $targetBoard = $team
-                ->boards()
-                ->active()
-                ->findOrFail($targetBoardId);
+        if ($targetBoard) {
             $this->authorize('update', $targetBoard);
-            $column = $targetBoard
-                ->columns()
-                ->findOrFail($request->validated('column_id'));
-        } else {
-            $column = $board
-                ->columns()
-                ->findOrFail($request->validated('column_id'));
         }
 
         MoveTask::run(

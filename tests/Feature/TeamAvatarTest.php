@@ -102,7 +102,8 @@ class TeamAvatarTest extends TestCase
             ['image' => $file]
         );
 
-        $this->team->refresh();
+        // The accessor only resolves when media is eager-loaded (N+1 guard)
+        $this->team->refresh()->load('media');
         $this->assertNotNull($this->team->image_url);
         $this->assertStringContainsString('avatar', $this->team->image_url);
     }

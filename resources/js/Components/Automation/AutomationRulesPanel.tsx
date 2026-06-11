@@ -48,8 +48,8 @@ const ACTION_TYPES = [
 ];
 
 interface Props {
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     columns: Column[];
     members: User[];
     labels: Label[];
@@ -72,8 +72,8 @@ const EMPTY_FORM: RuleForm = {
 };
 
 export default function AutomationRulesPanel({
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     columns,
     members,
     labels,
@@ -86,13 +86,13 @@ export default function AutomationRulesPanel({
 
     const fetchRules = useCallback(() => {
         axios
-            .get(route("boards.automation-rules.index", [teamId, boardId]))
+            .get(route("boards.automation-rules.index", [teamSlug, boardSlug]))
             .then(({ data }) => {
                 setRules(Array.isArray(data) ? (data as AutomationRule[]) : []);
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, [teamId, boardId]);
+    }, [teamSlug, boardSlug]);
 
     useEffect(() => {
         fetchRules();
@@ -128,11 +128,14 @@ export default function AutomationRulesPanel({
         if (!isActionConfigValid()) return;
         setSaving(true);
         axios
-            .post(route("boards.automation-rules.store", [teamId, boardId]), {
-                ...form,
-                trigger_config: stripEmpty(form.trigger_config),
-                action_config: stripEmpty(form.action_config),
-            })
+            .post(
+                route("boards.automation-rules.store", [teamSlug, boardSlug]),
+                {
+                    ...form,
+                    trigger_config: stripEmpty(form.trigger_config),
+                    action_config: stripEmpty(form.action_config),
+                },
+            )
             .then(() => {
                 setDialogOpen(false);
                 setForm(EMPTY_FORM);
@@ -145,8 +148,8 @@ export default function AutomationRulesPanel({
         axios
             .put(
                 route("boards.automation-rules.update", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     rule.id,
                 ]),
                 { is_active: !rule.is_active },
@@ -158,8 +161,8 @@ export default function AutomationRulesPanel({
         axios
             .delete(
                 route("boards.automation-rules.destroy", [
-                    teamId,
-                    boardId,
+                    teamSlug,
+                    boardSlug,
                     rule.id,
                 ]),
             )

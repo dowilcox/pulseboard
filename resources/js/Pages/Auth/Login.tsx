@@ -1,6 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { type FormEvent } from "react";
+import { type FormEvent, type ReactElement } from "react";
 import LockIcon from "@mui/icons-material/Lock";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -40,7 +40,7 @@ export default function Login({
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Log In" />
 
             {error && (
@@ -147,6 +147,8 @@ export default function Login({
                     </Button>
                 </>
             )}
-        </GuestLayout>
+        </>
     );
 }
+
+Login.layout = (page: ReactElement) => <GuestLayout>{page}</GuestLayout>;

@@ -182,6 +182,22 @@ class Task extends Model implements HasMedia
     }
 
     /**
+     * Canonical definition of a completed task: completed_at is set.
+     */
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->whereNotNull('completed_at');
+    }
+
+    /**
+     * Canonical definition of an open task: completed_at is null.
+     */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereNull('completed_at');
+    }
+
+    /**
      * Tasks that this task depends on (i.e. tasks blocking this one).
      */
     public function blockedBy(): BelongsToMany

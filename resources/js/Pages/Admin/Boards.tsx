@@ -1,6 +1,7 @@
 import { Head, router } from "@inertiajs/react";
-import { useState } from "react";
+import { type ReactElement, useState } from "react";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
@@ -45,17 +46,16 @@ export default function Boards({ adminBoards: boards }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="Board Oversight" />
+            <LayoutHeader>
                 <PageHeader
                     title="Board Oversight"
                     breadcrumbs={[
                         { label: "Admin", href: route("admin.dashboard") },
                     ]}
                 />
-            }
-        >
-            <Head title="Board Oversight" />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex" }}>
                 <AdminNav />
@@ -194,6 +194,10 @@ export default function Boards({ adminBoards: boards }: Props) {
                 itemName={deleteBoard?.name ?? ""}
                 processing={deleting}
             />
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Boards.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

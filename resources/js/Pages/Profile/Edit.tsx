@@ -1,9 +1,11 @@
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps } from "@/types";
 import { Head } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
+import type { ReactElement } from "react";
 
 import AuthProviderInfo from "./Partials/AuthProviderInfo";
 import DeleteUserForm from "./Partials/DeleteUserForm";
@@ -16,8 +18,11 @@ export default function Edit({
     status,
 }: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
     return (
-        <AuthenticatedLayout header={<PageHeader title="Profile" />}>
+        <>
             <Head title="Profile" />
+            <LayoutHeader>
+                <PageHeader title="Profile" />
+            </LayoutHeader>
 
             <Box
                 sx={{
@@ -51,6 +56,10 @@ export default function Edit({
                     <DeleteUserForm />
                 </Paper>
             </Box>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Edit.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

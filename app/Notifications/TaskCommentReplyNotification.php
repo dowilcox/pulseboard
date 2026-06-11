@@ -7,7 +7,6 @@ use App\Models\Task;
 use App\Models\User;
 use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskCommentReplyNotification extends Notification
@@ -67,29 +66,6 @@ class TaskCommentReplyNotification extends Notification
         }
 
         return "{$this->replier->name} replied in a thread you participated in on \"{$this->task->title}\"";
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-        $summary = $notifiable instanceof User
-            ? $this->summaryFor($notifiable)
-            : "{$this->replier->name} replied to your comment on \"{$this->task->title}\"";
-        $replyBody = NotificationText::toPlainText($this->reply->body);
-
-        $mail = (new MailMessage)
-            ->subject("New Reply on: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line("{$summary}:")
-            ->action('View Task', $url);
-
-        if ($replyBody !== '') {
-            $mail->line("> {$replyBody}");
-        }
-
-        return $mail->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

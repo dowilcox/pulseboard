@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Boards\CreateBoardFromTemplate;
 use App\Models\Board;
 use App\Models\BoardTemplate;
 use App\Models\Column;
@@ -73,29 +74,19 @@ class BoardTemplateController extends Controller
     {
         $this->authorize('update', $team);
 
+        abort_unless(
+            $boardTemplate->created_by === auth()->id() || auth()->user()->is_admin,
+            403,
+        );
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
         ]);
 
-        $board = $team->boards()->create([
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'sort_order' => $team->boards()->count(),
-        ]);
+        $board = CreateBoardFromTemplate::run($team, $boardTemplate, $validated);
 
-        $templateColumns = $boardTemplate->template_data['columns'] ?? [];
-        foreach ($templateColumns as $i => $colData) {
-            $board->columns()->create([
-                'name' => $colData['name'],
-                'color' => $colData['color'],
-                'wip_limit' => $colData['wip_limit'] ?? null,
-                'is_done_column' => $colData['is_done_column'] ?? false,
-                'sort_order' => $i,
-            ]);
-        }
-
-        return response()->json($board->load('columns'), 201);
+        return response()->json($board, 201);
     }
 
     public function destroy(BoardTemplate $boardTemplate): JsonResponse

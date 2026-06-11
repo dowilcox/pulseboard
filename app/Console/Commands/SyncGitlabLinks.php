@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Exceptions\GitlabApiException;
 use App\Models\TaskGitlabRef;
 use App\Services\GitlabApiService;
+use App\Services\TaskAutomationDispatcher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -40,6 +41,7 @@ class SyncGitlabLinks extends Command
 
         $synced = 0;
         $errors = 0;
+        $dispatcher = app(TaskAutomationDispatcher::class);
 
         // Group by connection to reuse API clients
         $grouped = $staleRefs->groupBy(fn ($ref) => $ref->task->gitlabProject->gitlab_connection_id);
@@ -77,8 +79,27 @@ class SyncGitlabLinks extends Command
                         }
                     }
 
+                    $previousState = $ref->state;
+                    $previousPipelineStatus = $ref->pipeline_status;
+
                     $ref->update($updates);
                     $synced++;
+
+                    // Fire board automations on state transitions detected by sync
+                    if ($ref->state === 'merged' && $previousState !== 'merged') {
+                        $dispatcher->dispatchTrigger($ref->task, 'gitlab_mr_merged', [
+                            'mr_iid' => $ref->gitlab_iid,
+                            'mr_title' => $ref->title,
+                            'mr_url' => $ref->url,
+                        ]);
+                    }
+
+                    if ($ref->pipeline_status !== null && $ref->pipeline_status !== $previousPipelineStatus) {
+                        $dispatcher->dispatchTrigger($ref->task, 'gitlab_pipeline_status', [
+                            'pipeline_status' => $ref->pipeline_status,
+                            'ref' => $ref->gitlab_ref,
+                        ]);
+                    }
                 } catch (GitlabApiException $e) {
                     $errors++;
                     Log::warning("Failed to sync GitLab ref {$ref->id}: {$e->getMessage()}");

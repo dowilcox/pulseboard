@@ -3,7 +3,7 @@
 namespace App\Actions\Teams;
 
 use App\Models\Team;
-use Illuminate\Support\Str;
+use App\Support\UniqueSlug;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class UpdateTeam
@@ -20,9 +20,9 @@ class UpdateTeam
         $attributes = [];
 
         if (isset($data['slug'])) {
-            $attributes['slug'] = Str::slug($data['slug']);
+            $attributes['slug'] = UniqueSlug::forTeam($data['slug'], $team->id);
         } elseif (isset($data['name'])) {
-            $attributes['slug'] = $this->generateUniqueSlug($data['name'], $team->id);
+            $attributes['slug'] = UniqueSlug::forTeam($data['name'], $team->id);
         }
 
         if (isset($data['name'])) {
@@ -40,22 +40,5 @@ class UpdateTeam
         $team->update($attributes);
 
         return $team->fresh();
-    }
-
-    /**
-     * Generate a unique slug, excluding the current team from the uniqueness check.
-     */
-    private function generateUniqueSlug(string $name, string $excludeTeamId): string
-    {
-        $slug = Str::slug($name);
-        $originalSlug = $slug;
-        $counter = 1;
-
-        while (Team::where('slug', $slug)->where('id', '!=', $excludeTeamId)->exists()) {
-            $slug = "{$originalSlug}-{$counter}";
-            $counter++;
-        }
-
-        return $slug;
     }
 }

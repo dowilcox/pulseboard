@@ -1,6 +1,7 @@
 import { PRIORITY_COLORS } from "@/constants/priorities";
 import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -237,13 +238,7 @@ const TaskCard = memo(function TaskCard({
                                 variant="caption"
                                 sx={{ color: CARD_MUTED }}
                             >
-                                {new Date(task.due_date).toLocaleDateString(
-                                    undefined,
-                                    {
-                                        month: "short",
-                                        day: "numeric",
-                                    },
-                                )}
+                                {formatDueDate(task.due_date)}
                             </Typography>
                         )}
                         {(task.comments_count ?? 0) > 0 && (

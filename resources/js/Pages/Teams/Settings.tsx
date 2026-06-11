@@ -2,13 +2,15 @@ import axios from "axios";
 import ImageUpload from "@/Components/Common/ImageUpload";
 import ColorSwatchPicker from "@/Components/Common/ColorSwatchPicker";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import { LABEL_COLORS } from "@/constants/labelColors";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { Label, PageProps, Team, User, UserWithTeamPivot } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { useCallback, useState } from "react";
+import { type ReactElement, useCallback, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -28,7 +30,6 @@ import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
@@ -209,10 +210,9 @@ export default function TeamSettings({
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={sidebarBoards}
-            header={
+        <>
+            <Head title={`Settings - ${team.name}`} />
+            <LayoutHeader>
                 <PageHeader
                     title="Settings"
                     breadcrumbs={[
@@ -223,9 +223,7 @@ export default function TeamSettings({
                         },
                     ]}
                 />
-            }
-        >
-            <Head title={`Settings - ${team.name}`} />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {/* Team Image */}
@@ -772,35 +770,15 @@ export default function TeamSettings({
             </Dialog>
 
             {/* Remove Member Confirmation Dialog */}
-            <Dialog
+            <ConfirmDialog
                 open={!!removeMember}
                 onClose={() => setRemoveMember(null)}
-                maxWidth="xs"
-                aria-labelledby="remove-member-dialog-title"
-            >
-                <DialogTitle id="remove-member-dialog-title">
-                    Remove Member
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Are you sure you want to remove {removeMember?.name}{" "}
-                        from this team? They will lose access to all team
-                        boards.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setRemoveMember(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={confirmRemoveMember}
-                        color="error"
-                        variant="contained"
-                    >
-                        Remove
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={confirmRemoveMember}
+                title="Remove Member"
+                message={`Are you sure you want to remove ${removeMember?.name} from this team? They will lose access to all team boards.`}
+                confirmLabel="Remove"
+                confirmColor="error"
+            />
 
             {/* Add Label Dialog */}
             <Dialog
@@ -891,32 +869,15 @@ export default function TeamSettings({
             </Dialog>
 
             {/* Delete Label Confirmation Dialog */}
-            <Dialog
+            <ConfirmDialog
                 open={!!deleteLabel}
                 onClose={() => setDeleteLabel(null)}
-                maxWidth="xs"
-                aria-labelledby="delete-label-dialog-title"
-            >
-                <DialogTitle id="delete-label-dialog-title">
-                    Delete Label
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Are you sure you want to delete "{deleteLabel?.name}"?
-                        It will be removed from all tasks.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setDeleteLabel(null)}>Cancel</Button>
-                    <Button
-                        onClick={confirmDeleteLabel}
-                        color="error"
-                        variant="contained"
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={confirmDeleteLabel}
+                title="Delete Label"
+                message={`Are you sure you want to delete "${deleteLabel?.name}"? It will be removed from all tasks.`}
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
 
             {/* Delete Team Confirmation Dialog */}
             <ConfirmDeleteDialog
@@ -928,6 +889,15 @@ export default function TeamSettings({
                 itemName={team.name}
                 processing={deletingTeam}
             />
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+TeamSettings.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.sidebarBoards ?? []}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

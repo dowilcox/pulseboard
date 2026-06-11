@@ -3,10 +3,10 @@ import ImageUpload from "@/Components/Common/ImageUpload";
 
 interface Props {
     board: Board;
-    teamId: string;
+    teamSlug: string;
 }
 
-export default function BoardImageUpload({ board, teamId }: Props) {
+export default function BoardImageUpload({ board, teamSlug }: Props) {
     return (
         <ImageUpload
             title="Board Image"
@@ -14,11 +14,11 @@ export default function BoardImageUpload({ board, teamId }: Props) {
             imageUrl={board.image_url}
             altText={board.name}
             uploadRoute={route("teams.boards.upload-image", [
-                teamId,
+                teamSlug,
                 board.slug,
             ])}
             deleteRoute={route("teams.boards.delete-image", [
-                teamId,
+                teamSlug,
                 board.slug,
             ])}
         />

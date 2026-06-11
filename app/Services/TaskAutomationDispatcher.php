@@ -33,6 +33,42 @@ class TaskAutomationDispatcher
         }
     }
 
+    /**
+     * Fire a single automation trigger that does not originate from the
+     * activity log (e.g. GitLab webhooks, scheduled due-date checks),
+     * while preserving the cascade depth guard.
+     */
+    public function dispatchTrigger(Task $task, string $triggerType, array $context = []): void
+    {
+        if (self::$automationDepth >= self::MAX_AUTOMATION_DEPTH) {
+            Log::warning('Automation cascade depth limit reached', [
+                'task_id' => $task->id,
+                'action' => $triggerType,
+                'depth' => self::$automationDepth,
+            ]);
+
+            return;
+        }
+
+        self::$automationDepth++;
+
+        try {
+            ExecuteAutomationRules::run(
+                $task->board,
+                $triggerType,
+                array_merge($context, ['task_id' => $task->id]),
+            );
+        } catch (\Throwable $e) {
+            Log::warning('Automation execution failed', [
+                'task_id' => $task->id,
+                'trigger' => $triggerType,
+                'error' => $e->getMessage(),
+            ]);
+        } finally {
+            self::$automationDepth--;
+        }
+    }
+
     public static function currentDepth(): int
     {
         return self::$automationDepth;

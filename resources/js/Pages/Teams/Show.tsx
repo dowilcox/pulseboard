@@ -1,8 +1,15 @@
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm, router, usePage } from "@inertiajs/react";
 import axios from "axios";
-import { useCallback, useEffect, useState } from "react";
+import {
+    type ReactElement,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import type {
     Board,
     BoardTemplate,
@@ -90,26 +97,49 @@ export default function TeamsShow({ team, members, boards }: Props) {
         description: "",
     });
 
+    const templatesControllerRef = useRef<AbortController | null>(null);
+
     const fetchTemplates = useCallback(() => {
+        templatesControllerRef.current?.abort();
+        const controller = new AbortController();
+        templatesControllerRef.current = controller;
         setTemplatesLoading(true);
         axios
-            .get(route("templates.index"))
+            .get(route("templates.index"), { signal: controller.signal })
             .then(({ data }) => {
                 setTemplates(data as BoardTemplate[]);
                 setTemplatesLoading(false);
             })
-            .catch(() => setTemplatesLoading(false));
+            .catch((err) => {
+                if (axios.isCancel(err)) return;
+                setTemplatesLoading(false);
+            });
+    }, []);
+
+    // Abort any pending templates fetch on unmount
+    useEffect(() => {
+        return () => {
+            templatesControllerRef.current?.abort();
+        };
     }, []);
 
     useEffect(() => {
+        const controller = new AbortController();
+        setStatsLoading(true);
         axios
-            .get(route("teams.dashboard.stats", team.slug))
+            .get(route("teams.dashboard.stats", team.slug), {
+                signal: controller.signal,
+            })
             .then(({ data }) => {
                 setStats(data as Stats);
                 setStatsLoading(false);
             })
-            .catch(() => setStatsLoading(false));
-    }, [team.id]);
+            .catch((err) => {
+                if (axios.isCancel(err)) return;
+                setStatsLoading(false);
+            });
+        return () => controller.abort();
+    }, [team.slug]);
 
     const columnData = (stats?.tasks_by_column ?? []).map((c) => ({
         name: c.column_name,
@@ -172,10 +202,9 @@ export default function TeamsShow({ team, members, boards }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            sidebarBoards={boards}
-            header={
+        <>
+            <Head title={team.name} />
+            <LayoutHeader>
                 <PageHeader
                     title={team.name}
                     breadcrumbs={[
@@ -252,9 +281,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
                         </>
                     }
                 />
-            }
-        >
-            <Head title={team.name} />
+            </LayoutHeader>
 
             {/* Team info */}
             <Paper
@@ -742,6 +769,15 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     </DialogActions>
                 </form>
             </Dialog>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+TeamsShow.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout
+        currentTeam={page.props.team}
+        sidebarBoards={page.props.boards}
+    >
+        {page}
+    </AuthenticatedLayout>
+);

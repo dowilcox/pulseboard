@@ -19,7 +19,7 @@ class SendOverdueReminders extends Command
         $overdue = Task::query()
             ->whereNotNull('due_date')
             ->where('due_date', '<', Carbon::now()->toDateString())
-            ->whereHas('column', fn ($q) => $q->where('is_done_column', false))
+            ->open()
             ->with(['assignees', 'board'])
             ->get();
 

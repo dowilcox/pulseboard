@@ -1,4 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
+import type { ReactElement } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
@@ -41,15 +43,14 @@ const statCards = [
 
 export default function Dashboard({ stats }: Props) {
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="Admin Dashboard" />
+            <LayoutHeader>
                 <PageHeader
                     title="Dashboard"
                     breadcrumbs={[{ label: "Admin" }]}
                 />
-            }
-        >
-            <Head title="Admin Dashboard" />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex" }}>
                 <AdminNav />
@@ -163,6 +164,10 @@ export default function Dashboard({ stats }: Props) {
                     </Grid>
                 </Box>
             </Box>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Dashboard.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

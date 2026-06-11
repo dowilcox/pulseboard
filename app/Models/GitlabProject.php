@@ -2,15 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopesRouteBindingToParent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GitlabProject extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, ScopesRouteBindingToParent;
 
     protected $keyType = 'string';
 
@@ -37,22 +37,8 @@ class GitlabProject extends Model
         return $this->belongsTo(Team::class);
     }
 
-    public function taskGitlabRefs(): HasMany
+    protected function parentRouteBinding(): array
     {
-        return $this->hasMany(TaskGitlabRef::class);
-    }
-
-    public function resolveRouteBinding($value, $field = null): ?self
-    {
-        $query = $this->newQuery();
-
-        $team = request()->route('team');
-        if ($team instanceof Team) {
-            $query->where('team_id', $team->id);
-        }
-
-        return $field
-            ? $query->where($field, $value)->first()
-            : $query->where('id', $value)->first();
+        return ['team', Team::class, 'team_id'];
     }
 }

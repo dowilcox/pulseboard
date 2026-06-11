@@ -1,11 +1,14 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { type ReactElement, useState } from "react";
+import CreateTokenDialog from "@/Components/ApiTokens/CreateTokenDialog";
+import RevokeTokenDialog from "@/Components/ApiTokens/RevokeTokenDialog";
+import TokenCreatedDialog from "@/Components/ApiTokens/TokenCreatedDialog";
+import TokenTable from "@/Components/ApiTokens/TokenTable";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { PageProps, PersonalAccessToken, Team, User } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
-import CheckIcon from "@mui/icons-material/Check";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import Alert from "@mui/material/Alert";
@@ -14,22 +17,12 @@ import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
-import Checkbox from "@mui/material/Checkbox";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -44,12 +37,6 @@ interface Props extends PageProps {
 }
 
 export default function ApiTokens({ team, bots }: Props) {
-    const { flash } = usePage<PageProps>().props;
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({ open: false, message: "", severity: "success" });
     const [botDialogOpen, setBotDialogOpen] = useState(false);
     const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
     const [selectedBot, setSelectedBot] = useState<BotWithTokens | null>(null);
@@ -59,34 +46,8 @@ export default function ApiTokens({ team, bots }: Props) {
     } | null>(null);
     const [confirmDeleteBot, setConfirmDeleteBot] =
         useState<BotWithTokens | null>(null);
-    const [createdToken, setCreatedToken] = useState<string | null>(null);
-    const [tokenCopied, setTokenCopied] = useState(false);
-
-    useEffect(() => {
-        if (flash?.token) {
-            setCreatedToken(flash.token);
-            setTokenCopied(false);
-        } else if (flash?.success) {
-            setSnackbar({
-                open: true,
-                message: flash.success,
-                severity: "success",
-            });
-        } else if (flash?.error) {
-            setSnackbar({
-                open: true,
-                message: flash.error,
-                severity: "error",
-            });
-        }
-    }, [flash?.success, flash?.error, flash?.token]);
 
     const botForm = useForm({ name: "" });
-
-    const tokenForm = useForm({
-        name: "",
-        abilities: ["read"] as string[],
-    });
 
     const handleCreateBot = () => {
         botForm.post(route("teams.bots.store", team.slug), {
@@ -99,22 +60,7 @@ export default function ApiTokens({ team, bots }: Props) {
 
     const openTokenDialog = (bot: BotWithTokens) => {
         setSelectedBot(bot);
-        tokenForm.reset();
-        tokenForm.clearErrors();
         setTokenDialogOpen(true);
-    };
-
-    const handleCreateToken = () => {
-        if (!selectedBot) return;
-        tokenForm.post(
-            route("teams.bots.create-token", [team.slug, selectedBot.id]),
-            {
-                onSuccess: () => {
-                    setTokenDialogOpen(false);
-                    tokenForm.reset();
-                },
-            },
-        );
     };
 
     const handleRevokeToken = () => {
@@ -141,27 +87,10 @@ export default function ApiTokens({ team, bots }: Props) {
         );
     };
 
-    const handleAbilityChange = (ability: string, checked: boolean) => {
-        if (ability === "write" && checked) {
-            tokenForm.setData("abilities", ["read", "write"]);
-        } else if (ability === "write" && !checked) {
-            tokenForm.setData("abilities", ["read"]);
-        }
-    };
-
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        setSnackbar({
-            open: true,
-            message: "Copied to clipboard",
-            severity: "success",
-        });
-    };
-
     return (
-        <AuthenticatedLayout
-            currentTeam={team}
-            header={
+        <>
+            <Head title={`${team.name} — API Tokens`} />
+            <LayoutHeader>
                 <PageHeader
                     title="API Tokens"
                     breadcrumbs={[
@@ -176,9 +105,7 @@ export default function ApiTokens({ team, bots }: Props) {
                         },
                     ]}
                 />
-            }
-        >
-            <Head title={`${team.name} — API Tokens`} />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 <Card variant="outlined">
@@ -291,111 +218,15 @@ export default function ApiTokens({ team, bots }: Props) {
                                             </Tooltip>
                                         </Box>
                                     </Box>
-                                    {bot.tokens.length > 0 && (
-                                        <TableContainer>
-                                            <Table size="small">
-                                                <TableHead>
-                                                    <TableRow>
-                                                        <TableCell>
-                                                            Name
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            Abilities
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            Last Used
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            Created
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            Actions
-                                                        </TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                    {bot.tokens.map((token) => (
-                                                        <TableRow
-                                                            key={token.id}
-                                                        >
-                                                            <TableCell>
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    fontWeight={
-                                                                        500
-                                                                    }
-                                                                >
-                                                                    {token.name}
-                                                                </Typography>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {token.abilities.map(
-                                                                    (
-                                                                        ability,
-                                                                    ) => (
-                                                                        <Chip
-                                                                            key={
-                                                                                ability
-                                                                            }
-                                                                            label={
-                                                                                ability
-                                                                            }
-                                                                            size="small"
-                                                                            variant="outlined"
-                                                                            sx={{
-                                                                                mr: 0.5,
-                                                                            }}
-                                                                        />
-                                                                    ),
-                                                                )}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    color="text.secondary"
-                                                                >
-                                                                    {token.last_used_at
-                                                                        ? new Date(
-                                                                              token.last_used_at,
-                                                                          ).toLocaleDateString()
-                                                                        : "Never"}
-                                                                </Typography>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Typography
-                                                                    variant="body2"
-                                                                    color="text.secondary"
-                                                                >
-                                                                    {new Date(
-                                                                        token.created_at,
-                                                                    ).toLocaleDateString()}
-                                                                </Typography>
-                                                            </TableCell>
-                                                            <TableCell align="right">
-                                                                <Tooltip title="Revoke">
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        color="error"
-                                                                        onClick={() =>
-                                                                            setConfirmRevoke(
-                                                                                {
-                                                                                    bot,
-                                                                                    tokenId:
-                                                                                        token.id,
-                                                                                },
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <DeleteIcon fontSize="small" />
-                                                                    </IconButton>
-                                                                </Tooltip>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </TableContainer>
-                                    )}
+                                    <TokenTable
+                                        tokens={bot.tokens}
+                                        onRevoke={(token) =>
+                                            setConfirmRevoke({
+                                                bot,
+                                                tokenId: token.id,
+                                            })
+                                        }
+                                    />
                                 </Paper>
                             ))
                         )}
@@ -454,114 +285,25 @@ export default function ApiTokens({ team, bots }: Props) {
                 </DialogActions>
             </Dialog>
 
-            {/* Create Token Dialog */}
-            <Dialog
+            <CreateTokenDialog
                 open={tokenDialogOpen}
                 onClose={() => setTokenDialogOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                aria-labelledby="create-bot-token-dialog-title"
-            >
-                <DialogTitle id="create-bot-token-dialog-title">
-                    Create API Token for {selectedBot?.name}
-                </DialogTitle>
-                <DialogContent>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            mt: 1,
-                        }}
-                    >
-                        <Alert severity="warning">
-                            The token will only be shown once after creation.
-                            Copy it immediately.
-                        </Alert>
-                        <TextField
-                            label="Token Name"
-                            value={tokenForm.data.name}
-                            onChange={(e) =>
-                                tokenForm.setData("name", e.target.value)
-                            }
-                            error={!!tokenForm.errors.name}
-                            helperText={tokenForm.errors.name}
-                            fullWidth
-                            required
-                        />
-                        <Box>
-                            <Typography
-                                variant="body2"
-                                fontWeight={500}
-                                sx={{ mb: 1 }}
-                            >
-                                Abilities
-                            </Typography>
-                            <FormControlLabel
-                                control={<Checkbox checked disabled />}
-                                label="read - Read access to boards, tasks, and comments"
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={tokenForm.data.abilities.includes(
-                                            "write",
-                                        )}
-                                        onChange={(e) =>
-                                            handleAbilityChange(
-                                                "write",
-                                                e.target.checked,
-                                            )
-                                        }
-                                    />
-                                }
-                                label="write - Create/update tasks, comments, and assignments"
-                            />
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setTokenDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCreateToken}
-                        disabled={tokenForm.processing}
-                    >
-                        Create Token
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                ownerName={selectedBot?.name}
+                submitUrl={
+                    selectedBot
+                        ? route("teams.bots.create-token", [
+                              team.slug,
+                              selectedBot.id,
+                          ])
+                        : null
+                }
+            />
 
-            {/* Confirm Revoke Token Dialog */}
-            <Dialog
+            <RevokeTokenDialog
                 open={!!confirmRevoke}
-                onClose={() => setConfirmRevoke(null)}
-                aria-labelledby="revoke-bot-token-dialog-title"
-            >
-                <DialogTitle id="revoke-bot-token-dialog-title">
-                    Revoke Token
-                </DialogTitle>
-                <DialogContent>
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                        This will immediately invalidate the token. Any
-                        applications using it will lose access.
-                    </Alert>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setConfirmRevoke(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleRevokeToken}
-                    >
-                        Revoke
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onCancel={() => setConfirmRevoke(null)}
+                onConfirm={handleRevokeToken}
+            />
 
             {/* Confirm Delete Bot Dialog */}
             <Dialog
@@ -593,103 +335,13 @@ export default function ApiTokens({ team, bots }: Props) {
                 </DialogActions>
             </Dialog>
 
-            {/* Token Created Dialog */}
-            <Dialog
-                open={!!createdToken}
-                maxWidth="sm"
-                fullWidth
-                aria-labelledby="bot-token-created-dialog-title"
-            >
-                <DialogTitle id="bot-token-created-dialog-title">
-                    API Token Created
-                </DialogTitle>
-                <DialogContent>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            mt: 1,
-                        }}
-                    >
-                        <Alert severity="warning">
-                            Copy this token now. It will not be shown again.
-                        </Alert>
-                        <TextField
-                            value={createdToken ?? ""}
-                            fullWidth
-                            slotProps={{
-                                input: {
-                                    readOnly: true,
-                                    sx: {
-                                        fontFamily: "monospace",
-                                        fontSize: "0.85rem",
-                                    },
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <Tooltip
-                                                title={
-                                                    tokenCopied
-                                                        ? "Copied!"
-                                                        : "Copy to clipboard"
-                                                }
-                                            >
-                                                <IconButton
-                                                    onClick={() => {
-                                                        if (createdToken) {
-                                                            navigator.clipboard.writeText(
-                                                                createdToken,
-                                                            );
-                                                            setTokenCopied(
-                                                                true,
-                                                            );
-                                                        }
-                                                    }}
-                                                    edge="end"
-                                                >
-                                                    {tokenCopied ? (
-                                                        <CheckIcon color="success" />
-                                                    ) : (
-                                                        <ContentCopyIcon />
-                                                    )}
-                                                </IconButton>
-                                            </Tooltip>
-                                        </InputAdornment>
-                                    ),
-                                },
-                            }}
-                            onClick={(e) =>
-                                (e.target as HTMLInputElement).select()
-                            }
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button
-                        variant="contained"
-                        onClick={() => setCreatedToken(null)}
-                    >
-                        Done
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    severity={snackbar.severity}
-                    variant="filled"
-                    role="status"
-                    sx={{ width: "100%" }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </AuthenticatedLayout>
+            <TokenCreatedDialog />
+        </>
     );
 }
+
+ApiTokens.layout = (page: ReactElement<Props>) => (
+    <AuthenticatedLayout currentTeam={page.props.team}>
+        {page}
+    </AuthenticatedLayout>
+);

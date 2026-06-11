@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\Boards\CreateBoard;
 use App\Actions\Boards\UpdateBoard;
+use App\Actions\Teams\CreateTeam;
 use App\Actions\Teams\UpdateTeam;
 use App\Models\Board;
 use App\Models\Column;
@@ -212,6 +213,43 @@ class SlugRoutingTest extends TestCase
         $this->get('/profile')->assertOk();
         $this->get('/templates')->assertOk();
         $this->get('/notifications')->assertOk();
+    }
+
+    public function test_team_with_reserved_name_gets_non_colliding_slug(): void
+    {
+        $team = CreateTeam::run($this->user, ['name' => 'Admin']);
+
+        $this->assertSame('admin-1', $team->slug);
+
+        // The new team is reachable through the /{team} catch-all.
+        $this->actingAs($this->user)->get('/'.$team->slug)->assertOk();
+    }
+
+    public function test_board_with_reserved_name_gets_non_colliding_slug(): void
+    {
+        $board = CreateBoard::run($this->team, ['name' => 'Settings']);
+
+        $this->assertSame('settings-1', $board->slug);
+
+        // /{team}/settings still resolves to the fixed teams.settings route,
+        // while the board remains reachable under its suffixed slug.
+        $this->actingAs($this->user)
+            ->get('/'.$this->team->slug.'/'.$board->slug)
+            ->assertOk();
+    }
+
+    public function test_manual_reserved_slug_on_team_update_is_suffixed(): void
+    {
+        $updated = UpdateTeam::run($this->team, ['slug' => 'teams']);
+
+        $this->assertSame('teams-1', $updated->slug);
+    }
+
+    public function test_manual_reserved_slug_on_board_update_is_suffixed(): void
+    {
+        $updated = UpdateBoard::run($this->board, ['slug' => 'image']);
+
+        $this->assertSame('image-1', $updated->slug);
     }
 
     public function test_board_scoped_to_team(): void

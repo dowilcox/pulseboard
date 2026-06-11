@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskDueSoonNotification extends Notification
@@ -47,24 +46,6 @@ class TaskDueSoonNotification extends Notification
             'board_name' => $this->task->board->name,
             'message' => "\"{$this->task->title}\" is due soon ({$dueFormatted})",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Due Soon: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "Your task \"{$this->task->title}\" is due on {$dueFormatted}.",
-            )
-            ->line("Board: {$this->task->board->name}")
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

@@ -52,20 +52,22 @@ const EMPTY_FILTERS: Filters = {
 interface Props {
     members: User[];
     labels: Label[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     onFilterChange: (filterFn: (task: Task) => boolean) => void;
 }
 
 export default function FilterBar({
     members,
     labels,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     onFilterChange,
 }: Props) {
     const { showSnackbar } = useSnackbar();
     const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+    // Local search input state, debounced before being applied as a filter
+    const [searchInput, setSearchInput] = useState("");
     const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
     const [savedFiltersMenuAnchor, setSavedFiltersMenuAnchor] =
         useState<HTMLElement | null>(null);
@@ -87,6 +89,7 @@ export default function FilterBar({
 
     const applyFilters = useCallback(
         (newFilters: Filters) => {
+            setSearchInput(newFilters.search);
             setFilters(newFilters);
 
             const hasAnyFilter =
@@ -163,11 +166,21 @@ export default function FilterBar({
         [onFilterChange],
     );
 
+    // Debounce search keystrokes before re-filtering the board
+    useEffect(() => {
+        if (searchInput === filters.search) return;
+        const timer = setTimeout(() => {
+            applyFilters({ ...filters, search: searchInput });
+        }, 250);
+        return () => clearTimeout(timer);
+    }, [searchInput, filters, applyFilters]);
+
     const updateFilter = <K extends keyof Filters>(
         key: K,
         value: Filters[K],
     ) => {
-        const newFilters = { ...filters, [key]: value };
+        // Include any pending (not yet debounced) search text so it isn't lost
+        const newFilters = { ...filters, search: searchInput, [key]: value };
         applyFilters(newFilters);
     };
 
@@ -179,7 +192,7 @@ export default function FilterBar({
     const fetchSavedFilters = useCallback(() => {
         const controller = new AbortController();
         axios
-            .get(route("boards.filters.index", [teamId, boardId]), {
+            .get(route("boards.filters.index", [teamSlug, boardSlug]), {
                 signal: controller.signal,
             })
             .then(({ data }) => setSavedFilters(data as SavedFilter[]))
@@ -188,7 +201,7 @@ export default function FilterBar({
                 showSnackbar("Failed to load saved filters", "error");
             });
         return controller;
-    }, [teamId, boardId, showSnackbar]);
+    }, [teamSlug, boardSlug, showSnackbar]);
 
     useEffect(() => {
         const controller = fetchSavedFilters();
@@ -209,7 +222,7 @@ export default function FilterBar({
     const handleSaveFilter = () => {
         if (!saveFilterName.trim()) return;
         axios
-            .post(route("boards.filters.store", [teamId, boardId]), {
+            .post(route("boards.filters.store", [teamSlug, boardSlug]), {
                 name: saveFilterName.trim(),
                 filter_config: filters,
                 is_default: saveFilterDefault,
@@ -226,7 +239,11 @@ export default function FilterBar({
     const handleDeleteFilter = (filterId: string) => {
         axios
             .delete(
-                route("boards.filters.destroy", [teamId, boardId, filterId]),
+                route("boards.filters.destroy", [
+                    teamSlug,
+                    boardSlug,
+                    filterId,
+                ]),
             )
             .then(() => {
                 setSavedFilters((prev) =>
@@ -413,8 +430,8 @@ export default function FilterBar({
             <TextField
                 size="small"
                 placeholder="Search tasks..."
-                value={filters.search}
-                onChange={(e) => updateFilter("search", e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 sx={{ minWidth: { xs: "100%", sm: 260 } }}
                 slotProps={{
                     input: {

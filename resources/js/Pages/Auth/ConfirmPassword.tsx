@@ -1,6 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { type FormEvent } from "react";
+import { type FormEvent, type ReactElement } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
@@ -19,7 +19,7 @@ export default function ConfirmPassword() {
     };
 
     return (
-        <GuestLayout>
+        <>
             <Head title="Confirm Password" />
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -58,6 +58,10 @@ export default function ConfirmPassword() {
                     </Button>
                 </Box>
             </Box>
-        </GuestLayout>
+        </>
     );
 }
+
+ConfirmPassword.layout = (page: ReactElement) => (
+    <GuestLayout>{page}</GuestLayout>
+);

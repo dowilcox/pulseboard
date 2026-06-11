@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ScopesRouteBindingToParent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TaskFigmaLink extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, ScopesRouteBindingToParent;
 
     protected $keyType = 'string';
 
@@ -36,17 +37,8 @@ class TaskFigmaLink extends Model
         return $this->belongsTo(FigmaConnection::class);
     }
 
-    public function resolveRouteBinding($value, $field = null): ?self
+    protected function parentRouteBinding(): array
     {
-        $query = $this->newQuery();
-
-        $task = request()->route('task');
-        if ($task instanceof Task) {
-            $query->where('task_id', $task->id);
-        }
-
-        return $field
-            ? $query->where($field, $value)->first()
-            : $query->where('id', $value)->first();
+        return ['task', Task::class, 'task_id'];
     }
 }

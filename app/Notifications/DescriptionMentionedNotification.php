@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class DescriptionMentionedNotification extends Notification
@@ -44,22 +43,6 @@ class DescriptionMentionedNotification extends Notification
             'mentioner_name' => $this->mentioner->name,
             'message' => "{$this->mentioner->name} mentioned you in the description of \"{$this->task->title}\"",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("You were mentioned in: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "{$this->mentioner->name} mentioned you in the description of \"{$this->task->title}\".",
-            )
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

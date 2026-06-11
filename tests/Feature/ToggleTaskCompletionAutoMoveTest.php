@@ -196,6 +196,25 @@ class ToggleTaskCompletionAutoMoveTest extends TestCase
         $this->assertEquals($this->doneColumn->id, $result->column_id);
     }
 
+    public function test_auto_move_logs_single_completed_activity(): void
+    {
+        Event::fake();
+
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->todoColumn->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        ToggleTaskCompletion::run($task, $this->user);
+
+        // MoveTask also syncs completion when entering a done column; the
+        // toggle action opts out, so exactly one 'completed' activity exists.
+        $this->assertEquals(1, Activity::where('task_id', $task->id)
+            ->where('action', 'completed')
+            ->count());
+    }
+
     public function test_auto_move_places_task_at_end_of_done_column(): void
     {
         Event::fake();

@@ -20,15 +20,14 @@ class CommentController extends Controller
     {
         $this->authorize('view', $task);
 
-        $parentId = $request->validated('parent_id');
-
-        if ($parentId) {
-            $parent = Comment::where('id', $parentId)->where('task_id', $task->id)->firstOrFail();
-            // Flatten to one level: if replying to a reply, attach to the root parent
-            $parentId = $parent->parent_id ?? $parent->id;
-        }
-
-        CreateComment::run($task, $request->validated('body'), $request->user(), $parentId);
+        // Parent resolution (including reply flattening) happens in CreateComment
+        // so web and API comment creation behave identically.
+        CreateComment::run(
+            $task,
+            $request->validated('body'),
+            $request->user(),
+            $request->validated('parent_id'),
+        );
 
         return Redirect::back();
     }

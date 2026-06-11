@@ -38,6 +38,15 @@ class NotificationEmail extends Mailable
                 : config('app.url');
     }
 
+    /**
+     * Single source of truth for notification email subjects.
+     *
+     * All notification email delivery goes through the digest command
+     * (notifications:send-emails) and this mailable -- the notification
+     * classes themselves only implement the 'database' channel. When adding
+     * a new emailable type to SendNotificationEmails::EMAIL_TYPES, add its
+     * subject line here.
+     */
     public function envelope(): Envelope
     {
         $data = $this->notification->data;

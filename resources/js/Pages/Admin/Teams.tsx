@@ -1,7 +1,8 @@
 import { Head, router } from "@inertiajs/react";
 import axios from "axios";
-import { useCallback, useState } from "react";
+import { type ReactElement, useCallback, useState } from "react";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
@@ -173,17 +174,16 @@ export default function Teams({ adminTeams: teams }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="Team Oversight" />
+            <LayoutHeader>
                 <PageHeader
                     title="Team Oversight"
                     breadcrumbs={[
                         { label: "Admin", href: route("admin.dashboard") },
                     ]}
                 />
-            }
-        >
-            <Head title="Team Oversight" />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex" }}>
                 <AdminNav />
@@ -615,6 +615,10 @@ export default function Teams({ adminTeams: teams }: Props) {
                 itemName={teamDetail?.name ?? ""}
                 processing={deleting}
             />
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+Teams.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

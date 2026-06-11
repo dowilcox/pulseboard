@@ -31,10 +31,27 @@ class UpdateTask
         $changes = [];
 
         foreach ($fillable as $field) {
-            if (
-                array_key_exists($field, $data) &&
-                $task->{$field} != $data[$field]
-            ) {
+            if (! array_key_exists($field, $data)) {
+                continue;
+            }
+
+            // due_date is cast `date:Y-m-d` (Carbon), so compare normalized
+            // date strings — a raw comparison against the request string
+            // would always report a change.
+            if ($field === 'due_date') {
+                $from = $task->due_date?->toDateString();
+                $to = ! empty($data['due_date'])
+                    ? Carbon::parse($data['due_date'])->toDateString()
+                    : null;
+
+                if ($from !== $to) {
+                    $changes[$field] = ['from' => $from, 'to' => $to];
+                }
+
+                continue;
+            }
+
+            if ($task->{$field} != $data[$field]) {
                 $changes[$field] = [
                     'from' => $task->{$field},
                     'to' => $data[$field],

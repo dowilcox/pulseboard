@@ -15,6 +15,16 @@ class AddTaskDependency
 
     public function handle(Task $task, Task $dependsOn, User $user): TaskDependency
     {
+        $alreadyExists = TaskDependency::where('task_id', $task->id)
+            ->where('depends_on_task_id', $dependsOn->id)
+            ->exists();
+
+        if ($alreadyExists) {
+            throw ValidationException::withMessages([
+                'depends_on_task_id' => ['This dependency already exists.'],
+            ]);
+        }
+
         // Circular dependency check via BFS
         $visited = [$task->id];
         $queue = [$dependsOn->id];

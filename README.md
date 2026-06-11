@@ -62,7 +62,7 @@
 - SAML2 SSO with JIT (just-in-time) user provisioning
 - Bot user creation scoped to teams (for API integrations)
 - CSV export of team tasks
-- Dark / light / system theme support
+- Dark theme UI
 
 ## Quick Start
 

@@ -13,8 +13,8 @@ import { useState } from "react";
 interface Props {
     task: Task;
     boardTasks: TaskSummary[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
 }
 
 const DEPENDENCY_TEXT = "#f8fafc";
@@ -25,8 +25,8 @@ const DEPENDENCY_HOVER = "rgba(148, 163, 184, 0.14)";
 export default function DependencySection({
     task,
     boardTasks,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
 }: Props) {
     const [addingBlockedBy, setAddingBlockedBy] = useState(false);
     const [addingBlocking, setAddingBlocking] = useState(false);
@@ -44,7 +44,7 @@ export default function DependencySection({
 
     const handleAddBlockedBy = (depTask: TaskSummary) => {
         router.post(
-            route("tasks.dependencies.store", [teamId, boardId, task.slug]),
+            route("tasks.dependencies.store", [teamSlug, boardSlug, task.slug]),
             { depends_on_task_id: depTask.id },
             { preserveScroll: true },
         );
@@ -54,7 +54,11 @@ export default function DependencySection({
 
     const handleAddBlocking = (depTask: TaskSummary) => {
         router.post(
-            route("tasks.dependencies.store", [teamId, boardId, depTask.slug]),
+            route("tasks.dependencies.store", [
+                teamSlug,
+                boardSlug,
+                depTask.slug,
+            ]),
             { depends_on_task_id: task.id },
             { preserveScroll: true },
         );
@@ -62,25 +66,30 @@ export default function DependencySection({
         setSelectedTask(null);
     };
 
-    const handleRemoveBlockedBy = (depTaskId: string) => {
+    // Route shape: {team}/{board}/tasks/{task}/dependencies/{dependsOnTask}.
+    // {task} is resolved scoped to {board}, while {dependsOnTask} is resolved
+    // globally when given a UUID — so always pass UUIDs for the other task,
+    // and use the dependent task's own board for {board} so cross-board
+    // dependencies resolve correctly.
+    const handleRemoveBlockedBy = (depTask: Task) => {
         router.delete(
             route("tasks.dependencies.destroy", [
-                teamId,
-                boardId,
-                task.slug,
-                depTaskId,
+                teamSlug,
+                boardSlug,
+                task.slug ?? task.id,
+                depTask.id,
             ]),
             { preserveScroll: true },
         );
     };
 
-    const handleRemoveBlocking = (depTaskId: string) => {
+    const handleRemoveBlocking = (depTask: Task) => {
         router.delete(
             route("tasks.dependencies.destroy", [
-                teamId,
-                boardId,
-                depTaskId,
-                task.slug,
+                teamSlug,
+                depTask.board_id,
+                depTask.slug ?? depTask.id,
+                task.id,
             ]),
             { preserveScroll: true },
         );
@@ -98,7 +107,7 @@ export default function DependencySection({
         setAdding: (v: boolean) => void,
         available: TaskSummary[],
         onAdd: (t: TaskSummary) => void,
-        onRemove: (id: string) => void,
+        onRemove: (t: Task) => void,
         color: "warning" | "info",
     ) => (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
@@ -151,7 +160,7 @@ export default function DependencySection({
                             size="small"
                             color={color}
                             variant="outlined"
-                            onDelete={() => onRemove(dep.slug ?? dep.id)}
+                            onDelete={() => onRemove(dep)}
                             deleteIcon={
                                 <CloseIcon
                                     sx={{ fontSize: "14px !important" }}

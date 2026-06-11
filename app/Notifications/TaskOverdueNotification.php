@@ -5,7 +5,6 @@ namespace App\Notifications;
 use App\Models\Task;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class TaskOverdueNotification extends Notification
@@ -47,24 +46,6 @@ class TaskOverdueNotification extends Notification
             'board_name' => $this->task->board->name,
             'message' => "\"{$this->task->title}\" is overdue (was due {$dueFormatted})",
         ];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        $dueFormatted = Carbon::parse($this->task->due_date)->format('M j, Y');
-        $url = url(
-            "/{$this->task->board->team->slug}/{$this->task->board->slug}/tasks/{$this->task->slug}",
-        );
-
-        return (new MailMessage)
-            ->subject("Overdue: {$this->task->title}")
-            ->greeting("Hello {$notifiable->name},")
-            ->line(
-                "Your task \"{$this->task->title}\" was due on {$dueFormatted} and is now overdue.",
-            )
-            ->line("Board: {$this->task->board->name}")
-            ->action('View Task', $url)
-            ->line('Thank you for using PulseBoard!');
     }
 
     public function afterCommit(): bool

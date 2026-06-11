@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Actions\Tasks\CreateComment;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
-use App\Models\Comment;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
@@ -39,14 +38,14 @@ class CommentController extends Controller
             'parent_id' => ['nullable', 'uuid', 'exists:comments,id'],
         ]);
 
-        $parentId = $validated['parent_id'] ?? null;
-
-        if ($parentId) {
-            $parent = Comment::where('id', $parentId)->where('task_id', $task->id)->firstOrFail();
-            $parentId = $parent->parent_id ?? $parent->id;
-        }
-
-        $comment = CreateComment::run($task, $validated['body'], $request->user(), $parentId);
+        // Parent resolution (including reply flattening) happens in CreateComment
+        // so web and API comment creation behave identically.
+        $comment = CreateComment::run(
+            $task,
+            $validated['body'],
+            $request->user(),
+            $validated['parent_id'] ?? null,
+        );
 
         return response()->json(['data' => $comment], 201);
     }

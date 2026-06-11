@@ -32,8 +32,13 @@ class ReorderColumns
                 $destroy = ! empty($data['_destroy']);
 
                 if ($id && $destroy) {
-                    // Delete existing column (tasks cascade via FK)
-                    $board->columns()->where('id', $id)->delete();
+                    $column = $board->columns()->whereKey($id)->first();
+
+                    if ($column) {
+                        // Delete tasks via Eloquent to trigger media library cleanup
+                        $column->tasks()->each(fn ($task) => $task->delete());
+                        $column->delete();
+                    }
 
                     continue;
                 }

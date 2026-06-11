@@ -20,6 +20,8 @@ class TaskTemplateController extends Controller
 {
     public function index(Team $team): JsonResponse
     {
+        $this->authorize('view', $team);
+
         $templates = TaskTemplate::where('team_id', $team->id)
             ->with('creator')
             ->orderBy('name')
@@ -30,6 +32,8 @@ class TaskTemplateController extends Controller
 
     public function store(Request $request, Team $team): RedirectResponse
     {
+        $this->authorize('update', $team);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description_template' => ['nullable', 'string'],
@@ -49,6 +53,9 @@ class TaskTemplateController extends Controller
 
     public function destroy(Team $team, TaskTemplate $taskTemplate): RedirectResponse
     {
+        $this->authorize('update', $team);
+        abort_unless($taskTemplate->team_id === $team->id, 404);
+
         DeleteTaskTemplate::run($taskTemplate);
 
         return Redirect::back();
@@ -56,6 +63,8 @@ class TaskTemplateController extends Controller
 
     public function createFromTask(Request $request, Team $team, Board $board, Task $task): RedirectResponse
     {
+        $this->authorize('update', $team);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
         ]);
@@ -75,6 +84,9 @@ class TaskTemplateController extends Controller
 
     public function createTask(Request $request, Team $team, Board $board, Column $column, TaskTemplate $taskTemplate): RedirectResponse
     {
+        $this->authorize('create', [Task::class, $board]);
+        abort_unless($taskTemplate->team_id === $team->id, 404);
+
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
         ]);

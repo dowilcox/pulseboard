@@ -26,7 +26,15 @@ class MeController extends Controller
 
         $query = Task::whereHas('assignees', function ($q) use ($request) {
             $q->where('users.id', $request->user()->id);
-        })->with(['assignees', 'labels', 'column:id,name,board_id', 'board:id,name,team_id']);
+        })->with([
+            'assignees',
+            'labels',
+            'column:id,name,board_id',
+            // board.media is required for the image_url accessor, which
+            // returns null unless the media relation is eager-loaded.
+            'board:id,name,team_id',
+            'board.media',
+        ]);
 
         if ($status === 'open') {
             $query->whereNull('completed_at');

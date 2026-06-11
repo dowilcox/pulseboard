@@ -1,3 +1,4 @@
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import CopyMarkdownButton from "@/Components/Common/CopyMarkdownButton";
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
@@ -15,11 +16,6 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -36,8 +32,8 @@ type FeedItem =
 interface Props {
     comments: Comment[];
     activities: Activity[];
-    teamId: string;
-    boardId: string;
+    teamSlug: string;
+    boardSlug: string;
     taskId: string;
     currentUserId: string;
     uploadImageUrl?: string;
@@ -202,11 +198,192 @@ function activityDescription(
     }
 }
 
+interface CommentItemProps {
+    comment: Comment;
+    variant: "comment" | "reply";
+    isOwn: boolean;
+    isEditing: boolean;
+    editBody: string;
+    onEditBodyChange: (body: string) => void;
+    onStartEdit: () => void;
+    onCancelEdit: () => void;
+    onSaveEdit: () => void;
+    onDelete: () => void;
+    onReply?: () => void;
+    uploadImageUrl?: string;
+    mentionableUsers: User[];
+}
+
+function CommentItem({
+    comment,
+    variant,
+    isOwn,
+    isEditing,
+    editBody,
+    onEditBodyChange,
+    onStartEdit,
+    onCancelEdit,
+    onSaveEdit,
+    onDelete,
+    onReply,
+    uploadImageUrl,
+    mentionableUsers,
+}: CommentItemProps) {
+    const isReply = variant === "reply";
+    const wasEdited = comment.updated_at !== comment.created_at;
+    const actionIconSize = isReply ? 14 : 16;
+
+    const meta = (
+        <>
+            <Typography
+                variant="body2"
+                fontWeight={600}
+                fontSize={isReply ? "0.85rem" : undefined}
+            >
+                {comment.user?.name}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+                {formatTimestamp(comment.created_at)}
+            </Typography>
+            {wasEdited && (
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontStyle: "italic" }}
+                >
+                    (edited)
+                </Typography>
+            )}
+            <Box sx={{ flex: 1 }} />
+            {!isEditing && (
+                <CopyMarkdownButton
+                    content={comment.body}
+                    aria-label={`Copy ${variant} as Markdown`}
+                />
+            )}
+            {!isReply && !isEditing && (
+                <Tooltip title="Reply">
+                    <IconButton size="small" onClick={onReply}>
+                        <ReplyIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                </Tooltip>
+            )}
+            {isOwn && !isEditing && (
+                <>
+                    <Tooltip title="Edit">
+                        <IconButton size="small" onClick={onStartEdit}>
+                            <EditIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                        <IconButton size="small" onClick={onDelete}>
+                            <DeleteIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
+                </>
+            )}
+        </>
+    );
+
+    const body = isEditing ? (
+        <>
+            <RichTextEditor
+                content={editBody}
+                onChange={onEditBodyChange}
+                placeholder={isReply ? "Edit reply..." : "Edit comment..."}
+                uploadImageUrl={uploadImageUrl}
+                minHeight={isReply ? 60 : 80}
+                mentionableUsers={mentionableUsers}
+            />
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    gap: 1,
+                    mt: 1,
+                }}
+            >
+                <Button size="small" onClick={onCancelEdit}>
+                    Cancel
+                </Button>
+                <Button size="small" variant="contained" onClick={onSaveEdit}>
+                    Save
+                </Button>
+            </Box>
+        </>
+    ) : (
+        <RichTextDisplay content={comment.body} />
+    );
+
+    if (isReply) {
+        return (
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 1.5,
+                    py: 1.5,
+                    "&:not(:last-of-type)": {
+                        borderBottom: 1,
+                        borderColor: "divider",
+                    },
+                }}
+            >
+                <Avatar
+                    alt=""
+                    sx={{
+                        width: 28,
+                        height: 28,
+                        fontSize: "0.75rem",
+                        flexShrink: 0,
+                        mt: 0.25,
+                    }}
+                    src={comment.user?.avatar_url}
+                >
+                    {comment.user?.name?.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            mb: 0.5,
+                        }}
+                    >
+                        {meta}
+                    </Box>
+                    {body}
+                </Box>
+            </Box>
+        );
+    }
+
+    return (
+        <>
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    px: 2,
+                    py: 0.75,
+                    bgcolor: "action.hover",
+                    borderBottom: 1,
+                    borderColor: "divider",
+                }}
+            >
+                {meta}
+            </Box>
+            <Box sx={{ p: 2 }}>{body}</Box>
+        </>
+    );
+}
+
 export default function ActivityFeed({
     comments,
     activities,
-    teamId,
-    boardId,
+    teamSlug,
+    boardSlug,
     taskId,
     currentUserId,
     uploadImageUrl,
@@ -271,38 +448,25 @@ export default function ActivityFeed({
         );
     };
 
-    const handleAddComment = () => {
-        if (!newCommentBody.trim() || submitting) return;
+    const submitComment = (parentId?: string) => {
+        const body = parentId ? replyBody : newCommentBody;
+        if (!body.trim() || submitting) return;
         setSubmitting(true);
 
         router.post(
-            route("comments.store", [teamId, boardId, taskId]),
-            { body: newCommentBody },
+            route("comments.store", [teamSlug, boardSlug, taskId]),
+            parentId ? { body, parent_id: parentId } : { body },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setNewCommentBody("");
-                    setCommentEditorKey((k) => k + 1);
-                    setSubmitting(false);
-                },
-                onError: () => setSubmitting(false),
-            },
-        );
-    };
-
-    const handleAddReply = (parentId: string) => {
-        if (!replyBody.trim() || submitting) return;
-        setSubmitting(true);
-
-        router.post(
-            route("comments.store", [teamId, boardId, taskId]),
-            { body: replyBody, parent_id: parentId },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setReplyBody("");
-                    setReplyEditorKey((k) => k + 1);
-                    setReplyingTo(null);
+                    if (parentId) {
+                        setReplyBody("");
+                        setReplyEditorKey((k) => k + 1);
+                        setReplyingTo(null);
+                    } else {
+                        setNewCommentBody("");
+                        setCommentEditorKey((k) => k + 1);
+                    }
                     setSubmitting(false);
                 },
                 onError: () => setSubmitting(false),
@@ -312,7 +476,7 @@ export default function ActivityFeed({
 
     const handleEditComment = (commentId: string) => {
         router.put(
-            route("comments.update", [teamId, boardId, taskId, commentId]),
+            route("comments.update", [teamSlug, boardSlug, taskId, commentId]),
             { body: editBody },
             {
                 preserveScroll: true,
@@ -326,8 +490,8 @@ export default function ActivityFeed({
         if (!deleteCommentTarget) return;
         router.delete(
             route("comments.destroy", [
-                teamId,
-                boardId,
+                teamSlug,
+                boardSlug,
                 taskId,
                 deleteCommentTarget,
             ]),
@@ -350,266 +514,37 @@ export default function ActivityFeed({
         });
     };
 
-    const renderCommentHeader = (comment: Comment) => {
-        const isOwn = comment.user_id === currentUserId;
-        const isEditing = editingId === comment.id;
-        const wasEdited = comment.updated_at !== comment.created_at;
-
-        return (
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    px: 2,
-                    py: 0.75,
-                    bgcolor: "action.hover",
-                    borderBottom: 1,
-                    borderColor: "divider",
-                }}
-            >
-                <Typography variant="body2" fontWeight={600}>
-                    {comment.user?.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                    {formatTimestamp(comment.created_at)}
-                </Typography>
-                {wasEdited && (
-                    <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ fontStyle: "italic" }}
-                    >
-                        (edited)
-                    </Typography>
-                )}
-                <Box sx={{ flex: 1 }} />
-                {!isEditing && (
-                    <CopyMarkdownButton
-                        content={comment.body}
-                        aria-label="Copy comment as Markdown"
-                    />
-                )}
-                {!isEditing && (
-                    <Tooltip title="Reply">
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setReplyingTo(comment.id);
-                                setReplyBody("");
-                            }}
-                        >
-                            <ReplyIcon sx={{ fontSize: 16 }} />
-                        </IconButton>
-                    </Tooltip>
-                )}
-                {isOwn && !isEditing && (
-                    <>
-                        <Tooltip title="Edit">
-                            <IconButton
-                                size="small"
-                                onClick={() => {
-                                    setEditingId(comment.id);
-                                    setEditBody(comment.body);
-                                }}
-                            >
-                                <EditIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                            <IconButton
-                                size="small"
-                                onClick={() =>
-                                    setDeleteCommentTarget(comment.id)
-                                }
-                            >
-                                <DeleteIcon sx={{ fontSize: 16 }} />
-                            </IconButton>
-                        </Tooltip>
-                    </>
-                )}
-            </Box>
-        );
-    };
-
-    const renderCommentBody = (comment: Comment) => {
-        const isEditing = editingId === comment.id;
-
-        if (isEditing) {
-            return (
-                <Box sx={{ p: 2 }}>
-                    <RichTextEditor
-                        content={editBody}
-                        onChange={setEditBody}
-                        placeholder="Edit comment..."
-                        uploadImageUrl={uploadImageUrl}
-                        minHeight={80}
-                        mentionableUsers={mentionableUsers}
-                    />
-                    <Box
-                        sx={{
-                            display: "flex",
-                            justifyContent: "flex-end",
-                            gap: 1,
-                            mt: 1,
-                        }}
-                    >
-                        <Button size="small" onClick={() => setEditingId(null)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => handleEditComment(comment.id)}
-                        >
-                            Save
-                        </Button>
-                    </Box>
-                </Box>
-            );
-        }
-
-        return (
-            <Box sx={{ p: 2 }}>
-                <RichTextDisplay content={comment.body} />
-            </Box>
-        );
-    };
-
-    const renderReplyItem = (reply: Comment) => {
-        const isOwn = reply.user_id === currentUserId;
-        const isEditing = editingId === reply.id;
-        const wasEdited = reply.updated_at !== reply.created_at;
-
-        return (
-            <Box
-                key={reply.id}
-                sx={{
-                    display: "flex",
-                    gap: 1.5,
-                    py: 1.5,
-                    "&:not(:last-of-type)": {
-                        borderBottom: 1,
-                        borderColor: "divider",
-                    },
-                }}
-            >
-                <Avatar
-                    alt=""
-                    sx={{
-                        width: 28,
-                        height: 28,
-                        fontSize: "0.75rem",
-                        flexShrink: 0,
-                        mt: 0.25,
-                    }}
-                    src={reply.user?.avatar_url}
-                >
-                    {reply.user?.name?.charAt(0).toUpperCase()}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 0.5,
-                        }}
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight={600}
-                            fontSize="0.85rem"
-                        >
-                            {reply.user?.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                            {formatTimestamp(reply.created_at)}
-                        </Typography>
-                        {wasEdited && (
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ fontStyle: "italic" }}
-                            >
-                                (edited)
-                            </Typography>
-                        )}
-                        <Box sx={{ flex: 1 }} />
-                        {!isEditing && (
-                            <CopyMarkdownButton
-                                content={reply.body}
-                                aria-label="Copy reply as Markdown"
-                            />
-                        )}
-                        {isOwn && !isEditing && (
-                            <>
-                                <Tooltip title="Edit">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => {
-                                            setEditingId(reply.id);
-                                            setEditBody(reply.body);
-                                        }}
-                                    >
-                                        <EditIcon sx={{ fontSize: 14 }} />
-                                    </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete">
-                                    <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                            setDeleteCommentTarget(reply.id)
-                                        }
-                                    >
-                                        <DeleteIcon sx={{ fontSize: 14 }} />
-                                    </IconButton>
-                                </Tooltip>
-                            </>
-                        )}
-                    </Box>
-                    {isEditing ? (
-                        <>
-                            <RichTextEditor
-                                content={editBody}
-                                onChange={setEditBody}
-                                placeholder="Edit reply..."
-                                uploadImageUrl={uploadImageUrl}
-                                minHeight={60}
-                                mentionableUsers={mentionableUsers}
-                            />
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    gap: 1,
-                                    mt: 1,
-                                }}
-                            >
-                                <Button
-                                    size="small"
-                                    onClick={() => setEditingId(null)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    onClick={() => handleEditComment(reply.id)}
-                                >
-                                    Save
-                                </Button>
-                            </Box>
-                        </>
-                    ) : (
-                        <>
-                            <RichTextDisplay content={reply.body} />
-                        </>
-                    )}
-                </Box>
-            </Box>
-        );
-    };
+    const renderCommentItem = (
+        comment: Comment,
+        variant: "comment" | "reply",
+    ) => (
+        <CommentItem
+            key={variant === "reply" ? comment.id : undefined}
+            comment={comment}
+            variant={variant}
+            isOwn={comment.user_id === currentUserId}
+            isEditing={editingId === comment.id}
+            editBody={editBody}
+            onEditBodyChange={setEditBody}
+            onStartEdit={() => {
+                setEditingId(comment.id);
+                setEditBody(comment.body);
+            }}
+            onCancelEdit={() => setEditingId(null)}
+            onSaveEdit={() => handleEditComment(comment.id)}
+            onDelete={() => setDeleteCommentTarget(comment.id)}
+            onReply={
+                variant === "comment"
+                    ? () => {
+                          setReplyingTo(comment.id);
+                          setReplyBody("");
+                      }
+                    : undefined
+            }
+            uploadImageUrl={uploadImageUrl}
+            mentionableUsers={mentionableUsers}
+        />
+    );
 
     const renderReplies = (comment: Comment) => {
         const replies = comment.replies ?? [];
@@ -655,7 +590,9 @@ export default function ActivityFeed({
                     {/* Reply list */}
                     {replies.length > 0 && (
                         <Box sx={{ px: 2 }}>
-                            {replies.map((reply) => renderReplyItem(reply))}
+                            {replies.map((reply) =>
+                                renderCommentItem(reply, "reply"),
+                            )}
                         </Box>
                     )}
 
@@ -697,7 +634,7 @@ export default function ActivityFeed({
                                             submitting || !replyBody.trim()
                                         }
                                         onClick={() =>
-                                            handleAddReply(comment.id)
+                                            submitComment(comment.id)
                                         }
                                     >
                                         Reply
@@ -761,7 +698,7 @@ export default function ActivityFeed({
                         size="small"
                         variant="contained"
                         disabled={submitting || !newCommentBody.trim()}
-                        onClick={handleAddComment}
+                        onClick={() => submitComment()}
                     >
                         Comment
                     </Button>
@@ -879,8 +816,7 @@ export default function ActivityFeed({
                                             overflow: "hidden",
                                         }}
                                     >
-                                        {renderCommentHeader(comment)}
-                                        {renderCommentBody(comment)}
+                                        {renderCommentItem(comment, "comment")}
                                         {renderReplies(comment)}
                                     </Box>
                                 </Box>
@@ -951,33 +887,15 @@ export default function ActivityFeed({
             )}
 
             {/* Delete comment confirmation dialog */}
-            <Dialog
+            <ConfirmDialog
                 open={deleteCommentTarget !== null}
                 onClose={() => setDeleteCommentTarget(null)}
-                aria-labelledby="delete-comment-dialog-title"
-            >
-                <DialogTitle id="delete-comment-dialog-title">
-                    Delete Comment
-                </DialogTitle>
-                <DialogContent>
-                    <DialogContentText>
-                        Are you sure you want to delete this comment? This
-                        action cannot be undone.
-                    </DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteCommentTarget(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleDeleteComment}
-                        color="error"
-                        variant="contained"
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                onConfirm={handleDeleteComment}
+                title="Delete Comment"
+                message="Are you sure you want to delete this comment? This action cannot be undone."
+                confirmLabel="Delete"
+                confirmColor="error"
+            />
         </Box>
     );
 }

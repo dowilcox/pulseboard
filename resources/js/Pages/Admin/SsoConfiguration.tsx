@@ -1,6 +1,7 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { type ReactElement, useState } from "react";
+import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AdminNav from "@/Components/Admin/AdminNav";
@@ -22,7 +23,6 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
-import Snackbar from "@mui/material/Snackbar";
 import Switch from "@mui/material/Switch";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -72,7 +72,6 @@ const defaultFormData: SsoFormData = {
 };
 
 export default function SsoConfigurationPage({ configurations }: Props) {
-    const { flash } = usePage<PageProps>().props;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editing, setEditing] = useState<SsoConfiguration | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -80,27 +79,6 @@ export default function SsoConfigurationPage({ configurations }: Props) {
         {},
     );
     const [testingIds, setTestingIds] = useState<Set<string>>(new Set());
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({ open: false, message: "", severity: "success" });
-
-    useEffect(() => {
-        if (flash?.success) {
-            setSnackbar({
-                open: true,
-                message: flash.success,
-                severity: "success",
-            });
-        } else if (flash?.error) {
-            setSnackbar({
-                open: true,
-                message: flash.error,
-                severity: "error",
-            });
-        }
-    }, [flash?.success, flash?.error]);
 
     const form = useForm<SsoFormData>({ ...defaultFormData });
 
@@ -176,17 +154,16 @@ export default function SsoConfigurationPage({ configurations }: Props) {
     };
 
     return (
-        <AuthenticatedLayout
-            header={
+        <>
+            <Head title="SSO Configuration" />
+            <LayoutHeader>
                 <PageHeader
                     title="SSO Configuration"
                     breadcrumbs={[
                         { label: "Admin", href: route("admin.dashboard") },
                     ]}
                 />
-            }
-        >
-            <Head title="SSO Configuration" />
+            </LayoutHeader>
 
             <Box sx={{ display: "flex" }}>
                 <AdminNav />
@@ -560,23 +537,10 @@ export default function SsoConfigurationPage({ configurations }: Props) {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-                    severity={snackbar.severity}
-                    variant="filled"
-                    role="status"
-                    sx={{ width: "100%" }}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
-        </AuthenticatedLayout>
+        </>
     );
 }
+
+SsoConfigurationPage.layout = (page: ReactElement) => (
+    <AuthenticatedLayout>{page}</AuthenticatedLayout>
+);

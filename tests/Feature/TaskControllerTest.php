@@ -151,6 +151,27 @@ class TaskControllerTest extends TestCase
         $this->assertEquals('urgent', $task->priority);
     }
 
+    public function test_task_show_defers_board_tasks_and_team_boards(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(
+            route('tasks.show', [$this->team, $this->board, $task])
+        );
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('Tasks/Show')
+            ->where('task.id', $task->id)
+            ->missing('teamBoards')
+            ->missing('boardTasks')
+        );
+    }
+
     public function test_task_show_includes_sidebar_board_slugs(): void
     {
         $this->board->update([
@@ -165,17 +186,33 @@ class TaskControllerTest extends TestCase
             'created_by' => $this->user->id,
         ]);
 
-        $response = $this->actingAs($this->user)->get(
+        $initial = $this->actingAs($this->user)->get(
             route('tasks.show', [$this->team, $this->board, $task])
+        );
+        $initial->assertOk();
+
+        // teamBoards/boardTasks are deferred props: simulate the follow-up
+        // partial reload Inertia performs after first paint.
+        $version = (string) ($initial->viewData('page')['version'] ?? '');
+
+        $response = $this->actingAs($this->user)->get(
+            route('tasks.show', [$this->team, $this->board, $task]),
+            [
+                'X-Inertia' => 'true',
+                'X-Inertia-Version' => $version,
+                'X-Inertia-Partial-Component' => 'Tasks/Show',
+                'X-Inertia-Partial-Data' => 'teamBoards,boardTasks',
+            ]
         );
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Tasks/Show')
-            ->where('teamBoards.0.id', $this->board->id)
-            ->where('teamBoards.0.slug', 'alpha-board')
-            ->where('teamBoards.0.sort_order', 1)
-        );
+        // Partial reloads return the raw Inertia page JSON (no view), so
+        // assert on the JSON payload directly.
+        $response->assertJsonPath('component', 'Tasks/Show');
+        $response->assertJsonPath('props.teamBoards.0.id', $this->board->id);
+        $response->assertJsonPath('props.teamBoards.0.slug', 'alpha-board');
+        $response->assertJsonPath('props.teamBoards.0.sort_order', 1);
+        $response->assertJsonPath('props.boardTasks.0.id', $task->id);
     }
 
     public function test_task_description_is_sanitized_on_update(): void

@@ -99,6 +99,34 @@ class AdminPanelTest extends TestCase
         $this->assertTrue($user->is_admin);
     }
 
+    public function test_admin_cannot_remove_own_admin_flag(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->put(route('admin.users.update', $this->admin), [
+                'name' => $this->admin->name,
+                'email' => $this->admin->email,
+                'is_admin' => false,
+            ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+        $response->assertSessionHas('error', 'You cannot remove your own admin access.');
+        $this->assertTrue($this->admin->fresh()->is_admin);
+    }
+
+    public function test_admin_can_update_own_profile_while_keeping_admin_flag(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->put(route('admin.users.update', $this->admin), [
+                'name' => 'Renamed Admin',
+                'email' => $this->admin->email,
+                'is_admin' => true,
+            ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+        $response->assertSessionHas('success');
+        $this->assertEquals('Renamed Admin', $this->admin->fresh()->name);
+    }
+
     public function test_admin_can_toggle_user_active(): void
     {
         $user = User::factory()->create(['deactivated_at' => null]);

@@ -2,20 +2,22 @@
 
 namespace App\Actions\Tasks;
 
+use App\Actions\Tasks\Concerns\ManagesTaskPlacement;
 use App\Events\BoardChanged;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
+use App\Models\Team;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class MoveTask
 {
     use AsAction;
+    use ManagesTaskPlacement;
 
     public function handle(
         Task $task,
@@ -32,11 +34,37 @@ class MoveTask
         return $move['task']->fresh();
     }
 
+    /**
+     * Resolve the destination board and column for a move request, scoped to
+     * the team/board from the route. Returns the target board (null when the
+     * task stays on its current board) and the destination column; 404s when
+     * either does not belong to the team. Callers must still authorize the
+     * returned target board.
+     *
+     * @return array{0: Board|null, 1: Column}
+     */
+    public function resolveTarget(
+        Team $team,
+        Board $board,
+        ?string $targetBoardId,
+        string $columnId,
+    ): array {
+        if ($targetBoardId && $targetBoardId !== $board->id) {
+            // Cross-board move: validate target board belongs to same team
+            $targetBoard = $team->boards()->active()->findOrFail($targetBoardId);
+
+            return [$targetBoard, $targetBoard->columns()->findOrFail($columnId)];
+        }
+
+        return [null, $board->columns()->findOrFail($columnId)];
+    }
+
     public function applyMove(
         Task $task,
         Column $column,
         ?float $sortOrder,
         ?Board $targetBoard = null,
+        bool $syncCompletion = true,
     ): array {
         $task->loadMissing('column', 'board');
 
@@ -44,14 +72,8 @@ class MoveTask
         $fromBoard = $task->board;
         $crossBoard = $targetBoard && $targetBoard->id !== $fromBoard->id;
 
-        if ($fromColumn->id !== $column->id && $column->wip_limit !== null && $column->wip_limit > 0) {
-            Column::whereKey($column->id)->lockForUpdate()->first();
-            $currentCount = Task::where('column_id', $column->id)->count();
-            if ($currentCount >= $column->wip_limit) {
-                throw ValidationException::withMessages([
-                    'column_id' => "Column \"{$column->name}\" has reached its WIP limit of {$column->wip_limit}.",
-                ]);
-            }
+        if ($fromColumn->id !== $column->id) {
+            $this->assertWipCapacity($column);
         }
 
         $resolvedSortOrder = $sortOrder;
@@ -68,16 +90,25 @@ class MoveTask
 
         if ($crossBoard) {
             $updateData['board_id'] = $targetBoard->id;
+            $updateData['task_number'] = $this->nextTaskNumber($targetBoard);
+        }
 
-            $maxTaskNumber = DB::table('tasks')
-                ->where('board_id', $targetBoard->id)
-                ->lockForUpdate()
-                ->max('task_number') ?? 0;
-            $updateData['task_number'] = $maxTaskNumber + 1;
+        // Keep completed_at in sync with done columns, mirroring
+        // ToggleTaskCompletion (which manages the timestamp itself and
+        // passes $syncCompletion = false to avoid double-handling).
+        $completionChange = null;
+
+        if ($syncCompletion && $fromColumn->id !== $column->id) {
+            if ($column->is_done_column && $task->completed_at === null) {
+                $updateData['completed_at'] = now();
+                $completionChange = 'completed';
+            } elseif (! $column->is_done_column && $fromColumn->is_done_column && $task->completed_at !== null) {
+                $updateData['completed_at'] = null;
+                $completionChange = 'uncompleted';
+            }
         }
 
         $task->update($updateData);
-        $task->forceFill($updateData);
 
         return [
             'task' => $task,
@@ -87,6 +118,7 @@ class MoveTask
             'target_board' => $targetBoard,
             'cross_board' => $crossBoard,
             'sort_order' => $resolvedSortOrder,
+            'completion_change' => $completionChange,
         ];
     }
 
@@ -105,6 +137,12 @@ class MoveTask
         $crossBoard = $move['cross_board'];
         $sortOrder = $move['sort_order'];
         $userId = $actor?->id ?? Auth::id() ?? 'system';
+
+        // Logged before the move itself to match ToggleTaskCompletion's
+        // ordering (completed first, then moved).
+        if (! empty($move['completion_change'])) {
+            ActivityLogger::log($task, $move['completion_change'], [], $actor);
+        }
 
         if ($crossBoard) {
             ActivityLogger::log($task, 'moved', array_merge([
