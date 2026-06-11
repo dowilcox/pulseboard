@@ -9,6 +9,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import { harbor } from "@/theme/harbor";
 import { useNotifications } from "@/hooks/useNotifications";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 
@@ -77,8 +78,23 @@ export default function NotificationBell() {
                         : "Notifications (0 unread)"
                 }
             >
-                <Badge badgeContent={unreadCount} color="error" max={99}>
-                    <NotificationsIcon />
+                {/* Harbor: small red pill badge over a sub-toned bell */}
+                <Badge
+                    badgeContent={unreadCount}
+                    max={99}
+                    sx={{
+                        "& .MuiBadge-badge": {
+                            bgcolor: harbor.dueSoon.fg,
+                            color: "#ffffff",
+                            fontSize: "9px",
+                            fontWeight: 700,
+                            minWidth: 14,
+                            height: 14,
+                            px: "3px",
+                        },
+                    }}
+                >
+                    <NotificationsIcon sx={{ color: harbor.sub }} />
                 </Badge>
             </IconButton>
 

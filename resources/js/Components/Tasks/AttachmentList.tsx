@@ -1,4 +1,5 @@
 import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import { harbor } from "@/theme/harbor";
 import type { Attachment } from "@/types";
 import { router } from "@inertiajs/react";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -216,33 +217,34 @@ export default function AttachmentList({
                     }
                 }}
                 sx={{
-                    border: "2px dashed",
-                    borderColor: dragOver ? "primary.main" : "divider",
-                    borderRadius: 1,
+                    border: "1.5px dashed",
+                    borderColor: dragOver ? "primary.main" : harbor.faint,
+                    borderRadius: "10px",
                     p: 2,
                     textAlign: "center",
                     cursor: "pointer",
-                    bgcolor: dragOver ? "action.hover" : "transparent",
-                    transition: "all 0.2s",
+                    bgcolor: dragOver ? harbor.track : harbor.countBg,
+                    transition:
+                        "background-color 150ms ease-out, border-color 150ms ease-out",
                     mb: 1,
                     "&:hover": {
-                        borderColor: "primary.light",
-                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                        bgcolor: harbor.track,
                     },
                     "&:focus-visible": {
                         outline: "2px solid",
-                        outlineColor: "primary.light",
+                        outlineColor: "primary.main",
                         outlineOffset: 2,
                     },
                 }}
             >
                 <CloudUploadIcon
-                    sx={{ fontSize: 28, color: "text.secondary", mb: 0.5 }}
+                    sx={{ fontSize: 26, color: harbor.sub, mb: 0.5 }}
                 />
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ fontSize: 13, color: harbor.sub }}>
                     Drop files here or click to upload
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography sx={{ fontSize: 11.5, color: harbor.sub }}>
                     Max 15MB per file
                 </Typography>
                 <input
@@ -484,9 +486,7 @@ export default function AttachmentList({
 
             {attachments.length === 0 && !uploading && (
                 <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.5 }}
+                    sx={{ fontSize: 12.5, color: harbor.faint, mt: 0.5 }}
                 >
                     No attachments yet.
                 </Typography>

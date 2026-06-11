@@ -17,17 +17,19 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { PageProps } from "@/types";
 import { useSidebar } from "@/Contexts/SidebarContext";
+import { harbor } from "@/theme/harbor";
 import Logo from "@/Components/Common/Logo";
 import BoardList from "./BoardList";
 import type { ReactNode } from "react";
 
-const SIDEBAR_BG = "#08111f";
-const SIDEBAR_TEXT = "#f8fafc";
-const SIDEBAR_MUTED = "#a8b3c7";
-const SIDEBAR_SELECTED = "rgba(108, 92, 255, 0.30)";
-const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
-const SIDEBAR_FOCUS = "rgba(108, 92, 255, 0.38)";
-const SIDEBAR_DIVIDER = "rgba(148, 163, 184, 0.18)";
+// Harbor: the sidebar sits directly on the canvas — active items become
+// cream card tiles with a soft chip shadow instead of accent strips.
+const SIDEBAR_BG = harbor.canvas;
+const SIDEBAR_TEXT = harbor.ink;
+const SIDEBAR_MUTED = harbor.faint;
+const SIDEBAR_SELECTED = harbor.card;
+const SIDEBAR_HOVER = "rgba(34, 41, 53, 0.05)";
+const SIDEBAR_DIVIDER = "rgba(34, 41, 53, 0.08)";
 
 interface SidebarProps {
     activeBoardId?: string;
@@ -63,17 +65,16 @@ function NavItem({
                 mb: 0.5,
                 px: collapsed ? 1 : 1.75,
                 justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: 1.25,
-                borderLeft: selected ? 3 : 0,
-                borderColor: "primary.main",
+                borderRadius: `${harbor.radius.tile}px`,
                 color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
                 bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
+                boxShadow: selected ? harbor.chipShadow : "none",
                 "&.Mui-selected": {
                     bgcolor: SIDEBAR_SELECTED,
                     color: SIDEBAR_TEXT,
                 },
                 "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? SIDEBAR_FOCUS : SIDEBAR_HOVER,
+                    bgcolor: selected ? SIDEBAR_SELECTED : SIDEBAR_HOVER,
                     color: SIDEBAR_TEXT,
                 },
             }}
@@ -103,8 +104,8 @@ function NavItem({
                                 height: 26,
                                 px: 1,
                                 borderRadius: 999,
-                                bgcolor: "rgba(148, 163, 184, 0.14)",
-                                color: SIDEBAR_TEXT,
+                                bgcolor: harbor.countBg,
+                                color: harbor.sub,
                                 display: "grid",
                                 placeItems: "center",
                                 fontSize: "0.8rem",
@@ -128,11 +129,10 @@ function NavItem({
                 mb: 0.5,
                 px: collapsed ? 1 : 1.75,
                 justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: 1.25,
-                borderLeft: selected ? 3 : 0,
-                borderColor: "primary.main",
+                borderRadius: `${harbor.radius.tile}px`,
                 color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
                 bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
+                boxShadow: selected ? harbor.chipShadow : "none",
                 width: "calc(100% - 16px)",
                 textAlign: "left",
                 "&.Mui-selected": {
@@ -140,7 +140,7 @@ function NavItem({
                     color: SIDEBAR_TEXT,
                 },
                 "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? SIDEBAR_FOCUS : SIDEBAR_HOVER,
+                    bgcolor: selected ? SIDEBAR_SELECTED : SIDEBAR_HOVER,
                     color: SIDEBAR_TEXT,
                 },
             }}
@@ -170,8 +170,8 @@ function NavItem({
                                 height: 26,
                                 px: 1,
                                 borderRadius: 999,
-                                bgcolor: "rgba(148, 163, 184, 0.14)",
-                                color: SIDEBAR_TEXT,
+                                bgcolor: harbor.countBg,
+                                color: harbor.sub,
                                 display: "grid",
                                 placeItems: "center",
                                 fontSize: "0.8rem",
@@ -317,7 +317,7 @@ export default function Sidebar({
                                     sx={{
                                         width: 34,
                                         height: 34,
-                                        borderRadius: 1.25,
+                                        borderRadius: `${harbor.radius.tile}px`,
                                         display: "grid",
                                         placeItems: "center",
                                         cursor: "pointer",
@@ -325,15 +325,14 @@ export default function Sidebar({
                                         fontWeight: 800,
                                         overflow: "hidden",
                                         bgcolor: isActive
-                                            ? "primary.main"
+                                            ? SIDEBAR_SELECTED
                                             : SIDEBAR_HOVER,
                                         color: isActive
-                                            ? "primary.contrastText"
+                                            ? SIDEBAR_TEXT
                                             : SIDEBAR_MUTED,
-                                        border: 1,
-                                        borderColor: isActive
-                                            ? "primary.light"
-                                            : SIDEBAR_DIVIDER,
+                                        boxShadow: isActive
+                                            ? harbor.chipShadow
+                                            : "none",
                                     }}
                                 >
                                     {board.image_url ? (

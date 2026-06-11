@@ -1,3 +1,4 @@
+import { harbor, harborHex } from "@/theme/harbor";
 import type { Task, TaskSummary } from "@/types";
 import { router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
@@ -16,11 +17,6 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
 }
-
-const DEPENDENCY_TEXT = "#f8fafc";
-const DEPENDENCY_MUTED = "#cbd5e1";
-const DEPENDENCY_SUBTLE = "#a8b3c7";
-const DEPENDENCY_HOVER = "rgba(148, 163, 184, 0.14)";
 
 export default function DependencySection({
     task,
@@ -110,7 +106,7 @@ export default function DependencySection({
         onRemove: (t: Task) => void,
         color: "warning" | "info",
     ) => (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Box
                 sx={{
                     display: "flex",
@@ -119,9 +115,14 @@ export default function DependencySection({
                 }}
             >
                 <Typography
-                    variant="caption"
-                    fontWeight={600}
-                    sx={{ color: DEPENDENCY_MUTED }}
+                    component="span"
+                    sx={{
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.07em",
+                        color: harbor.faint,
+                    }}
                 >
                     {label}
                 </Typography>
@@ -129,20 +130,20 @@ export default function DependencySection({
                     <Button
                         size="small"
                         startIcon={
-                            <AddIcon sx={{ fontSize: "14px !important" }} />
+                            <AddIcon sx={{ fontSize: "13px !important" }} />
                         }
                         onClick={() => setAdding(true)}
                         aria-label={`Add ${label.toLowerCase()} task`}
                         sx={{
-                            textTransform: "none",
-                            color: DEPENDENCY_MUTED,
-                            fontSize: "0.7rem",
+                            color: harborHex.accent,
+                            fontSize: 11.5,
+                            fontWeight: 700,
                             minWidth: 0,
                             py: 0,
                             px: 0.5,
                             "&:hover": {
-                                color: DEPENDENCY_TEXT,
-                                bgcolor: DEPENDENCY_HOVER,
+                                bgcolor: "transparent",
+                                textDecoration: "underline",
                             },
                         }}
                     >
@@ -176,10 +177,7 @@ export default function DependencySection({
                     ))}
                 </Box>
             ) : !adding ? (
-                <Typography
-                    variant="caption"
-                    sx={{ color: DEPENDENCY_SUBTLE, fontStyle: "italic" }}
-                >
+                <Typography sx={{ fontSize: 12.5, color: harbor.faint }}>
                     None
                 </Typography>
             ) : null}

@@ -1,14 +1,13 @@
-import { PRIORITY_COLORS } from "@/constants/priorities";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
 import { formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Head, router } from "@inertiajs/react";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import GroupsIcon from "@mui/icons-material/Groups";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -47,6 +46,77 @@ interface MyTask extends Task {
 interface Props {
     myTasks: MyTask[];
     completedCount: number;
+}
+
+/** Maps a task's column/state to a Harbor status pill key. */
+function statusKey(column: NonNullable<MyTask["column"]>) {
+    const name = column.name.toLowerCase();
+    if (
+        column.is_done_column ||
+        name.includes("done") ||
+        name.includes("complete")
+    ) {
+        return "done" as const;
+    }
+    if (
+        name.includes("progress") ||
+        name.includes("doing") ||
+        name.includes("review")
+    ) {
+        return "inProgress" as const;
+    }
+    if (name.includes("backlog")) {
+        return "backlog" as const;
+    }
+    return "todo" as const;
+}
+
+/** Shared Harbor card shell: cream surface, soft shadow, no border. */
+const harborCardSx = {
+    p: "18px 20px",
+    borderRadius: "16px",
+    boxShadow: harbor.cardShadow,
+    bgcolor: harbor.card,
+} as const;
+
+function SectionTitle({
+    children,
+    count,
+}: {
+    children: ReactNode;
+    count?: number;
+}) {
+    return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+                component="h2"
+                sx={{
+                    fontFamily: harbor.headingFont,
+                    fontSize: 17,
+                    fontWeight: 700,
+                    color: harbor.ink,
+                }}
+            >
+                {children}
+            </Typography>
+            {count !== undefined && (
+                <Box
+                    component="span"
+                    sx={{
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        color: harbor.sub,
+                        bgcolor: harbor.countBg,
+                        borderRadius: 999,
+                        px: 1.1,
+                        py: 0.25,
+                    }}
+                >
+                    {count}
+                </Box>
+            )}
+        </Box>
+    );
 }
 
 export default function Dashboard({ myTasks, completedCount }: Props) {
@@ -149,72 +219,99 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
         label: string,
         value: string | number,
         icon: ReactNode,
-        color: string,
-        helper: string,
-    ) => (
-        <Paper
-            variant="outlined"
-            sx={{
-                p: 2.5,
-                minHeight: 172,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                bgcolor: "background.paper",
-            }}
-        >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                <Box
-                    sx={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 999,
-                        bgcolor: color,
-                        color: getContrastText(color),
-                        display: "grid",
-                        placeItems: "center",
-                    }}
-                >
-                    {icon}
-                </Box>
-                <Box>
-                    <Typography variant="body2" fontWeight={800}>
-                        {label}
-                    </Typography>
-                    <Typography variant="h4" component="p" fontWeight={900}>
-                        {value}
-                    </Typography>
-                    <Typography variant="caption" color="success.main">
-                        {helper}
-                    </Typography>
-                </Box>
-            </Box>
-            <Box
+        tint: { fg: string; bg: string },
+        delta: string,
+        deltaTone: "good" | "warn" | "flat",
+        bar?: number,
+    ) => {
+        const deltaColor =
+            deltaTone === "good"
+                ? harbor.successText
+                : deltaTone === "warn"
+                  ? harbor.dueSoon.fg
+                  : harbor.faint;
+        return (
+            <Paper
+                elevation={0}
                 sx={{
-                    height: 30,
+                    ...harborCardSx,
+                    p: "16px 18px",
                     display: "flex",
-                    alignItems: "end",
-                    gap: 0.6,
-                    opacity: 0.9,
+                    flexDirection: "column",
+                    gap: 1.25,
                 }}
             >
-                {[30, 42, 34, 56, 48, 50, 39, 44, 60, 35, 46, 52].map(
-                    (height, index) => (
-                        <Box
-                            key={index}
-                            sx={{
-                                flex: 1,
-                                height: `${height}%`,
-                                minWidth: 4,
-                                borderRadius: 999,
-                                bgcolor: color,
-                            }}
-                        />
-                    ),
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                    <Box
+                        sx={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: "10px",
+                            bgcolor: tint.bg,
+                            color: tint.fg,
+                            display: "grid",
+                            placeItems: "center",
+                        }}
+                    >
+                        {icon}
+                    </Box>
+                    <Typography
+                        component="span"
+                        sx={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: harbor.sub,
+                        }}
+                    >
+                        {label}
+                    </Typography>
+                </Box>
+                <Box
+                    sx={{ display: "flex", alignItems: "baseline", gap: 1.25 }}
+                >
+                    <Typography
+                        component="p"
+                        sx={{
+                            fontFamily: harbor.headingFont,
+                            fontSize: 34,
+                            fontWeight: 800,
+                            color: harbor.ink,
+                            lineHeight: 1,
+                        }}
+                    >
+                        {value}
+                    </Typography>
+                    <Typography
+                        component="span"
+                        sx={{
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            color: deltaColor,
+                        }}
+                    >
+                        {delta}
+                    </Typography>
+                </Box>
+                {bar !== undefined && (
+                    <LinearProgress
+                        aria-label="Team workload progress"
+                        variant="determinate"
+                        value={bar}
+                        sx={{
+                            mt: 0.25,
+                            height: 6,
+                            borderRadius: "3px",
+                            bgcolor: harbor.track,
+                            "& .MuiLinearProgress-bar": {
+                                bgcolor: harbor.accent,
+                                borderRadius: "3px",
+                            },
+                        }}
+                    />
                 )}
-            </Box>
-        </Paper>
-    );
+            </Paper>
+        );
+    };
 
     return (
         <>
@@ -226,7 +323,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
             <Box
                 sx={{
                     display: "grid",
-                    gridTemplateColumns: { xs: "1fr", xl: "1fr 430px" },
+                    gridTemplateColumns: { xs: "1fr", lg: "1.85fr 1fr" },
                     gap: 2,
                     alignItems: "start",
                 }}
@@ -247,135 +344,80 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                         {metricCard(
                             "Active Tasks",
                             myTasks.length,
-                            <AssignmentIcon />,
-                            "#6c5cff",
+                            <AssignmentIcon sx={{ fontSize: 18 }} />,
+                            harbor.tints.indigo,
                             "+12% vs last week",
+                            "good",
                         )}
                         {metricCard(
                             "Overdue",
                             overdueTasks.length,
-                            <WarningAmberIcon />,
-                            "#ff554a",
+                            <WarningAmberIcon sx={{ fontSize: 18 }} />,
+                            harbor.tints.red,
                             "-25% vs last week",
+                            "good",
                         )}
                         {metricCard(
                             "Completed This Week",
                             completedCount,
-                            <CheckCircleIcon />,
-                            "#43d18b",
+                            <CheckCircleIcon sx={{ fontSize: 18 }} />,
+                            harbor.tints.green,
                             "+20% vs last week",
+                            "good",
                         )}
-                        <Paper
-                            variant="outlined"
-                            sx={{
-                                p: 2.5,
-                                minHeight: 172,
-                                display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "space-between",
-                            }}
-                        >
-                            <Box sx={{ display: "flex", gap: 1.5 }}>
-                                <Box
-                                    sx={{
-                                        width: 46,
-                                        height: 46,
-                                        borderRadius: 999,
-                                        bgcolor: "#3867d6",
-                                        color: "#fff",
-                                        display: "grid",
-                                        placeItems: "center",
-                                    }}
-                                >
-                                    <GroupsIcon />
-                                </Box>
-                                <Box>
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={800}
-                                    >
-                                        Team Workload
-                                    </Typography>
-                                    <Typography
-                                        variant="h4"
-                                        component="p"
-                                        fontWeight={900}
-                                    >
-                                        {workload.length > 0 ? "68%" : "0%"}
-                                    </Typography>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            color: (theme) =>
-                                                theme.palette.mode === "dark"
-                                                    ? theme.palette.success.main
-                                                    : theme.palette.success
-                                                          .dark,
-                                        }}
-                                    >
-                                        On track
-                                    </Typography>
-                                </Box>
-                            </Box>
-                            <LinearProgress
-                                aria-label="Team workload progress"
-                                variant="determinate"
-                                value={68}
-                                sx={{ height: 8, borderRadius: 999 }}
-                            />
-                        </Paper>
+                        {metricCard(
+                            "Team Workload",
+                            workload.length > 0 ? "68%" : "0%",
+                            <GroupsIcon sx={{ fontSize: 18 }} />,
+                            harbor.tints.copper,
+                            "On track",
+                            "flat",
+                            68,
+                        )}
                     </Box>
 
-                    <Paper
-                        variant="outlined"
-                        sx={{ mb: 2, overflow: "hidden" }}
-                    >
-                        <Box
-                            sx={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                px: 2.5,
-                                py: 1.75,
-                            }}
-                        >
-                            <Box
+                    <Paper elevation={0} sx={{ ...harborCardSx, mb: 2 }}>
+                        <SectionTitle count={myTasks.length}>
+                            My Priority Tasks
+                        </SectionTitle>
+                        <TableContainer>
+                            <Table
+                                size="small"
                                 sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
+                                    "& .MuiTableCell-root": {
+                                        px: 1,
+                                        borderColor: harbor.cardBorder,
+                                        "&:first-of-type": { pl: 0 },
+                                        "&:last-of-type": { pr: 0 },
+                                    },
                                 }}
                             >
-                                <Typography
-                                    variant="h6"
-                                    component="h2"
-                                    fontWeight={900}
-                                >
-                                    My Priority Tasks
-                                </Typography>
-                                <Chip label={myTasks.length} size="small" />
-                            </Box>
-                        </Box>
-                        <TableContainer>
-                            <Table size="small">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Task</TableCell>
-                                        <TableCell sx={{ width: 170 }}>
+                                        <TableCell sx={{ width: 150 }}>
                                             Board
                                         </TableCell>
-                                        <TableCell sx={{ width: 120 }}>
+                                        <TableCell sx={{ width: 95 }}>
                                             Priority
                                         </TableCell>
-                                        <TableCell sx={{ width: 115 }}>
+                                        <TableCell sx={{ width: 95 }}>
                                             Due date
                                         </TableCell>
-                                        <TableCell sx={{ width: 130 }}>
+                                        <TableCell sx={{ width: 110 }}>
                                             Status
                                         </TableCell>
                                     </TableRow>
                                 </TableHead>
-                                <TableBody>
+                                <TableBody
+                                    sx={{
+                                        "& .MuiTableCell-body": { py: "10px" },
+                                        "& .MuiTableRow-root:last-child .MuiTableCell-body":
+                                            {
+                                                border: 0,
+                                            },
+                                    }}
+                                >
                                     {myTasks.length === 0 ? (
                                         <TableRow>
                                             <TableCell
@@ -383,206 +425,238 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                                 align="center"
                                                 sx={{ py: 6 }}
                                             >
-                                                <Typography color="text.secondary">
+                                                <Typography
+                                                    sx={{ color: harbor.sub }}
+                                                >
                                                     No tasks assigned to you
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        myTasks.slice(0, 8).map((task) => (
-                                            <TableRow
-                                                key={task.id}
-                                                hover
-                                                tabIndex={0}
-                                                aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
-                                                sx={{
-                                                    cursor: "pointer",
-                                                }}
-                                                onClick={() =>
-                                                    handleTaskClick(task)
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (
-                                                        e.key === "Enter" ||
-                                                        e.key === " "
-                                                    ) {
-                                                        e.preventDefault();
-                                                        handleTaskClick(task);
+                                        myTasks.slice(0, 8).map((task) => {
+                                            const highPriority =
+                                                task.priority === "high" ||
+                                                task.priority === "urgent";
+                                            const pill = task.column
+                                                ? harbor.status[
+                                                      statusKey(task.column)
+                                                  ]
+                                                : null;
+                                            return (
+                                                <TableRow
+                                                    key={task.id}
+                                                    hover
+                                                    tabIndex={0}
+                                                    aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
+                                                    sx={{
+                                                        cursor: "pointer",
+                                                    }}
+                                                    onClick={() =>
+                                                        handleTaskClick(task)
                                                     }
-                                                }}
-                                            >
-                                                <TableCell>
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={500}
-                                                        sx={{
-                                                            textDecoration:
-                                                                "none",
-                                                        }}
-                                                    >
-                                                        {getGitlabPrefix(
-                                                            task,
-                                                        ) && (
-                                                            <Typography
-                                                                component="span"
-                                                                variant="body2"
-                                                                color="text.secondary"
-                                                                sx={{ mr: 0.5 }}
-                                                            >
-                                                                {getGitlabPrefix(
-                                                                    task,
-                                                                )}
-                                                            </Typography>
-                                                        )}
-                                                        {task.title}
-                                                    </Typography>
-                                                    <Box
-                                                        sx={{
-                                                            mt: 0.75,
-                                                            display: "flex",
-                                                            gap: 0.5,
-                                                        }}
-                                                    >
-                                                        {(task.labels ?? [])
-                                                            .slice(0, 2)
-                                                            .map((label) => (
-                                                                <Chip
-                                                                    key={
-                                                                        label.id
-                                                                    }
-                                                                    label={
-                                                                        label.name
-                                                                    }
-                                                                    size="small"
-                                                                    sx={{
-                                                                        height: 20,
-                                                                        fontSize:
-                                                                            "0.65rem",
-                                                                        fontWeight: 700,
-                                                                        bgcolor:
-                                                                            label.color,
-                                                                        color: getContrastText(
-                                                                            label.color,
-                                                                        ),
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {task.board && (
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                            noWrap
-                                                        >
-                                                            {task.board.name}
-                                                        </Typography>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Box
-                                                        sx={{
-                                                            display: "flex",
-                                                            alignItems:
-                                                                "center",
-                                                            gap: 0.5,
-                                                        }}
+                                                    onKeyDown={(e) => {
+                                                        if (
+                                                            e.key === "Enter" ||
+                                                            e.key === " "
+                                                        ) {
+                                                            e.preventDefault();
+                                                            handleTaskClick(
+                                                                task,
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <TableCell
+                                                        sx={{ maxWidth: 0 }}
                                                     >
                                                         <Box
                                                             sx={{
-                                                                width: 8,
-                                                                height: 8,
-                                                                borderRadius:
-                                                                    "50%",
-                                                                bgcolor:
-                                                                    PRIORITY_COLORS[
-                                                                        task
-                                                                            .priority
-                                                                    ] ??
-                                                                    "transparent",
-                                                                border:
-                                                                    task.priority ===
-                                                                    "none"
-                                                                        ? "1px solid"
-                                                                        : "none",
-                                                                borderColor:
-                                                                    "divider",
-                                                            }}
-                                                        />
-                                                        <Typography
-                                                            variant="body2"
-                                                            sx={{
-                                                                textTransform:
-                                                                    "capitalize",
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                gap: 1,
+                                                                minWidth: 0,
+                                                                overflow:
+                                                                    "hidden",
                                                             }}
                                                         >
-                                                            {task.priority}
-                                                        </Typography>
-                                                    </Box>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {task.due_date && (
-                                                        <Typography
-                                                            variant="body2"
-                                                            color={
-                                                                new Date(
-                                                                    task.due_date,
-                                                                ) < new Date()
-                                                                    ? "error"
-                                                                    : "text.secondary"
-                                                            }
-                                                        >
-                                                            {formatDueDate(
-                                                                task.due_date,
+                                                            {getGitlabPrefix(
+                                                                task,
+                                                            ) && (
+                                                                <Typography
+                                                                    component="span"
+                                                                    sx={{
+                                                                        fontSize: 11.5,
+                                                                        color: harbor.faint,
+                                                                        fontVariantNumeric:
+                                                                            "tabular-nums",
+                                                                        whiteSpace:
+                                                                            "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {getGitlabPrefix(
+                                                                        task,
+                                                                    )}
+                                                                </Typography>
                                                             )}
-                                                        </Typography>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {task.column && (
-                                                        <Chip
-                                                            label={
-                                                                task.column.name
-                                                            }
-                                                            size="small"
+                                                            <Typography
+                                                                noWrap
+                                                                sx={{
+                                                                    fontSize: 13.5,
+                                                                    fontWeight: 600,
+                                                                    color: harbor.ink,
+                                                                    // Keep the title readable; let the label pill clip instead.
+                                                                    minWidth: 96,
+                                                                }}
+                                                            >
+                                                                {task.title}
+                                                            </Typography>
+                                                            {(task.labels ?? [])
+                                                                .slice(0, 1)
+                                                                .map(
+                                                                    (label) => (
+                                                                        <Chip
+                                                                            key={
+                                                                                label.id
+                                                                            }
+                                                                            label={
+                                                                                label.name
+                                                                            }
+                                                                            size="small"
+                                                                            sx={{
+                                                                                height: 20,
+                                                                                fontSize: 11,
+                                                                                fontWeight: 700,
+                                                                                bgcolor:
+                                                                                    label.color,
+                                                                                color: getContrastText(
+                                                                                    label.color,
+                                                                                ),
+                                                                            }}
+                                                                        />
+                                                                    ),
+                                                                )}
+                                                        </Box>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {task.board && (
+                                                            <Typography
+                                                                noWrap
+                                                                sx={{
+                                                                    fontSize: 12.5,
+                                                                    color: harbor.sub,
+                                                                }}
+                                                            >
+                                                                {
+                                                                    task.board
+                                                                        .name
+                                                                }
+                                                            </Typography>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Box
                                                             sx={{
-                                                                bgcolor:
-                                                                    task.column
-                                                                        .color,
-                                                                color: getContrastText(
-                                                                    task.column
-                                                                        .color,
-                                                                ),
+                                                                display: "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                gap: 0.75,
                                                             }}
-                                                        />
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                                        >
+                                                            {highPriority && (
+                                                                <Box
+                                                                    sx={{
+                                                                        width: 7,
+                                                                        height: 7,
+                                                                        borderRadius:
+                                                                            "50%",
+                                                                        bgcolor:
+                                                                            harbor.secondaryDot,
+                                                                    }}
+                                                                />
+                                                            )}
+                                                            <Typography
+                                                                component="span"
+                                                                sx={{
+                                                                    fontSize: 12.5,
+                                                                    fontWeight:
+                                                                        highPriority
+                                                                            ? 700
+                                                                            : 400,
+                                                                    color: highPriority
+                                                                        ? harbor
+                                                                              .dueSoon
+                                                                              .fg
+                                                                        : harbor.faint,
+                                                                    textTransform:
+                                                                        "capitalize",
+                                                                }}
+                                                            >
+                                                                {task.priority}
+                                                            </Typography>
+                                                        </Box>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {task.due_date && (
+                                                            <Typography
+                                                                sx={{
+                                                                    fontSize: 12.5,
+                                                                    color:
+                                                                        new Date(
+                                                                            task.due_date,
+                                                                        ) <
+                                                                        new Date()
+                                                                            ? harbor.dangerText
+                                                                            : harbor.sub,
+                                                                    fontVariantNumeric:
+                                                                        "tabular-nums",
+                                                                }}
+                                                            >
+                                                                {formatDueDate(
+                                                                    task.due_date,
+                                                                )}
+                                                            </Typography>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {task.column &&
+                                                            pill && (
+                                                                <Box
+                                                                    component="span"
+                                                                    sx={{
+                                                                        display:
+                                                                            "inline-block",
+                                                                        fontSize: 11.5,
+                                                                        fontWeight: 700,
+                                                                        color: pill.fg,
+                                                                        bgcolor:
+                                                                            pill.bg,
+                                                                        borderRadius: 999,
+                                                                        px: 1.1,
+                                                                        py: 0.3,
+                                                                        whiteSpace:
+                                                                            "nowrap",
+                                                                    }}
+                                                                >
+                                                                    {
+                                                                        task
+                                                                            .column
+                                                                            .name
+                                                                    }
+                                                                </Box>
+                                                            )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
                                     )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
                     </Paper>
 
-                    <Paper variant="outlined" sx={{ p: 2.5 }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2,
-                            }}
-                        >
-                            <Typography
-                                variant="h6"
-                                component="h2"
-                                fontWeight={900}
-                            >
-                                Board Progress
-                            </Typography>
-                        </Box>
+                    <Paper elevation={0} sx={harborCardSx}>
+                        <SectionTitle>Board Progress</SectionTitle>
                         <Box
                             sx={{
                                 display: "grid",
@@ -592,6 +666,7 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                     lg: "repeat(4, minmax(0, 1fr))",
                                 },
                                 gap: 1.5,
+                                mt: 1.75,
                             }}
                         >
                             {boardProgress.map((board) => {
@@ -602,75 +677,118 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                           )
                                         : 0;
                                 return (
-                                    <Paper
+                                    <Box
                                         key={board.name}
-                                        variant="outlined"
                                         sx={{
-                                            p: 1.75,
-                                            bgcolor: "action.hover",
+                                            bgcolor: harbor.countBg,
+                                            borderRadius: "12px",
+                                            p: "14px 16px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: 1.1,
                                         }}
                                     >
-                                        <Typography fontWeight={900} noWrap>
-                                            {board.name}
-                                        </Typography>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "baseline",
+                                                gap: 1,
+                                            }}
+                                        >
+                                            <Typography
+                                                noWrap
+                                                sx={{
+                                                    flex: 1,
+                                                    fontFamily:
+                                                        harbor.headingFont,
+                                                    fontSize: 14,
+                                                    fontWeight: 700,
+                                                    color: harbor.ink,
+                                                }}
+                                            >
+                                                {board.name}
+                                            </Typography>
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontFamily:
+                                                        harbor.headingFont,
+                                                    fontSize: 15,
+                                                    fontWeight: 800,
+                                                    color: harbor.ink,
+                                                }}
+                                            >
+                                                {percent}%
+                                            </Typography>
+                                        </Box>
+                                        <LinearProgress
+                                            aria-label={`${board.name} board progress`}
+                                            variant="determinate"
+                                            value={
+                                                percent > 0
+                                                    ? Math.max(percent, 2)
+                                                    : 0
+                                            }
+                                            sx={{
+                                                height: 6,
+                                                borderRadius: "3px",
+                                                bgcolor: harbor.card,
+                                                "& .MuiLinearProgress-bar": {
+                                                    bgcolor: harbor.accent,
+                                                    borderRadius: "3px",
+                                                },
+                                            }}
+                                        />
                                         <Box
                                             sx={{
                                                 display: "flex",
                                                 alignItems: "center",
                                                 gap: 1,
-                                                mt: 1,
                                             }}
                                         >
-                                            <LinearProgress
-                                                aria-label={`${board.name} board progress`}
-                                                variant="determinate"
-                                                value={percent}
+                                            <Typography
+                                                component="span"
                                                 sx={{
                                                     flex: 1,
-                                                    height: 7,
-                                                    borderRadius: 999,
+                                                    fontSize: 11.5,
+                                                    color: harbor.sub,
                                                 }}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                fontWeight={800}
                                             >
-                                                {percent}%
+                                                {board.total} active tasks
                                             </Typography>
+                                            <AvatarGroup
+                                                max={5}
+                                                sx={{
+                                                    "& .MuiAvatar-root": {
+                                                        width: 20,
+                                                        height: 20,
+                                                        fontSize: "0.6rem",
+                                                        border: `2px solid ${harbor.countBg}`,
+                                                    },
+                                                }}
+                                            >
+                                                {board.members.map((member) => (
+                                                    <Avatar
+                                                        key={member.id}
+                                                        src={member.avatar_url}
+                                                        alt={member.name}
+                                                        imgProps={{
+                                                            alt: member.name,
+                                                        }}
+                                                        sx={{
+                                                            bgcolor:
+                                                                harborAvatarColor(
+                                                                    member.name,
+                                                                ),
+                                                            color: "#fff",
+                                                        }}
+                                                    >
+                                                        {member.name.charAt(0)}
+                                                    </Avatar>
+                                                ))}
+                                            </AvatarGroup>
                                         </Box>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                            sx={{ mt: 1 }}
-                                        >
-                                            {board.total} active tasks
-                                        </Typography>
-                                        <AvatarGroup
-                                            max={5}
-                                            sx={{
-                                                mt: 1,
-                                                justifyContent: "flex-end",
-                                                "& .MuiAvatar-root": {
-                                                    width: 24,
-                                                    height: 24,
-                                                    fontSize: "0.65rem",
-                                                },
-                                            }}
-                                        >
-                                            {board.members.map((member) => (
-                                                <Avatar
-                                                    key={member.id}
-                                                    src={member.avatar_url}
-                                                    alt={member.name}
-                                                    imgProps={{
-                                                        alt: member.name,
-                                                    }}
-                                                >
-                                                    {member.name.charAt(0)}
-                                                </Avatar>
-                                            ))}
-                                        </AvatarGroup>
-                                    </Paper>
+                                    </Box>
                                 );
                             })}
                         </Box>
@@ -678,35 +796,9 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                 </Box>
 
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <Paper variant="outlined" sx={{ p: 2.25 }}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 1.5,
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    alignItems: "center",
-                                }}
-                            >
-                                <CalendarMonthIcon
-                                    sx={{ color: "text.secondary" }}
-                                />
-                                <Typography
-                                    component="h2"
-                                    variant="body1"
-                                    fontWeight={900}
-                                >
-                                    Upcoming Deadlines
-                                </Typography>
-                            </Box>
-                        </Box>
-                        {upcomingTasks.map((task) => {
+                    <Paper elevation={0} sx={harborCardSx}>
+                        <SectionTitle>Upcoming Deadlines</SectionTitle>
+                        {upcomingTasks.map((task, index) => {
                             const overdue =
                                 task.due_date &&
                                 new Date(task.due_date) < new Date();
@@ -715,38 +807,60 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                     key={task.id}
                                     onClick={() => handleTaskClick(task)}
                                     sx={{
-                                        display: "grid",
-                                        gridTemplateColumns: "52px 1fr auto",
-                                        gap: 1.25,
+                                        display: "flex",
                                         alignItems: "center",
+                                        gap: 1.5,
                                         py: 1.25,
-                                        borderTop: 1,
-                                        borderColor: "divider",
+                                        borderTop:
+                                            index === 0
+                                                ? "none"
+                                                : `1px solid ${harbor.cardBorder}`,
+                                        mt: index === 0 ? 1 : 0,
                                         cursor: "pointer",
                                     }}
                                 >
                                     <Box
                                         sx={{
-                                            bgcolor: "action.hover",
-                                            borderRadius: 1,
-                                            p: 1,
-                                            textAlign: "center",
+                                            width: 46,
+                                            height: 46,
+                                            flex: "none",
+                                            bgcolor: harbor.countBg,
+                                            borderRadius: "12px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            justifyContent: "center",
                                         }}
                                     >
                                         <Typography
-                                            variant="caption"
-                                            fontWeight={800}
+                                            component="span"
+                                            sx={{
+                                                fontSize: 9.5,
+                                                fontWeight: 700,
+                                                color: harbor.faint,
+                                                letterSpacing: "0.08em",
+                                                textTransform: "uppercase",
+                                            }}
                                         >
                                             {task.due_date
-                                                ? new Date(task.due_date)
-                                                      .toLocaleDateString(
-                                                          undefined,
-                                                          { month: "short" },
-                                                      )
-                                                      .toUpperCase()
+                                                ? new Date(
+                                                      task.due_date,
+                                                  ).toLocaleDateString(
+                                                      undefined,
+                                                      { month: "short" },
+                                                  )
                                                 : ""}
                                         </Typography>
-                                        <Typography fontWeight={900}>
+                                        <Typography
+                                            component="span"
+                                            sx={{
+                                                fontFamily: harbor.headingFont,
+                                                fontSize: 17,
+                                                fontWeight: 800,
+                                                color: harbor.ink,
+                                                lineHeight: 1,
+                                            }}
+                                        >
                                             {task.due_date
                                                 ? new Date(
                                                       task.due_date,
@@ -754,144 +868,220 @@ export default function Dashboard({ myTasks, completedCount }: Props) {
                                                 : ""}
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ minWidth: 0 }}>
-                                        <Typography fontWeight={800} noWrap>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography
+                                            noWrap
+                                            sx={{
+                                                fontSize: 13.5,
+                                                fontWeight: 600,
+                                                color: harbor.ink,
+                                            }}
+                                        >
                                             {task.title}
                                         </Typography>
                                         <Typography
-                                            variant="body2"
-                                            color="text.secondary"
                                             noWrap
+                                            sx={{
+                                                fontSize: 11.5,
+                                                color: harbor.faint,
+                                                mt: 0.25,
+                                            }}
                                         >
                                             {task.board?.name}
                                         </Typography>
                                     </Box>
-                                    <Typography
-                                        variant="caption"
-                                        fontWeight={800}
+                                    <Box
+                                        component="span"
                                         sx={{
-                                            color: (theme) =>
-                                                overdue
-                                                    ? theme.palette.error.main
-                                                    : theme.palette.mode ===
-                                                        "dark"
-                                                      ? theme.palette.warning
-                                                            .main
-                                                      : "#995300",
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            color: overdue
+                                                ? harbor.tints.red.fg
+                                                : harbor.dueSoon.fg,
+                                            bgcolor: overdue
+                                                ? harbor.tints.red.bg
+                                                : harbor.dueSoon.bg,
+                                            borderRadius: 999,
+                                            px: 1.1,
+                                            py: 0.4,
+                                            whiteSpace: "nowrap",
                                         }}
                                     >
                                         {overdue ? "Overdue" : "Due soon"}
-                                    </Typography>
+                                    </Box>
                                 </Box>
                             );
                         })}
                     </Paper>
 
-                    <Paper variant="outlined" sx={{ p: 2.25 }}>
-                        <Typography
-                            component="h2"
-                            variant="body1"
-                            fontWeight={900}
-                            sx={{ mb: 1.5 }}
+                    <Paper elevation={0} sx={harborCardSx}>
+                        <SectionTitle>Recent Activity</SectionTitle>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1.6,
+                                mt: 1.5,
+                            }}
                         >
-                            Recent Activity
-                        </Typography>
-                        {myTasks.slice(0, 4).map((task) => (
-                            <Box
-                                key={task.id}
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 1.25,
-                                    py: 1,
-                                }}
-                            >
-                                <Avatar
-                                    src={task.assignees?.[0]?.avatar_url}
-                                    alt={
-                                        task.assignees?.[0]?.name ?? "Assignee"
-                                    }
-                                    imgProps={{
-                                        alt:
-                                            task.assignees?.[0]?.name ??
-                                            "Assignee",
-                                    }}
-                                    sx={{ width: 34, height: 34 }}
-                                >
-                                    {task.assignees?.[0]?.name.charAt(0) ?? "P"}
-                                </Avatar>
-                                <Typography variant="body2" sx={{ flex: 1 }}>
-                                    <Box component="span" fontWeight={800}>
-                                        {task.assignees?.[0]?.name ?? "Someone"}
-                                    </Box>{" "}
-                                    updated {task.title}
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    recently
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Paper>
-
-                    <Paper variant="outlined" sx={{ p: 2.25 }}>
-                        <Typography
-                            component="h2"
-                            variant="body1"
-                            fontWeight={900}
-                            sx={{ mb: 1.5 }}
-                        >
-                            Team Workload
-                        </Typography>
-                        {workload.map(({ user, count }) => {
-                            const value = Math.min(100, count * 18 + 28);
-                            return (
+                            {myTasks.slice(0, 4).map((task) => (
                                 <Box
-                                    key={user.id}
+                                    key={task.id}
                                     sx={{
-                                        display: "grid",
-                                        gridTemplateColumns:
-                                            "36px 1fr 90px 38px",
-                                        gap: 1,
-                                        alignItems: "center",
-                                        py: 0.8,
+                                        display: "flex",
+                                        alignItems: "flex-start",
+                                        gap: 1.25,
                                     }}
                                 >
                                     <Avatar
-                                        src={user.avatar_url}
-                                        alt={user.name}
-                                        imgProps={{ alt: user.name }}
-                                        sx={{ width: 34, height: 34 }}
-                                    >
-                                        {user.name.charAt(0)}
-                                    </Avatar>
-                                    <Typography fontWeight={800} noWrap>
-                                        {user.name}
-                                    </Typography>
-                                    <LinearProgress
-                                        aria-label={`${user.name} workload`}
-                                        variant="determinate"
-                                        value={value}
-                                        color={
-                                            value > 85
-                                                ? "error"
-                                                : value > 65
-                                                  ? "warning"
-                                                  : "success"
+                                        src={task.assignees?.[0]?.avatar_url}
+                                        alt={
+                                            task.assignees?.[0]?.name ??
+                                            "Assignee"
                                         }
-                                        sx={{ height: 7, borderRadius: 999 }}
-                                    />
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={800}
+                                        imgProps={{
+                                            alt:
+                                                task.assignees?.[0]?.name ??
+                                                "Assignee",
+                                        }}
+                                        sx={{
+                                            width: 24,
+                                            height: 24,
+                                            fontSize: "0.65rem",
+                                            bgcolor: harborAvatarColor(
+                                                task.assignees?.[0]?.name ??
+                                                    "P",
+                                            ),
+                                            color: "#fff",
+                                        }}
                                     >
-                                        {value}%
+                                        {task.assignees?.[0]?.name.charAt(0) ??
+                                            "P"}
+                                    </Avatar>
+                                    <Typography
+                                        sx={{
+                                            flex: 1,
+                                            minWidth: 0,
+                                            fontSize: 12.5,
+                                            color: harbor.sub,
+                                            lineHeight: 1.45,
+                                        }}
+                                    >
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                fontWeight: 700,
+                                                color: harbor.ink,
+                                            }}
+                                        >
+                                            {task.assignees?.[0]?.name ??
+                                                "Someone"}
+                                        </Box>{" "}
+                                        updated {task.title}
+                                    </Typography>
+                                    <Typography
+                                        component="span"
+                                        sx={{
+                                            fontSize: 11,
+                                            color: harbor.faint,
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        recently
                                     </Typography>
                                 </Box>
-                            );
-                        })}
+                            ))}
+                        </Box>
+                    </Paper>
+
+                    <Paper elevation={0} sx={harborCardSx}>
+                        <SectionTitle>Team Workload</SectionTitle>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1.5,
+                                mt: 1.5,
+                            }}
+                        >
+                            {workload.map(({ user, count }) => {
+                                const value = Math.min(100, count * 18 + 28);
+                                const barColor =
+                                    value >= 95
+                                        ? harbor.danger
+                                        : value >= 70
+                                          ? harbor.secondary
+                                          : harbor.success;
+                                return (
+                                    <Box
+                                        key={user.id}
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1.25,
+                                        }}
+                                    >
+                                        <Avatar
+                                            src={user.avatar_url}
+                                            alt={user.name}
+                                            imgProps={{ alt: user.name }}
+                                            sx={{
+                                                width: 26,
+                                                height: 26,
+                                                fontSize: "0.7rem",
+                                                bgcolor: harborAvatarColor(
+                                                    user.name,
+                                                ),
+                                                color: "#fff",
+                                            }}
+                                        >
+                                            {user.name.charAt(0)}
+                                        </Avatar>
+                                        <Typography
+                                            noWrap
+                                            sx={{
+                                                width: 118,
+                                                flex: "none",
+                                                fontSize: 12.5,
+                                                fontWeight: 600,
+                                                color: harbor.ink,
+                                            }}
+                                        >
+                                            {user.name}
+                                        </Typography>
+                                        <LinearProgress
+                                            aria-label={`${user.name} workload`}
+                                            variant="determinate"
+                                            value={value}
+                                            sx={{
+                                                flex: 1,
+                                                height: 6,
+                                                borderRadius: "3px",
+                                                bgcolor: harbor.track,
+                                                "& .MuiLinearProgress-bar": {
+                                                    bgcolor: barColor,
+                                                    borderRadius: "3px",
+                                                },
+                                            }}
+                                        />
+                                        <Typography
+                                            component="span"
+                                            sx={{
+                                                width: 38,
+                                                textAlign: "right",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                color: harbor.sub,
+                                                fontVariantNumeric:
+                                                    "tabular-nums",
+                                            }}
+                                        >
+                                            {value}%
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
                     </Paper>
                 </Box>
             </Box>

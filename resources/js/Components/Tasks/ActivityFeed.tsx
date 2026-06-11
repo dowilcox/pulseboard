@@ -2,6 +2,7 @@ import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import CopyMarkdownButton from "@/Components/Common/CopyMarkdownButton";
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
+import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import type { Activity, Comment, PageProps, User } from "@/types";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { router, usePage } from "@inertiajs/react";
@@ -16,14 +17,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
-import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-
-const TIMELINE_WIDTH = 40;
 
 type FeedItem =
     | { type: "comment"; item: Comment; timestamp: string }
@@ -39,6 +37,21 @@ interface Props {
     uploadImageUrl?: string;
     mentionableUsers?: User[];
 }
+
+/** Comment / Reply submit button as a Harbor pill. */
+const commentPillSx = {
+    height: 40,
+    px: "18px",
+    borderRadius: 999,
+    fontSize: 13,
+    fontWeight: 700,
+    flexShrink: 0,
+    bgcolor: harborHex.accent,
+    color: "#fff",
+    transition: "background-color 150ms ease-out",
+    "&:hover": { bgcolor: harborHex.accentDark },
+    "&.Mui-disabled": { bgcolor: harbor.track, color: harbor.faint },
+} as const;
 
 function LabelChip({ name }: { name: string }) {
     return (
@@ -231,57 +244,83 @@ function CommentItem({
 }: CommentItemProps) {
     const isReply = variant === "reply";
     const wasEdited = comment.updated_at !== comment.created_at;
-    const actionIconSize = isReply ? 14 : 16;
+    const actionIconSize = isReply ? 13 : 14;
 
     const meta = (
         <>
             <Typography
-                variant="body2"
-                fontWeight={600}
-                fontSize={isReply ? "0.85rem" : undefined}
+                sx={{
+                    fontSize: isReply ? 12.5 : 13.5,
+                    fontWeight: 700,
+                    color: harbor.ink,
+                }}
             >
                 {comment.user?.name}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography sx={{ fontSize: 11.5, color: harbor.faint }}>
                 {formatTimestamp(comment.created_at)}
             </Typography>
             {wasEdited && (
                 <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ fontStyle: "italic" }}
+                    sx={{
+                        fontSize: 11.5,
+                        color: harbor.faint,
+                        fontStyle: "italic",
+                    }}
                 >
                     (edited)
                 </Typography>
             )}
             <Box sx={{ flex: 1 }} />
-            {!isEditing && (
-                <CopyMarkdownButton
-                    content={comment.body}
-                    aria-label={`Copy ${variant} as Markdown`}
-                />
-            )}
-            {!isReply && !isEditing && (
-                <Tooltip title="Reply">
-                    <IconButton size="small" onClick={onReply}>
-                        <ReplyIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                </Tooltip>
-            )}
-            {isOwn && !isEditing && (
-                <>
-                    <Tooltip title="Edit">
-                        <IconButton size="small" onClick={onStartEdit}>
-                            <EditIcon sx={{ fontSize: actionIconSize }} />
+            {/* Action tiles — revealed on hover/focus via opacity so they stay
+                in the tab order; always visible on touch devices. */}
+            <Box
+                className="comment-actions"
+                sx={{
+                    display: "flex",
+                    gap: "5px",
+                    opacity: 0,
+                    transition: "opacity 150ms ease-out",
+                    "&:focus-within": { opacity: 1 },
+                    "@media (hover: none)": { opacity: 1 },
+                    "& .MuiIconButton-root": {
+                        width: 26,
+                        height: 26,
+                        borderRadius: "8px",
+                        bgcolor: harbor.card,
+                        color: harbor.faint,
+                        "&:hover": { color: harbor.ink },
+                    },
+                }}
+            >
+                {!isEditing && (
+                    <CopyMarkdownButton
+                        content={comment.body}
+                        aria-label={`Copy ${variant} as Markdown`}
+                    />
+                )}
+                {!isReply && !isEditing && (
+                    <Tooltip title="Reply">
+                        <IconButton size="small" onClick={onReply}>
+                            <ReplyIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
-                        <IconButton size="small" onClick={onDelete}>
-                            <DeleteIcon sx={{ fontSize: actionIconSize }} />
-                        </IconButton>
-                    </Tooltip>
-                </>
-            )}
+                )}
+                {isOwn && !isEditing && (
+                    <>
+                        <Tooltip title="Edit">
+                            <IconButton size="small" onClick={onStartEdit}>
+                                <EditIcon sx={{ fontSize: actionIconSize }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                            <IconButton size="small" onClick={onDelete}>
+                                <DeleteIcon sx={{ fontSize: actionIconSize }} />
+                            </IconButton>
+                        </Tooltip>
+                    </>
+                )}
+            </Box>
         </>
     );
 
@@ -312,7 +351,15 @@ function CommentItem({
             </Box>
         </>
     ) : (
-        <RichTextDisplay content={comment.body} />
+        <Box
+            sx={{
+                fontSize: 13.5,
+                color: harbor.ink,
+                "& .tiptap p": { fontSize: 13.5, lineHeight: 1.55 },
+            }}
+        >
+            <RichTextDisplay content={comment.body} />
+        </Box>
     );
 
     if (isReply) {
@@ -323,19 +370,21 @@ function CommentItem({
                     gap: 1.5,
                     py: 1.5,
                     "&:not(:last-of-type)": {
-                        borderBottom: 1,
-                        borderColor: "divider",
+                        borderBottom: `1px solid ${harbor.cardBorder}`,
                     },
                 }}
             >
                 <Avatar
                     alt=""
                     sx={{
-                        width: 28,
-                        height: 28,
-                        fontSize: "0.75rem",
+                        width: 24,
+                        height: 24,
+                        fontSize: "0.7rem",
                         flexShrink: 0,
                         mt: 0.25,
+                        bgcolor: harborAvatarColor(
+                            comment.user?.id ?? comment.user?.name ?? "?",
+                        ),
                     }}
                     src={comment.user?.avatar_url}
                 >
@@ -360,21 +409,10 @@ function CommentItem({
 
     return (
         <>
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                    px: 2,
-                    py: 0.75,
-                    bgcolor: "action.hover",
-                    borderBottom: 1,
-                    borderColor: "divider",
-                }}
-            >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {meta}
             </Box>
-            <Box sx={{ p: 2 }}>{body}</Box>
+            <Box sx={{ mt: 1 }}>{body}</Box>
         </>
     );
 }
@@ -396,6 +434,7 @@ export default function ActivityFeed({
     const [editBody, setEditBody] = useState("");
     const [newCommentBody, setNewCommentBody] = useState("");
     const [commentEditorKey, setCommentEditorKey] = useState(0);
+    const [composerOpen, setComposerOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">(savedSort);
     const [deleteCommentTarget, setDeleteCommentTarget] = useState<
@@ -466,6 +505,7 @@ export default function ActivityFeed({
                     } else {
                         setNewCommentBody("");
                         setCommentEditorKey((k) => k + 1);
+                        setComposerOpen(false);
                     }
                     setSubmitting(false);
                 },
@@ -555,8 +595,8 @@ export default function ActivityFeed({
         return (
             <Box
                 sx={{
-                    borderTop: 1,
-                    borderColor: "divider",
+                    borderTop: `1px solid ${harbor.cardBorder}`,
+                    mt: 1.5,
                 }}
             >
                 {/* Collapse/expand toggle */}
@@ -573,11 +613,12 @@ export default function ActivityFeed({
                             )
                         }
                         sx={{
-                            textTransform: "none",
-                            color: "primary.main",
-                            px: 2,
+                            color: harborHex.accent,
+                            px: 0.5,
                             py: 0.75,
-                            fontSize: "0.8rem",
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            "&:hover": { bgcolor: "transparent" },
                         }}
                     >
                         {isCollapsed
@@ -589,7 +630,7 @@ export default function ActivityFeed({
                 <Collapse in={!isCollapsed}>
                     {/* Reply list */}
                     {replies.length > 0 && (
-                        <Box sx={{ px: 2 }}>
+                        <Box>
                             {replies.map((reply) =>
                                 renderCommentItem(reply, "reply"),
                             )}
@@ -597,7 +638,7 @@ export default function ActivityFeed({
                     )}
 
                     {/* Reply input — compact placeholder or full editor */}
-                    <Box sx={{ px: 2, py: 1.5 }}>
+                    <Box sx={{ py: 1 }}>
                         {replyingTo === comment.id ? (
                             <>
                                 <RichTextEditor
@@ -643,29 +684,28 @@ export default function ActivityFeed({
                             </>
                         ) : (
                             <Box
+                                component="button"
+                                type="button"
                                 onClick={() => {
                                     setReplyingTo(comment.id);
                                     setReplyBody("");
                                 }}
                                 sx={{
-                                    border: 1,
-                                    borderColor: "divider",
-                                    borderRadius: 1,
-                                    px: 1.5,
+                                    display: "block",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    border: "none",
+                                    borderRadius: 999,
+                                    bgcolor: harbor.card,
+                                    px: 1.75,
                                     py: 1,
                                     cursor: "text",
-                                    "&:hover": {
-                                        borderColor: "text.secondary",
-                                    },
+                                    fontFamily: harbor.bodyFont,
+                                    fontSize: 12.5,
+                                    color: harbor.faint,
                                 }}
                             >
-                                <Typography
-                                    variant="body2"
-                                    color="text.disabled"
-                                    fontSize="0.85rem"
-                                >
-                                    Reply...
-                                </Typography>
+                                Reply...
                             </Box>
                         )}
                     </Box>
@@ -676,46 +716,20 @@ export default function ActivityFeed({
 
     return (
         <Box>
-            {/* Add comment form */}
-            <Box sx={{ mb: 2 }}>
-                <RichTextEditor
-                    key={commentEditorKey}
-                    content={newCommentBody}
-                    onChange={setNewCommentBody}
-                    placeholder="Write a comment..."
-                    uploadImageUrl={uploadImageUrl}
-                    minHeight={100}
-                    mentionableUsers={mentionableUsers}
-                />
-                <Box
+            {/* Header — title + sort pill */}
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                <Typography
+                    component="h2"
                     sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        mt: 1,
+                        fontSize: 17,
+                        fontWeight: 700,
+                        fontFamily: harbor.headingFont,
+                        color: harbor.ink,
                     }}
                 >
-                    <Button
-                        size="small"
-                        variant="contained"
-                        disabled={submitting || !newCommentBody.trim()}
-                        onClick={() => submitComment()}
-                    >
-                        Comment
-                    </Button>
-                </Box>
-            </Box>
-
-            <Divider sx={{ mb: 2 }} />
-
-            {/* Sort toggle header */}
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "flex-end",
-                    mb: 1,
-                }}
-            >
+                    Activity
+                </Typography>
+                <Box sx={{ flex: 1 }} />
                 <Tooltip
                     title={
                         sortOrder === "desc"
@@ -723,29 +737,135 @@ export default function ActivityFeed({
                             : "Showing oldest first"
                     }
                 >
-                    <IconButton
-                        size="small"
+                    <Button
                         onClick={handleToggleSort}
                         aria-label={
                             sortOrder === "desc"
                                 ? "Sort oldest first"
                                 : "Sort newest first"
                         }
+                        startIcon={<SwapVertIcon sx={{ fontSize: 14 }} />}
+                        sx={{
+                            borderRadius: 999,
+                            bgcolor: harbor.countBg,
+                            color: harbor.sub,
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            px: "13px",
+                            py: "6px",
+                            minWidth: 0,
+                            transition: "background-color 150ms ease-out",
+                            "&:hover": { bgcolor: harbor.track },
+                        }}
                     >
-                        <SwapVertIcon fontSize="small" />
-                    </IconButton>
+                        {sortOrder === "desc" ? "Newest first" : "Oldest first"}
+                    </Button>
                 </Tooltip>
-                <Typography variant="caption" color="text.secondary">
-                    {sortOrder === "desc" ? "Newest first" : "Oldest first"}
-                </Typography>
+            </Box>
+
+            {/* Composer — pill that expands into the rich text editor */}
+            <Box
+                sx={{
+                    display: "flex",
+                    gap: 1.25,
+                    mb: 2.75,
+                    alignItems: composerOpen ? "flex-start" : "center",
+                }}
+            >
+                <Avatar
+                    alt=""
+                    src={auth.user.avatar_url}
+                    sx={{
+                        width: 30,
+                        height: 30,
+                        fontSize: "0.8rem",
+                        flexShrink: 0,
+                        bgcolor: harborAvatarColor(auth.user.id),
+                    }}
+                >
+                    {auth.user.name?.charAt(0).toUpperCase()}
+                </Avatar>
+                {composerOpen ? (
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <RichTextEditor
+                            key={commentEditorKey}
+                            content={newCommentBody}
+                            onChange={setNewCommentBody}
+                            placeholder="Write a comment..."
+                            uploadImageUrl={uploadImageUrl}
+                            minHeight={100}
+                            autoFocus
+                            mentionableUsers={mentionableUsers}
+                        />
+                        <Box
+                            sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                gap: 1,
+                                mt: 1,
+                            }}
+                        >
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setComposerOpen(false);
+                                    setNewCommentBody("");
+                                    setCommentEditorKey((k) => k + 1);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                disabled={submitting || !newCommentBody.trim()}
+                                onClick={() => submitComment()}
+                                sx={commentPillSx}
+                            >
+                                Comment
+                            </Button>
+                        </Box>
+                    </Box>
+                ) : (
+                    <>
+                        <Box
+                            component="button"
+                            type="button"
+                            onClick={() => setComposerOpen(true)}
+                            aria-label="Write a comment"
+                            sx={{
+                                flex: 1,
+                                minWidth: 0,
+                                height: 40,
+                                borderRadius: 999,
+                                border: "none",
+                                bgcolor: harbor.countBg,
+                                textAlign: "left",
+                                px: 2,
+                                fontFamily: harbor.bodyFont,
+                                fontSize: 13,
+                                color: harbor.faint,
+                                cursor: "text",
+                                transition: "background-color 150ms ease-out",
+                                "&:hover": { bgcolor: harbor.track },
+                            }}
+                        >
+                            Write a comment…
+                        </Box>
+                        <Button disabled sx={commentPillSx}>
+                            Comment
+                        </Button>
+                    </>
+                )}
             </Box>
 
             {/* Empty state */}
             {feed.length === 0 && (
                 <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ textAlign: "center", py: 3 }}
+                    sx={{
+                        fontSize: 13,
+                        color: harbor.faint,
+                        textAlign: "center",
+                        py: 3,
+                    }}
                 >
                     No activity yet
                 </Typography>
@@ -753,16 +873,23 @@ export default function ActivityFeed({
 
             {/* Timeline container */}
             {feed.length > 0 && (
-                <Box sx={{ position: "relative" }}>
+                <Box
+                    sx={{
+                        position: "relative",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
                     {/* Vertical timeline line */}
                     <Box
                         sx={{
                             position: "absolute",
-                            left: TIMELINE_WIDTH / 2 - 1,
-                            top: 0,
-                            bottom: 0,
-                            width: 2,
-                            bgcolor: "divider",
+                            left: 12,
+                            top: 6,
+                            bottom: 6,
+                            width: "1.5px",
+                            bgcolor: harbor.cardBorder,
                         }}
                     />
 
@@ -777,43 +904,45 @@ export default function ActivityFeed({
                                     sx={{
                                         display: "flex",
                                         gap: 1.5,
-                                        mb: 2.5,
                                         alignItems: "flex-start",
+                                        position: "relative",
                                     }}
                                 >
-                                    {/* Avatar on timeline */}
-                                    <Box
+                                    {/* Avatar centered on the timeline */}
+                                    <Avatar
+                                        alt=""
                                         sx={{
-                                            width: TIMELINE_WIDTH,
+                                            width: 26,
+                                            height: 26,
+                                            fontSize: "0.7rem",
                                             flexShrink: 0,
-                                            display: "flex",
-                                            justifyContent: "center",
+                                            zIndex: 1,
+                                            bgcolor: harborAvatarColor(
+                                                comment.user?.id ??
+                                                    comment.user?.name ??
+                                                    "?",
+                                            ),
+                                            boxShadow: `0 0 0 2px ${harbor.card}`,
                                         }}
+                                        src={comment.user?.avatar_url}
                                     >
-                                        <Avatar
-                                            alt=""
-                                            sx={{
-                                                width: 32,
-                                                height: 32,
-                                                fontSize: "0.8rem",
-                                                zIndex: 1,
-                                            }}
-                                            src={comment.user?.avatar_url}
-                                        >
-                                            {comment.user?.name
-                                                ?.charAt(0)
-                                                .toUpperCase()}
-                                        </Avatar>
-                                    </Box>
+                                        {comment.user?.name
+                                            ?.charAt(0)
+                                            .toUpperCase()}
+                                    </Avatar>
 
-                                    {/* Comment card */}
+                                    {/* Comment bubble */}
                                     <Box
                                         sx={{
                                             flex: 1,
-                                            border: 1,
-                                            borderColor: "divider",
-                                            borderRadius: 1,
-                                            overflow: "hidden",
+                                            minWidth: 0,
+                                            bgcolor: harbor.countBg,
+                                            borderRadius: "12px",
+                                            p: "12px 14px",
+                                            "&:hover .comment-actions, &:focus-within .comment-actions":
+                                                {
+                                                    opacity: 1,
+                                                },
                                         }}
                                     >
                                         {renderCommentItem(comment, "comment")}
@@ -830,55 +959,53 @@ export default function ActivityFeed({
                                 key={`activity-${activity.id}`}
                                 sx={{
                                     display: "flex",
-                                    gap: 1.5,
-                                    mb: 1.5,
-                                    alignItems: "center",
-                                    minHeight: 28,
+                                    gap: 1.75,
+                                    alignItems: "flex-start",
+                                    position: "relative",
                                 }}
                             >
                                 {/* Timeline dot */}
                                 <Box
                                     sx={{
-                                        width: TIMELINE_WIDTH,
+                                        width: 9,
+                                        height: 9,
+                                        borderRadius: "50%",
+                                        bgcolor: harbor.cardBorder,
+                                        boxShadow: `0 0 0 2px ${harbor.card}`,
+                                        mt: "5px",
+                                        ml: "8px",
                                         flexShrink: 0,
-                                        display: "flex",
-                                        justifyContent: "center",
+                                        zIndex: 1,
                                     }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 10,
-                                            height: 10,
-                                            borderRadius: "50%",
-                                            bgcolor: "text.disabled",
-                                            zIndex: 1,
-                                        }}
-                                    />
-                                </Box>
+                                />
 
                                 {/* Activity text */}
                                 <Typography
-                                    variant="body2"
-                                    color="text.secondary"
                                     component="div"
                                     sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        flexWrap: "wrap",
-                                        gap: 0.25,
-                                        lineHeight: 1.6,
+                                        fontSize: 13,
+                                        color: harbor.sub,
+                                        lineHeight: 1.5,
+                                        "& strong": {
+                                            color: harbor.ink,
+                                            fontWeight: 700,
+                                        },
                                     }}
                                 >
                                     <strong>
                                         {activity.user?.name ?? "System"}
-                                    </strong>
+                                    </strong>{" "}
                                     {activityDescription(
                                         activity.action,
                                         activity.changes ?? {},
                                     )}
-                                    <span style={{ marginLeft: 4 }}>
-                                        {formatTimestamp(activity.created_at)}
-                                    </span>
+                                    <Box
+                                        component="span"
+                                        sx={{ color: harbor.faint }}
+                                    >
+                                        {" "}
+                                        · {formatTimestamp(activity.created_at)}
+                                    </Box>
                                 </Typography>
                             </Box>
                         );

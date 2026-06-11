@@ -1,3 +1,4 @@
+import { harbor, harborHex } from "@/theme/harbor";
 import type { TaskLink } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -201,19 +202,30 @@ export default function LinkEditor({ links, onChange }: Props) {
             ) : (
                 <Button
                     size="small"
-                    startIcon={<AddIcon />}
+                    startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                     onClick={() => {
                         setAdding(true);
                         setTimeout(() => urlRef.current?.focus(), 0);
                     }}
-                    sx={{ mt: 0.5, textTransform: "none" }}
+                    sx={{
+                        mt: 0.5,
+                        px: 0.5,
+                        minWidth: 0,
+                        color: harborHex.accent,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        "&:hover": {
+                            bgcolor: "transparent",
+                            textDecoration: "underline",
+                        },
+                    }}
                 >
                     Add link
                 </Button>
             )}
 
             {links.length === 0 && !adding && (
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ fontSize: 12.5, color: harbor.faint }}>
                     No links yet.
                 </Typography>
             )}

@@ -140,14 +140,11 @@ export default function RichTextDisplay({
                         textDecoration: "underline",
                     },
                     "& .mention": {
-                        color: "primary.light",
-                        bgcolor: "primary.50",
+                        color: "primary.main",
+                        bgcolor: "rgba(57, 89, 166, 0.12)",
                         borderRadius: "4px",
                         px: 0.25,
                         fontWeight: 600,
-                        ...(theme.palette.mode === "dark" && {
-                            bgcolor: "rgba(156, 140, 255, 0.14)",
-                        }),
                     },
                     "& blockquote": {
                         borderLeft: 3,

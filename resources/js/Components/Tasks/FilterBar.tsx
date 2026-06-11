@@ -1,5 +1,6 @@
 import axios from "axios";
 import { PRIORITY_OPTIONS } from "@/constants/priorities";
+import { harbor, harborHex } from "@/theme/harbor";
 import type { Label, SavedFilter, Task, User } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
@@ -47,6 +48,21 @@ const EMPTY_FILTERS: Filters = {
     priorities: [],
     dueDateFrom: "",
     dueDateTo: "",
+};
+
+// Harbor pill treatment for filter inputs: card bg, full radius, chip
+// shadow, borderless (focus shown as an accent ring instead)
+const PILL_INPUT_SX = {
+    "& .MuiOutlinedInput-root": {
+        bgcolor: harbor.card,
+        borderRadius: "999px",
+        boxShadow: harbor.chipShadow,
+        color: harbor.sub,
+        "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+        "&.Mui-focused": {
+            boxShadow: `0 0 0 2px ${harborHex.accent}`,
+        },
+    },
 };
 
 interface Props {
@@ -432,7 +448,19 @@ export default function FilterBar({
                 placeholder="Search tasks..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                sx={{ minWidth: { xs: "100%", sm: 260 } }}
+                sx={{
+                    minWidth: { xs: "100%", sm: 280 },
+                    ...PILL_INPUT_SX,
+                    "& .MuiOutlinedInput-root": {
+                        ...PILL_INPUT_SX["& .MuiOutlinedInput-root"],
+                        height: 36,
+                        fontSize: "13px",
+                        "& input::placeholder": {
+                            color: harbor.faint,
+                            opacity: 1,
+                        },
+                    },
+                }}
                 slotProps={{
                     input: {
                         inputProps: { "aria-label": "Search tasks" },
@@ -440,8 +468,8 @@ export default function FilterBar({
                             <InputAdornment position="start">
                                 <SearchIcon
                                     sx={{
-                                        fontSize: 18,
-                                        color: "text.secondary",
+                                        fontSize: 16,
+                                        color: harbor.faint,
                                     }}
                                 />
                             </InputAdornment>
@@ -472,6 +500,7 @@ export default function FilterBar({
                     <TextField
                         {...params}
                         placeholder="Assignees"
+                        sx={PILL_INPUT_SX}
                         inputProps={{
                             ...params.inputProps,
                             "aria-label": "Filter by assignees",
@@ -514,6 +543,7 @@ export default function FilterBar({
                     <TextField
                         {...params}
                         placeholder="Labels"
+                        sx={PILL_INPUT_SX}
                         inputProps={{
                             ...params.inputProps,
                             "aria-label": "Filter by labels",
@@ -551,7 +581,7 @@ export default function FilterBar({
                 inputProps={{ "aria-label": "Filter by priority" }}
                 renderValue={(selected) =>
                     selected.length === 0 ? (
-                        <Box component="span" sx={{ color: "text.secondary" }}>
+                        <Box component="span" sx={{ color: harbor.sub }}>
                             Priority
                         </Box>
                     ) : (
@@ -572,7 +602,20 @@ export default function FilterBar({
                         </Box>
                     )
                 }
-                sx={{ minWidth: 120 }}
+                sx={{
+                    minWidth: 120,
+                    bgcolor: harbor.card,
+                    borderRadius: "999px",
+                    boxShadow: harbor.chipShadow,
+                    color: harbor.sub,
+                    fontSize: "12.5px",
+                    fontWeight: 700,
+                    height: 34,
+                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    "&.Mui-focused": {
+                        boxShadow: `0 0 0 2px ${harborHex.accent}`,
+                    },
+                }}
             >
                 {PRIORITY_OPTIONS.map((opt) => (
                     <MenuItem key={opt.value} value={opt.value}>
@@ -603,7 +646,7 @@ export default function FilterBar({
                 value={filters.dueDateFrom}
                 onChange={(e) => updateFilter("dueDateFrom", e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 145 }}
+                sx={{ width: 145, ...PILL_INPUT_SX }}
             />
             <TextField
                 size="small"
@@ -612,7 +655,7 @@ export default function FilterBar({
                 value={filters.dueDateTo}
                 onChange={(e) => updateFilter("dueDateTo", e.target.value)}
                 slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 145 }}
+                sx={{ width: 145, ...PILL_INPUT_SX }}
             />
 
             {/* Clear all */}

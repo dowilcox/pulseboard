@@ -28,6 +28,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
+import { harborAvatarColor, harborHex } from "@/theme/harbor";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
 
@@ -220,8 +221,6 @@ function AuthenticatedLayoutInner({
                         "& .MuiDrawer-paper": {
                             boxSizing: "border-box",
                             width: DRAWER_WIDTH,
-                            borderRight: 1,
-                            borderColor: "divider",
                         },
                     }}
                 >
@@ -236,8 +235,6 @@ function AuthenticatedLayoutInner({
                         "& .MuiDrawer-paper": {
                             boxSizing: "border-box",
                             width: drawerWidth,
-                            borderRight: 1,
-                            borderColor: "divider",
                             transition:
                                 "width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
                             overflowX: "hidden",
@@ -269,7 +266,6 @@ function AuthenticatedLayoutInner({
                         bgcolor: "background.default",
                         borderBottom: 1,
                         borderColor: "divider",
-                        backdropFilter: "blur(18px)",
                     }}
                 >
                     <Box role="status" aria-live="polite">
@@ -345,10 +341,13 @@ function AuthenticatedLayoutInner({
                                     src={user.avatar_url}
                                     alt={user.name}
                                     sx={{
-                                        width: 40,
-                                        height: 40,
-                                        bgcolor: "secondary.main",
+                                        width: 30,
+                                        height: 30,
+                                        fontSize: "0.75rem",
+                                        bgcolor: harborAvatarColor(user.name),
+                                        color: "#ffffff",
                                         fontWeight: 800,
+                                        boxShadow: `0 0 0 2px ${harborHex.canvas}`,
                                     }}
                                 >
                                     {user.name

@@ -43,6 +43,7 @@ export default function GuestLayout({ children }: PropsWithChildren) {
             </Box>
 
             <Box component="main" id="main-content">
+                {/* Harbor: cream panel on the canvas — radius/shadow from theme */}
                 <Paper
                     elevation={2}
                     sx={{
@@ -50,7 +51,6 @@ export default function GuestLayout({ children }: PropsWithChildren) {
                         maxWidth: 440,
                         px: 4,
                         py: 4,
-                        borderRadius: 1.5,
                     }}
                 >
                     {children}

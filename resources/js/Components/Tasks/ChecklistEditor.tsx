@@ -1,11 +1,12 @@
+import { harbor, harborHex } from "@/theme/harbor";
 import type { Checklist, ChecklistItem } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
+import CheckIcon from "@mui/icons-material/Check";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -15,6 +16,44 @@ interface Props {
     checklists: Checklist[];
     onChange: (checklists: Checklist[]) => void;
 }
+
+/** Indigo text action — "+ Add item" / "+ Add checklist". */
+const addActionSx = {
+    color: harborHex.accent,
+    fontSize: 12.5,
+    fontWeight: 700,
+    px: 0.5,
+    minWidth: 0,
+    "&:hover": { bgcolor: "transparent", textDecoration: "underline" },
+} as const;
+
+/** Harbor checkbox faces — 18px rounded square, indigo fill when checked. */
+const uncheckedIcon = (
+    <Box
+        sx={{
+            width: 18,
+            height: 18,
+            borderRadius: "6px",
+            border: `1.5px solid ${harbor.faint}`,
+            boxSizing: "border-box",
+        }}
+    />
+);
+const checkedIcon = (
+    <Box
+        sx={{
+            width: 18,
+            height: 18,
+            borderRadius: "6px",
+            bgcolor: harborHex.accent,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+        }}
+    >
+        <CheckIcon sx={{ fontSize: 13, color: "#fff" }} />
+    </Box>
+);
 
 export default function ChecklistEditor({ checklists, onChange }: Props) {
     const [newChecklistTitle, setNewChecklistTitle] = useState("");
@@ -114,22 +153,40 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                 const completed = checklist.items.filter(
                     (i) => i.completed,
                 ).length;
-                const progress = total > 0 ? (completed / total) * 100 : 0;
 
                 return (
-                    <Box key={checklist.id} sx={{ mb: 2 }}>
-                        {/* Checklist header */}
+                    <Box key={checklist.id} sx={{ mb: 2.25 }}>
+                        {/* Checklist header — name + fraction + delete */}
                         <Box
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 0.5,
+                                gap: 1.25,
                             }}
                         >
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography
+                                sx={{
+                                    fontSize: 14.5,
+                                    fontWeight: 700,
+                                    fontFamily: harbor.headingFont,
+                                    color: harbor.ink,
+                                }}
+                            >
                                 {checklist.title}
                             </Typography>
+                            <Box sx={{ flex: 1 }} />
+                            {total > 0 && (
+                                <Typography
+                                    sx={{
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        color: harbor.sub,
+                                        fontVariantNumeric: "tabular-nums",
+                                    }}
+                                >
+                                    {completed}/{total}
+                                </Typography>
+                            )}
                             <Tooltip title="Remove checklist">
                                 <IconButton
                                     size="small"
@@ -137,34 +194,44 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                         handleRemoveChecklist(checklist.id)
                                     }
                                     aria-label={`Remove checklist ${checklist.title}`}
+                                    sx={{ color: harbor.faint }}
                                 >
-                                    <DeleteIcon fontSize="small" />
+                                    <DeleteIcon sx={{ fontSize: 15 }} />
                                 </IconButton>
                             </Tooltip>
                         </Box>
 
-                        {/* Progress */}
+                        {/* Segmented progress — one segment per item */}
                         {total > 0 && (
                             <Box
+                                role="progressbar"
+                                aria-label={`${checklist.title} checklist progress`}
+                                aria-valuemin={0}
+                                aria-valuemax={total}
+                                aria-valuenow={completed}
                                 sx={{
                                     display: "flex",
-                                    alignItems: "center",
-                                    gap: 1,
-                                    mb: 1,
+                                    gap: "3px",
+                                    mt: 1,
+                                    mb: 0.75,
                                 }}
                             >
-                                <LinearProgress
-                                    aria-label={`${checklist.title} checklist progress`}
-                                    variant="determinate"
-                                    value={progress}
-                                    sx={{ flex: 1, height: 6, borderRadius: 3 }}
-                                />
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                >
-                                    {completed}/{total}
-                                </Typography>
+                                {checklist.items.map((item, i) => (
+                                    <Box
+                                        key={item.id}
+                                        sx={{
+                                            flex: 1,
+                                            height: 5,
+                                            borderRadius: "3px",
+                                            bgcolor:
+                                                i < completed
+                                                    ? harborHex.accent
+                                                    : harbor.track,
+                                            transition:
+                                                "background-color 150ms ease-out",
+                                        }}
+                                    />
+                                ))}
                             </Box>
                         )}
 
@@ -175,16 +242,19 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 sx={{
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 0.5,
-                                    ml: -1,
+                                    gap: 1,
+                                    py: "3px",
                                 }}
                             >
                                 <Checkbox
                                     size="small"
                                     checked={item.completed}
+                                    icon={uncheckedIcon}
+                                    checkedIcon={checkedIcon}
                                     onChange={() =>
                                         handleToggleItem(checklist.id, item.id)
                                     }
+                                    sx={{ p: "4px" }}
                                     slotProps={{
                                         input: {
                                             "aria-label": `Toggle ${item.text}`,
@@ -210,14 +280,19 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                         input: {
                                             disableUnderline: true,
                                             sx: {
-                                                fontSize: "0.875rem",
-                                                py: 0.5,
+                                                fontSize: 13.5,
+                                                py: "4px",
+                                                fontWeight: item.completed
+                                                    ? 400
+                                                    : 600,
                                                 textDecoration: item.completed
                                                     ? "line-through"
                                                     : "none",
                                                 color: item.completed
-                                                    ? "text.disabled"
-                                                    : "text.primary",
+                                                    ? harbor.faint
+                                                    : harbor.ink,
+                                                transition:
+                                                    "color 150ms ease-out",
                                             },
                                         },
                                     }}
@@ -232,10 +307,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                             )
                                         }
                                         aria-label={`Remove item ${item.text}`}
-                                        sx={{
-                                            opacity: 0.5,
-                                            "&:hover": { opacity: 1 },
-                                        }}
+                                        sx={{ color: harbor.faint }}
                                     >
                                         <DeleteIcon sx={{ fontSize: 14 }} />
                                     </IconButton>
@@ -300,7 +372,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                         ) : (
                             <Button
                                 size="small"
-                                startIcon={<AddIcon />}
+                                startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                                 onClick={() => {
                                     setAddingItemTo(checklist.id);
                                     setNewItemText("");
@@ -309,12 +381,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                         0,
                                     );
                                 }}
-                                sx={{
-                                    ml: 3,
-                                    mt: 0.5,
-                                    textTransform: "none",
-                                    color: "text.secondary",
-                                }}
+                                sx={{ ...addActionSx, mt: 0.25 }}
                             >
                                 Add item
                             </Button>
@@ -323,65 +390,85 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                 );
             })}
 
-            {/* Add checklist */}
-            {addingChecklist ? (
-                <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                    <TextField
-                        inputRef={newChecklistRef}
-                        size="small"
-                        fullWidth
-                        autoFocus
-                        placeholder="Checklist title..."
-                        slotProps={{
-                            htmlInput: { "aria-label": "New checklist title" },
-                        }}
-                        value={newChecklistTitle}
-                        onChange={(e) => setNewChecklistTitle(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault();
-                                handleAddChecklist();
+            {/* Add checklist — behind a hairline when checklists exist */}
+            <Box
+                sx={
+                    checklists.length > 0
+                        ? {
+                              borderTop: `1px solid ${harbor.cardBorder}`,
+                              pt: 1.5,
+                          }
+                        : undefined
+                }
+            >
+                {addingChecklist ? (
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <TextField
+                            inputRef={newChecklistRef}
+                            size="small"
+                            fullWidth
+                            autoFocus
+                            placeholder="Checklist title..."
+                            slotProps={{
+                                htmlInput: {
+                                    "aria-label": "New checklist title",
+                                },
+                            }}
+                            value={newChecklistTitle}
+                            onChange={(e) =>
+                                setNewChecklistTitle(e.target.value)
                             }
-                            if (e.key === "Escape") {
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddChecklist();
+                                }
+                                if (e.key === "Escape") {
+                                    setAddingChecklist(false);
+                                    setNewChecklistTitle("");
+                                }
+                            }}
+                        />
+                        <Button
+                            size="small"
+                            onClick={() => {
                                 setAddingChecklist(false);
                                 setNewChecklistTitle("");
-                            }
-                        }}
-                    />
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            onClick={handleAddChecklist}
+                            disabled={!newChecklistTitle.trim()}
+                        >
+                            Add
+                        </Button>
+                    </Box>
+                ) : (
                     <Button
                         size="small"
+                        startIcon={<AddIcon sx={{ fontSize: 14 }} />}
                         onClick={() => {
-                            setAddingChecklist(false);
-                            setNewChecklistTitle("");
+                            setAddingChecklist(true);
+                            setTimeout(
+                                () => newChecklistRef.current?.focus(),
+                                0,
+                            );
                         }}
+                        sx={{ ...addActionSx, fontSize: 13 }}
                     >
-                        Cancel
+                        Add checklist
                     </Button>
-                    <Button
-                        size="small"
-                        variant="contained"
-                        onClick={handleAddChecklist}
-                        disabled={!newChecklistTitle.trim()}
-                    >
-                        Add
-                    </Button>
-                </Box>
-            ) : (
-                <Button
-                    size="small"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                        setAddingChecklist(true);
-                        setTimeout(() => newChecklistRef.current?.focus(), 0);
-                    }}
-                    sx={{ mt: 1, textTransform: "none" }}
-                >
-                    Add checklist
-                </Button>
-            )}
+                )}
+            </Box>
 
             {checklists.length === 0 && !addingChecklist && (
-                <Typography variant="body2" color="text.secondary">
+                <Typography
+                    sx={{ fontSize: 12.5, color: harbor.faint, mt: 0.75 }}
+                >
                     No checklists yet.
                 </Typography>
             )}

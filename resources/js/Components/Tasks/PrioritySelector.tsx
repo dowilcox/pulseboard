@@ -1,4 +1,5 @@
 import { PRIORITY_OPTIONS } from "@/constants/priorities";
+import { harbor } from "@/theme/harbor";
 import type { Task } from "@/types";
 import { router } from "@inertiajs/react";
 import FlagIcon from "@mui/icons-material/Flag";
@@ -29,6 +30,13 @@ export default function PrioritySelector({ task, teamSlug, boardSlug }: Props) {
             size="small"
             fullWidth
             inputProps={{ "aria-label": "Priority" }}
+            sx={{
+                height: 38,
+                fontSize: 13,
+                fontWeight: 600,
+                color: harbor.ink,
+                "& .MuiSelect-icon": { color: harbor.faint },
+            }}
             renderValue={(value) => {
                 const p = PRIORITY_OPTIONS.find((pr) => pr.value === value);
                 return (

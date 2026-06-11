@@ -1,3 +1,4 @@
+import { harbor } from "@/theme/harbor";
 import type { Task } from "@/types";
 import axios from "axios";
 import { router } from "@inertiajs/react";
@@ -48,7 +49,16 @@ export default function GitlabRefsList({ task, teamSlug, boardSlug }: Props) {
 
     return (
         <Box>
-            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+            <Typography
+                component="h2"
+                sx={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    fontFamily: harbor.headingFont,
+                    color: harbor.ink,
+                    mb: 1,
+                }}
+            >
                 GitLab
             </Typography>
 

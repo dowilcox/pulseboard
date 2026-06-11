@@ -1,3 +1,4 @@
+import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { Task, User } from "@/types";
 import { router } from "@inertiajs/react";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -80,9 +81,9 @@ export default function AssigneeSelector({
                                 <Avatar
                                     alt=""
                                     sx={{
-                                        width: 20,
-                                        height: 20,
-                                        fontSize: "0.6rem",
+                                        fontSize: "0.65rem",
+                                        bgcolor: harborAvatarColor(user.id),
+                                        color: "#fff",
                                     }}
                                     src={user.avatar_url}
                                 >
@@ -91,6 +92,24 @@ export default function AssigneeSelector({
                             }
                             label={user.name}
                             size="small"
+                            sx={{
+                                height: "auto",
+                                py: "4px",
+                                pl: "4px",
+                                bgcolor: harbor.countBg,
+                                color: harbor.ink,
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                "& .MuiChip-avatar": {
+                                    width: 22,
+                                    height: 22,
+                                    ml: 0,
+                                },
+                                "& .MuiChip-deleteIcon": {
+                                    color: harbor.faint,
+                                    "&:hover": { color: harbor.ink },
+                                },
+                            }}
                         />
                     );
                 })

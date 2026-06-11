@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { harbor, harborHex } from "@/theme/harbor";
 import type { GitlabProject, Task } from "@/types";
 import axios from "axios";
 import { router } from "@inertiajs/react";
@@ -20,6 +21,22 @@ interface Props {
     boardSlug: string;
     gitlabProjects: GitlabProject[];
 }
+
+/** Outline-indigo Harbor button — 1.5px inset ring, transparent fill. */
+const outlineButtonSx = {
+    height: 38,
+    borderRadius: "10px",
+    fontSize: 13,
+    fontWeight: 700,
+    color: harborHex.accent,
+    boxShadow: `inset 0 0 0 1.5px ${harborHex.accent}`,
+    transition: "background-color 150ms ease-out",
+    "&:hover": { bgcolor: "rgba(57, 89, 166, 0.08)" },
+    "&.Mui-disabled": {
+        color: harbor.faint,
+        boxShadow: `inset 0 0 0 1.5px ${harbor.track}`,
+    },
+} as const;
 
 export default function GitlabSidebarControls({
     task,
@@ -114,6 +131,13 @@ export default function GitlabSidebarControls({
             <Autocomplete
                 size="small"
                 options={gitlabProjects}
+                sx={{
+                    "& .MuiOutlinedInput-root": {
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: harbor.ink,
+                    },
+                }}
                 value={selectedProject}
                 onChange={(_e, newValue) => handleSetProject(newValue)}
                 getOptionLabel={(option) => option.path_with_namespace}
@@ -162,8 +186,8 @@ export default function GitlabSidebarControls({
             {selectedProject && (
                 <Box
                     sx={{
-                        display: "flex",
-                        flexDirection: "column",
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
                         gap: 1,
                         mt: 1,
                     }}
@@ -177,23 +201,22 @@ export default function GitlabSidebarControls({
                     >
                         <span>
                             <Button
-                                size="small"
-                                variant="outlined"
                                 fullWidth
                                 startIcon={
                                     creating ? (
                                         <CircularProgress size={14} />
                                     ) : (
                                         <AccountTreeIcon
-                                            sx={{ fontSize: 16 }}
+                                            sx={{ fontSize: 15 }}
                                         />
                                     )
                                 }
                                 onClick={() => handleCreate("branch")}
                                 disabled={creating || hasBranch}
-                                sx={{ textTransform: "none" }}
+                                aria-label="Create branch"
+                                sx={outlineButtonSx}
                             >
-                                Create Branch
+                                Branch
                             </Button>
                         </span>
                     </Tooltip>
@@ -206,21 +229,20 @@ export default function GitlabSidebarControls({
                     >
                         <span>
                             <Button
-                                size="small"
-                                variant="outlined"
                                 fullWidth
                                 startIcon={
                                     creating ? (
                                         <CircularProgress size={14} />
                                     ) : (
-                                        <MergeTypeIcon sx={{ fontSize: 16 }} />
+                                        <MergeTypeIcon sx={{ fontSize: 15 }} />
                                     )
                                 }
                                 onClick={() => handleCreate("merge_request")}
                                 disabled={creating || hasOpenMr}
-                                sx={{ textTransform: "none" }}
+                                aria-label="Create merge request"
+                                sx={outlineButtonSx}
                             >
-                                Create MR
+                                MR
                             </Button>
                         </span>
                     </Tooltip>

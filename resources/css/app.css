@@ -1,8 +1,10 @@
-@import "@fontsource/inter/300.css";
-@import "@fontsource/inter/400.css";
-@import "@fontsource/inter/500.css";
-@import "@fontsource/inter/600.css";
-@import "@fontsource/inter/700.css";
+@import "@fontsource/schibsted-grotesk/400.css";
+@import "@fontsource/schibsted-grotesk/500.css";
+@import "@fontsource/schibsted-grotesk/600.css";
+@import "@fontsource/schibsted-grotesk/700.css";
+@import "@fontsource/bricolage-grotesque/600.css";
+@import "@fontsource/bricolage-grotesque/700.css";
+@import "@fontsource/bricolage-grotesque/800.css";
 
 *,
 *::before,
@@ -18,9 +20,20 @@ body {
 }
 
 html {
-    background: #080f1d;
+    /* Harbor canvas — keep in sync with resources/js/theme/harbor.ts */
+    background: oklch(88% 0.011 245);
 }
 
 * {
-    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    scrollbar-color: oklch(70% 0.02 250) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

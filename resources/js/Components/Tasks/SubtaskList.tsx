@@ -1,11 +1,12 @@
+import { harbor, harborHex } from "@/theme/harbor";
 import type { Task } from "@/types";
 import { router, useForm } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
-import IconButton from "@mui/material/IconButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
@@ -83,16 +84,23 @@ export default function SubtaskList({
                     <LinearProgress
                         variant="determinate"
                         value={progress}
-                        sx={{ flex: 1, height: 6, borderRadius: 3 }}
+                        sx={{ flex: 1, height: 5, borderRadius: 3 }}
                     />
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                        sx={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: harbor.sub,
+                            fontVariantNumeric: "tabular-nums",
+                        }}
+                    >
                         {completed}/{total}
                     </Typography>
                 </Box>
             )}
 
             {total === 0 && !showForm && (
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ fontSize: 12.5, color: harbor.faint }}>
                     No subtasks yet.
                 </Typography>
             )}
@@ -193,19 +201,28 @@ export default function SubtaskList({
                     />
                 </Box>
             ) : (
-                <IconButton
+                <Button
                     size="small"
+                    startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                     onClick={() => {
                         setShowForm(true);
                         setTimeout(() => inputRef.current?.focus(), 0);
                     }}
-                    sx={{ mt: 0.5 }}
+                    sx={{
+                        mt: 0.5,
+                        px: 0.5,
+                        minWidth: 0,
+                        color: harborHex.accent,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        "&:hover": {
+                            bgcolor: "transparent",
+                            textDecoration: "underline",
+                        },
+                    }}
                 >
-                    <AddIcon fontSize="small" />
-                    <Typography variant="caption" sx={{ ml: 0.5 }}>
-                        Add subtask
-                    </Typography>
-                </IconButton>
+                    Add subtask
+                </Button>
             )}
         </Box>
     );

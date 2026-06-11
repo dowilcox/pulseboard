@@ -1,3 +1,4 @@
+import { harbor } from "@/theme/harbor";
 import type { TaskTemplate } from "@/types";
 import { router, useForm } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
@@ -18,9 +19,8 @@ interface Props {
     disabled?: boolean;
 }
 
-const KANBAN_TEXT_MUTED = "#cbd5e1";
-const KANBAN_HOVER = "rgba(148, 163, 184, 0.14)";
-const KANBAN_INPUT = "rgba(8, 17, 31, 0.72)";
+// Subtle ink wash for hover on the column well
+const KANBAN_HOVER = "rgba(34, 41, 53, 0.06)";
 
 export default function QuickCreateTask({
     teamSlug,
@@ -106,8 +106,13 @@ export default function QuickCreateTask({
                     sx={{
                         flex: 1,
                         justifyContent: "flex-start",
-                        color: KANBAN_TEXT_MUTED,
+                        // Quiet add affordance — muted text on wells uses `sub`
+                        color: harbor.sub,
+                        fontSize: "12.5px",
+                        fontWeight: 700,
                         textTransform: "none",
+                        px: "6px",
+                        "& .MuiButton-startIcon": { mr: 0.5 },
                         "&:hover": { bgcolor: KANBAN_HOVER },
                     }}
                 >
@@ -120,7 +125,7 @@ export default function QuickCreateTask({
                             onClick={(e) => setAnchorEl(e.currentTarget)}
                             sx={{
                                 minWidth: "auto",
-                                color: KANBAN_TEXT_MUTED,
+                                color: harbor.sub,
                                 "&:hover": { bgcolor: KANBAN_HOVER },
                             }}
                             aria-label="Create from template"
@@ -181,7 +186,8 @@ export default function QuickCreateTask({
                 disabled={processing}
                 sx={{
                     "& .MuiOutlinedInput-root": {
-                        bgcolor: KANBAN_INPUT,
+                        bgcolor: harbor.card,
+                        borderRadius: "10px",
                         ...(selectedTemplate && {
                             borderColor: "primary.main",
                             "& fieldset": { borderColor: "primary.main" },

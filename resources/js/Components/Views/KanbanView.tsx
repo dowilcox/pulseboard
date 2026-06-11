@@ -25,6 +25,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
+import { harbor } from "@/theme/harbor";
 import { router } from "@inertiajs/react";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -48,12 +49,25 @@ function buildColumnTasksMap(columns: Column[]): Record<string, Task[]> {
     return map;
 }
 
-const KANBAN_PANEL = "rgba(12, 21, 36, 0.72)";
-const KANBAN_PANEL_HOVER = "rgba(31, 42, 61, 0.76)";
-const KANBAN_PANEL_SELECTED = "rgba(108, 92, 255, 0.20)";
-const KANBAN_TEXT = "#f8fafc";
-const KANBAN_MUTED = "#cbd5e1";
-const KANBAN_DIVIDER = "rgba(148, 163, 184, 0.20)";
+// Indigo accent (harborHex.accent) at low alpha for drop-target highlights
+const KANBAN_DROP_HIGHLIGHT = "rgba(57, 89, 166, 0.12)";
+
+/** Column status dot: user-defined color, else a sensible Harbor default. */
+function columnDotColor(column: Column): string {
+    if (column.color) return column.color;
+    if (column.is_done_column) return harbor.colDots.done;
+    const name = column.name.toLowerCase();
+    if (name.includes("progress") || name.includes("doing")) {
+        return harbor.colDots.progress;
+    }
+    if (name.includes("done") || name.includes("complete")) {
+        return harbor.colDots.done;
+    }
+    if (name.includes("todo") || name.includes("to do")) {
+        return harbor.colDots.todo;
+    }
+    return harbor.colDots.backlog;
+}
 
 function findColumnForTask(
     columnTasks: Record<string, Task[]>,
@@ -111,18 +125,21 @@ function DroppableColumnBody({
                 scrollRef.current = node;
             }}
             sx={{
-                px: 1,
-                pt: 1,
-                pb: 1.5,
+                // Negative margin + padding keeps card shadows unclipped
+                // while content stays aligned with the well's 12px inset
+                mx: "-4px",
+                px: "4px",
+                pt: "2px",
+                pb: "6px",
                 minHeight: 100,
                 maxHeight: "calc(100vh - 280px)",
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
-                gap: 1.25,
-                borderRadius: "0 0 16px 16px",
-                transition: "background-color 150ms ease",
-                bgcolor: isOver ? KANBAN_PANEL_SELECTED : "transparent",
+                gap: "10px",
+                borderRadius: "0 0 12px 12px",
+                transition: "background-color 150ms ease-out",
+                bgcolor: isOver ? KANBAN_DROP_HIGHLIGHT : "transparent",
             }}
         >
             {children}
@@ -179,24 +196,22 @@ function CollapsedColumn({
             ref={setNodeRef}
             elevation={0}
             sx={{
-                width: 48,
-                minWidth: 48,
-                flex: "0 0 48px",
-                bgcolor: isOver ? KANBAN_PANEL_SELECTED : KANBAN_PANEL,
-                borderRadius: "12px",
-                border: 1,
-                borderColor: isOver ? "primary.main" : KANBAN_DIVIDER,
-                color: KANBAN_TEXT,
+                width: 52,
+                minWidth: 52,
+                flex: "0 0 52px",
+                bgcolor: isOver ? KANBAN_DROP_HIGHLIGHT : harbor.well,
+                borderRadius: "18px",
+                color: harbor.ink,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                py: 1.5,
+                gap: 1.25,
+                py: 1.75,
                 cursor: "pointer",
-                transition: "all 200ms ease",
+                transition: "background-color 150ms ease-out",
                 minHeight: 200,
                 "&:hover": {
-                    borderColor: "primary.main",
-                    bgcolor: KANBAN_PANEL_HOVER,
+                    bgcolor: KANBAN_DROP_HIGHLIGHT,
                 },
             }}
             onClick={onExpand}
@@ -211,43 +226,38 @@ function CollapsedColumn({
             aria-label={`Expand ${column.name} column`}
         >
             <Tooltip title="Expand column" placement="right">
-                <IconButton size="small" sx={{ mb: 1, color: KANBAN_MUTED }}>
-                    <ChevronRightIcon fontSize="small" />
-                </IconButton>
+                <ChevronRightIcon
+                    fontSize="small"
+                    sx={{ color: harbor.faint }}
+                />
             </Tooltip>
             <Box
                 sx={{
-                    width: 8,
-                    height: 8,
+                    width: 9,
+                    height: 9,
                     borderRadius: "50%",
-                    bgcolor: column.color || "#9e9e9e",
+                    bgcolor: columnDotColor(column),
                     flexShrink: 0,
-                    mb: 1,
                 }}
-            />
-            <Chip
-                label={taskCount}
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.65rem", minWidth: 24, mb: 1.5 }}
             />
             <Typography
                 variant="caption"
-                fontWeight={700}
                 sx={{
                     writingMode: "vertical-rl",
                     textOrientation: "mixed",
-                    transform: "rotate(180deg)",
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     maxHeight: "calc(100vh - 360px)",
-                    letterSpacing: "0.05em",
-                    color: KANBAN_MUTED,
+                    fontFamily: harbor.headingFont,
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    color: harbor.sub,
                     userSelect: "none",
                 }}
             >
-                {column.name}
+                {column.name} · {taskCount}
             </Typography>
         </Paper>
     );
@@ -568,7 +578,7 @@ export default function KanbanView({
                 aria-label="Kanban board"
                 sx={{
                     display: "flex",
-                    gap: 2.5,
+                    gap: 2,
                     overflowX: "auto",
                     overflowY: "hidden",
                     pb: 2,
@@ -662,19 +672,14 @@ export default function KanbanView({
                                     minWidth: 330,
                                     maxWidth: 360,
                                     flex: "0 0 330px",
-                                    bgcolor: KANBAN_PANEL,
-                                    borderRadius: "16px",
-                                    border: 1,
-                                    borderColor: atWipLimit
-                                        ? "warning.main"
-                                        : KANBAN_DIVIDER,
-                                    color: KANBAN_TEXT,
+                                    bgcolor: harbor.well,
+                                    borderRadius: "18px",
+                                    p: "12px",
+                                    color: harbor.ink,
                                     display: "flex",
                                     flexDirection: "column",
-                                    boxShadow:
-                                        "0 18px 50px rgba(0, 0, 0, 0.12)",
                                     transition:
-                                        "flex 200ms ease, min-width 200ms ease",
+                                        "flex 180ms ease-out, min-width 180ms ease-out",
                                 }}
                             >
                                 {/* Column header */}
@@ -682,52 +687,59 @@ export default function KanbanView({
                                     sx={{
                                         display: "flex",
                                         alignItems: "center",
-                                        gap: 1.25,
-                                        px: 2,
-                                        py: 2,
+                                        gap: 1,
+                                        px: "6px",
+                                        pt: "4px",
+                                        pb: "10px",
                                     }}
                                 >
                                     <Box
                                         sx={{
-                                            width: 24,
-                                            height: 24,
+                                            width: 9,
+                                            height: 9,
                                             borderRadius: "50%",
-                                            bgcolor: column.color || "#9e9e9e",
+                                            bgcolor: columnDotColor(column),
                                             flexShrink: 0,
-                                            boxShadow: `0 0 0 5px ${column.color || "#9e9e9e"}22`,
                                         }}
                                     />
                                     <Typography
                                         variant="subtitle2"
                                         component="h2"
-                                        fontWeight={700}
-                                        sx={{ flex: 1, color: KANBAN_TEXT }}
+                                        sx={{
+                                            color: harbor.ink,
+                                            fontFamily: harbor.headingFont,
+                                            fontSize: "15px",
+                                            fontWeight: 700,
+                                            minWidth: 0,
+                                        }}
                                         noWrap
                                     >
                                         {column.name}
                                     </Typography>
-                                    <Chip
-                                        label={
-                                            column.wip_limit != null &&
-                                            column.wip_limit > 0
-                                                ? `${totalCount} / ${column.wip_limit}`
-                                                : totalCount
-                                        }
-                                        size="small"
-                                        variant="outlined"
-                                        color={
-                                            atWipLimit ? "warning" : "default"
-                                        }
+                                    <Box
+                                        component="span"
                                         sx={{
-                                            height: 22,
-                                            fontSize: "0.7rem",
-                                            minWidth: 28,
-                                            bgcolor:
-                                                "rgba(148, 163, 184, 0.12)",
-                                            color: KANBAN_TEXT,
-                                            borderColor: KANBAN_DIVIDER,
+                                            fontSize: "11.5px",
+                                            fontWeight: 700,
+                                            fontVariantNumeric: "tabular-nums",
+                                            color: atWipLimit
+                                                ? harbor.dueSoon.fg
+                                                : harbor.sub,
+                                            bgcolor: atWipLimit
+                                                ? harbor.dueSoon.bg
+                                                : harbor.countBg,
+                                            borderRadius: "999px",
+                                            padding: "2px 8px",
+                                            whiteSpace: "nowrap",
+                                            flexShrink: 0,
                                         }}
-                                    />
+                                    >
+                                        {column.wip_limit != null &&
+                                        column.wip_limit > 0
+                                            ? `${totalCount} / ${column.wip_limit}`
+                                            : totalCount}
+                                    </Box>
+                                    <Box sx={{ flex: 1 }} />
                                     <Tooltip title="Collapse column">
                                         <IconButton
                                             size="small"
@@ -736,12 +748,12 @@ export default function KanbanView({
                                             }
                                             aria-label={`Collapse ${column.name} column`}
                                             sx={{
-                                                ml: 0.5,
                                                 width: 26,
                                                 height: 26,
-                                                opacity: 0.6,
-                                                color: KANBAN_MUTED,
-                                                "&:hover": { opacity: 1 },
+                                                color: harbor.faint,
+                                                "&:hover": {
+                                                    color: harbor.sub,
+                                                },
                                             }}
                                         >
                                             <ChevronLeftIcon fontSize="small" />
@@ -790,14 +802,13 @@ export default function KanbanView({
                                         {hasMore && !isLoading && (
                                             <Button
                                                 size="small"
-                                                variant="outlined"
                                                 onClick={() =>
                                                     loadMoreForColumn(column.id)
                                                 }
                                                 sx={{
                                                     fontSize: "0.7rem",
                                                     textTransform: "none",
-                                                    color: KANBAN_MUTED,
+                                                    color: harbor.sub,
                                                     alignSelf: "center",
                                                 }}
                                             >
@@ -826,9 +837,9 @@ export default function KanbanView({
                 {activeTask ? (
                     <Box
                         sx={{
-                            opacity: 0.9,
+                            opacity: 0.95,
                             transform: "rotate(2deg)",
-                            filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.15))",
+                            filter: "drop-shadow(0 10px 18px rgba(34, 41, 53, 0.18))",
                         }}
                     >
                         <TaskCard task={activeTask} />

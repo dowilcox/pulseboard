@@ -5,6 +5,7 @@ import DependencySection from "@/Components/Tasks/DependencySection";
 import LabelSelector from "@/Components/Tasks/LabelSelector";
 import PrioritySelector from "@/Components/Tasks/PrioritySelector";
 import RecurrenceConfig from "@/Components/Tasks/RecurrenceConfig";
+import { harbor, harborHex } from "@/theme/harbor";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import type {
     Board,
@@ -18,12 +19,12 @@ import type {
 } from "@/types";
 import type { RequestPayload } from "@inertiajs/core";
 import { router, usePage } from "@inertiajs/react";
-import BookmarkAddIcon from "@mui/icons-material/BookmarkAdd";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import CheckIcon from "@mui/icons-material/Check";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DeleteIcon from "@mui/icons-material/Delete";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import Box from "@mui/material/Box";
@@ -33,7 +34,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
-import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -51,12 +51,24 @@ interface Props {
     isWatching: boolean;
 }
 
-const SIDEBAR_SURFACE = "rgba(16, 24, 39, 0.92)";
-const SIDEBAR_TEXT = "#f8fafc";
-const SIDEBAR_MUTED = "#cbd5e1";
-const SIDEBAR_SUBTLE = "#a8b3c7";
-const SIDEBAR_BORDER = "rgba(148, 163, 184, 0.24)";
-const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
+/** Harbor sidebar group card. */
+const groupCardSx = {
+    bgcolor: harbor.card,
+    borderRadius: "16px",
+    boxShadow: harbor.cardShadow,
+    p: "14px 16px",
+    display: "flex",
+    flexDirection: "column",
+} as const;
+
+/** Shared sizing for the sidebar selects/inputs — 38px Harbor controls. */
+const controlSx = {
+    height: 38,
+    fontSize: 13,
+    fontWeight: 600,
+    color: harbor.ink,
+    "& .MuiSelect-icon": { color: harbor.faint },
+} as const;
 
 export default function TaskSidebar({
     task,
@@ -239,112 +251,148 @@ export default function TaskSidebar({
         );
     };
 
-    const sectionLabel = (label: string) => (
+    // Micro-label above each sidebar field group.
+    const microLabel = (label: string) => (
         <Typography
-            variant="caption"
-            fontWeight={700}
-            textTransform="uppercase"
-            letterSpacing={0.5}
-            sx={{ pt: 0.5, color: SIDEBAR_SUBTLE }}
+            component="span"
+            sx={{
+                display: "block",
+                fontSize: 10.5,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.07em",
+                color: harbor.faint,
+                mb: "6px",
+            }}
         >
             {label}
         </Typography>
     );
 
     const fieldRow = (label: string, children: React.ReactNode) => (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-            <Typography
-                variant="caption"
-                fontWeight={600}
-                sx={{ color: SIDEBAR_MUTED }}
-            >
-                {label}
-            </Typography>
+        <Box>
+            {microLabel(label)}
             <Box>{children}</Box>
         </Box>
     );
 
     return (
-        <Paper
-            variant="outlined"
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 1.5,
-                p: 1.75,
-                bgcolor: SIDEBAR_SURFACE,
-                color: SIDEBAR_TEXT,
-                borderColor: SIDEBAR_BORDER,
-                "& .MuiOutlinedInput-root": {
-                    color: SIDEBAR_TEXT,
-                    "& fieldset": { borderColor: SIDEBAR_BORDER },
-                    "&:hover fieldset": { borderColor: SIDEBAR_MUTED },
-                    "&.Mui-focused fieldset": { borderColor: "primary.main" },
-                },
-                "& .MuiSvgIcon-root": {
-                    color: SIDEBAR_MUTED,
-                },
-            }}
-        >
-            {/* Status — always visible */}
-            <Button
-                variant={isCompleted ? "contained" : "outlined"}
-                color={isCompleted ? "success" : "inherit"}
-                startIcon={
-                    isCompleted ? (
-                        <CheckCircleOutlineIcon />
-                    ) : (
-                        <RadioButtonUncheckedIcon />
-                    )
-                }
-                onClick={handleToggleComplete}
-                fullWidth
-                size="small"
-                aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
-                sx={{
-                    color: isCompleted ? undefined : SIDEBAR_TEXT,
-                    borderColor: isCompleted ? undefined : SIDEBAR_BORDER,
-                    "&:hover": {
-                        borderColor: isCompleted ? undefined : SIDEBAR_MUTED,
-                        bgcolor: isCompleted ? undefined : SIDEBAR_HOVER,
-                    },
-                }}
-            >
-                {isCompleted ? "Completed" : "Mark Complete"}
-            </Button>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
+            {/* Actions — complete / watch / board / column */}
+            <Box sx={{ ...groupCardSx, gap: 1.125 }}>
+                <Button
+                    variant="contained"
+                    color={isCompleted ? "success" : "primary"}
+                    disableElevation
+                    startIcon={
+                        isCompleted ? (
+                            <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
+                        ) : (
+                            <CheckIcon sx={{ fontSize: 16 }} />
+                        )
+                    }
+                    onClick={handleToggleComplete}
+                    fullWidth
+                    aria-label={
+                        isCompleted ? "Mark incomplete" : "Mark complete"
+                    }
+                    sx={{
+                        height: 38,
+                        borderRadius: "10px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                    }}
+                >
+                    {isCompleted ? "Completed" : "Mark Complete"}
+                </Button>
 
-            <Button
-                variant={isWatching ? "contained" : "outlined"}
-                color={isWatching ? "primary" : "inherit"}
-                startIcon={
-                    isWatching ? <VisibilityIcon /> : <VisibilityOffIcon />
-                }
-                onClick={handleToggleWatch}
-                fullWidth
-                size="small"
-                aria-label={isWatching ? "Unwatch task" : "Watch task"}
-                sx={{
-                    color: isWatching ? undefined : SIDEBAR_TEXT,
-                    borderColor: isWatching ? undefined : SIDEBAR_BORDER,
-                    "&:hover": {
-                        borderColor: isWatching ? undefined : SIDEBAR_MUTED,
-                        bgcolor: isWatching ? undefined : SIDEBAR_HOVER,
-                    },
-                }}
-            >
-                {isWatching ? "Watching" : "Watch"}
-            </Button>
+                <Button
+                    startIcon={
+                        isWatching ? (
+                            <VisibilityIcon sx={{ fontSize: 16 }} />
+                        ) : (
+                            <VisibilityOffIcon sx={{ fontSize: 16 }} />
+                        )
+                    }
+                    onClick={handleToggleWatch}
+                    fullWidth
+                    aria-label={isWatching ? "Unwatch task" : "Watch task"}
+                    sx={{
+                        height: 38,
+                        borderRadius: "10px",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        bgcolor: harbor.countBg,
+                        color: isWatching ? harborHex.accent : harbor.ink,
+                        transition: "background-color 150ms ease-out",
+                        "&:hover": { bgcolor: harbor.track },
+                    }}
+                >
+                    {isWatching ? "Watching" : "Watch"}
+                </Button>
 
-            {/* Board selector */}
-            {teamBoards.length > 1 && (
+                {/* Board selector */}
+                {teamBoards.length > 1 && (
+                    <Select
+                        size="small"
+                        fullWidth
+                        value={board.id}
+                        onChange={(e) => handleBoardChange(e.target.value)}
+                        inputProps={{ "aria-label": "Board" }}
+                        sx={controlSx}
+                        renderValue={(value) => {
+                            const b = teamBoards.find((tb) => tb.id === value);
+                            return (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <DashboardIcon
+                                        sx={{
+                                            fontSize: 14,
+                                            color: harbor.faint,
+                                        }}
+                                    />
+                                    {b?.name ?? "Unknown"}
+                                </Box>
+                            );
+                        }}
+                    >
+                        {teamBoards.map((b) => (
+                            <MenuItem key={b.id} value={b.id}>
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                    }}
+                                >
+                                    <DashboardIcon
+                                        sx={{
+                                            fontSize: 14,
+                                            color: "text.secondary",
+                                        }}
+                                    />
+                                    {b.name}
+                                </Box>
+                            </MenuItem>
+                        ))}
+                    </Select>
+                )}
+
+                {/* Column selector — 8px status dot in the column color */}
                 <Select
                     size="small"
                     fullWidth
-                    value={board.id}
-                    onChange={(e) => handleBoardChange(e.target.value)}
-                    inputProps={{ "aria-label": "Board" }}
+                    value={task.column_id}
+                    onChange={(e) => handleColumnChange(e.target.value)}
+                    inputProps={{ "aria-label": "Column" }}
+                    sx={controlSx}
                     renderValue={(value) => {
-                        const b = teamBoards.find((tb) => tb.id === value);
+                        const col = columns.find((c) => c.id === value);
                         return (
                             <Box
                                 sx={{
@@ -353,19 +401,22 @@ export default function TaskSidebar({
                                     gap: 1,
                                 }}
                             >
-                                <DashboardIcon
+                                <Box
                                     sx={{
-                                        fontSize: 14,
-                                        color: SIDEBAR_MUTED,
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: "50%",
+                                        bgcolor: col?.color ?? "grey.400",
+                                        flexShrink: 0,
                                     }}
                                 />
-                                {b?.name ?? "Unknown"}
+                                {col?.name ?? "Unknown"}
                             </Box>
                         );
                     }}
                 >
-                    {teamBoards.map((b) => (
-                        <MenuItem key={b.id} value={b.id}>
+                    {columns.map((col) => (
+                        <MenuItem key={col.id} value={col.id}>
                             <Box
                                 sx={{
                                     display: "flex",
@@ -373,90 +424,37 @@ export default function TaskSidebar({
                                     gap: 1,
                                 }}
                             >
-                                <DashboardIcon
+                                <Box
                                     sx={{
-                                        fontSize: 14,
-                                        color: "text.secondary",
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: "50%",
+                                        bgcolor: col.color,
+                                        flexShrink: 0,
                                     }}
                                 />
-                                {b.name}
+                                {col.name}
                             </Box>
                         </MenuItem>
                     ))}
                 </Select>
-            )}
-
-            {/* Column selector */}
-            <Select
-                size="small"
-                fullWidth
-                value={task.column_id}
-                onChange={(e) => handleColumnChange(e.target.value)}
-                inputProps={{ "aria-label": "Column" }}
-                renderValue={(value) => {
-                    const col = columns.find((c) => c.id === value);
-                    return (
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    bgcolor: col?.color ?? "grey.400",
-                                    flexShrink: 0,
-                                }}
-                            />
-                            {col?.name ?? "Unknown"}
-                        </Box>
-                    );
-                }}
-            >
-                {columns.map((col) => (
-                    <MenuItem key={col.id} value={col.id}>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    bgcolor: col.color,
-                                    flexShrink: 0,
-                                }}
-                            />
-                            {col.name}
-                        </Box>
-                    </MenuItem>
-                ))}
-            </Select>
+            </Box>
 
             {/* GitLab */}
             {gitlabProjects.length > 0 && (
-                <>
-                    {sectionLabel("GitLab")}
+                <Box sx={{ ...groupCardSx, gap: 1.125 }}>
+                    {microLabel("GitLab")}
                     <GitlabSidebarControls
                         task={task}
                         teamSlug={team.slug}
                         boardSlug={board.slug}
                         gitlabProjects={gitlabProjects}
                     />
-                </>
+                </Box>
             )}
 
             {/* Details */}
-            {sectionLabel("Details")}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ ...groupCardSx, gap: 1.5 }}>
                 {fieldRow(
                     "Priority",
                     <PrioritySelector
@@ -484,13 +482,14 @@ export default function TaskSidebar({
                     />,
                 )}
                 {fieldRow(
-                    "Due Date",
+                    "Due date",
                     <TextField
                         type="date"
                         size="small"
                         fullWidth
                         value={dueDate}
                         onChange={(e) => handleDueDateChange(e.target.value)}
+                        sx={{ "& .MuiOutlinedInput-root": controlSx }}
                         slotProps={{
                             htmlInput: {
                                 "aria-label": "Due date",
@@ -499,9 +498,9 @@ export default function TaskSidebar({
                                 startAdornment: (
                                     <CalendarTodayIcon
                                         sx={{
-                                            fontSize: 16,
+                                            fontSize: 15,
                                             mr: 1,
-                                            color: SIDEBAR_MUTED,
+                                            color: harbor.faint,
                                         }}
                                     />
                                 ),
@@ -519,6 +518,7 @@ export default function TaskSidebar({
                         value={effortEstimate}
                         onChange={(e) => handleEffortChange(e.target.value)}
                         placeholder="Points"
+                        sx={{ "& .MuiOutlinedInput-root": controlSx }}
                         slotProps={{
                             htmlInput: {
                                 min: 0,
@@ -529,9 +529,8 @@ export default function TaskSidebar({
                 )}
             </Box>
 
-            {/* Planning */}
-            {sectionLabel("Planning")}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Planning — dependencies + recurrence */}
+            <Box sx={{ ...groupCardSx, gap: 1.375 }}>
                 <DependencySection
                     task={task}
                     boardTasks={boardTasks}
@@ -539,104 +538,105 @@ export default function TaskSidebar({
                     boardSlug={board.slug}
                 />
 
-                {fieldRow(
-                    "Recurrence",
+                <Box
+                    sx={{
+                        borderTop: `1px solid ${harbor.cardBorder}`,
+                        pt: 1.375,
+                    }}
+                >
                     <RecurrenceConfig
                         config={recurrenceConfig}
                         onChange={handleRecurrenceChange}
-                    />,
-                )}
+                    />
+                </Box>
             </Box>
 
             {/* Info */}
-            {sectionLabel("Info")}
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 0.25,
-                }}
-            >
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography
-                        variant="caption"
-                        sx={{ color: SIDEBAR_SUBTLE }}
+            <Box sx={{ ...groupCardSx, gap: 0.875 }}>
+                {microLabel("Info")}
+                <Box sx={{ display: "flex", fontSize: 12, color: harbor.sub }}>
+                    <Box
+                        component="span"
+                        sx={{ width: 70, flexShrink: 0, color: harbor.faint }}
                     >
                         Created
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: SIDEBAR_MUTED }}>
+                    </Box>
+                    <Box component="span">
                         {formatTimestamp(task.created_at)}
                         {task.creator && ` by ${task.creator.name}`}
-                    </Typography>
+                    </Box>
                 </Box>
-                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                    <Typography
-                        variant="caption"
-                        sx={{ color: SIDEBAR_SUBTLE }}
+                <Box sx={{ display: "flex", fontSize: 12, color: harbor.sub }}>
+                    <Box
+                        component="span"
+                        sx={{ width: 70, flexShrink: 0, color: harbor.faint }}
                     >
                         Updated
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: SIDEBAR_MUTED }}>
+                    </Box>
+                    <Box component="span">
                         {formatTimestamp(task.updated_at)}
-                    </Typography>
+                    </Box>
                 </Box>
-            </Box>
 
-            {/* Actions */}
-            <Box
-                sx={{
-                    display: "flex",
-                    gap: 1,
-                    pt: 0.5,
-                    borderTop: 1,
-                    borderColor: "divider",
-                    mt: 0.5,
-                }}
-            >
-                {canManageTemplates && (
+                {/* Actions — template / delete */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1.75,
+                        borderTop: `1px solid ${harbor.cardBorder}`,
+                        pt: 1.25,
+                        mt: 0.375,
+                    }}
+                >
+                    {canManageTemplates && (
+                        <Button
+                            variant="text"
+                            startIcon={
+                                <ContentCopyIcon
+                                    sx={{ fontSize: "13px !important" }}
+                                />
+                            }
+                            onClick={() => setTemplateDialogOpen(true)}
+                            size="small"
+                            sx={{
+                                px: 0.5,
+                                minWidth: 0,
+                                fontSize: 12.5,
+                                fontWeight: 700,
+                                color: harbor.sub,
+                                "&:hover": {
+                                    bgcolor: "transparent",
+                                    color: harbor.ink,
+                                },
+                            }}
+                        >
+                            Template
+                        </Button>
+                    )}
+                    <Box sx={{ flex: 1 }} />
                     <Button
                         variant="text"
                         startIcon={
-                            <BookmarkAddIcon
-                                sx={{ fontSize: "16px !important" }}
-                            />
+                            <DeleteIcon sx={{ fontSize: "13px !important" }} />
                         }
-                        onClick={() => setTemplateDialogOpen(true)}
+                        onClick={() => setDeleteDialogOpen(true)}
                         size="small"
                         sx={{
-                            flex: 1,
-                            textTransform: "none",
-                            color: SIDEBAR_MUTED,
-                            fontSize: "0.75rem",
+                            px: 0.5,
+                            minWidth: 0,
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            color: harbor.dangerText,
                             "&:hover": {
-                                color: SIDEBAR_TEXT,
-                                bgcolor: SIDEBAR_HOVER,
+                                bgcolor: "transparent",
+                                color: harborHex.danger,
                             },
                         }}
                     >
-                        Template
+                        Delete
                     </Button>
-                )}
-                <Button
-                    variant="text"
-                    startIcon={
-                        <DeleteIcon sx={{ fontSize: "16px !important" }} />
-                    }
-                    onClick={() => setDeleteDialogOpen(true)}
-                    size="small"
-                    sx={{
-                        flex: 1,
-                        textTransform: "none",
-                        color: SIDEBAR_MUTED,
-                        fontSize: "0.75rem",
-                        "&:hover": {
-                            color: "error.main",
-                            bgcolor: SIDEBAR_HOVER,
-                        },
-                    }}
-                >
-                    Delete
-                </Button>
+                </Box>
             </Box>
 
             {/* Delete confirmation dialog */}
@@ -687,6 +687,6 @@ export default function TaskSidebar({
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Paper>
+        </Box>
     );
 }

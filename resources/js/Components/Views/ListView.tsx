@@ -5,6 +5,7 @@ import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
 import { formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
+import { harbor } from "@/theme/harbor";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
@@ -461,7 +462,7 @@ export default function ListView({
                         sx={{
                             "& .MuiTableCell-head": {
                                 fontWeight: 600,
-                                bgcolor: "rgba(148, 163, 184, 0.08)",
+                                bgcolor: harbor.countBg,
                                 py: 1.5,
                             },
                         }}

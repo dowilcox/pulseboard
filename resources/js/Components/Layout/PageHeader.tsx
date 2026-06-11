@@ -3,8 +3,16 @@ import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import { harbor } from "@/theme/harbor";
 import type { ReactNode } from "react";
+
+// Harbor breadcrumbs: small bold faint trail with "›" separators; the
+// trailing crumb steps up to the sub tone.
+const CRUMB_SX = {
+    fontSize: "12.5px",
+    fontWeight: 600,
+    color: harbor.faint,
+} as const;
 
 const VISUALLY_HIDDEN = {
     position: "absolute",
@@ -53,49 +61,55 @@ export default function PageHeader({
         >
             <Box sx={{ minWidth: 0, flex: "1 1 auto", maxWidth: "100%" }}>
                 <MuiBreadcrumbs
-                    separator={<NavigateNextIcon sx={{ fontSize: 14 }} />}
-                    sx={{ mb: 0.25 }}
+                    separator="›"
+                    sx={{
+                        mb: 0.25,
+                        "& .MuiBreadcrumbs-separator": {
+                            ...CRUMB_SX,
+                            mx: 0.75,
+                        },
+                    }}
                     aria-label="breadcrumb"
                 >
                     <Link
                         component={InertiaLink}
                         href={route("dashboard")}
                         underline="hover"
-                        color="text.secondary"
-                        variant="body2"
                         sx={{
+                            ...CRUMB_SX,
                             display: "flex",
                             alignItems: "center",
                             gap: 0.5,
-                            fontSize: "0.95rem",
+                            color:
+                                breadcrumbs.length === 0
+                                    ? harbor.sub
+                                    : harbor.faint,
                         }}
                     >
                         Home
                     </Link>
-                    {breadcrumbs.map((crumb) =>
-                        crumb.href ? (
+                    {breadcrumbs.map((crumb, index) => {
+                        const isLast = index === breadcrumbs.length - 1;
+                        const color = isLast ? harbor.sub : harbor.faint;
+                        return crumb.href ? (
                             <Link
                                 key={crumb.label}
                                 component={InertiaLink}
                                 href={crumb.href}
                                 underline="hover"
-                                color="text.secondary"
-                                variant="body2"
-                                sx={{ fontSize: "0.95rem" }}
+                                sx={{ ...CRUMB_SX, color }}
                             >
                                 {crumb.label}
                             </Link>
                         ) : (
                             <Typography
                                 key={crumb.label}
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ fontSize: "0.95rem" }}
+                                sx={{ ...CRUMB_SX, color }}
                             >
                                 {crumb.label}
                             </Typography>
-                        ),
-                    )}
+                        );
+                    })}
                 </MuiBreadcrumbs>
                 <Box
                     sx={{
@@ -121,8 +135,9 @@ export default function PageHeader({
                             noWrap
                             sx={{
                                 fontSize: { xs: "1.6rem", md: "1.85rem" },
-                                letterSpacing: "-0.04em",
+                                letterSpacing: "-0.01em",
                                 lineHeight: 1.12,
+                                color: harbor.ink,
                             }}
                         >
                             {title}

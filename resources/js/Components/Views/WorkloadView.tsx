@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { PRIORITY_COLORS } from "@/constants/priorities";
+import { harborHex } from "@/theme/harbor";
 import type { Column, Task, User } from "@/types";
 import { getTaskLabel } from "@/utils/gitlabPrefix";
 import Avatar from "@mui/material/Avatar";
@@ -28,7 +29,7 @@ function TaskChip({
             sx={{
                 cursor: "pointer",
                 borderLeft: 3,
-                borderColor: PRIORITY_COLORS[task.priority] ?? "#e5e7eb",
+                borderColor: PRIORITY_COLORS[task.priority] ?? harborHex.track,
                 maxWidth: 200,
             }}
         />
@@ -189,7 +190,7 @@ export default function WorkloadView({
                                                     borderColor:
                                                         PRIORITY_COLORS[
                                                             priority
-                                                        ] ?? "#e5e7eb",
+                                                        ] ?? harborHex.track,
                                                 }}
                                             />
                                         ),

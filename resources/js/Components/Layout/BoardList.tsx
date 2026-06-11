@@ -28,12 +28,14 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useRef } from "react";
+import { harbor } from "@/theme/harbor";
 
-const SIDEBAR_TEXT = "#f8fafc";
-const SIDEBAR_MUTED = "#a8b3c7";
-const SIDEBAR_SELECTED = "rgba(108, 92, 255, 0.30)";
-const SIDEBAR_HOVER = "rgba(148, 163, 184, 0.14)";
-const SIDEBAR_FOCUS = "rgba(108, 92, 255, 0.38)";
+// Harbor: active board is a cream card tile with a chip shadow; inactive
+// rows are faint text on the canvas with a subtle ink-tint hover.
+const SIDEBAR_TEXT = harbor.ink;
+const SIDEBAR_MUTED = harbor.faint;
+const SIDEBAR_SELECTED = harbor.card;
+const SIDEBAR_HOVER = "rgba(34, 41, 53, 0.05)";
 
 interface BoardListProps {
     boards: Board[];
@@ -99,15 +101,14 @@ function SortableBoardItem({
                     mb: 0.5,
                     px: 1.75,
                     py: 1,
-                    borderRadius: 1.25,
-                    borderLeft: isActive ? 3 : 0,
-                    borderColor: "primary.main",
+                    borderRadius: `${harbor.radius.tile}px`,
                     color: isActive ? SIDEBAR_TEXT : SIDEBAR_MUTED,
+                    boxShadow: isActive ? harbor.chipShadow : "none",
                     "&.Mui-selected": {
                         bgcolor: SIDEBAR_SELECTED,
                         color: SIDEBAR_TEXT,
                         "&:hover": {
-                            bgcolor: SIDEBAR_FOCUS,
+                            bgcolor: SIDEBAR_SELECTED,
                         },
                     },
                     "&:hover": {
@@ -156,7 +157,7 @@ function SortableBoardItem({
                             fontSize="small"
                             sx={{
                                 color: isActive
-                                    ? "primary.light"
+                                    ? "primary.main"
                                     : SIDEBAR_MUTED,
                             }}
                         />

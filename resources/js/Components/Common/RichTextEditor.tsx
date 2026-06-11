@@ -31,6 +31,7 @@ import MentionList, {
 } from "@/Components/Common/MentionList";
 import { htmlSourceToMarkdownCode } from "@/utils/htmlCodePaste";
 import { sanitizeRichText } from "@/utils/sanitizeRichText";
+import { harbor } from "@/theme/harbor";
 import type { User } from "@/types";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -496,18 +497,13 @@ export default function RichTextEditor({
         <Box
             sx={{
                 border: 1,
-                borderColor:
-                    theme.palette.mode === "dark"
-                        ? "rgba(255,255,255,0.16)"
-                        : "divider",
-                borderRadius: 1,
+                borderColor: "transparent",
+                borderRadius: "10px",
                 overflow: "hidden",
-                bgcolor: "background.paper",
+                bgcolor: harbor.countBg,
+                transition: "border-color 150ms ease-out",
                 "&:hover": {
-                    borderColor:
-                        theme.palette.mode === "dark"
-                            ? "rgba(255,255,255,0.30)"
-                            : "text.primary",
+                    borderColor: harbor.faint,
                 },
                 "&:focus-within": {
                     borderColor: "primary.main",
@@ -519,7 +515,7 @@ export default function RichTextEditor({
                     outline: "none",
                     "& p.is-editor-empty:first-of-type::before": {
                         content: "attr(data-placeholder)",
-                        color: "text.disabled",
+                        color: harbor.faint,
                         float: "left",
                         height: 0,
                         pointerEvents: "none",
@@ -575,15 +571,12 @@ export default function RichTextEditor({
                         textDecoration: "underline",
                     },
                     "& .mention": {
-                        color: "primary.light",
-                        bgcolor: "primary.50",
+                        color: "primary.main",
+                        bgcolor: "rgba(57, 89, 166, 0.12)",
                         borderRadius: "4px",
                         px: 0.25,
                         fontWeight: 600,
                         cursor: "default",
-                        ...(theme.palette.mode === "dark" && {
-                            bgcolor: "rgba(156, 140, 255, 0.14)",
-                        }),
                     },
                     "& blockquote": {
                         borderLeft: 3,
@@ -622,9 +615,7 @@ export default function RichTextEditor({
                         flexWrap: "wrap",
                         gap: 0.25,
                         p: 0.5,
-                        bgcolor: "background.paper",
-                        borderBottom: 1,
-                        borderColor: "divider",
+                        borderBottom: "1px solid rgba(34, 41, 53, 0.08)",
                     }}
                 >
                     {toolbarButton(

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { harbor, harborHex } from "@/theme/harbor";
 import type { FigmaConnection, Task, TaskFigmaLink } from "@/types";
 import axios from "axios";
 import { router } from "@inertiajs/react";
@@ -149,20 +150,39 @@ export default function FigmaSection({
                     mb: 1,
                 }}
             >
-                <Typography variant="subtitle2" fontWeight={600}>
+                <Typography
+                    component="h2"
+                    sx={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        fontFamily: harbor.headingFont,
+                        color: harbor.ink,
+                    }}
+                >
                     Figma
                 </Typography>
                 <Button
                     size="small"
-                    startIcon={<AddIcon />}
+                    startIcon={<AddIcon sx={{ fontSize: 13 }} />}
                     onClick={() => setDialogOpen(true)}
+                    sx={{
+                        px: 0.5,
+                        minWidth: 0,
+                        color: harborHex.accent,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        "&:hover": {
+                            bgcolor: "transparent",
+                            textDecoration: "underline",
+                        },
+                    }}
                 >
                     Link
                 </Button>
             </Box>
 
             {links.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
+                <Typography sx={{ fontSize: 12.5, color: harbor.faint }}>
                     No Figma links yet
                 </Typography>
             ) : (

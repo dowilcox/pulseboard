@@ -1,27 +1,90 @@
-import { createTheme, type ThemeOptions } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
+import { harbor, harborHex } from "./harbor";
 
-const commonOptions: ThemeOptions = {
+/**
+ * Harbor theme — mid-tone blue-slate canvas, cream shadow-only cards,
+ * indigo accent with copper warmth. Tokens in ./harbor.ts.
+ */
+export const harborTheme = createTheme({
     typography: {
-        fontFamily: '"Inter", "Helvetica Neue", "Arial", sans-serif',
+        fontFamily: harbor.bodyFont,
+        h1: { fontFamily: harbor.headingFont, fontWeight: 800 },
+        h2: { fontFamily: harbor.headingFont, fontWeight: 800 },
+        h3: { fontFamily: harbor.headingFont, fontWeight: 800 },
         h4: {
-            letterSpacing: "-0.03em",
-        },
-        h5: {
-            letterSpacing: "-0.02em",
-        },
-        h6: {
+            fontFamily: harbor.headingFont,
+            fontWeight: 800,
             letterSpacing: "-0.01em",
         },
+        h5: {
+            fontFamily: harbor.headingFont,
+            fontWeight: 800,
+            letterSpacing: "-0.01em",
+        },
+        h6: {
+            fontFamily: harbor.headingFont,
+            fontWeight: 700,
+            letterSpacing: "-0.01em",
+        },
+        subtitle1: { fontWeight: 600 },
+        subtitle2: { fontWeight: 700 },
+        button: { fontWeight: 700 },
     },
     shape: {
         borderRadius: 12,
+    },
+    palette: {
+        mode: "light",
+        primary: {
+            main: harborHex.accent,
+            light: harborHex.accentLight,
+            dark: harborHex.accentDark,
+            contrastText: "#ffffff",
+        },
+        secondary: {
+            main: harborHex.secondary,
+            contrastText: "#ffffff",
+        },
+        success: {
+            main: harborHex.success,
+            contrastText: "#ffffff",
+        },
+        warning: {
+            main: harborHex.secondary,
+            contrastText: "#ffffff",
+        },
+        error: {
+            main: harborHex.danger,
+            dark: harborHex.dangerText,
+            contrastText: "#ffffff",
+        },
+        background: {
+            default: harborHex.canvas,
+            paper: harborHex.card,
+        },
+        text: {
+            primary: harborHex.ink,
+            secondary: harborHex.sub,
+        },
+        divider: harborHex.cardBorder,
+        action: {
+            hover: "rgba(34, 41, 53, 0.05)",
+            selected: "rgba(57, 89, 166, 0.12)",
+            focus: "rgba(57, 89, 166, 0.18)",
+            disabled: "rgba(77, 86, 98, 0.38)",
+            disabledBackground: "rgba(77, 86, 98, 0.12)",
+        },
     },
     components: {
         MuiCssBaseline: {
             styleOverrides: {
                 body: {
-                    background:
-                        "radial-gradient(circle at 28% -10%, rgba(78, 91, 232, 0.18), transparent 34%), #080f1d",
+                    background: harbor.canvas,
+                    color: harbor.ink,
+                },
+                "*:focus-visible": {
+                    outline: `2px solid ${harborHex.accent}`,
+                    outlineOffset: 2,
                 },
             },
         },
@@ -32,43 +95,14 @@ const commonOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     textTransform: "none",
-                    borderRadius: 10,
+                    borderRadius: harbor.radius.control,
                     fontWeight: 700,
                 },
                 outlinedPrimary: {
-                    color: "#9c8cff",
-                    borderColor: "rgba(156, 140, 255, 0.62)",
+                    borderWidth: 1.5,
                     "&:hover": {
-                        borderColor: "#9c8cff",
-                        backgroundColor: "rgba(156, 140, 255, 0.08)",
+                        borderWidth: 1.5,
                     },
-                },
-                textPrimary: {
-                    color: "#9c8cff",
-                    "&:hover": {
-                        backgroundColor: "rgba(156, 140, 255, 0.08)",
-                    },
-                },
-                containedError: {
-                    backgroundColor: "#d32f2f",
-                    color: "#ffffff",
-                    "&:hover": {
-                        backgroundColor: "#b91c1c",
-                    },
-                },
-            },
-        },
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    borderRadius: 10,
-                },
-            },
-        },
-        MuiDialog: {
-            styleOverrides: {
-                paper: {
-                    borderRadius: 12,
                 },
             },
         },
@@ -76,9 +110,34 @@ const commonOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     backgroundImage: "none",
+                    backgroundColor: harbor.card,
                 },
                 rounded: {
-                    borderRadius: 14,
+                    borderRadius: harbor.radius.panel,
+                },
+                elevation1: {
+                    boxShadow: harbor.cardShadow,
+                },
+                elevation2: {
+                    boxShadow: harbor.cardShadow,
+                },
+                elevation3: {
+                    boxShadow: harbor.cardShadowHover,
+                },
+            },
+        },
+        MuiCard: {
+            styleOverrides: {
+                root: {
+                    borderRadius: harbor.radius.panel,
+                    boxShadow: harbor.cardShadow,
+                },
+            },
+        },
+        MuiDialog: {
+            styleOverrides: {
+                paper: {
+                    borderRadius: harbor.radius.panel,
                 },
             },
         },
@@ -86,14 +145,11 @@ const commonOptions: ThemeOptions = {
             styleOverrides: {
                 root: {
                     fontWeight: 700,
-                    borderRadius: 7,
-                },
-                outlinedPrimary: {
-                    color: "#9c8cff",
-                    borderColor: "rgba(156, 140, 255, 0.62)",
+                    borderRadius: harbor.radius.pill,
                 },
                 sizeSmall: {
                     height: 22,
+                    fontSize: 11,
                 },
             },
         },
@@ -104,94 +160,39 @@ const commonOptions: ThemeOptions = {
                 },
             },
         },
-        MuiTableHead: {
-            styleOverrides: {
-                root: {
-                    "& .MuiTableCell-head": {
-                        fontWeight: 600,
-                        fontSize: "0.75rem",
-                        letterSpacing: "0.02em",
-                    },
-                },
-            },
-        },
-    },
-};
-
-export const darkTheme = createTheme({
-    ...commonOptions,
-    palette: {
-        mode: "dark",
-        primary: {
-            main: "#6c5cff",
-            light: "#9c8cff",
-            dark: "#5142df",
-            contrastText: "#ffffff",
-        },
-        secondary: {
-            main: "#13c8e8",
-        },
-        success: {
-            main: "#43d18b",
-        },
-        warning: {
-            main: "#ffb020",
-        },
-        error: {
-            main: "#ff554a",
-        },
-        background: {
-            default: "#080f1d",
-            paper: "#101827",
-        },
-        text: {
-            primary: "#f8fafc",
-            secondary: "#a8b3c7",
-        },
-        divider: "rgba(148, 163, 184, 0.18)",
-        action: {
-            hover: "rgba(148, 163, 184, 0.08)",
-            selected: "rgba(108, 92, 255, 0.16)",
-            focus: "rgba(108, 92, 255, 0.22)",
-            disabled: "rgba(148, 163, 184, 0.32)",
-            disabledBackground: "rgba(148, 163, 184, 0.10)",
-        },
-    },
-    components: {
-        ...commonOptions.components,
         MuiAppBar: {
             styleOverrides: {
                 root: {
                     backgroundImage: "none",
-                    backgroundColor: "#080f1d",
-                    borderColor: "rgba(148, 163, 184, 0.16)",
+                    backgroundColor: harbor.canvas,
+                    color: harbor.ink,
+                    borderColor: "transparent",
                 },
             },
         },
-        MuiPaper: {
-            ...commonOptions.components?.MuiPaper,
+        MuiDrawer: {
             styleOverrides: {
-                ...commonOptions.components?.MuiPaper?.styleOverrides,
-                root: {
+                paper: {
+                    backgroundColor: harbor.canvas,
                     backgroundImage: "none",
-                    backgroundColor: "#101827",
+                    borderRight: "none",
                 },
             },
         },
         MuiOutlinedInput: {
             styleOverrides: {
                 root: {
-                    backgroundColor: "#0b1423",
-                    borderRadius: 10,
+                    backgroundColor: harbor.countBg,
+                    borderRadius: harbor.radius.control,
                     "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(148, 163, 184, 0.22)",
+                        borderColor: "transparent",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(148, 163, 184, 0.40)",
+                        borderColor: harbor.faint,
                     },
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "#6c5cff",
-                        boxShadow: "0 0 0 3px rgba(108, 92, 255, 0.18)",
+                        borderColor: harborHex.accent,
+                        borderWidth: 2,
                     },
                 },
             },
@@ -200,30 +201,78 @@ export const darkTheme = createTheme({
             styleOverrides: {
                 root: {
                     "&.Mui-focused": {
-                        color: "#9c8cff",
+                        color: harborHex.accent,
                     },
                 },
             },
         },
-        MuiDrawer: {
+        MuiSelect: {
             styleOverrides: {
-                paper: {
-                    backgroundColor: "#08111f",
-                    backgroundImage: "none",
+                root: {
+                    borderRadius: harbor.radius.control,
+                },
+            },
+        },
+        MuiTableHead: {
+            styleOverrides: {
+                root: {
+                    "& .MuiTableCell-head": {
+                        fontWeight: 700,
+                        fontSize: "0.6875rem",
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        color: harbor.faint,
+                    },
                 },
             },
         },
         MuiTableCell: {
             styleOverrides: {
                 root: {
-                    borderColor: "rgba(148, 163, 184, 0.16)",
+                    borderColor: harbor.cardBorder,
                 },
             },
         },
         MuiLink: {
             styleOverrides: {
                 root: {
-                    color: "#9c8cff",
+                    color: harborHex.accent,
+                    fontWeight: 600,
+                },
+            },
+        },
+        MuiTooltip: {
+            styleOverrides: {
+                tooltip: {
+                    backgroundColor: harborHex.ink,
+                    fontWeight: 600,
+                },
+            },
+        },
+        MuiMenu: {
+            styleOverrides: {
+                paper: {
+                    boxShadow: harbor.cardShadowHover,
+                    borderRadius: harbor.radius.card,
+                },
+            },
+        },
+        MuiLinearProgress: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: harbor.track,
+                    borderRadius: 3,
+                    height: 6,
+                },
+                bar: {
+                    borderRadius: 3,
+                },
+            },
+        },
+        MuiAvatar: {
+            styleOverrides: {
+                root: {
+                    fontWeight: 700,
                 },
             },
         },

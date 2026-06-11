@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { useTheme } from "@mui/material/styles";
+import { harborHex } from "@/theme/harbor";
 
 interface LogoProps {
     size?: "small" | "medium" | "large";
@@ -25,9 +25,7 @@ export default function Logo({
     showText = false,
     textColor = "text.primary",
 }: LogoProps) {
-    const theme = useTheme();
     const iconSize = sizeMap[size];
-    const primaryColor = theme.palette.primary.main;
 
     return (
         <Box
@@ -45,26 +43,14 @@ export default function Logo({
                 xmlns="http://www.w3.org/2000/svg"
                 aria-hidden="true"
             >
-                <defs>
-                    <linearGradient
-                        id="pulseboard-logo-gradient"
-                        x1="4"
-                        y1="4"
-                        x2="60"
-                        y2="60"
-                        gradientUnits="userSpaceOnUse"
-                    >
-                        <stop stopColor={primaryColor} />
-                        <stop offset="1" stopColor="#13c8e8" />
-                    </linearGradient>
-                </defs>
+                {/* Harbor: solid indigo rounded square, white pulse mark */}
                 <rect
                     x="4"
                     y="4"
                     width="56"
                     height="56"
                     rx="14"
-                    fill="url(#pulseboard-logo-gradient)"
+                    fill={harborHex.accent}
                 />
                 <polyline
                     points="12,34 22,34 26,22 32,46 38,18 42,34 52,34"

@@ -14,6 +14,7 @@ import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { harbor } from "@/theme/harbor";
 import type {
     Board,
     Checklist,
@@ -33,7 +34,6 @@ import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -44,6 +44,22 @@ import {
     useRef,
     useState,
 } from "react";
+
+/** Harbor section card — cream surface, soft shadow, no border. */
+const cardSx = {
+    bgcolor: harbor.card,
+    borderRadius: "16px",
+    boxShadow: harbor.cardShadow,
+    p: "16px 20px",
+} as const;
+
+/** Harbor section title — 15px/700 heading font in ink. */
+const sectionTitleSx = {
+    fontSize: 15,
+    fontWeight: 700,
+    fontFamily: harbor.headingFont,
+    color: harbor.ink,
+} as const;
 
 interface Props {
     task: Task;
@@ -308,15 +324,23 @@ export default function TasksShow({
             <Box
                 sx={{
                     display: "flex",
-                    gap: 3,
+                    gap: 2,
                     flexDirection: { xs: "column", md: "row" },
                     alignItems: "flex-start",
                 }}
             >
                 {/* Left — main content */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box
+                    sx={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                    }}
+                >
                     {(task.gitlab_project || task.parent_task) && (
-                        <Box sx={{ mb: 2 }}>
+                        <Box>
                             {task.gitlab_project && (
                                 <Link
                                     href={task.gitlab_project.web_url}
@@ -364,7 +388,7 @@ export default function TasksShow({
                     )}
 
                     {/* Description */}
-                    <Box sx={{ mb: 4 }}>
+                    <Box sx={cardSx}>
                         <Box
                             sx={{
                                 display: "flex",
@@ -372,12 +396,7 @@ export default function TasksShow({
                                 justifyContent: "space-between",
                             }}
                         >
-                            <Typography
-                                variant="subtitle1"
-                                component="h2"
-                                fontWeight={700}
-                                sx={{ letterSpacing: "0.01em" }}
-                            >
+                            <Typography component="h2" sx={sectionTitleSx}>
                                 Description
                             </Typography>
                             {!editingDescription &&
@@ -401,27 +420,32 @@ export default function TasksShow({
                                             onClick={() =>
                                                 setEditingDescription(true)
                                             }
+                                            sx={{
+                                                fontSize: 12.5,
+                                                fontWeight: 700,
+                                            }}
                                         >
                                             Edit
                                         </Button>
                                     </Box>
                                 )}
                         </Box>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         {editingDescription ? (
                             <>
-                                <RichTextEditor
-                                    content={description}
-                                    onChange={handleDescriptionChange}
-                                    placeholder="Add a description..."
-                                    uploadImageUrl={route(
-                                        "tasks.images.store",
-                                        [team.slug, board.slug, task.slug],
-                                    )}
-                                    minHeight={150}
-                                    autoFocus
-                                    mentionableUsers={members}
-                                />
+                                <Box sx={{ mt: 1 }}>
+                                    <RichTextEditor
+                                        content={description}
+                                        onChange={handleDescriptionChange}
+                                        placeholder="Add a description..."
+                                        uploadImageUrl={route(
+                                            "tasks.images.store",
+                                            [team.slug, board.slug, task.slug],
+                                        )}
+                                        minHeight={150}
+                                        autoFocus
+                                        mentionableUsers={members}
+                                    />
+                                </Box>
                                 <Box
                                     sx={{
                                         display: "flex",
@@ -455,40 +479,48 @@ export default function TasksShow({
                                 </Box>
                             </>
                         ) : !isDescriptionEmpty(description) ? (
-                            <Box sx={{ px: 1 }}>
+                            <Box sx={{ mt: 1 }}>
                                 <RichTextDisplay
                                     content={description}
                                     ariaLabel="Task description"
                                 />
                             </Box>
                         ) : (
-                            <Typography
-                                color="text.secondary"
-                                sx={{
-                                    cursor: "pointer",
-                                    py: 1,
-                                    "&:hover": {
-                                        textDecoration: "underline",
-                                    },
-                                }}
+                            <Box
+                                component="button"
+                                type="button"
                                 onClick={() => setEditingDescription(true)}
+                                sx={{
+                                    display: "block",
+                                    width: "100%",
+                                    textAlign: "left",
+                                    mt: 1,
+                                    p: "12px 14px",
+                                    border: "none",
+                                    borderRadius: "10px",
+                                    bgcolor: harbor.countBg,
+                                    fontFamily: harbor.bodyFont,
+                                    fontSize: 13,
+                                    color: harbor.faint,
+                                    cursor: "pointer",
+                                    transition:
+                                        "background-color 150ms ease-out",
+                                    "&:hover": { bgcolor: harbor.track },
+                                }}
                             >
                                 Add a description...
-                            </Typography>
+                            </Box>
                         )}
                     </Box>
 
                     {/* Checklists */}
-                    <Box sx={{ mb: 4 }}>
+                    <Box sx={cardSx}>
                         <Typography
-                            variant="subtitle1"
                             component="h2"
-                            fontWeight={700}
-                            sx={{ letterSpacing: "0.01em" }}
+                            sx={{ ...sectionTitleSx, mb: 1.5 }}
                         >
                             Checklists
                         </Typography>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <ChecklistEditor
                             checklists={checklists}
                             onChange={handleChecklistsChange}
@@ -496,16 +528,13 @@ export default function TasksShow({
                     </Box>
 
                     {/* Related Links */}
-                    <Box sx={{ mb: 4 }}>
+                    <Box sx={cardSx}>
                         <Typography
-                            variant="subtitle1"
                             component="h2"
-                            fontWeight={700}
-                            sx={{ letterSpacing: "0.01em" }}
+                            sx={{ ...sectionTitleSx, mb: 0.75 }}
                         >
                             Related Links
                         </Typography>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <LinkEditor
                             links={links}
                             onChange={handleLinksChange}
@@ -513,16 +542,13 @@ export default function TasksShow({
                     </Box>
 
                     {/* Subtasks */}
-                    <Box sx={{ mb: 4 }}>
+                    <Box sx={cardSx}>
                         <Typography
-                            variant="subtitle1"
                             component="h2"
-                            fontWeight={700}
-                            sx={{ letterSpacing: "0.01em" }}
+                            sx={{ ...sectionTitleSx, mb: 0.75 }}
                         >
                             Subtasks
                         </Typography>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <SubtaskList
                             task={task}
                             teamSlug={team.slug}
@@ -534,7 +560,7 @@ export default function TasksShow({
 
                     {/* GitLab Refs */}
                     {(task.gitlab_refs ?? []).length > 0 && (
-                        <Box sx={{ mb: 4 }}>
+                        <Box sx={cardSx}>
                             <GitlabRefsList
                                 task={task}
                                 teamSlug={team.slug}
@@ -545,7 +571,7 @@ export default function TasksShow({
 
                     {/* Figma */}
                     {figmaConnections.length > 0 && (
-                        <Box sx={{ mb: 4 }}>
+                        <Box sx={cardSx}>
                             <FigmaSection
                                 task={task}
                                 teamSlug={team.slug}
@@ -556,16 +582,13 @@ export default function TasksShow({
                     )}
 
                     {/* Attachments */}
-                    <Box sx={{ mb: 4 }}>
+                    <Box sx={cardSx}>
                         <Typography
-                            variant="subtitle1"
                             component="h2"
-                            fontWeight={700}
-                            sx={{ letterSpacing: "0.01em" }}
+                            sx={{ ...sectionTitleSx, mb: 1 }}
                         >
                             Attachments
                         </Typography>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
                         <AttachmentList
                             attachments={task.attachments ?? []}
                             teamSlug={team.slug}
@@ -574,17 +597,8 @@ export default function TasksShow({
                         />
                     </Box>
 
-                    {/* Activity + Comments */}
-                    <Box>
-                        <Typography
-                            variant="subtitle1"
-                            component="h2"
-                            fontWeight={700}
-                            sx={{ letterSpacing: "0.01em" }}
-                        >
-                            Activity
-                        </Typography>
-                        <Divider sx={{ mt: 0.5, mb: 2 }} />
+                    {/* Activity + Comments — header lives inside ActivityFeed */}
+                    <Box sx={{ ...cardSx, p: "20px 24px" }}>
                         <ActivityFeed
                             comments={task.comments ?? []}
                             activities={task.activities ?? []}
@@ -605,10 +619,10 @@ export default function TasksShow({
                 {/* Right — sidebar */}
                 <Box
                     sx={{
-                        width: { xs: "100%", md: 280 },
+                        width: { xs: "100%", md: 320 },
                         flexShrink: 0,
                         position: { md: "sticky" },
-                        top: { md: 16 },
+                        top: { md: 0 },
                         alignSelf: "flex-start",
                     }}
                 >

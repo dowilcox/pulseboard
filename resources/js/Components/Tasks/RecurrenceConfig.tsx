@@ -1,3 +1,4 @@
+import { harbor } from "@/theme/harbor";
 import type { RecurrenceConfig as RecurrenceConfigType } from "@/types";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -103,7 +104,13 @@ export default function RecurrenceConfig({ config, onChange }: Props) {
                     />
                 }
                 label={
-                    <Typography variant="body2">
+                    <Typography
+                        sx={{
+                            fontSize: 12.5,
+                            fontWeight: 600,
+                            color: harbor.sub,
+                        }}
+                    >
                         {enabled
                             ? `Repeats every ${frequencyLabel()}`
                             : "Recurring task"}
