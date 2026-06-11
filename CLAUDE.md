@@ -94,7 +94,7 @@ Key relationships: Organization -> Teams -> Boards -> Columns (ordered by `sort_
 
 ### Frontend Styling
 
-MUI v6 components exclusively - no Tailwind. Use `sx` prop for styling. Theme defined in `resources/js/theme/index.ts` with light/dark variants. Theme switching via `ThemeContext`.
+MUI v6 components exclusively - no Tailwind. Use `sx` prop for styling. Theme defined in `resources/js/theme/index.ts` (currently dark-only; `ThemeContext.tsx` is a static wrapper, no mode toggle).
 
 **Important:** MUI Grid v6 must be imported from `@mui/material/Grid2` (not `Grid`). The `size` prop syntax: `<Grid size={{ xs: 12, sm: 6, md: 4 }}>`.
 
