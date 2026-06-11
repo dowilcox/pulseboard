@@ -13,6 +13,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import ListSubheader from "@mui/material/ListSubheader";
+import { harbor } from "@/theme/harbor";
 
 interface NavSection {
     label: string;
@@ -88,15 +89,22 @@ export default function AdminNav() {
                 <Chip
                     label="Admin"
                     size="small"
-                    color="warning"
-                    variant="outlined"
-                    sx={{ fontWeight: 600 }}
+                    sx={{
+                        fontWeight: 700,
+                        // Tinted copper pill — outlined copper text on the
+                        // canvas fails the 4.5:1 contrast minimum
+                        color: harbor.tints.copper.fg,
+                        bgcolor: harbor.tints.copper.bg,
+                    }}
                 />
             </Box>
-            <List disablePadding>
+            {/* component="div" keeps the grouping Boxes valid — a real <ul>
+                may only contain <li> children */}
+            <List disablePadding component="div">
                 {navSections.map((section) => (
                     <Box key={section.label}>
                         <ListSubheader
+                            component="div"
                             disableSticky
                             sx={{
                                 fontSize: "0.7rem",

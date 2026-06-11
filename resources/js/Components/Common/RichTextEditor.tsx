@@ -31,7 +31,7 @@ import MentionList, {
 } from "@/Components/Common/MentionList";
 import { htmlSourceToMarkdownCode } from "@/utils/htmlCodePaste";
 import { sanitizeRichText } from "@/utils/sanitizeRichText";
-import { harbor } from "@/theme/harbor";
+import { harbor, harborHex } from "@/theme/harbor";
 import type { User } from "@/types";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
@@ -571,7 +571,9 @@ export default function RichTextEditor({
                         textDecoration: "underline",
                     },
                     "& .mention": {
-                        color: "primary.main",
+                        // Audited pair — primary.main on the tint falls just
+                        // short of 4.5:1, so use the darker indigo
+                        color: harborHex.accentDark,
                         bgcolor: "rgba(57, 89, 166, 0.12)",
                         borderRadius: "4px",
                         px: 0.25,

@@ -19,7 +19,6 @@ import type {
 } from "@/types";
 import type { RequestPayload } from "@inertiajs/core";
 import { router, usePage } from "@inertiajs/react";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import CheckIcon from "@mui/icons-material/Check";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -491,19 +490,10 @@ export default function TaskSidebar({
                         onChange={(e) => handleDueDateChange(e.target.value)}
                         sx={{ "& .MuiOutlinedInput-root": controlSx }}
                         slotProps={{
+                            // No decorative calendar adornment — the native
+                            // date input already shows a picker icon
                             htmlInput: {
                                 "aria-label": "Due date",
-                            },
-                            input: {
-                                startAdornment: (
-                                    <CalendarTodayIcon
-                                        sx={{
-                                            fontSize: 15,
-                                            mr: 1,
-                                            color: harbor.faint,
-                                        }}
-                                    />
-                                ),
                             },
                             inputLabel: { shrink: true },
                         }}

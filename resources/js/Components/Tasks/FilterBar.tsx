@@ -638,24 +638,59 @@ export default function FilterBar({
                 ))}
             </Select>
 
-            {/* Due date range */}
+            {/* Due date range — inline prefix instead of a floating label,
+                which doesn't work on borderless pills */}
             <TextField
                 size="small"
                 type="date"
-                label="From"
                 value={filters.dueDateFrom}
                 onChange={(e) => updateFilter("dueDateFrom", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 145, ...PILL_INPUT_SX }}
+                slotProps={{
+                    htmlInput: { "aria-label": "Due date from" },
+                    input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Typography
+                                    component="span"
+                                    sx={{
+                                        fontSize: 12.5,
+                                        fontWeight: 700,
+                                        color: harbor.sub,
+                                    }}
+                                >
+                                    From
+                                </Typography>
+                            </InputAdornment>
+                        ),
+                    },
+                }}
+                sx={{ width: 200, ...PILL_INPUT_SX }}
             />
             <TextField
                 size="small"
                 type="date"
-                label="To"
                 value={filters.dueDateTo}
                 onChange={(e) => updateFilter("dueDateTo", e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ width: 145, ...PILL_INPUT_SX }}
+                slotProps={{
+                    htmlInput: { "aria-label": "Due date to" },
+                    input: {
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <Typography
+                                    component="span"
+                                    sx={{
+                                        fontSize: 12.5,
+                                        fontWeight: 700,
+                                        color: harbor.sub,
+                                    }}
+                                >
+                                    To
+                                </Typography>
+                            </InputAdornment>
+                        ),
+                    },
+                }}
+                sx={{ width: 185, ...PILL_INPUT_SX }}
             />
 
             {/* Clear all */}

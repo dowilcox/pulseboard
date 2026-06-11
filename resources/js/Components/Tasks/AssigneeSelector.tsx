@@ -96,7 +96,10 @@ export default function AssigneeSelector({
                                 height: "auto",
                                 py: "4px",
                                 pl: "4px",
-                                bgcolor: harbor.countBg,
+                                // Card-on-countBg so the pill reads as a pill
+                                // against the selector field it sits in
+                                bgcolor: harbor.card,
+                                boxShadow: harbor.chipShadow,
                                 color: harbor.ink,
                                 fontSize: 12.5,
                                 fontWeight: 700,

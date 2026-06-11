@@ -114,6 +114,10 @@ export default function QuickCreateTask({
                         px: "6px",
                         "& .MuiButton-startIcon": { mr: 0.5 },
                         "&:hover": { bgcolor: KANBAN_HOVER },
+                        // "WIP limit reached" carries information — keep it
+                        // at the audited muted-on-well tone, not MUI's
+                        // low-alpha disabled gray
+                        "&.Mui-disabled": { color: harbor.sub },
                     }}
                 >
                     {disabled ? "WIP limit reached" : "Add task"}

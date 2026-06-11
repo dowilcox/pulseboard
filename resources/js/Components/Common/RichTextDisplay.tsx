@@ -14,6 +14,7 @@ import Mention from "@tiptap/extension-mention";
 import { Markdown } from "tiptap-markdown";
 import { createLowlight, common } from "lowlight";
 import { sanitizeRichText } from "@/utils/sanitizeRichText";
+import { harborHex } from "@/theme/harbor";
 import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 
@@ -140,7 +141,9 @@ export default function RichTextDisplay({
                         textDecoration: "underline",
                     },
                     "& .mention": {
-                        color: "primary.main",
+                        // Audited pair — primary.main on the tint falls just
+                        // short of 4.5:1, so use the darker indigo
+                        color: harborHex.accentDark,
                         bgcolor: "rgba(57, 89, 166, 0.12)",
                         borderRadius: "4px",
                         px: 0.25,

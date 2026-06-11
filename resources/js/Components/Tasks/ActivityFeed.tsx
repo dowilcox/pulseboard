@@ -739,11 +739,6 @@ export default function ActivityFeed({
                 >
                     <Button
                         onClick={handleToggleSort}
-                        aria-label={
-                            sortOrder === "desc"
-                                ? "Sort oldest first"
-                                : "Sort newest first"
-                        }
                         startIcon={<SwapVertIcon sx={{ fontSize: 14 }} />}
                         sx={{
                             borderRadius: 999,

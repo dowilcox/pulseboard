@@ -76,6 +76,7 @@ export default function Dashboard({ stats }: Props) {
                                         <Box>
                                             <Typography
                                                 variant="h4"
+                                                component="p"
                                                 fontWeight={700}
                                             >
                                                 {stats[card.key]}
@@ -93,7 +94,7 @@ export default function Dashboard({ stats }: Props) {
                         ))}
                     </Grid>
 
-                    <Typography variant="h6" gutterBottom>
+                    <Typography variant="h6" component="h2" gutterBottom>
                         Quick Links
                     </Typography>
                     <Grid container spacing={2}>
@@ -116,6 +117,7 @@ export default function Dashboard({ stats }: Props) {
                                 <CardContent>
                                     <Typography
                                         variant="subtitle1"
+                                        component="h3"
                                         fontWeight={600}
                                     >
                                         Manage Users
@@ -148,6 +150,7 @@ export default function Dashboard({ stats }: Props) {
                                 <CardContent>
                                     <Typography
                                         variant="subtitle1"
+                                        component="h3"
                                         fontWeight={600}
                                     >
                                         Team Oversight
