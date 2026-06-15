@@ -7,10 +7,15 @@ import { harbor } from "@/theme/harbor";
 import type { ReactNode } from "react";
 
 // Harbor breadcrumbs: small bold faint trail with "›" separators; the
-// trailing crumb steps up to the sub tone.
+// trailing crumb steps up to the sub tone. Every crumb and the separator
+// share one inline-flex, centered, single-line-height box so links
+// (inline <a>), the current-page <p>, and the "›" all sit on one line.
 const CRUMB_SX = {
     fontSize: "12.5px",
     fontWeight: 600,
+    lineHeight: 1.5,
+    display: "inline-flex",
+    alignItems: "center",
     color: harbor.faint,
 } as const;
 
@@ -64,6 +69,16 @@ export default function PageHeader({
                     separator="›"
                     sx={{
                         mb: 0.25,
+                        // Center every crumb's <li> wrapper so the link text,
+                        // current-page text, and "›" separators share one
+                        // baseline (the wrappers otherwise inherit a taller
+                        // line-box than the separators and ride low).
+                        "& .MuiBreadcrumbs-ol": { alignItems: "center" },
+                        "& .MuiBreadcrumbs-li": {
+                            display: "flex",
+                            alignItems: "center",
+                            minWidth: 0,
+                        },
                         "& .MuiBreadcrumbs-separator": {
                             ...CRUMB_SX,
                             mx: 0.75,
@@ -77,8 +92,6 @@ export default function PageHeader({
                         underline="hover"
                         sx={{
                             ...CRUMB_SX,
-                            display: "flex",
-                            alignItems: "center",
                             gap: 0.5,
                             color:
                                 breadcrumbs.length === 0
