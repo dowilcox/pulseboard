@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\Task;
+use App\Models\Team;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+class DashboardController extends Controller
+{
+    public function teamStats(Request $request, Team $team): JsonResponse
+    {
+        $this->authorize('view', $team);
+
+        $boardIds = $team->boards()->pluck('id');
+
+        // Task counts by column (for burndown-like data)
+        $tasksByColumn = Task::whereIn('tasks.board_id', $boardIds)
+            ->join('columns', 'tasks.column_id', '=', 'columns.id')
+            ->select('columns.name as column_name', 'columns.is_done_column', DB::raw('count(*) as count'))
+            ->groupBy('columns.name', 'columns.is_done_column')
+            ->get();
+
+        // Tasks by priority
+        $tasksByPriority = Task::whereIn('board_id', $boardIds)
+            ->select('priority', DB::raw('count(*) as count'))
+            ->groupBy('priority')
+            ->pluck('count', 'priority');
+
+        // Overdue tasks
+        $overdueTasks = Task::whereIn('board_id', $boardIds)
+            ->whereNotNull('due_date')
+            ->where('due_date', '<', now()->startOfDay())
+            ->open()
+            ->with(['board.media', 'column', 'assignees'])
+            ->orderBy('due_date')
+            ->limit(20)
+            ->get();
+
+        // Workload distribution (tasks per assignee)
+        $workload = DB::table('task_assignees')
+            ->join('tasks', 'task_assignees.task_id', '=', 'tasks.id')
+            ->join('users', 'task_assignees.user_id', '=', 'users.id')
+            ->join('columns', 'tasks.column_id', '=', 'columns.id')
+            ->whereIn('tasks.board_id', $boardIds)
+            ->where('columns.is_done_column', false)
+            ->select('users.name', DB::raw('count(*) as task_count'), DB::raw('coalesce(sum(tasks.effort_estimate), 0) as total_effort'))
+            ->groupBy('users.name')
+            ->orderByDesc('task_count')
+            ->get();
+
+        // SQLite-compatible equivalents keep the test environment working;
+        // production runs MySQL and uses the native functions.
+        $sqlite = DB::connection()->getDriverName() === 'sqlite';
+        $weekExpression = $sqlite
+            ? "strftime('%Y%W', activities.created_at)"
+            : 'YEARWEEK(activities.created_at)';
+        $avgDaysExpression = $sqlite
+            ? 'AVG(julianday(activities.created_at) - julianday(tasks.created_at))'
+            : 'AVG(DATEDIFF(activities.created_at, tasks.created_at))';
+
+        // Velocity: tasks completed per week (last 8 weeks)
+        $velocity = DB::table('activities')
+            ->join('tasks', 'activities.task_id', '=', 'tasks.id')
+            ->whereIn('tasks.board_id', $boardIds)
+            ->where('activities.action', 'moved')
+            ->where('activities.created_at', '>=', now()->subWeeks(8))
+            ->where('activities.changes->to_done', true)
+            ->select(DB::raw("{$weekExpression} as week"), DB::raw('count(*) as completed'))
+            ->groupBy('week')
+            ->orderBy('week')
+            ->get();
+
+        // Cycle time: avg days from creation to done (last 30 days)
+        $cycleTime = DB::table('activities')
+            ->join('tasks', 'activities.task_id', '=', 'tasks.id')
+            ->whereIn('tasks.board_id', $boardIds)
+            ->where('activities.action', 'moved')
+            ->where('activities.created_at', '>=', now()->subDays(30))
+            ->where('activities.changes->to_done', true)
+            ->select(DB::raw("{$avgDaysExpression} as avg_days"))
+            ->value('avg_days');
+
+        return response()->json([
+            'tasks_by_column' => $tasksByColumn,
+            'tasks_by_priority' => $tasksByPriority,
+            'overdue_tasks' => $overdueTasks,
+            'workload' => $workload,
+            'velocity' => $velocity,
+            'cycle_time' => round((float) ($cycleTime ?? 0), 1),
+        ]);
+    }
+
+    public function exportCsv(Request $request, Team $team): StreamedResponse
+    {
+        $this->authorize('view', $team);
+
+        $boardIds = $team->boards()->pluck('id');
+
+        $tasks = Task::whereIn('board_id', $boardIds)
+            ->with(['board.media', 'column', 'assignees', 'labels'])
+            ->orderBy('board_id')
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->streamDownload(function () use ($tasks) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'Board', 'Column', 'Task Number', 'Title', 'Priority',
+                'Status', 'Due Date', 'Assignees', 'Labels', 'Effort',
+                'Created At',
+            ]);
+
+            foreach ($tasks as $task) {
+                fputcsv($handle, [
+                    $task->board->name ?? '',
+                    $task->column->name ?? '',
+                    '#'.$task->task_number,
+                    $task->title,
+                    $task->priority,
+                    $task->column->is_done_column ? 'Done' : 'In Progress',
+                    $task->due_date?->format('Y-m-d') ?? '',
+                    $task->assignees->pluck('name')->join(', '),
+                    $task->labels->pluck('name')->join(', '),
+                    $task->effort_estimate ?? '',
+                    $task->created_at->format('Y-m-d H:i'),
+                ]);
+            }
+
+            fclose($handle);
+        }, $team->name.'-tasks-'.now()->format('Y-m-d').'.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+}

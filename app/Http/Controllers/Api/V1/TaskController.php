@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Tasks\AssignTask;
 use App\Actions\Tasks\CreateTask;
+use App\Actions\Tasks\DeleteTask;
 use App\Actions\Tasks\MoveTask;
 use App\Actions\Tasks\SyncTaskLabels;
 use App\Actions\Tasks\ToggleTaskCompletion;
+use App\Actions\Tasks\ToggleTaskWatch;
 use App\Actions\Tasks\UpdateTask;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MoveTaskRequest;
@@ -35,6 +37,7 @@ class TaskController extends Controller
             'label_id' => ['sometimes', 'uuid'],
             'priority' => ['sometimes', 'string', 'in:urgent,high,medium,low,none'],
             'status' => ['sometimes', 'string', 'in:open,completed,all'],
+            'q' => ['sometimes', 'string', 'max:255'],
         ]);
 
         $perPage = $validated['per_page'] ?? 50;
@@ -42,8 +45,21 @@ class TaskController extends Controller
         $direction = $validated['direction'] ?? 'asc';
 
         $query = Task::where('board_id', $board->id)
-            ->with(['assignees', 'labels', 'column:id,name,board_id'])
-            ->withCount(['comments', 'subtasks']);
+            ->with([
+                'assignees',
+                'labels',
+                'column:id,name,board_id',
+                'gitlabProject',
+                'gitlabRefs',
+                'blockedBy:id',
+            ])
+            ->withCount([
+                'comments',
+                'subtasks',
+                'subtasks as completed_subtasks_count' => function ($q) {
+                    $q->whereNotNull('completed_at');
+                },
+            ]);
 
         if (isset($validated['column_id'])) {
             $query->where('column_id', $validated['column_id']);
@@ -59,6 +75,17 @@ class TaskController extends Controller
 
         if (isset($validated['priority'])) {
             $query->where('priority', $validated['priority']);
+        }
+
+        if (isset($validated['q'])) {
+            $q = $validated['q'];
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'like', "%{$q}%");
+
+                if (ctype_digit($q) && (int) $q > 0) {
+                    $sub->orWhere('task_number', (int) $q);
+                }
+            });
         }
 
         $status = $validated['status'] ?? 'all';
@@ -84,7 +111,7 @@ class TaskController extends Controller
     {
         $this->authorize('view', $board);
 
-        $task->load(['assignees', 'labels', 'comments.user', 'column:id,name,board_id', 'subtasks', 'activities.user']);
+        $task->load(['assignees', 'labels', 'comments.user', 'column:id,name,board_id', 'subtasks', 'activities.user', 'blockedBy', 'dependencies']);
 
         return response()->json(['data' => $task]);
     }
@@ -132,13 +159,54 @@ class TaskController extends Controller
         return response()->json(['data' => $task]);
     }
 
+    public function destroy(Team $team, Board $board, Task $task): JsonResponse
+    {
+        $this->authorize('delete', $task);
+
+        DeleteTask::run($task);
+
+        return response()->json(null, 204);
+    }
+
     public function complete(Request $request, Team $team, Board $board, Task $task): JsonResponse
     {
         $this->authorize('update', $task);
 
+        $request->validate([
+            'completed' => ['sometimes', 'boolean'],
+        ]);
+
+        // When an explicit target state is provided, the endpoint is
+        // idempotent: a task already in that state is returned unchanged.
+        if ($request->has('completed')
+            && $request->boolean('completed') === ($task->completed_at !== null)) {
+            return response()->json(['data' => $task]);
+        }
+
         $task = ToggleTaskCompletion::run($task, $request->user());
 
         return response()->json(['data' => $task]);
+    }
+
+    public function watch(Request $request, Team $team, Board $board, Task $task): JsonResponse
+    {
+        $this->authorize('view', $task);
+
+        $request->validate([
+            'watching' => ['sometimes', 'boolean'],
+        ]);
+
+        $isWatching = $task->watchers()->where('users.id', $request->user()->id)->exists();
+
+        // When an explicit target state is provided, the endpoint is
+        // idempotent: no toggle happens if the state already matches.
+        if ($request->has('watching') && $request->boolean('watching') === $isWatching) {
+            return response()->json(['data' => ['watching' => $isWatching]]);
+        }
+
+        $watching = ToggleTaskWatch::run($task, $request->user());
+
+        return response()->json(['data' => ['watching' => $watching]]);
     }
 
     public function assignees(Request $request, Team $team, Board $board, Task $task): JsonResponse

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Tasks\CreateComment;
+use App\Actions\Tasks\DeleteComment;
+use App\Actions\Tasks\UpdateComment;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
+use App\Models\Comment;
 use App\Models\Task;
 use App\Models\Team;
 use Illuminate\Http\JsonResponse;
@@ -48,5 +51,27 @@ class CommentController extends Controller
         );
 
         return response()->json(['data' => $comment], 201);
+    }
+
+    public function update(Request $request, Team $team, Board $board, Task $task, Comment $comment): JsonResponse
+    {
+        $this->authorize('update', $comment);
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:65535'],
+        ]);
+
+        $comment = UpdateComment::run($comment, $validated['body']);
+
+        return response()->json(['data' => $comment]);
+    }
+
+    public function destroy(Team $team, Board $board, Task $task, Comment $comment): JsonResponse
+    {
+        $this->authorize('delete', $comment);
+
+        DeleteComment::run($comment);
+
+        return response()->json(null, 204);
     }
 }

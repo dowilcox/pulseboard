@@ -30,7 +30,7 @@ class TokenController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'abilities' => ['sometimes', 'array'],
-            'abilities.*' => [Rule::in(['read', 'write'])],
+            'abilities.*' => [Rule::in(['read', 'write', 'manage'])],
         ]);
 
         $abilities = $validated['abilities'] ?? ['read'];

@@ -7,6 +7,7 @@ use App\Models\Column;
 use App\Models\Comment;
 use App\Models\Label;
 use App\Models\Task;
+use App\Models\TaskDependency;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -386,5 +387,161 @@ class TaskApiTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonCount(1, 'data');
+    }
+
+    public function test_search_tasks_by_title_is_case_insensitive(): void
+    {
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Fix Login Bug',
+        ]);
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Unrelated task',
+        ]);
+
+        $response = $this->api()->getJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/tasks?q=login"
+        );
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.title', 'Fix Login Bug');
+    }
+
+    public function test_search_tasks_by_task_number(): void
+    {
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Alpha',
+            'task_number' => 42,
+        ]);
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Beta',
+            'task_number' => 7,
+        ]);
+
+        $response = $this->api()->getJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/tasks?q=42"
+        );
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.id', $task->id);
+    }
+
+    public function test_numeric_search_also_matches_title(): void
+    {
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Upgrade to PHP 42',
+            'task_number' => 1,
+        ]);
+        Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'title' => 'Beta',
+            'task_number' => 42,
+        ]);
+
+        $response = $this->api()->getJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/tasks?q=42"
+        );
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+    }
+
+    public function test_index_includes_gitlab_and_dependency_relations(): void
+    {
+        $blocker = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        TaskDependency::create([
+            'task_id' => $task->id,
+            'depends_on_task_id' => $blocker->id,
+            'created_by' => $this->user->id,
+        ]);
+        $subtask = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'parent_task_id' => $task->id,
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->api()->getJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/tasks?sort=created_at"
+        );
+
+        $response->assertOk();
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    'id',
+                    'assignees',
+                    'labels',
+                    'column',
+                    'gitlab_refs',
+                    'blocked_by',
+                    'comments_count',
+                    'subtasks_count',
+                    'completed_subtasks_count',
+                ],
+            ],
+        ]);
+
+        $blocked = collect($response->json('data'))->firstWhere('id', $task->id);
+        $this->assertCount(1, $blocked['blocked_by']);
+        $this->assertEquals($blocker->id, $blocked['blocked_by'][0]['id']);
+        $this->assertEquals(1, $blocked['subtasks_count']);
+        $this->assertEquals(1, $blocked['completed_subtasks_count']);
+    }
+
+    public function test_show_includes_dependency_relations(): void
+    {
+        $blocker = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+        TaskDependency::create([
+            'task_id' => $task->id,
+            'depends_on_task_id' => $blocker->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        $response = $this->api()->getJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/tasks/{$task->id}"
+        );
+
+        $response->assertOk();
+        $response->assertJsonStructure(['data' => ['blocked_by', 'dependencies']]);
+        $response->assertJsonCount(1, 'data.blocked_by');
+        $response->assertJsonPath('data.blocked_by.0.id', $blocker->id);
     }
 }
