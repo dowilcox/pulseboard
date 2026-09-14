@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -45,13 +45,17 @@ export default function RichTextDisplay({
     // the extension/editorProps closures.
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
-    const editorRef = useRef<Editor | null>(null);
+    // Markdown we last emitted from a checkbox toggle. When the parent echoes
+    // it back as `content`, the doc is already in that state and a full
+    // setContent would only rebuild every node view.
+    const lastEmittedRef = useRef<string | null>(null);
 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
                 paragraph: false,
                 codeBlock: false,
+                link: false,
             }),
             MarkdownParagraph,
             Image,
@@ -81,70 +85,82 @@ export default function RichTextDisplay({
         ],
         content: sanitizedContent,
         editable: false,
+        // Fires for the checkbox transaction dispatched below (the editor is
+        // read-only, so nothing else mutates the doc).
+        onUpdate: ({ editor: ed }) => {
+            const handler = onChangeRef.current;
+            if (!handler) return;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const md: string = (ed.storage as any).markdown.getMarkdown();
+            lastEmittedRef.current = sanitizeRichText(md);
+            handler(md);
+        },
         editorProps: {
             attributes: {
                 "aria-label": ariaLabel,
             },
             handleDOMEvents: {
                 change: (view, event) => {
-                    const handler = onChangeRef.current;
                     const target = event.target;
                     if (
-                        !handler ||
+                        !onChangeRef.current ||
                         !(target instanceof HTMLInputElement) ||
                         target.type !== "checkbox"
                     ) {
                         return false;
                     }
 
-                    const item = target.closest('li[data-type="taskItem"]');
+                    // The TaskItem node view renders a bare <li data-checked>
+                    // (no data-type), so match the nearest list item and
+                    // confirm the node type from the resolved position.
+                    const item = target.closest("li");
                     if (!item) return false;
 
-                    // posAtDOM(li, 0) lands just inside the item; walk up the
-                    // resolved position to find the taskItem node itself.
-                    const $pos = view.state.doc.resolve(
-                        view.posAtDOM(item, 0),
-                    );
-                    let itemPos: number | null = null;
-                    for (let depth = $pos.depth; depth > 0; depth--) {
-                        if ($pos.node(depth).type.name === "taskItem") {
-                            itemPos = $pos.before(depth);
-                            break;
+                    try {
+                        const $pos = view.state.doc.resolve(
+                            view.posAtDOM(item, 0),
+                        );
+                        let itemPos: number | null = null;
+                        for (let depth = $pos.depth; depth > 0; depth--) {
+                            if ($pos.node(depth).type.name === "taskItem") {
+                                itemPos = $pos.before(depth);
+                                break;
+                            }
                         }
+                        const node =
+                            itemPos === null
+                                ? null
+                                : view.state.doc.nodeAt(itemPos);
+                        if (itemPos === null || !node) {
+                            throw new Error("task item not found");
+                        }
+
+                        view.dispatch(
+                            view.state.tr.setNodeMarkup(itemPos, undefined, {
+                                ...node.attrs,
+                                checked: target.checked,
+                            }),
+                        );
+                        return true;
+                    } catch {
+                        // Keep the DOM in step with the document: the node
+                        // view already accepted the click via
+                        // onReadOnlyChecked, so undo it.
+                        target.checked = !target.checked;
+                        return false;
                     }
-                    if (itemPos === null) return false;
-
-                    const node = view.state.doc.nodeAt(itemPos);
-                    if (!node) return false;
-
-                    view.dispatch(
-                        view.state.tr.setNodeMarkup(itemPos, undefined, {
-                            ...node.attrs,
-                            checked: target.checked,
-                        }),
-                    );
-
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const storage = editorRef.current?.storage as any;
-                    const md =
-                        storage?.markdown?.getMarkdown?.() ??
-                        editorRef.current?.getHTML() ??
-                        "";
-                    handler(md);
-                    return true;
                 },
             },
         },
     });
 
-    editorRef.current = editor;
-
     const interactive = Boolean(onChange);
 
     useEffect(() => {
-        if (editor && sanitizedContent !== undefined) {
-            editor.commands.setContent(sanitizedContent);
-        }
+        if (!editor || sanitizedContent === undefined) return;
+        if (sanitizedContent === lastEmittedRef.current) return;
+        lastEmittedRef.current = null;
+        editor.commands.setContent(sanitizedContent, { emitUpdate: false });
     }, [sanitizedContent, editor]);
 
     if (content == null) return null;

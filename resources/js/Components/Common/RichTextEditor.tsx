@@ -81,11 +81,6 @@ function createTurndownService(): TurndownService {
     return td;
 }
 
-/**
- * Custom paragraph extension that serializes empty paragraphs as <br> in
- * markdown so blank lines survive the save/reload roundtrip.  The default
- * prosemirror-markdown paragraph serializer silently discards them.
- */
 function createMentionSuggestion(users: User[]) {
     return {
         items: ({ query }: { query: string }) =>
@@ -185,6 +180,7 @@ export default function RichTextEditor({
                 paragraph: false,
                 codeBlock: false,
                 underline: false,
+                link: false,
             }),
             MarkdownParagraph,
             Image,

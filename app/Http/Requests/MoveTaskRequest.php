@@ -18,7 +18,8 @@ class MoveTaskRequest extends FormRequest
             'column_id' => ['required', 'uuid', 'exists:columns,id'],
             // Negative values are valid: inserting above a task whose
             // sort_order is 0 yields -1 (see resources/js/utils/sortOrder.ts).
-            'sort_order' => ['required', 'numeric'],
+            // null appends the task after the column's last task.
+            'sort_order' => ['present', 'nullable', 'numeric'],
         ];
     }
 }

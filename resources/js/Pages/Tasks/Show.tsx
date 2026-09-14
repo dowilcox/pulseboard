@@ -108,6 +108,9 @@ export default function TasksShow({
         null,
     );
     const linksTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const descriptionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+        null,
+    );
 
     // Clean up pending timeouts on unmount
     useEffect(() => {
@@ -116,6 +119,8 @@ export default function TasksShow({
             if (checklistTimeoutRef.current)
                 clearTimeout(checklistTimeoutRef.current);
             if (linksTimeoutRef.current) clearTimeout(linksTimeoutRef.current);
+            if (descriptionTimeoutRef.current)
+                clearTimeout(descriptionTimeoutRef.current);
         };
     }, []);
 
@@ -126,7 +131,9 @@ export default function TasksShow({
     }, [task.title]);
 
     useEffect(() => {
-        if (!editingDescription) {
+        // Skip while a checkbox toggle is pending so a slower reload that
+        // was already in flight cannot revert it.
+        if (!editingDescription && !descriptionTimeoutRef.current) {
             setDescription(task.description ?? "");
         }
     }, [task.description, editingDescription]);
@@ -220,10 +227,16 @@ export default function TasksShow({
         saveField({ description: normalized });
     };
 
-    // Checkbox toggled directly in the read-only description view.
+    // Checkbox toggled directly in the read-only description view. Debounced
+    // like the other inline fields so rapid clicks collapse into one save.
     const handleDescriptionCheckboxToggle = (val: string) => {
         setDescription(val);
-        saveField({ description: isDescriptionEmpty(val) ? null : val });
+        if (descriptionTimeoutRef.current)
+            clearTimeout(descriptionTimeoutRef.current);
+        descriptionTimeoutRef.current = setTimeout(() => {
+            descriptionTimeoutRef.current = null;
+            saveField({ description: isDescriptionEmpty(val) ? null : val });
+        }, 500);
     };
 
     const handleChecklistsChange = (newChecklists: Checklist[]) => {

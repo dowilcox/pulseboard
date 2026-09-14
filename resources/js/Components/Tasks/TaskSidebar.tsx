@@ -173,7 +173,8 @@ export default function TaskSidebar({
 
         router.patch(
             route("tasks.move", [team.slug, board.slug, task.slug]),
-            { board_id: newBoardId, column_id: firstColumn.id, sort_order: 0 },
+            // null lets the server append after the column's last task
+            { board_id: newBoardId, column_id: firstColumn.id, sort_order: null },
             { preserveScroll: true },
         );
     };

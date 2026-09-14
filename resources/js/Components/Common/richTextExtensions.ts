@@ -36,14 +36,24 @@ export const MarkdownParagraph = Paragraph.extend({
  * Mention node that serializes to the `<span data-type="mention">` HTML
  * form that `MentionParser` expects on the server.
  */
+function escapeAttribute(value: string): string {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
 export const MentionWithMarkdown = Mention.extend({
     addStorage() {
         return {
             markdown: {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 serialize(state: any, node: any) {
-                    const id = node.attrs.id ?? "";
-                    const label = node.attrs.label ?? "";
+                    const id = escapeAttribute(String(node.attrs.id ?? ""));
+                    const label = escapeAttribute(
+                        String(node.attrs.label ?? ""),
+                    );
                     state.write(
                         `<span data-type="mention" data-id="${id}" data-label="${label}">@${label}</span>`,
                     );
