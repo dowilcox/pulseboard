@@ -220,6 +220,12 @@ export default function TasksShow({
         saveField({ description: normalized });
     };
 
+    // Checkbox toggled directly in the read-only description view.
+    const handleDescriptionCheckboxToggle = (val: string) => {
+        setDescription(val);
+        saveField({ description: isDescriptionEmpty(val) ? null : val });
+    };
+
     const handleChecklistsChange = (newChecklists: Checklist[]) => {
         setChecklists(newChecklists);
         if (checklistTimeoutRef.current)
@@ -483,6 +489,7 @@ export default function TasksShow({
                                 <RichTextDisplay
                                     content={description}
                                     ariaLabel="Task description"
+                                    onChange={handleDescriptionCheckboxToggle}
                                 />
                             </Box>
                         ) : (

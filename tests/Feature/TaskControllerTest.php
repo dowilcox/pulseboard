@@ -351,6 +351,33 @@ class TaskControllerTest extends TestCase
         $this->assertEquals(1.0, $task->sort_order);
     }
 
+    public function test_move_task_to_top_accepts_negative_sort_order(): void
+    {
+        $first = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'sort_order' => 0,
+        ]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'sort_order' => 1,
+        ]);
+
+        // The frontend inserts above the first task with (first - 1).
+        $response = $this->actingAs($this->user)->patch(
+            route('tasks.move', [$this->team, $this->board, $task]),
+            ['column_id' => $this->column->id, 'sort_order' => -1]
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals(-1.0, $task->fresh()->sort_order);
+        $this->assertEquals(0.0, $first->fresh()->sort_order);
+    }
+
     public function test_update_task_assignees(): void
     {
         $task = Task::factory()->create([

@@ -7,7 +7,6 @@ import {
     useState,
 } from "react";
 import { ReactRenderer, useEditor, EditorContent } from "@tiptap/react";
-import Paragraph from "@tiptap/extension-paragraph";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -20,7 +19,10 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { TableCell } from "@tiptap/extension-table-cell";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import Mention from "@tiptap/extension-mention";
+import {
+    MarkdownParagraph,
+    MentionWithMarkdown,
+} from "@/Components/Common/richTextExtensions";
 import { Markdown } from "tiptap-markdown";
 import { createLowlight, common } from "lowlight";
 import TurndownService from "turndown";
@@ -84,58 +86,6 @@ function createTurndownService(): TurndownService {
  * markdown so blank lines survive the save/reload roundtrip.  The default
  * prosemirror-markdown paragraph serializer silently discards them.
  */
-const MarkdownParagraph = Paragraph.extend({
-    addStorage() {
-        return {
-            markdown: {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                serialize(state: any, node: any) {
-                    const isEmpty =
-                        node.childCount === 0 ||
-                        (node.childCount === 1 &&
-                            node.firstChild?.type.name === "hardBreak");
-                    if (isEmpty) {
-                        state.write("<br>");
-                        state.closeBlock(node);
-                    } else {
-                        state.renderInline(node);
-                        state.closeBlock(node);
-                    }
-                },
-                parse: {
-                    // handled by markdown-it
-                },
-            },
-        };
-    },
-});
-
-/**
- * Custom Mention extension that serializes to HTML in markdown so mentions
- * survive the save/reload roundtrip.  The default Mention extension's
- * parseHTML rules recognise `<span data-type="mention">` which means the
- * HTML embedded in the markdown is parsed back into proper mention nodes.
- */
-const MentionWithMarkdown = Mention.extend({
-    addStorage() {
-        return {
-            markdown: {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                serialize(state: any, node: any) {
-                    const id = node.attrs.id ?? "";
-                    const label = node.attrs.label ?? "";
-                    state.write(
-                        `<span data-type="mention" data-id="${id}" data-label="${label}">@${label}</span>`,
-                    );
-                },
-                parse: {
-                    // HTML parsing handled by Mention.parseHTML + html:true
-                },
-            },
-        };
-    },
-});
-
 function createMentionSuggestion(users: User[]) {
     return {
         items: ({ query }: { query: string }) =>
@@ -536,7 +486,11 @@ export default function RichTextEditor({
                             display: "flex",
                             alignItems: "flex-start",
                             gap: 1,
-                            "& label": { mt: 0.25 },
+                            "& label": { mt: 0.25, flexShrink: 0 },
+                            // Let the text block fill the row so clicking in
+                            // the empty space beside a task item still places
+                            // the caret inside it.
+                            "& > div": { flex: 1, minWidth: 0 },
                             '& input[type="checkbox"]': {
                                 accentColor: theme.palette.primary.main,
                                 width: 16,

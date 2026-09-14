@@ -16,7 +16,9 @@ class MoveTaskRequest extends FormRequest
         return [
             'board_id' => ['sometimes', 'nullable', 'uuid', 'exists:boards,id'],
             'column_id' => ['required', 'uuid', 'exists:columns,id'],
-            'sort_order' => ['required', 'numeric', 'min:0'],
+            // Negative values are valid: inserting above a task whose
+            // sort_order is 0 yields -1 (see resources/js/utils/sortOrder.ts).
+            'sort_order' => ['required', 'numeric'],
         ];
     }
 }
