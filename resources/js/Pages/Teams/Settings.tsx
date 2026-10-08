@@ -195,11 +195,7 @@ export default function TeamSettings({
     );
 }
 
-TeamSettings.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TeamSettings.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.sidebarBoards ?? [] },
+];

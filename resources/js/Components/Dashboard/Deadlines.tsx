@@ -1,6 +1,6 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import { harbor } from "@/theme/harbor";
 import { parseDateOnly } from "@/utils/formatTimestamp";
-import { Link } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -32,7 +32,7 @@ function DeadlineRow({ task }: { task: DashboardTask }) {
     return (
         <Box component="li">
             <ListItemButton
-                component={Link}
+                component={RouterLink}
                 href={href}
                 sx={{
                     display: "flex",

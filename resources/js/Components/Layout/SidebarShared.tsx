@@ -14,7 +14,13 @@ export const SIDEBAR_TEXT = harbor.ink;
 export const SIDEBAR_MUTED = harbor.faint;
 export const SIDEBAR_SELECTED = harbor.card;
 export const SIDEBAR_HOVER = "rgba(34, 41, 53, 0.05)";
-export const SIDEBAR_DIVIDER = "rgba(34, 41, 53, 0.08)";
+export const SIDEBAR_DIVIDER = harbor.chromeDivider;
+
+/**
+ * CSS custom property holding the app bar's live height, published by
+ * AuthenticatedLayout so the sidebar's logo header can match it.
+ */
+export const APP_BAR_HEIGHT_VAR = "--pb-app-bar-height";
 export const SIDEBAR_STAR = harborHex.secondary;
 
 /** Focus ring drawn inside the element so the drawer edge can't clip it. */

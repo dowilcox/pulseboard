@@ -1,5 +1,5 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import { useId, useRef, useState } from "react";
-import { Link } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
@@ -386,8 +386,8 @@ function NotificationRow({
         >
             {notification.url ? (
                 <ListItemButton
-                    component={Link}
-                    ref={itemRef}
+                    component={RouterLink}
+                    ref={itemRef as React.Ref<HTMLAnchorElement>}
                     href={notification.url}
                     onClick={(event: React.MouseEvent) =>
                         onItemClick(event, notification)

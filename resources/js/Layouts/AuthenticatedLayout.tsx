@@ -1,15 +1,19 @@
-import { Link, usePage, router } from "@inertiajs/react";
+import { usePage, router } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import {
     type PropsWithChildren,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import type { PageProps, Team } from "@/types";
 import { LayoutHeaderSlotProvider } from "@/Components/Layout/LayoutHeader";
 import { SidebarProvider, useSidebar } from "@/Contexts/SidebarContext";
 import Sidebar from "@/Components/Layout/Sidebar";
+import { APP_BAR_HEIGHT_VAR } from "@/Components/Layout/SidebarShared";
 import AppBar from "@mui/material/AppBar";
 import LinearProgress from "@mui/material/LinearProgress";
 import Avatar from "@mui/material/Avatar";
@@ -29,7 +33,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
 import QuickSwitcher from "@/Components/Layout/QuickSwitcher";
-import { harborAvatarColor, harborHex } from "@/theme/harbor";
+import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
 import { pushRecentBoard } from "@/utils/recentBoards";
@@ -48,13 +52,17 @@ interface AuthenticatedLayoutProps {
  * Persistent layout for all authenticated pages.
  *
  * Pages must NOT render this inline; instead they assign it via Inertia's
- * persistent layout pattern:
+ * persistent layout pattern, using the callback form when the layout needs
+ * page props:
  *
- *     Page.layout = (page) => (
- *         <AuthenticatedLayout currentTeam={page.props.team}>
- *             {page}
- *         </AuthenticatedLayout>
- *     );
+ *     Page.layout = (props: Props) => [
+ *         AuthenticatedLayout,
+ *         { currentTeam: props.team },
+ *     ];
+ *
+ * Don't read `page.props` inside a `(page) => <AuthenticatedLayout>...`
+ * render function: Inertia v3 first calls it with the raw page props to
+ * detect its form, so `page.props` is undefined on that call and throws.
  *
  * Because the layout element type stays identical across navigations, React
  * preserves this subtree — keeping WebSocketProvider (Echo connection),
@@ -90,6 +98,26 @@ function AuthenticatedLayoutInner({
     const { reconnectVersion } = useWebSocket();
 
     const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+
+    // The app bar grows with its page header (breadcrumbs, wrapped actions),
+    // so publish its height for the sidebar's logo header to match — that
+    // keeps both bottom borders on one continuous line on every page.
+    const appBarRef = useRef<HTMLElement>(null);
+    useLayoutEffect(() => {
+        const el = appBarRef.current;
+        if (!el) return;
+        const root = document.documentElement;
+        const apply = () =>
+            root.style.setProperty(
+                APP_BAR_HEIGHT_VAR,
+                `${el.getBoundingClientRect().height}px`,
+            );
+        apply();
+        if (typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(apply);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -138,7 +166,7 @@ function AuthenticatedLayoutInner({
     // Fallback: any page mounted in this layout gets a refresh on reconnect
     // so it picks up events missed during the disconnect. Pages that subscribe
     // to reconnectVersion themselves (e.g. Boards/Show, Tasks/Show) may do
-    // narrower partial reloads in addition; both are idempotent. Inertia v2
+    // narrower partial reloads in addition; both are idempotent. Inertia's
     // router.reload always preserves state and scroll.
     useEffect(() => {
         if (reconnectVersion === 0) return;
@@ -268,14 +296,14 @@ function AuthenticatedLayoutInner({
             >
                 {/* Top AppBar */}
                 <AppBar
+                    ref={appBarRef}
                     position="sticky"
                     component="header"
                     color="default"
                     elevation={0}
                     sx={{
                         bgcolor: "background.default",
-                        borderBottom: 1,
-                        borderColor: "divider",
+                        borderBottom: `1px solid ${harbor.chromeDivider}`,
                     }}
                 >
                     <Box role="status" aria-live="polite">
@@ -401,7 +429,7 @@ function AuthenticatedLayoutInner({
                             }}
                         >
                             <MenuItem
-                                component={Link}
+                                component={RouterLink}
                                 href={route("profile.edit")}
                                 onClick={handleMenuClose}
                             >

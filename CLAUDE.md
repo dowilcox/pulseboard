@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PulseBoard is a self-hosted Kanban project management app with GitLab and Figma integrations, real-time collaboration (Laravel Reverb WebSockets), SAML2 SSO, and a token-authenticated REST API.
 
-**Stack:** Laravel 12 (Octane/FrankenPHP) + Inertia.js v2 + React 18 + TypeScript + MUI v6 (no Tailwind). MySQL 8.0, Redis 7.
+**Stack:** Laravel 13 (Octane/FrankenPHP) + Inertia.js v3 + React 19 + TypeScript + MUI v6 (no Tailwind). MySQL 8.4, Redis 8.
 
 ## Commands
 
@@ -140,8 +140,8 @@ docker compose exec app php artisan octane:reload
 
 ## Database
 
-MySQL 8.0. All tables use UUID PKs. Pivot tables cascade on delete; entity tables restrict. JSON columns for flexible data (`settings`, `email_notification_prefs`, `custom_fields`).
+MySQL 8.4. All tables use UUID PKs. Pivot tables cascade on delete; entity tables restrict. JSON columns for flexible data (`settings`, `email_notification_prefs`, `custom_fields`).
 
 ## Docs
 
-SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment.
+SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`.

@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import type {
     DraggableAttributes,
     DraggableSyntheticListeners,
@@ -115,7 +115,7 @@ export default function SidebarBoardRow({
                 {...tooltipProps}
             >
                 <ListItemButton
-                    component={Link}
+                    component={RouterLink}
                     href={href}
                     aria-current={isActive ? "page" : undefined}
                     sx={{

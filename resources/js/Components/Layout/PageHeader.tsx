@@ -1,4 +1,5 @@
-import { Link as InertiaLink, usePage } from "@inertiajs/react";
+import { usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import CheckIcon from "@mui/icons-material/Check";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -84,7 +85,7 @@ function TeamSwitcherCrumb({
         >
             {crumb.href ? (
                 <Link
-                    component={InertiaLink}
+                    component={RouterLink}
                     href={crumb.href}
                     underline="hover"
                     noWrap
@@ -127,7 +128,7 @@ function TeamSwitcherCrumb({
                     return (
                         <MenuItem
                             key={team.id}
-                            component={InertiaLink}
+                            component={RouterLink}
                             href={route("teams.show", team.slug)}
                             selected={current}
                             aria-current={current ? "true" : undefined}
@@ -154,7 +155,7 @@ function TeamSwitcherCrumb({
                 })}
                 {teams.length > 0 && <Divider />}
                 <MenuItem
-                    component={InertiaLink}
+                    component={RouterLink}
                     href={route("teams.index")}
                     onClick={close}
                 >
@@ -238,7 +239,7 @@ export default function PageHeader({
                             return crumb.href ? (
                                 <Link
                                     key={crumb.label}
-                                    component={InertiaLink}
+                                    component={RouterLink}
                                     href={crumb.href}
                                     underline="hover"
                                     sx={{ ...CRUMB_SX, color }}

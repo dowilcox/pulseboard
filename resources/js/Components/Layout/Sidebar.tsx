@@ -1,4 +1,5 @@
 import { Link, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -34,6 +35,7 @@ import SidebarBoardRow from "./SidebarBoardRow";
 import SidebarRail from "./SidebarRail";
 import SidebarTeamSection from "./SidebarTeamSection";
 import {
+    APP_BAR_HEIGHT_VAR,
     INSET_FOCUS,
     SIDEBAR_BG,
     SIDEBAR_DIVIDER,
@@ -90,7 +92,7 @@ function NavItem({
 }: NavItemProps) {
     const content = (
         <ListItemButton
-            component={Link}
+            component={RouterLink}
             href={href}
             selected={selected}
             aria-current={selected ? "page" : undefined}
@@ -203,17 +205,24 @@ export default function Sidebar({
                 bgcolor: SIDEBAR_BG,
             }}
         >
+            {/* On desktop the logo header takes the app bar's live height
+                and draws the same bottom border, so the two lines meet. */}
             <Toolbar
                 sx={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: isCollapsed ? "center" : "flex-start",
                     px: isCollapsed ? 0 : 2.5,
-                    minHeight: 82,
+                    boxSizing: "border-box",
+                    minHeight: { xs: 82, md: 0 },
+                    height: {
+                        md: `var(${APP_BAR_HEIGHT_VAR}, 82px)`,
+                    },
+                    borderBottom: `1px solid ${SIDEBAR_DIVIDER}`,
                 }}
             >
                 <Box
-                    component={Link}
+                    component={RouterLink}
                     href={route("dashboard")}
                     aria-label="PulseBoard dashboard"
                     sx={{
@@ -230,8 +239,6 @@ export default function Sidebar({
                     />
                 </Box>
             </Toolbar>
-
-            <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
 
             <List sx={{ pt: 1.5, pb: isCollapsed ? 1 : 0 }}>
                 <NavItem
@@ -290,7 +297,7 @@ export default function Sidebar({
                         >
                             You're not in any teams yet.{" "}
                             <MuiLink
-                                component={Link}
+                                component={RouterLink}
                                 href={route("teams.index")}
                                 underline="hover"
                                 sx={{ fontWeight: 700 }}

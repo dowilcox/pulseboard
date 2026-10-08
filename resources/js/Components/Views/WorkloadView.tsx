@@ -1,3 +1,4 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import { useMemo, useState } from "react";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import { harbor, harborAvatarColor } from "@/theme/harbor";
@@ -10,7 +11,6 @@ import {
     PRIORITY_RANK,
     type WorkloadGroup,
 } from "@/utils/workload";
-import { Link } from "@inertiajs/react";
 import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -37,7 +37,7 @@ function initials(name: string): string {
 function TaskChip({ task, href }: { task: Task; href: string }) {
     return (
         <Chip
-            component={Link}
+            component={RouterLink}
             href={href}
             clickable
             size="small"

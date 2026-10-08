@@ -9,7 +9,8 @@ import BoardColumnsSection from "@/Pages/Boards/Settings/BoardColumnsSection";
 import TaskTemplatesSection from "@/Pages/Boards/Settings/TaskTemplatesSection";
 import { useBoardColumnsForm } from "@/Pages/Boards/Settings/useBoardColumnsForm";
 import { useTaskTemplates } from "@/Pages/Boards/Settings/useTaskTemplates";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import type { Board, Label, Team, User } from "@/types";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -162,7 +163,7 @@ export default function BoardSettings({
                     ]}
                     actions={
                         <Button
-                            component={Link}
+                            component={RouterLink}
                             href={boardUrl}
                             variant="outlined"
                             size="small"
@@ -511,12 +512,11 @@ export default function BoardSettings({
     );
 }
 
-BoardSettings.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+BoardSettings.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team,
+        sidebarBoards: props.sidebarBoards ?? [],
+        activeBoardId: props.board.id,
+    },
+];

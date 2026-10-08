@@ -5,6 +5,7 @@ import TokenCreatedDialog from "@/Components/ApiTokens/TokenCreatedDialog";
 import TokenTable from "@/Components/ApiTokens/TokenTable";
 import type { PersonalAccessToken, Team, User } from "@/types";
 import { Link, router, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -107,7 +108,7 @@ export default function ApiTokens({ team, bots }: Props) {
                                 {" "}
                                 To use the API as yourself, create a{" "}
                                 <MuiLink
-                                    component={Link}
+                                    component={RouterLink}
                                     href={route("profile.tokens.index")}
                                 >
                                     personal token

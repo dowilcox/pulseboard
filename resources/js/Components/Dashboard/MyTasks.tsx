@@ -2,6 +2,7 @@ import { harbor } from "@/theme/harbor";
 import { getContrastText } from "@/utils/colorContrast";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { Link } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
@@ -136,7 +137,7 @@ function TaskRow({ task }: { task: DashboardTask }) {
                     )}
                     {href ? (
                         <MuiLink
-                            component={Link}
+                            component={RouterLink}
                             href={href}
                             underline="hover"
                             sx={{ color: "inherit" }}
@@ -171,7 +172,7 @@ function TaskRow({ task }: { task: DashboardTask }) {
                             </Box>
                             {boardHref ? (
                                 <MuiLink
-                                    component={Link}
+                                    component={RouterLink}
                                     href={boardHref}
                                     underline="hover"
                                     sx={{ color: "inherit" }}

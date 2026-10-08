@@ -36,7 +36,8 @@ import type {
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { singleLineTitle } from "@/utils/taskFields";
 import type { PendingVisit } from "@inertiajs/core";
-import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
@@ -707,7 +708,7 @@ export default function TasksShow({
                                 >
                                     Subtask of{" "}
                                     <Link
-                                        component={InertiaLink}
+                                        component={RouterLink}
                                         href={route("tasks.show", [
                                             team.slug,
                                             board.slug,
@@ -1060,12 +1061,11 @@ export default function TasksShow({
     );
 }
 
-TasksShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team as Team}
-        sidebarBoards={page.props.teamBoards}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TasksShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team as Team,
+        sidebarBoards: props.teamBoards,
+        activeBoardId: props.board.id,
+    },
+];

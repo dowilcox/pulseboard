@@ -88,9 +88,17 @@ export function SnackbarProvider({ children }: PropsWithChildren) {
 
     // Watch Inertia validation errors — show the first error as a snackbar
     useEffect(() => {
-        const removeListener = router.on("invalid", (event) => {
-            // Inertia fires "invalid" for non-2xx responses that aren't
-            // redirect or validation errors. Show a generic message.
+        const removeListener = router.on("httpException", (event) => {
+            // Inertia fires "httpException" for non-Inertia responses and for
+            // Inertia responses with a 4xx/5xx status. Let the latter render
+            // (that's the Error page), skip anything already handled (e.g. the
+            // 419 reload in bootstrap.ts), and show a generic message otherwise.
+            if (
+                event.defaultPrevented ||
+                event.detail.response.headers["x-inertia"]
+            ) {
+                return;
+            }
             showSnackbar("Something went wrong. Please try again.", "error");
             event.preventDefault();
         });

@@ -2,6 +2,7 @@ import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { PageProps } from "@/types";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { Link, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import MuiLink from "@mui/material/Link";
@@ -75,7 +76,7 @@ function ActivityItem({
                     </Box>{" "}
                     {before}{" "}
                     <MuiLink
-                        component={Link}
+                        component={RouterLink}
                         href={taskHref}
                         underline="always"
                         sx={{ fontWeight: 600, color: harbor.ink }}
@@ -96,7 +97,7 @@ function ActivityItem({
                     }}
                 >
                     <MuiLink
-                        component={Link}
+                        component={RouterLink}
                         href={boardHref}
                         underline="hover"
                         sx={{ color: "inherit", overflowWrap: "anywhere" }}

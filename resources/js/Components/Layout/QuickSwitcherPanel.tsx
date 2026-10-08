@@ -1,4 +1,5 @@
 import { Link, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import axios from "axios";
 import {
     type ComponentType,
@@ -667,7 +668,7 @@ function ResultOption({
 }: ResultOptionProps) {
     return (
         <Box
-            component={Link}
+            component={RouterLink}
             href={item.href}
             id={id}
             role="option"

@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
@@ -34,7 +34,7 @@ function RailLink({
     return (
         <Tooltip title={label} placement="right">
             <Box
-                component={Link}
+                component={RouterLink}
                 href={href}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}

@@ -1,6 +1,7 @@
 import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import type { Task } from "@/types";
-import { Link as InertiaLink, router, useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
@@ -142,7 +143,7 @@ export default function SubtaskList({
                                 sx={{ p: "6px", mr: 0.25 }}
                             />
                             <ListItemButton
-                                component={InertiaLink}
+                                component={RouterLink}
                                 href={route("tasks.show", [
                                     teamSlug,
                                     boardSlug,

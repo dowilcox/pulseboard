@@ -1,3 +1,4 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import type { Task, TaskGitlabRef } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
@@ -5,7 +6,6 @@ import { daysUntil, formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { describeTaskCard } from "@/utils/taskCardLabel";
 import { harbor, harborAvatarColor } from "@/theme/harbor";
-import { Link } from "@inertiajs/react";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -425,7 +425,7 @@ const TaskCard = memo(
                 <Paper
                     ref={ref as React.Ref<HTMLAnchorElement>}
                     elevation={0}
-                    component={Link}
+                    component={RouterLink}
                     href={href}
                     draggable={false}
                     aria-label={describeTaskCard(task)}

@@ -1,6 +1,7 @@
 import { harbor, harborHex } from "@/theme/harbor";
 import type { Board, Task, TaskSummary } from "@/types";
-import { Link as InertiaLink, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -146,7 +147,7 @@ export default function DependencySection({
             >
                 {href ? (
                     <Link
-                        component={InertiaLink}
+                        component={RouterLink}
                         href={href}
                         underline="hover"
                         title={

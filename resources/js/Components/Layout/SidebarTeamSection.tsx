@@ -1,4 +1,5 @@
 import { Link } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import Box from "@mui/material/Box";
@@ -89,7 +90,7 @@ export default function SidebarTeamSection({
                     {...tooltipProps}
                 >
                     <ListItemButton
-                        component={Link}
+                        component={RouterLink}
                         href={route("teams.show", team.slug)}
                         aria-current={isTeamPage ? "page" : undefined}
                         sx={{
@@ -126,7 +127,7 @@ export default function SidebarTeamSection({
                 {canManage && (
                     <Tooltip title="Team settings" placement="top">
                         <IconButton
-                            component={Link}
+                            component={RouterLink}
                             href={route("teams.settings", team.slug)}
                             size="small"
                             className="sidebar-row-action"
@@ -175,7 +176,7 @@ export default function SidebarTeamSection({
                     >
                         No boards yet ·{" "}
                         <MuiLink
-                            component={Link}
+                            component={RouterLink}
                             href={route("teams.show", team.slug)}
                             underline="hover"
                             sx={{ fontWeight: 700 }}

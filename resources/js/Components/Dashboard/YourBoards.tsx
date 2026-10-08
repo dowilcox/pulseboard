@@ -2,6 +2,7 @@ import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { PageProps, Team } from "@/types";
 import { getRecentBoardIds } from "@/utils/recentBoards";
 import { Link, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import StarIcon from "@mui/icons-material/Star";
 import Avatar from "@mui/material/Avatar";
@@ -80,7 +81,7 @@ function BoardCard({
                         {/* The link's ::after stretches over the whole card so
                             the card is clickable while the link name stays short. */}
                         <MuiLink
-                            component={Link}
+                            component={RouterLink}
                             href={href}
                             underline="none"
                             sx={{
@@ -200,7 +201,7 @@ function NoBoards({ teams }: { teams: Team[] }) {
                 {teams.slice(0, 3).map((team) => (
                     <Button
                         key={team.id}
-                        component={Link}
+                        component={RouterLink}
                         href={route("teams.show", team.slug)}
                         variant="contained"
                         size="small"
@@ -250,7 +251,7 @@ export default function YourBoards({
             countLabel={`${boards.length} ${boards.length === 1 ? "board" : "boards"}`}
             action={
                 <MuiLink
-                    component={Link}
+                    component={RouterLink}
                     href={route("teams.index")}
                     underline="hover"
                     sx={{ fontSize: 13, fontWeight: 700 }}
@@ -294,7 +295,7 @@ export default function YourBoards({
                         >
                             Showing {MAX_BOARDS} of {boards.length} boards.{" "}
                             <MuiLink
-                                component={Link}
+                                component={RouterLink}
                                 href={route("teams.index")}
                                 underline="hover"
                                 sx={{ fontWeight: 700 }}

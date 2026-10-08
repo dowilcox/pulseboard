@@ -32,7 +32,8 @@ import {
 } from "@dnd-kit/sortable";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { harbor, harborHex } from "@/theme/harbor";
-import { Link, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -776,7 +777,7 @@ export default function KanbanView({
                 </Typography>
                 {canManage && (
                     <Button
-                        component={Link}
+                        component={RouterLink}
                         href={route("teams.boards.settings", [
                             team.slug,
                             board.slug,

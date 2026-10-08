@@ -1,3 +1,4 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import { memo, useMemo, useState } from "react";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
@@ -9,7 +10,6 @@ import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { describeTaskCard } from "@/utils/taskCardLabel";
 import { PRIORITY_RANK } from "@/utils/workload";
 import { harbor, harborAvatarColor } from "@/theme/harbor";
-import { Link as InertiaLink } from "@inertiajs/react";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Box from "@mui/material/Box";
@@ -102,7 +102,7 @@ const TaskRow = memo(function TaskRow({
             </TableCell>
             <TableCell>
                 <Link
-                    component={InertiaLink}
+                    component={RouterLink}
                     href={href}
                     underline="hover"
                     aria-label={describeTaskCard(task)}

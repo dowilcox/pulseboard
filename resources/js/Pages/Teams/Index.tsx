@@ -1,7 +1,8 @@
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import { type ReactElement, useMemo, useState } from "react";
 import type { Board, Team } from "@/types";
 import { useSidebar } from "@/Contexts/SidebarContext";
@@ -63,7 +64,7 @@ function TeamBoardLinks({ team, boards }: { team: Team; boards: Board[] }) {
             {boards.slice(0, BOARD_PREVIEW_LIMIT).map((board) => (
                 <li key={board.id}>
                     <ListItemButton
-                        component={Link}
+                        component={RouterLink}
                         href={route("teams.boards.show", [
                             team.slug,
                             board.slug,
@@ -98,7 +99,7 @@ function TeamBoardLinks({ team, boards }: { team: Team; boards: Board[] }) {
             {hidden > 0 && (
                 <li>
                     <ListItemButton
-                        component={Link}
+                        component={RouterLink}
                         href={route("teams.show", team.slug)}
                         aria-label={`${hidden} more ${team.name} boards`}
                         sx={{ borderRadius: 1.5, py: 0.5 }}
@@ -225,7 +226,7 @@ export default function TeamsIndex({ pageTeams: teams }: Props) {
                                     }}
                                 >
                                     <CardActionArea
-                                        component={Link}
+                                        component={RouterLink}
                                         href={route("teams.show", team.slug)}
                                         sx={{
                                             flexGrow: 1,

@@ -18,6 +18,9 @@ export const harbor = {
     well: "oklch(84.5% 0.013 245)", // column wells (inset surfaces)
     card: "oklch(98.5% 0.004 240)", // cards, panels, inputs
     cardBorder: "oklch(93% 0.009 245)", // hairline dividers inside cards
+    // Hairlines on the canvas itself (sidebar sections, app bar bottom) —
+    // one token so the sidebar header and app bar borders read as one line.
+    chromeDivider: "rgba(34, 41, 53, 0.08)",
     track: "oklch(91.5% 0.011 245)", // progress tracks, neutral chips on cards
     countBg: "oklch(92% 0.011 245)", // count badges, selects, comment wells, date chips
     ink: "oklch(28% 0.025 260)", // primary text

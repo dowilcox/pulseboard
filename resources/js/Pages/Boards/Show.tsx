@@ -37,7 +37,8 @@ import {
     type BoardFilters,
     type BoardState,
 } from "@/utils/boardFilters";
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import Alert from "@mui/material/Alert";
@@ -395,7 +396,7 @@ export default function BoardsShow({
                             {canManage && (
                                 <Tooltip title="Board settings">
                                     <IconButton
-                                        component={Link}
+                                        component={RouterLink}
                                         href={route("teams.boards.settings", [
                                             team.slug,
                                             board.slug,
@@ -476,12 +477,11 @@ export default function BoardsShow({
     );
 }
 
-BoardsShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+BoardsShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team,
+        sidebarBoards: props.sidebarBoards ?? [],
+        activeBoardId: props.board.id,
+    },
+];

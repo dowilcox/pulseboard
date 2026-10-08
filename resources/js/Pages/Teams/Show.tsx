@@ -5,6 +5,7 @@ import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import type { Board, Team, UserWithTeamPivot } from "@/types";
 import { formatTimestamp } from "@/utils/formatTimestamp";
 import { Head, Link, router } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import BrushIcon from "@mui/icons-material/Brush";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -119,7 +120,7 @@ export default function TeamsShow({
                         <>
                             {can.manageTeam && (
                                 <Button
-                                    component={Link}
+                                    component={RouterLink}
                                     href={settingsHref}
                                     variant="outlined"
                                     size="small"
@@ -191,7 +192,7 @@ export default function TeamsShow({
                                 )}
                                 {can.manageIntegrations && (
                                     <MenuItem
-                                        component={Link}
+                                        component={RouterLink}
                                         href={integrationsHref}
                                         onClick={closeMenu}
                                     >
@@ -203,7 +204,7 @@ export default function TeamsShow({
                                 )}
                                 {can.manageIntegrations && (
                                     <MenuItem
-                                        component={Link}
+                                        component={RouterLink}
                                         href={integrationsHref}
                                         onClick={closeMenu}
                                     >
@@ -215,7 +216,7 @@ export default function TeamsShow({
                                 )}
                                 {!can.manageTeam && (
                                     <MenuItem
-                                        component={Link}
+                                        component={RouterLink}
                                         href={settingsHref}
                                         onClick={closeMenu}
                                     >
@@ -464,7 +465,7 @@ function TeamIntro({
                     ))}
                 </AvatarGroup>
                 <MuiLink
-                    component={Link}
+                    component={RouterLink}
                     href={membersHref}
                     variant="body2"
                     fontWeight={600}
@@ -483,7 +484,7 @@ function BoardCard({ team, board }: { team: Team; board: TeamBoard }) {
     return (
         <Card variant="outlined" sx={{ height: "100%" }}>
             <CardActionArea
-                component={Link}
+                component={RouterLink}
                 href={route("teams.boards.show", [team.slug, board.slug])}
                 sx={{
                     height: "100%",
@@ -760,7 +761,7 @@ function ArchivedBoards({
                                         noWrap
                                     >
                                         <MuiLink
-                                            component={Link}
+                                            component={RouterLink}
                                             href={route("teams.boards.show", [
                                                 team.slug,
                                                 board.slug,
@@ -805,11 +806,7 @@ function ArchivedBoards({
     );
 }
 
-TeamsShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.boards}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TeamsShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.boards },
+];

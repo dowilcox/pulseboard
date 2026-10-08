@@ -1,5 +1,5 @@
+import RouterLink from "@/Components/Common/RouterLink";
 import { harbor } from "@/theme/harbor";
-import { Link } from "@inertiajs/react";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import GroupsIcon from "@mui/icons-material/Groups";
 import ViewKanbanIcon from "@mui/icons-material/ViewKanban";
@@ -142,7 +142,7 @@ export default function WelcomePanel({ userName }: { userName: string }) {
                 }}
             >
                 <Button
-                    component={Link}
+                    component={RouterLink}
                     href={route("teams.index")}
                     variant="contained"
                     size="large"

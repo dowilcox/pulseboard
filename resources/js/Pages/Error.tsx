@@ -1,10 +1,10 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { PageProps } from "@/types";
-import { Head, Link as InertiaLink, usePage } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import type { ReactElement } from "react";
 
 interface Props {
     status: number;
@@ -73,7 +73,7 @@ export default function Error({ status }: Props) {
                     </Button>
                     <Button
                         variant="contained"
-                        component={InertiaLink}
+                        component={RouterLink}
                         href={auth?.user ? "/dashboard" : "/"}
                     >
                         {auth?.user ? "Dashboard" : "Home"}
@@ -85,9 +85,5 @@ export default function Error({ status }: Props) {
 }
 
 // Authenticated users get the persistent app layout; guests render bare.
-Error.layout = (page: ReactElement<Props & PageProps>) =>
-    page.props.auth?.user ? (
-        <AuthenticatedLayout>{page}</AuthenticatedLayout>
-    ) : (
-        page
-    );
+Error.layout = (props: Props & PageProps) =>
+    props.auth?.user ? [AuthenticatedLayout] : [];
