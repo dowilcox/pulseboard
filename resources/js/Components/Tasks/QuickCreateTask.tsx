@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { type FormEvent, type KeyboardEvent, useRef, useState } from "react";
 
@@ -15,29 +16,66 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
     columnId: string;
+    columnName: string;
     templates?: TaskTemplate[];
+    /** The column is at (or over) its WIP limit. */
     disabled?: boolean;
+    wipLimit?: number | null;
+    taskCount?: number;
+    /**
+     * Render just the title form, already open (used when adding from the
+     * column header). `onClose` fires when the form is dismissed.
+     */
+    formOnly?: boolean;
+    onClose?: () => void;
 }
 
 // Subtle ink wash for hover on the column well
 const KANBAN_HOVER = "rgba(34, 41, 53, 0.06)";
 
+export function wipLimitMessage(
+    taskCount: number | undefined,
+    wipLimit: number | null | undefined,
+): string {
+    return wipLimit
+        ? `This column is at its WIP limit (${taskCount ?? wipLimit} of ${wipLimit}). Move or finish a task before adding another.`
+        : "This column is at its WIP limit.";
+}
+
 export default function QuickCreateTask({
     teamSlug,
     boardSlug,
     columnId,
+    columnName,
     templates = [],
     disabled = false,
+    wipLimit,
+    taskCount,
+    formOnly = false,
+    onClose,
 }: Props) {
-    const [isCreating, setIsCreating] = useState(false);
+    const [isCreating, setIsCreating] = useState(formOnly);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [selectedTemplate, setSelectedTemplate] =
         useState<TaskTemplate | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, post, processing, reset } = useForm({
-        title: "",
-    });
+    const { data, setData, post, processing, reset, errors, clearErrors } =
+        useForm({
+            title: "",
+        });
+
+    // The server reports a WIP-limit race on `column_id`.
+    const errorMessage =
+        errors.title ?? (errors as Record<string, string | undefined>).column_id;
+
+    const close = () => {
+        setIsCreating(false);
+        setSelectedTemplate(null);
+        reset("title");
+        clearErrors();
+        onClose?.();
+    };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
@@ -74,9 +112,8 @@ export default function QuickCreateTask({
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
-            setIsCreating(false);
-            setSelectedTemplate(null);
-            reset("title");
+            e.stopPropagation();
+            close();
         }
     };
 
@@ -92,50 +129,67 @@ export default function QuickCreateTask({
     };
 
     if (!isCreating) {
+        if (formOnly) return null;
+
         return (
             <Box sx={{ display: "flex", gap: 0.5 }}>
-                <Button
-                    startIcon={<AddIcon />}
-                    size="small"
-                    disabled={disabled}
-                    onClick={() => {
-                        setSelectedTemplate(null);
-                        setIsCreating(true);
-                        setTimeout(() => inputRef.current?.focus(), 0);
-                    }}
-                    sx={{
-                        flex: 1,
-                        justifyContent: "flex-start",
-                        // Quiet add affordance — muted text on wells uses `sub`
-                        color: harbor.sub,
-                        fontSize: "12.5px",
-                        fontWeight: 700,
-                        textTransform: "none",
-                        px: "6px",
-                        "& .MuiButton-startIcon": { mr: 0.5 },
-                        "&:hover": { bgcolor: KANBAN_HOVER },
-                        // "WIP limit reached" carries information — keep it
-                        // at the audited muted-on-well tone, not MUI's
-                        // low-alpha disabled gray
-                        "&.Mui-disabled": { color: harbor.sub },
-                    }}
+                <Tooltip
+                    title={disabled ? wipLimitMessage(taskCount, wipLimit) : ""}
+                    // Describe rather than relabel, so the accessible name
+                    // stays the visible "WIP limit reached" text.
+                    describeChild
                 >
-                    {disabled ? "WIP limit reached" : "Add task"}
-                </Button>
+                    {/* aria-disabled (not disabled) keeps the button focusable
+                        so keyboard users get the explanation too */}
+                    <Button
+                        startIcon={<AddIcon />}
+                        size="small"
+                        aria-disabled={disabled || undefined}
+                        onClick={() => {
+                            if (disabled) return;
+                            setSelectedTemplate(null);
+                            setIsCreating(true);
+                            setTimeout(() => inputRef.current?.focus(), 0);
+                        }}
+                        sx={{
+                            flex: 1,
+                            justifyContent: "flex-start",
+                            // Quiet add affordance — muted text on wells uses `sub`
+                            color: harbor.sub,
+                            fontSize: "12.5px",
+                            fontWeight: 700,
+                            textTransform: "none",
+                            px: "6px",
+                            "& .MuiButton-startIcon": { mr: 0.5 },
+                            "&:hover": {
+                                bgcolor: disabled
+                                    ? "transparent"
+                                    : KANBAN_HOVER,
+                            },
+                            ...(disabled && { cursor: "not-allowed" }),
+                        }}
+                    >
+                        {disabled ? "WIP limit reached" : "Add task"}
+                    </Button>
+                </Tooltip>
                 {templates.length > 0 && !disabled && (
                     <>
-                        <Button
-                            size="small"
-                            onClick={(e) => setAnchorEl(e.currentTarget)}
-                            sx={{
-                                minWidth: "auto",
-                                color: harbor.sub,
-                                "&:hover": { bgcolor: KANBAN_HOVER },
-                            }}
-                            aria-label="Create from template"
-                        >
-                            <NoteAddIcon sx={{ fontSize: 16 }} />
-                        </Button>
+                        <Tooltip title="Create from template">
+                            <Button
+                                size="small"
+                                onClick={(e) => setAnchorEl(e.currentTarget)}
+                                sx={{
+                                    minWidth: "auto",
+                                    color: harbor.sub,
+                                    "&:hover": { bgcolor: KANBAN_HOVER },
+                                }}
+                                aria-label={`Create from template in ${columnName}`}
+                                aria-haspopup="menu"
+                                aria-expanded={anchorEl ? "true" : undefined}
+                            >
+                                <NoteAddIcon sx={{ fontSize: 16 }} />
+                            </Button>
+                        </Tooltip>
                         <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
@@ -174,24 +228,27 @@ export default function QuickCreateTask({
                 placeholder={
                     selectedTemplate
                         ? `${selectedTemplate.name}...`
-                        : "Task title..."
+                        : "Task title — Enter to add, Esc to cancel"
                 }
-                inputProps={{ "aria-label": "Task title" }}
+                slotProps={{
+                    htmlInput: {
+                        "aria-label": `New task title in ${columnName}`,
+                        maxLength: 255,
+                    },
+                }}
                 value={data.title}
                 onChange={(e) => setData("title", e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={() => {
-                    if (!data.title.trim()) {
-                        setIsCreating(false);
-                        setSelectedTemplate(null);
-                        reset("title");
-                    }
+                    if (!data.title.trim()) close();
                 }}
                 disabled={processing}
+                error={Boolean(errorMessage)}
                 sx={{
                     "& .MuiOutlinedInput-root": {
                         bgcolor: harbor.card,
                         borderRadius: "10px",
+                        fontSize: "13.5px",
                         ...(selectedTemplate && {
                             borderColor: "primary.main",
                             "& fieldset": { borderColor: "primary.main" },
@@ -199,9 +256,10 @@ export default function QuickCreateTask({
                     },
                 }}
                 helperText={
-                    selectedTemplate
+                    errorMessage ??
+                    (selectedTemplate
                         ? `Template: ${selectedTemplate.name}`
-                        : undefined
+                        : undefined)
                 }
             />
         </Box>

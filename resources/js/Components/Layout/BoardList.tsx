@@ -1,5 +1,5 @@
 import { useSidebar } from "@/Contexts/SidebarContext";
-import type { Board } from "@/types";
+import type { Board, Team } from "@/types";
 import {
     closestCenter,
     DndContext,
@@ -8,7 +8,7 @@ import {
     useSensor,
     useSensors,
 } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent, Modifier } from "@dnd-kit/core";
 import {
     arrayMove,
     SortableContext,
@@ -17,176 +17,84 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { router } from "@inertiajs/react";
-import ViewModuleOutlinedIcon from "@mui/icons-material/ViewModuleOutlined";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import Box from "@mui/material/Box";
 import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
-import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef } from "react";
-import { harbor } from "@/theme/harbor";
+import { useCallback } from "react";
+import SidebarBoardRow from "./SidebarBoardRow";
 
-// Harbor: active board is a cream card tile with a chip shadow; inactive
-// rows are faint text on the canvas with a subtle ink-tint hover.
-const SIDEBAR_TEXT = harbor.ink;
-const SIDEBAR_MUTED = harbor.faint;
-const SIDEBAR_SELECTED = harbor.card;
-const SIDEBAR_HOVER = "rgba(34, 41, 53, 0.05)";
+// Rows only move vertically inside the narrow sidebar.
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({
+    ...transform,
+    x: 0,
+});
 
 interface BoardListProps {
+    team: Team;
     boards: Board[];
-    teamId: string;
-    teamSlug: string;
     activeBoardId?: string;
+    id?: string;
+    "aria-labelledby"?: string;
 }
 
 interface SortableBoardItemProps {
     board: Board;
-    teamSlug: string;
+    team: Team;
     isActive: boolean;
+    starred: boolean;
+    onToggleStar: (boardId: string) => void;
 }
 
 function SortableBoardItem({
     board,
-    teamSlug,
+    team,
     isActive,
+    starred,
+    onToggleStar,
 }: SortableBoardItemProps) {
     const {
         attributes,
         listeners,
         setNodeRef,
+        setActivatorNodeRef,
         transform,
         transition,
         isDragging,
     } = useSortable({ id: board.id });
-    const draggedRef = useRef(false);
-
-    useEffect(() => {
-        if (isDragging) {
-            draggedRef.current = true;
-        }
-    }, [isDragging]);
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.4 : 1,
-    };
-
-    const handleBoardClick = () => {
-        if (draggedRef.current) {
-            draggedRef.current = false;
-            return;
-        }
-
-        router.get(route("teams.boards.show", [teamSlug, board.slug]));
-    };
 
     return (
-        <ListItem ref={setNodeRef} style={style} disablePadding>
-            <ListItemButton
-                {...attributes}
-                {...listeners}
-                selected={isActive}
-                onClick={handleBoardClick}
-                onPointerDownCapture={() => {
-                    draggedRef.current = false;
-                }}
-                sx={{
-                    mx: 1,
-                    mb: 0.5,
-                    px: 1.75,
-                    py: 1,
-                    borderRadius: `${harbor.radius.tile}px`,
-                    color: isActive ? SIDEBAR_TEXT : SIDEBAR_MUTED,
-                    boxShadow: isActive ? harbor.chipShadow : "none",
-                    "&.Mui-selected": {
-                        bgcolor: SIDEBAR_SELECTED,
-                        color: SIDEBAR_TEXT,
-                        "&:hover": {
-                            bgcolor: SIDEBAR_SELECTED,
-                        },
-                    },
-                    "&:hover": {
-                        bgcolor: SIDEBAR_HOVER,
-                        color: SIDEBAR_TEXT,
-                    },
-                    cursor: isDragging ? "grabbing" : "grab",
-                    "& .drag-handle": {
-                        opacity: isDragging ? 1 : 0,
-                        transition: "opacity 0.15s",
-                    },
-                    "&:hover .drag-handle": {
-                        opacity: 0.6,
-                    },
-                }}
-            >
-                <Box
-                    className="drag-handle"
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        mr: 0.5,
-                        color: SIDEBAR_MUTED,
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`Drag to reorder ${board.name}`}
-                    aria-hidden="true"
-                >
-                    <DragIndicatorIcon sx={{ fontSize: 16 }} />
-                </Box>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                    {board.image_url ? (
-                        <Box
-                            component="img"
-                            src={board.image_url}
-                            alt={board.name}
-                            sx={{
-                                width: 24,
-                                height: 24,
-                                borderRadius: "4px",
-                                objectFit: "cover",
-                            }}
-                        />
-                    ) : (
-                        <ViewModuleOutlinedIcon
-                            fontSize="small"
-                            sx={{
-                                color: isActive
-                                    ? "primary.main"
-                                    : SIDEBAR_MUTED,
-                            }}
-                        />
-                    )}
-                </ListItemIcon>
-                <ListItemText
-                    primary={board.name}
-                    primaryTypographyProps={{
-                        variant: "body2",
-                        noWrap: true,
-                        fontWeight: isActive ? 800 : 600,
-                    }}
-                />
-            </ListItemButton>
-        </ListItem>
+        <SidebarBoardRow
+            board={board}
+            team={team}
+            isActive={isActive}
+            starred={starred}
+            onToggleStar={onToggleStar}
+            sortable={{
+                setNodeRef,
+                setActivatorNodeRef,
+                attributes,
+                listeners,
+                isDragging,
+                style: {
+                    transform: CSS.Translate.toString(transform),
+                    transition,
+                },
+            }}
+        />
     );
 }
 
+/** One team's boards, reorderable via each row's drag handle. */
 export default function BoardList({
+    team,
     boards,
-    teamId,
-    teamSlug,
     activeBoardId,
+    id,
+    "aria-labelledby": ariaLabelledBy,
 }: BoardListProps) {
-    const { reorderBoards } = useSidebar();
+    const { reorderBoards, starredBoardIds, toggleStarredBoard } = useSidebar();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
-            activationConstraint: { distance: 5 },
+            activationConstraint: { distance: 4 },
         }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
@@ -204,44 +112,42 @@ export default function BoardList({
 
             const reordered = arrayMove(boards, oldIndex, newIndex);
             reorderBoards(
-                teamId,
+                team.id,
                 reordered.map((b) => b.id),
             );
         },
-        [boards, teamId, reorderBoards],
+        [boards, team.id, reorderBoards],
     );
 
     return (
-        <Box sx={{ display: "flex", flexDirection: "column" }}>
-            {boards.length === 0 ? (
-                <Box sx={{ px: 2, py: 1 }}>
-                    <Typography variant="body2" color={SIDEBAR_MUTED}>
-                        No boards yet
-                    </Typography>
-                </Box>
-            ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={handleDragEnd}
+        >
+            <SortableContext
+                items={boards.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+            >
+                <List
+                    dense
+                    disablePadding
+                    id={id}
+                    aria-labelledby={ariaLabelledBy}
                 >
-                    <SortableContext
-                        items={boards.map((b) => b.id)}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        <List dense disablePadding>
-                            {boards.map((board) => (
-                                <SortableBoardItem
-                                    key={board.id}
-                                    board={board}
-                                    teamSlug={teamSlug}
-                                    isActive={board.id === activeBoardId}
-                                />
-                            ))}
-                        </List>
-                    </SortableContext>
-                </DndContext>
-            )}
-        </Box>
+                    {boards.map((board) => (
+                        <SortableBoardItem
+                            key={board.id}
+                            board={board}
+                            team={team}
+                            isActive={board.id === activeBoardId}
+                            starred={starredBoardIds.includes(board.id)}
+                            onToggleStar={toggleStarredBoard}
+                        />
+                    ))}
+                </List>
+            </SortableContext>
+        </DndContext>
     );
 }

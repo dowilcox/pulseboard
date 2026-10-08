@@ -5,20 +5,27 @@ import DependencySection from "@/Components/Tasks/DependencySection";
 import LabelSelector from "@/Components/Tasks/LabelSelector";
 import PrioritySelector from "@/Components/Tasks/PrioritySelector";
 import RecurrenceConfig from "@/Components/Tasks/RecurrenceConfig";
+import { useSnackbar } from "@/Contexts/SnackbarContext";
+import type { Autosave } from "@/hooks/useAutosave";
 import { harbor, harborHex } from "@/theme/harbor";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import {
+    dueDateHint,
+    parseEffortInput,
+    toDateInputValue,
+} from "@/utils/taskFields";
 import type {
     Board,
     GitlabProject,
     Label,
-    PageProps,
     RecurrenceConfig as RecurrenceConfigType,
     Task,
+    TaskMoveTarget,
+    TaskPermissions,
     TaskSummary,
     User,
 } from "@/types";
-import type { RequestPayload } from "@inertiajs/core";
-import { router, usePage } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
 import CheckIcon from "@mui/icons-material/Check";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -31,12 +38,14 @@ import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 
 interface Props {
     task: Task;
@@ -44,10 +53,14 @@ interface Props {
     board: Board;
     members: User[];
     labels: Label[];
+    /** Dependency candidates (this board plus open tasks on other boards). */
     boardTasks: TaskSummary[];
-    teamBoards: Board[];
+    /** Other boards the user may move this task to, with their columns. */
+    moveTargets: TaskMoveTarget[];
+    can: TaskPermissions;
     gitlabProjects?: GitlabProject[];
     isWatching: boolean;
+    autosave: Autosave;
 }
 
 /** Harbor sidebar group card. */
@@ -69,6 +82,159 @@ const controlSx = {
     "& .MuiSelect-icon": { color: harbor.faint },
 } as const;
 
+/** Debounce for sidebar fields saved through the page autosave. */
+const FIELD_SAVE_DELAY = 600;
+
+type MoveColumn = TaskMoveTarget["columns"][number];
+
+/** WIP limits of 0/null don't restrict (mirrors MoveTask::assertWipCapacity). */
+function isColumnFull(column: MoveColumn): boolean {
+    return (
+        !!column.wip_limit &&
+        column.wip_limit > 0 &&
+        (column.tasks_count ?? 0) >= column.wip_limit
+    );
+}
+
+function ColumnDot({ color }: { color?: string }) {
+    return (
+        <Box
+            aria-hidden
+            sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: color ?? "grey.400",
+                flexShrink: 0,
+            }}
+        />
+    );
+}
+
+interface MoveTaskDialogProps {
+    open: boolean;
+    targets: TaskMoveTarget[];
+    initialBoardId: string;
+    taskLabel: string;
+    submitting: boolean;
+    onClose: () => void;
+    onConfirm: (boardId: string, columnId: string) => void;
+}
+
+/** Pick the destination board + column for a cross-board move. */
+function MoveTaskDialog({
+    open,
+    targets,
+    initialBoardId,
+    taskLabel,
+    submitting,
+    onClose,
+    onConfirm,
+}: MoveTaskDialogProps) {
+    const titleId = useId();
+    const [boardId, setBoardId] = useState(initialBoardId);
+    const [columnId, setColumnId] = useState("");
+
+    useEffect(() => {
+        if (open) setBoardId(initialBoardId);
+    }, [open, initialBoardId]);
+
+    const target = targets.find((t) => t.id === boardId);
+
+    // Default to the first open, non-done column with room whenever the
+    // dialog opens or the board changes.
+    useEffect(() => {
+        if (!open) return;
+        const columns = targets.find((t) => t.id === boardId)?.columns ?? [];
+        const preferred =
+            columns.find((c) => !c.is_done_column && !isColumnFull(c)) ??
+            columns.find((c) => !isColumnFull(c));
+        setColumnId(preferred?.id ?? "");
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only on open/board change
+    }, [open, boardId]);
+
+    return (
+        <Dialog
+            open={open}
+            onClose={submitting ? undefined : onClose}
+            maxWidth="xs"
+            fullWidth
+            aria-labelledby={titleId}
+        >
+            <DialogTitle id={titleId}>Move to another board</DialogTitle>
+            <DialogContent>
+                <DialogContentText sx={{ mb: 2 }}>
+                    {taskLabel} will move with its comments, checklists and
+                    attachments, and gets a new number on the target board.
+                </DialogContentText>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Board"
+                        value={boardId}
+                        onChange={(e) => setBoardId(e.target.value)}
+                    >
+                        {targets.map((t) => (
+                            <MenuItem key={t.id} value={t.id}>
+                                {t.name}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    <TextField
+                        select
+                        fullWidth
+                        label="Column"
+                        value={columnId}
+                        onChange={(e) => setColumnId(e.target.value)}
+                        helperText={
+                            target && target.columns.length === 0
+                                ? "This board has no columns yet."
+                                : undefined
+                        }
+                    >
+                        {(target?.columns ?? []).map((column) => {
+                            const full = isColumnFull(column);
+                            return (
+                                <MenuItem
+                                    key={column.id}
+                                    value={column.id}
+                                    disabled={full}
+                                >
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <ColumnDot color={column.color} />
+                                        {column.name}
+                                        {full && " (WIP limit reached)"}
+                                    </Box>
+                                </MenuItem>
+                            );
+                        })}
+                    </TextField>
+                </Box>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} disabled={submitting}>
+                    Cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    disableElevation
+                    disabled={!columnId || submitting}
+                    onClick={() => onConfirm(boardId, columnId)}
+                >
+                    {submitting ? "Moving…" : "Move task"}
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
 export default function TaskSidebar({
     task,
     team,
@@ -76,18 +242,21 @@ export default function TaskSidebar({
     members,
     labels,
     boardTasks,
-    teamBoards,
+    moveTargets,
+    can,
     gitlabProjects = [],
     isWatching,
+    autosave,
 }: Props) {
-    const { teams: sharedTeams } = usePage<PageProps>().props;
-    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
-    const canManageTemplates = userRole === "owner" || userRole === "admin";
+    const { showSnackbar } = useSnackbar();
 
     const columns = board.columns ?? [];
     const isCompleted = task.completed_at != null;
+    const taskLabel = task.task_number
+        ? `#${task.task_number} ${task.title}`
+        : task.title;
 
-    const [dueDate, setDueDate] = useState(task.due_date ?? "");
+    const [dueDate, setDueDate] = useState(toDateInputValue(task.due_date));
     const [effortEstimate, setEffortEstimate] = useState<string>(
         task.effort_estimate != null ? String(task.effort_estimate) : "",
     );
@@ -96,87 +265,61 @@ export default function TaskSidebar({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
     const [templateName, setTemplateName] = useState("");
+    const [savingTemplate, setSavingTemplate] = useState(false);
+    const [moveBoardId, setMoveBoardId] = useState<string | null>(null);
+    const [moving, setMoving] = useState(false);
 
-    const dueDateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-        null,
-    );
-    const effortTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const recurrenceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-        null,
-    );
-
+    // Take server values unless the field has an unsaved local edit.
     useEffect(() => {
-        return () => {
-            if (dueDateTimeoutRef.current)
-                clearTimeout(dueDateTimeoutRef.current);
-            if (effortTimeoutRef.current)
-                clearTimeout(effortTimeoutRef.current);
-            if (recurrenceTimeoutRef.current)
-                clearTimeout(recurrenceTimeoutRef.current);
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!dueDateTimeoutRef.current) {
-            setDueDate(task.due_date ?? "");
+        if (!autosave.isBusy("due_date")) {
+            setDueDate(toDateInputValue(task.due_date));
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- sync on prop change only
     }, [task.due_date]);
 
     useEffect(() => {
-        if (!effortTimeoutRef.current) {
+        if (!autosave.isBusy("effort_estimate")) {
             setEffortEstimate(
                 task.effort_estimate != null
                     ? String(task.effort_estimate)
                     : "",
             );
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- sync on prop change only
     }, [task.effort_estimate]);
 
     useEffect(() => {
-        if (!recurrenceTimeoutRef.current) {
+        if (!autosave.isBusy("recurrence_config")) {
             setRecurrenceConfig(task.recurrence_config ?? null);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- sync on prop change only
     }, [task.recurrence_config]);
 
-    const saveField = useCallback(
-        (data: Record<string, unknown>) => {
-            router.put(
-                route("tasks.update", [team.slug, board.slug, task.slug]),
-                data as RequestPayload,
-                {
-                    preserveScroll: true,
-                    preserveState: true,
-                },
-            );
-        },
-        [team.slug, board.slug, task.slug],
-    );
-
     const handleColumnChange = (columnId: string) => {
-        const targetColumn = columns.find((c) => c.id === columnId);
-        const maxSort = (targetColumn?.tasks ?? []).reduce(
-            (max, t) => Math.max(max, t.sort_order ?? 0),
-            0,
-        );
+        if (columnId === task.column_id) return;
         router.patch(
             route("tasks.move", [team.slug, board.slug, task.slug]),
-            { column_id: columnId, sort_order: maxSort + 1 },
+            // null lets the server append after the column's last task
+            { column_id: columnId, sort_order: null },
             { preserveScroll: true },
         );
     };
 
-    const handleBoardChange = (newBoardId: string) => {
-        if (newBoardId === board.id) return;
-        const targetBoard = teamBoards.find((b) => b.id === newBoardId);
-        const firstColumn = targetBoard?.columns?.[0];
-        if (!firstColumn) return;
-
-        router.patch(
-            route("tasks.move", [team.slug, board.slug, task.slug]),
-            // null lets the server append after the column's last task
-            { board_id: newBoardId, column_id: firstColumn.id, sort_order: null },
-            { preserveScroll: true },
-        );
+    const handleMoveConfirm = (boardId: string, columnId: string) => {
+        setMoving(true);
+        const move = () =>
+            router.patch(
+                route("tasks.move", [team.slug, board.slug, task.slug]),
+                { board_id: boardId, column_id: columnId, sort_order: null },
+                {
+                    // The server redirects to the task's new URL and flashes
+                    // a success message.
+                    onSuccess: () => setMoveBoardId(null),
+                    onFinish: () => setMoving(false),
+                },
+            );
+        // Land pending edits on the current URL before the task moves.
+        autosave.flush().then(move, move);
     };
 
     const handleToggleComplete = () => {
@@ -197,64 +340,64 @@ export default function TaskSidebar({
 
     const handleDueDateChange = (newDate: string) => {
         setDueDate(newDate);
-        if (dueDateTimeoutRef.current) clearTimeout(dueDateTimeoutRef.current);
-        dueDateTimeoutRef.current = setTimeout(() => {
-            dueDateTimeoutRef.current = null;
-            saveField({ due_date: newDate || null });
-        }, 600);
+        autosave.schedule("due_date", newDate || null, FIELD_SAVE_DELAY);
     };
 
     const handleEffortChange = (value: string) => {
-        setEffortEstimate(value);
-        if (effortTimeoutRef.current) clearTimeout(effortTimeoutRef.current);
-        effortTimeoutRef.current = setTimeout(() => {
-            effortTimeoutRef.current = null;
-            const num = parseInt(value);
-            saveField({ effort_estimate: isNaN(num) ? null : num });
-        }, 600);
+        const { text, points } = parseEffortInput(value);
+        setEffortEstimate(text);
+        autosave.schedule("effort_estimate", points, FIELD_SAVE_DELAY);
     };
 
     const handleRecurrenceChange = (config: RecurrenceConfigType | null) => {
         setRecurrenceConfig(config);
-        if (recurrenceTimeoutRef.current)
-            clearTimeout(recurrenceTimeoutRef.current);
-        recurrenceTimeoutRef.current = setTimeout(() => {
-            recurrenceTimeoutRef.current = null;
-            saveField({ recurrence_config: config });
-        }, 600);
+        autosave.schedule("recurrence_config", config, FIELD_SAVE_DELAY);
     };
 
     const handleDelete = () => {
+        setDeleteDialogOpen(false);
+        // Unsaved edits to a task being deleted are moot.
+        autosave.discard();
+        // The server redirects back to the board.
         router.delete(
             route("tasks.destroy", [team.slug, board.slug, task.slug]),
-            {
-                onSuccess: () =>
-                    router.visit(
-                        route("teams.boards.show", [team.slug, board.slug]),
-                    ),
-            },
         );
     };
 
     const handleSaveAsTemplate = () => {
-        if (!templateName.trim()) return;
-        router.post(
-            route("tasks.save-template", [team.slug, board.slug, task.slug]),
-            { name: templateName.trim() },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setTemplateDialogOpen(false);
-                    setTemplateName("");
+        const name = templateName.trim();
+        if (!name || savingTemplate) return;
+        setSavingTemplate(true);
+        const save = () =>
+            router.post(
+                route("tasks.save-template", [
+                    team.slug,
+                    board.slug,
+                    task.slug,
+                ]),
+                { name },
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        setTemplateDialogOpen(false);
+                        setTemplateName("");
+                        showSnackbar(
+                            `Saved “${name}” as a task template.`,
+                            "success",
+                        );
+                    },
+                    onFinish: () => setSavingTemplate(false),
                 },
-            },
-        );
+            );
+        // The template is built from the stored task, so save edits first.
+        autosave.flush().then(save, save);
     };
 
     // Micro-label above each sidebar field group.
-    const microLabel = (label: string) => (
+    const microLabel = (label: string, htmlFor?: string) => (
         <Typography
-            component="span"
+            component={htmlFor ? "label" : "span"}
+            htmlFor={htmlFor}
             sx={{
                 display: "block",
                 fontSize: 10.5,
@@ -269,21 +412,28 @@ export default function TaskSidebar({
         </Typography>
     );
 
-    const fieldRow = (label: string, children: React.ReactNode) => (
+    const fieldRow = (label: string, children: ReactNode, htmlFor?: string) => (
         <Box>
-            {microLabel(label)}
+            {microLabel(label, htmlFor)}
             <Box>{children}</Box>
         </Box>
     );
+
+    const dueHint = dueDateHint(dueDate, isCompleted);
+    const dueDateId = `task-${task.id}-due-date`;
+    const effortId = `task-${task.id}-effort`;
+    const moveOptions = [{ id: board.id, name: board.name }, ...moveTargets];
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.75 }}>
             {/* Actions — complete / watch / board / column */}
             <Box sx={{ ...groupCardSx, gap: 1.125 }}>
+                {/* Visible text is the accessible name (WCAG 2.5.3). */}
                 <Button
                     variant="contained"
                     color={isCompleted ? "success" : "primary"}
                     disableElevation
+                    disabled={!can.update}
                     startIcon={
                         isCompleted ? (
                             <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
@@ -293,9 +443,6 @@ export default function TaskSidebar({
                     }
                     onClick={handleToggleComplete}
                     fullWidth
-                    aria-label={
-                        isCompleted ? "Mark incomplete" : "Mark complete"
-                    }
                     sx={{
                         height: 38,
                         borderRadius: "10px",
@@ -303,7 +450,7 @@ export default function TaskSidebar({
                         fontWeight: 700,
                     }}
                 >
-                    {isCompleted ? "Completed" : "Mark Complete"}
+                    {isCompleted ? "Completed — Reopen" : "Mark complete"}
                 </Button>
 
                 <Button
@@ -316,7 +463,7 @@ export default function TaskSidebar({
                     }
                     onClick={handleToggleWatch}
                     fullWidth
-                    aria-label={isWatching ? "Unwatch task" : "Watch task"}
+                    aria-pressed={isWatching}
                     sx={{
                         height: 38,
                         borderRadius: "10px",
@@ -331,37 +478,36 @@ export default function TaskSidebar({
                     {isWatching ? "Watching" : "Watch"}
                 </Button>
 
-                {/* Board selector */}
-                {teamBoards.length > 1 && (
+                {/* Board selector — only when there's somewhere to move to */}
+                {can.move && moveTargets.length > 0 && (
                     <Select
                         size="small"
                         fullWidth
                         value={board.id}
-                        onChange={(e) => handleBoardChange(e.target.value)}
+                        onChange={(e) => {
+                            if (e.target.value !== board.id) {
+                                setMoveBoardId(e.target.value);
+                            }
+                        }}
                         inputProps={{ "aria-label": "Board" }}
                         sx={controlSx}
-                        renderValue={(value) => {
-                            const b = teamBoards.find((tb) => tb.id === value);
-                            return (
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1,
-                                    }}
-                                >
-                                    <DashboardIcon
-                                        sx={{
-                                            fontSize: 14,
-                                            color: harbor.faint,
-                                        }}
-                                    />
-                                    {b?.name ?? "Unknown"}
-                                </Box>
-                            );
-                        }}
+                        renderValue={(value) => (
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                }}
+                            >
+                                <DashboardIcon
+                                    sx={{ fontSize: 14, color: harbor.faint }}
+                                />
+                                {moveOptions.find((b) => b.id === value)
+                                    ?.name ?? "Unknown"}
+                            </Box>
+                        )}
                     >
-                        {teamBoards.map((b) => (
+                        {moveOptions.map((b) => (
                             <MenuItem key={b.id} value={b.id}>
                                 <Box
                                     sx={{
@@ -376,7 +522,9 @@ export default function TaskSidebar({
                                             color: "text.secondary",
                                         }}
                                     />
-                                    {b.name}
+                                    {b.id === board.id
+                                        ? b.name
+                                        : `Move to ${b.name}…`}
                                 </Box>
                             </MenuItem>
                         ))}
@@ -388,6 +536,7 @@ export default function TaskSidebar({
                     size="small"
                     fullWidth
                     value={task.column_id}
+                    disabled={!can.update}
                     onChange={(e) => handleColumnChange(e.target.value)}
                     inputProps={{ "aria-label": "Column" }}
                     sx={controlSx}
@@ -401,15 +550,7 @@ export default function TaskSidebar({
                                     gap: 1,
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: "50%",
-                                        bgcolor: col?.color ?? "grey.400",
-                                        flexShrink: 0,
-                                    }}
-                                />
+                                <ColumnDot color={col?.color} />
                                 {col?.name ?? "Unknown"}
                             </Box>
                         );
@@ -424,15 +565,7 @@ export default function TaskSidebar({
                                     gap: 1,
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: "50%",
-                                        bgcolor: col.color,
-                                        flexShrink: 0,
-                                    }}
-                                />
+                                <ColumnDot color={col.color} />
                                 {col.name}
                             </Box>
                         </MenuItem>
@@ -484,39 +617,48 @@ export default function TaskSidebar({
                 {fieldRow(
                     "Due date",
                     <TextField
+                        id={dueDateId}
                         type="date"
                         size="small"
                         fullWidth
                         value={dueDate}
                         onChange={(e) => handleDueDateChange(e.target.value)}
                         sx={{ "& .MuiOutlinedInput-root": controlSx }}
+                        helperText={dueHint?.text}
                         slotProps={{
-                            // No decorative calendar adornment — the native
-                            // date input already shows a picker icon
-                            htmlInput: {
-                                "aria-label": "Due date",
+                            formHelperText: {
+                                sx: {
+                                    mx: 0,
+                                    fontWeight: 700,
+                                    color:
+                                        dueHint?.tone === "overdue"
+                                            ? harbor.dangerText
+                                            : harbor.dueSoon.fg,
+                                },
                             },
-                            inputLabel: { shrink: true },
                         }}
                     />,
+                    dueDateId,
                 )}
                 {fieldRow(
-                    "Effort",
+                    "Effort (points)",
                     <TextField
-                        type="number"
+                        id={effortId}
                         size="small"
                         fullWidth
                         value={effortEstimate}
                         onChange={(e) => handleEffortChange(e.target.value)}
-                        placeholder="Points"
+                        placeholder="e.g. 3"
                         sx={{ "& .MuiOutlinedInput-root": controlSx }}
                         slotProps={{
                             htmlInput: {
-                                min: 0,
-                                "aria-label": "Effort points",
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
+                                autoComplete: "off",
                             },
                         }}
                     />,
+                    effortId,
                 )}
             </Box>
 
@@ -526,7 +668,8 @@ export default function TaskSidebar({
                     task={task}
                     boardTasks={boardTasks}
                     teamSlug={team.slug}
-                    boardSlug={board.slug}
+                    board={board}
+                    canEdit={can.update}
                 />
 
                 <Box
@@ -570,114 +713,147 @@ export default function TaskSidebar({
                 </Box>
 
                 {/* Actions — template / delete */}
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.75,
-                        borderTop: `1px solid ${harbor.cardBorder}`,
-                        pt: 1.25,
-                        mt: 0.375,
-                    }}
-                >
-                    {canManageTemplates && (
-                        <Button
-                            variant="text"
-                            startIcon={
-                                <ContentCopyIcon
-                                    sx={{ fontSize: "13px !important" }}
-                                />
-                            }
-                            onClick={() => setTemplateDialogOpen(true)}
-                            size="small"
-                            sx={{
-                                px: 0.5,
-                                minWidth: 0,
-                                fontSize: 12.5,
-                                fontWeight: 700,
-                                color: harbor.sub,
-                                "&:hover": {
-                                    bgcolor: "transparent",
-                                    color: harbor.ink,
-                                },
-                            }}
-                        >
-                            Template
-                        </Button>
-                    )}
-                    <Box sx={{ flex: 1 }} />
-                    <Button
-                        variant="text"
-                        startIcon={
-                            <DeleteIcon sx={{ fontSize: "13px !important" }} />
-                        }
-                        onClick={() => setDeleteDialogOpen(true)}
-                        size="small"
+                {(can.saveAsTemplate || can.delete) && (
+                    <Box
                         sx={{
-                            px: 0.5,
-                            minWidth: 0,
-                            fontSize: 12.5,
-                            fontWeight: 700,
-                            color: harbor.dangerText,
-                            "&:hover": {
-                                bgcolor: "transparent",
-                                color: harborHex.danger,
-                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.75,
+                            borderTop: `1px solid ${harbor.cardBorder}`,
+                            pt: 1.25,
+                            mt: 0.375,
                         }}
                     >
-                        Delete
-                    </Button>
-                </Box>
+                        {can.saveAsTemplate && (
+                            <Tooltip title="Create a reusable task template from this task's description, checklists, labels, priority and effort">
+                                <Button
+                                    variant="text"
+                                    startIcon={
+                                        <ContentCopyIcon
+                                            sx={{ fontSize: "13px !important" }}
+                                        />
+                                    }
+                                    onClick={() => setTemplateDialogOpen(true)}
+                                    size="small"
+                                    sx={{
+                                        px: 0.5,
+                                        minWidth: 0,
+                                        fontSize: 12.5,
+                                        fontWeight: 700,
+                                        color: harbor.sub,
+                                        "&:hover": {
+                                            bgcolor: "transparent",
+                                            color: harbor.ink,
+                                        },
+                                    }}
+                                >
+                                    Save as template
+                                </Button>
+                            </Tooltip>
+                        )}
+                        <Box sx={{ flex: 1 }} />
+                        {can.delete && (
+                            <Button
+                                variant="text"
+                                startIcon={
+                                    <DeleteIcon
+                                        sx={{ fontSize: "13px !important" }}
+                                    />
+                                }
+                                onClick={() => setDeleteDialogOpen(true)}
+                                size="small"
+                                sx={{
+                                    px: 0.5,
+                                    minWidth: 0,
+                                    fontSize: 12.5,
+                                    fontWeight: 700,
+                                    color: harbor.dangerText,
+                                    "&:hover": {
+                                        bgcolor: "transparent",
+                                        color: harborHex.danger,
+                                    },
+                                }}
+                            >
+                                Delete task
+                            </Button>
+                        )}
+                    </Box>
+                )}
             </Box>
 
+            {/* Move to another board */}
+            {can.move && moveTargets.length > 0 && (
+                <MoveTaskDialog
+                    open={moveBoardId !== null}
+                    targets={moveTargets}
+                    initialBoardId={moveBoardId ?? moveTargets[0].id}
+                    taskLabel={`“${taskLabel}”`}
+                    submitting={moving}
+                    onClose={() => setMoveBoardId(null)}
+                    onConfirm={handleMoveConfirm}
+                />
+            )}
+
             {/* Delete confirmation dialog */}
-            <ConfirmDialog
-                open={deleteDialogOpen}
-                onClose={() => setDeleteDialogOpen(false)}
-                onConfirm={handleDelete}
-                title="Delete Task"
-                message={`Are you sure you want to delete "${task.title}"? This will also delete all subtasks, comments, and attachments. This action cannot be undone.`}
-                confirmLabel="Delete"
-                confirmColor="error"
-            />
+            {can.delete && (
+                <ConfirmDialog
+                    open={deleteDialogOpen}
+                    onClose={() => setDeleteDialogOpen(false)}
+                    onConfirm={handleDelete}
+                    title="Delete task?"
+                    message={`“${taskLabel}” and all of its subtasks, comments and attachments will be permanently deleted. This can't be undone.`}
+                    confirmLabel="Delete task"
+                    confirmColor="error"
+                />
+            )}
 
             {/* Save as template dialog */}
-            <Dialog
-                open={canManageTemplates && templateDialogOpen}
-                onClose={() => setTemplateDialogOpen(false)}
-                maxWidth="xs"
-                fullWidth
-                aria-labelledby="save-template-dialog-title"
-            >
-                <DialogTitle id="save-template-dialog-title">
-                    Save as Template
-                </DialogTitle>
-                <DialogContent>
-                    <TextField
-                        autoFocus
-                        fullWidth
-                        label="Template name"
-                        value={templateName}
-                        onChange={(e) => setTemplateName(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveAsTemplate();
-                        }}
-                        sx={{ mt: 1 }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setTemplateDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={handleSaveAsTemplate}
-                        variant="contained"
-                        disabled={!templateName.trim()}
-                    >
-                        Save
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            {can.saveAsTemplate && (
+                <Dialog
+                    open={templateDialogOpen}
+                    onClose={() => setTemplateDialogOpen(false)}
+                    maxWidth="xs"
+                    fullWidth
+                    aria-labelledby="save-template-dialog-title"
+                >
+                    <DialogTitle id="save-template-dialog-title">
+                        Save as template
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText sx={{ mb: 1 }}>
+                            New tasks created from this template start with this
+                            task's description, checklists, labels, priority and
+                            effort.
+                        </DialogContentText>
+                        <TextField
+                            autoFocus
+                            fullWidth
+                            label="Template name"
+                            value={templateName}
+                            onChange={(e) => setTemplateName(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleSaveAsTemplate();
+                                }
+                            }}
+                            sx={{ mt: 1 }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setTemplateDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveAsTemplate}
+                            variant="contained"
+                            disabled={!templateName.trim() || savingTemplate}
+                        >
+                            Save template
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
         </Box>
     );
 }

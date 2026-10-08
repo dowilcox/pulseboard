@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Controllers\Api\BoardTaskController;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
@@ -9,6 +10,8 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class BoardTaskApiTest extends TestCase
@@ -142,5 +145,124 @@ class BoardTaskApiTest extends TestCase
         $this->assertArrayHasKey('gitlab_refs', $task);
         $this->assertArrayHasKey('comments_count', $task);
         $this->assertArrayHasKey('subtasks_count', $task);
+    }
+
+    public function test_all_mode_returns_every_task_without_pagination(): void
+    {
+        $column2 = Column::factory()->create(['board_id' => $this->board->id]);
+        $this->insertTasks(70, $this->column);
+        $this->insertTasks(60, $column2);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1');
+
+        $response->assertOk();
+        $response->assertJsonCount(130, 'data');
+        $response->assertJsonPath('total', 130);
+        $response->assertJsonPath('limit', BoardTaskController::ALL_TASKS_LIMIT);
+        $response->assertJsonPath('truncated', false);
+        $response->assertJsonMissingPath('current_page');
+
+        $task = $response->json('data.0');
+        $this->assertArrayHasKey('assignees', $task);
+        $this->assertArrayHasKey('labels', $task);
+        $this->assertArrayHasKey('comments_count', $task);
+        $this->assertArrayHasKey('subtasks_count', $task);
+        $this->assertArrayHasKey('slug', $task);
+    }
+
+    public function test_all_mode_is_bounded_and_reports_truncation(): void
+    {
+        $this->insertTasks(BoardTaskController::ALL_TASKS_LIMIT + 5, $this->column);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1');
+
+        $response->assertOk();
+        $response->assertJsonCount(BoardTaskController::ALL_TASKS_LIMIT, 'data');
+        $response->assertJsonPath('total', BoardTaskController::ALL_TASKS_LIMIT + 5);
+        $response->assertJsonPath('truncated', true);
+    }
+
+    public function test_all_mode_can_be_scoped_to_a_column(): void
+    {
+        $column2 = Column::factory()->create(['board_id' => $this->board->id]);
+        $this->insertTasks(3, $this->column);
+        $this->insertTasks(2, $column2);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1&column_id='.$column2->id);
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('total', 2);
+    }
+
+    public function test_all_mode_excludes_other_boards_tasks(): void
+    {
+        $otherBoard = Board::factory()->create(['team_id' => $this->team->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+        $this->insertTasks(2, $this->column);
+        $this->insertTasks(4, $otherColumn);
+
+        $response = $this->actingAs($this->user)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1');
+
+        $response->assertOk();
+        $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('total', 2);
+    }
+
+    public function test_all_mode_requires_board_access(): void
+    {
+        $otherUser = User::factory()->create();
+
+        $this->actingAs($otherUser)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1')
+            ->assertForbidden();
+    }
+
+    public function test_all_mode_requires_authentication(): void
+    {
+        $this->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=1')
+            ->assertUnauthorized();
+    }
+
+    public function test_all_mode_rejects_non_boolean_values(): void
+    {
+        $this->actingAs($this->user)
+            ->getJson(route('boards.tasks.index', [$this->team, $this->board]).'?all=everything')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('all');
+    }
+
+    /**
+     * Bulk-insert tasks directly; model factories are too slow for the
+     * volumes needed to exercise the "all" cap.
+     */
+    private function insertTasks(int $count, Column $column): void
+    {
+        static $taskNumber = 0;
+        $now = now();
+
+        $rows = [];
+        for ($i = 0; $i < $count; $i++) {
+            $rows[] = [
+                'id' => (string) Str::uuid(),
+                'board_id' => $column->board_id,
+                'column_id' => $column->id,
+                'task_number' => ++$taskNumber,
+                'title' => "Task {$taskNumber}",
+                'priority' => 'none',
+                'sort_order' => $i,
+                'created_by' => $this->user->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        foreach (array_chunk($rows, 200) as $chunk) {
+            DB::table('tasks')->insert($chunk);
+        }
     }
 }

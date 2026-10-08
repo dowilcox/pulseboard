@@ -1,35 +1,56 @@
 import { harbor, harborHex } from "@/theme/harbor";
-import type { Task, TaskSummary } from "@/types";
-import { router } from "@inertiajs/react";
+import type { Board, Task, TaskSummary } from "@/types";
+import { Link as InertiaLink, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
 
 interface Props {
     task: Task;
+    /** Candidates: this board's tasks plus open tasks on the team's other boards. */
     boardTasks: TaskSummary[];
     teamSlug: string;
-    boardSlug: string;
+    board: Pick<Board, "id" | "name" | "slug">;
+    canEdit?: boolean;
+}
+
+type Tone = "warning" | "info";
+
+const toneColors: Record<Tone, { fg: string; border: string }> = {
+    warning: { fg: harbor.dueSoon.fg, border: harbor.dueSoon.fg },
+    info: { fg: harborHex.accent, border: harborHex.accent },
+};
+
+function taskLabel(t: Pick<TaskSummary, "task_number" | "title">): string {
+    const num = t.task_number ? `#${t.task_number}` : "";
+    return `${num} ${t.title}`.trim();
 }
 
 export default function DependencySection({
     task,
     boardTasks,
     teamSlug,
-    boardSlug,
+    board,
+    canEdit = true,
 }: Props) {
     const [addingBlockedBy, setAddingBlockedBy] = useState(false);
     const [addingBlocking, setAddingBlocking] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<TaskSummary | null>(null);
 
     const blockedBy = task.blocked_by ?? [];
     const dependencies = task.dependencies ?? [];
+
+    const boardOf = (t: { board_id?: string; board?: TaskSummary["board"] }) =>
+        t.board ?? (t.board_id === board.id || !t.board_id ? board : null);
+
+    const isOtherBoard = (t: { board_id?: string }) =>
+        !!t.board_id && t.board_id !== board.id;
 
     const availableForBlockedBy = boardTasks.filter(
         (t) => t.id !== task.id && !blockedBy.some((b) => b.id === t.id),
@@ -40,26 +61,29 @@ export default function DependencySection({
 
     const handleAddBlockedBy = (depTask: TaskSummary) => {
         router.post(
-            route("tasks.dependencies.store", [teamSlug, boardSlug, task.slug]),
+            route("tasks.dependencies.store", [
+                teamSlug,
+                board.slug,
+                task.slug ?? task.id,
+            ]),
             { depends_on_task_id: depTask.id },
             { preserveScroll: true },
         );
         setAddingBlockedBy(false);
-        setSelectedTask(null);
     };
 
+    // The other task becomes the dependent one, so post to its own board.
     const handleAddBlocking = (depTask: TaskSummary) => {
         router.post(
             route("tasks.dependencies.store", [
                 teamSlug,
-                boardSlug,
-                depTask.slug,
+                boardOf(depTask)?.slug ?? depTask.board_id ?? board.slug,
+                depTask.slug ?? depTask.id,
             ]),
             { depends_on_task_id: task.id },
             { preserveScroll: true },
         );
         setAddingBlocking(false);
-        setSelectedTask(null);
     };
 
     // Route shape: {team}/{board}/tasks/{task}/dependencies/{dependsOnTask}.
@@ -71,7 +95,7 @@ export default function DependencySection({
         router.delete(
             route("tasks.dependencies.destroy", [
                 teamSlug,
-                boardSlug,
+                board.slug,
                 task.slug ?? task.id,
                 depTask.id,
             ]),
@@ -83,7 +107,7 @@ export default function DependencySection({
         router.delete(
             route("tasks.dependencies.destroy", [
                 teamSlug,
-                depTask.board_id,
+                depTask.board?.slug ?? depTask.board_id,
                 depTask.slug ?? depTask.id,
                 task.id,
             ]),
@@ -91,9 +115,92 @@ export default function DependencySection({
         );
     };
 
-    const formatTaskLabel = (t: TaskSummary | Task) => {
-        const num = t.task_number ? `#${t.task_number}` : "";
-        return `${num} ${t.title}`.trim();
+    const depChip = (
+        dep: Task,
+        label: string,
+        tone: Tone,
+        onRemove: (t: Task) => void,
+    ) => {
+        const depBoard = boardOf(dep);
+        const crossBoard = isOtherBoard(dep);
+        const text = taskLabel(dep);
+        const colors = toneColors[tone];
+        const href = depBoard
+            ? route("tasks.show", [teamSlug, depBoard.slug, dep.slug ?? dep.id])
+            : null;
+
+        return (
+            <Box
+                key={dep.id}
+                sx={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    maxWidth: "100%",
+                    minHeight: 26,
+                    pl: 1,
+                    pr: canEdit ? 0.25 : 1,
+                    borderRadius: 999,
+                    border: `1px solid ${colors.border}`,
+                    bgcolor: harbor.card,
+                }}
+            >
+                {href ? (
+                    <Link
+                        component={InertiaLink}
+                        href={href}
+                        underline="hover"
+                        title={
+                            crossBoard && depBoard
+                                ? `${depBoard.name} · ${text}`
+                                : text
+                        }
+                        sx={{
+                            minWidth: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: colors.fg,
+                            py: "3px",
+                        }}
+                    >
+                        {crossBoard && depBoard && (
+                            <Box
+                                component="span"
+                                sx={{ color: harbor.sub, fontWeight: 700 }}
+                            >
+                                {depBoard.name} ·{" "}
+                            </Box>
+                        )}
+                        {text}
+                    </Link>
+                ) : (
+                    <Typography
+                        component="span"
+                        noWrap
+                        sx={{ fontSize: 12, fontWeight: 600, color: colors.fg }}
+                    >
+                        {text}
+                    </Typography>
+                )}
+                {canEdit && (
+                    <IconButton
+                        size="small"
+                        onClick={() => onRemove(dep)}
+                        aria-label={`Remove ${label.toLowerCase()} ${text}`}
+                        sx={{
+                            ml: 0.25,
+                            p: "3px",
+                            color: harbor.faint,
+                            "&:hover": { color: harbor.ink },
+                        }}
+                    >
+                        <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                )}
+            </Box>
+        );
     };
 
     const depRow = (
@@ -104,7 +211,7 @@ export default function DependencySection({
         available: TaskSummary[],
         onAdd: (t: TaskSummary) => void,
         onRemove: (t: Task) => void,
-        color: "warning" | "info",
+        tone: Tone,
     ) => (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
             <Box
@@ -126,7 +233,7 @@ export default function DependencySection({
                 >
                     {label}
                 </Typography>
-                {!adding && (
+                {canEdit && !adding && (
                     <Button
                         size="small"
                         startIcon={
@@ -153,27 +260,22 @@ export default function DependencySection({
             </Box>
 
             {items.length > 0 ? (
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                <Box
+                    component="ul"
+                    sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.5,
+                        listStyle: "none",
+                        m: 0,
+                        p: 0,
+                        "& > li": { display: "flex", maxWidth: "100%" },
+                    }}
+                >
                     {items.map((dep) => (
-                        <Chip
-                            key={dep.id}
-                            label={formatTaskLabel(dep)}
-                            size="small"
-                            color={color}
-                            variant="outlined"
-                            onDelete={() => onRemove(dep)}
-                            deleteIcon={
-                                <CloseIcon
-                                    sx={{ fontSize: "14px !important" }}
-                                />
-                            }
-                            sx={{
-                                maxWidth: "100%",
-                                height: 24,
-                                fontSize: "0.75rem",
-                            }}
-                            aria-label={`${label}: ${formatTaskLabel(dep)}`}
-                        />
+                        <li key={dep.id}>
+                            {depChip(dep, label, tone, onRemove)}
+                        </li>
                     ))}
                 </Box>
             ) : !adding ? (
@@ -186,8 +288,9 @@ export default function DependencySection({
                 <Autocomplete
                     size="small"
                     options={available}
-                    getOptionLabel={formatTaskLabel}
-                    value={selectedTask}
+                    groupBy={(option) => boardOf(option)?.name ?? board.name}
+                    getOptionLabel={taskLabel}
+                    value={null}
                     onChange={(_, value) => {
                         if (value) onAdd(value);
                     }}

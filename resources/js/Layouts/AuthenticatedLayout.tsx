@@ -28,9 +28,12 @@ import MenuIcon from "@mui/icons-material/Menu";
 import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
+import QuickSwitcher from "@/Components/Layout/QuickSwitcher";
 import { harborAvatarColor, harborHex } from "@/theme/harbor";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
+import { pushRecentBoard } from "@/utils/recentBoards";
+import { nameInitials } from "@/utils/sidebarNav";
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 64;
@@ -83,7 +86,7 @@ function AuthenticatedLayoutInner({
     const pageProps = usePage<PageProps>().props;
     const { auth } = pageProps;
     const user = auth.user;
-    const { collapsed } = useSidebar();
+    const { collapsed, refreshRecentBoards } = useSidebar();
     const { reconnectVersion } = useWebSocket();
 
     const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
@@ -124,6 +127,14 @@ function AuthenticatedLayoutInner({
         };
     }, []);
 
+    // Remember board visits for the sidebar's "Recent" section (and the
+    // quick switcher), which re-read the list after each navigation.
+    useEffect(() => {
+        if (!activeBoardId) return;
+        pushRecentBoard(activeBoardId);
+        refreshRecentBoards();
+    }, [activeBoardId, refreshRecentBoards]);
+
     // Fallback: any page mounted in this layout gets a refresh on reconnect
     // so it picks up events missed during the disconnect. Pages that subscribe
     // to reconnectVersion themselves (e.g. Boards/Show, Tasks/Show) may do
@@ -147,11 +158,6 @@ function AuthenticatedLayoutInner({
     const handleLogout = () => {
         handleMenuClose();
         router.post(route("logout"));
-    };
-
-    const handleProfile = () => {
-        handleMenuClose();
-        router.get(route("profile.edit"));
     };
 
     const handleDrawerToggle = () => {
@@ -201,9 +207,9 @@ function AuthenticatedLayoutInner({
                 Skip to main content
             </Box>
 
-            {/* Sidebar - permanent on desktop, temporary on mobile */}
+            {/* Sidebar - permanent on desktop, temporary on mobile. The
+                Sidebar itself renders the labelled <nav> landmark. */}
             <Box
-                component="nav"
                 sx={{
                     width: { md: drawerWidth },
                     flexShrink: { md: 0 },
@@ -221,6 +227,7 @@ function AuthenticatedLayoutInner({
                         "& .MuiDrawer-paper": {
                             boxSizing: "border-box",
                             width: DRAWER_WIDTH,
+                            maxWidth: "85vw",
                         },
                     }}
                 >
@@ -252,7 +259,10 @@ function AuthenticatedLayoutInner({
                     flexGrow: 1,
                     display: "flex",
                     flexDirection: "column",
-                    width: { md: `calc(100% - ${drawerWidth}px)` },
+                    // Without this the flex item grows to its widest child
+                    // (e.g. a board's columns) and widens the whole page.
+                    minWidth: 0,
+                    width: { xs: "100%", md: `calc(100% - ${drawerWidth}px)` },
                     transition: "width 225ms cubic-bezier(0.4, 0, 0.6, 1)",
                 }}
             >
@@ -290,15 +300,23 @@ function AuthenticatedLayoutInner({
                             </Typography>
                         )}
                     </Box>
+                    {/* Phones: menu button + app actions on the first row and
+                        the page header on its own full-width row, so the bell
+                        and avatar never get pushed off-screen. */}
                     <Toolbar
                         sx={{
-                            alignItems: "flex-start",
+                            alignItems: { xs: "center", md: "flex-start" },
                             display: "grid",
                             gridTemplateColumns: {
-                                xs: "auto 1fr auto",
+                                xs: "auto minmax(0, 1fr) auto",
                                 md: "minmax(0, 1fr) auto",
                             },
-                            gap: 2,
+                            gridTemplateAreas: {
+                                xs: '"menu . actions" "header header header"',
+                                md: '"header actions"',
+                            },
+                            columnGap: 2,
+                            rowGap: { xs: hasHeader ? 1 : 0, md: 0 },
                             px: { xs: 2, lg: 4 },
                             py: 1.25,
                         }}
@@ -307,30 +325,37 @@ function AuthenticatedLayoutInner({
                             color="inherit"
                             edge="start"
                             onClick={handleDrawerToggle}
-                            sx={{ display: { md: "none" } }}
+                            sx={{ gridArea: "menu", display: { md: "none" } }}
                             aria-label="Open navigation menu"
                         >
                             <MenuIcon />
                         </IconButton>
 
                         {/* Header slot — pages portal content here via <LayoutHeader> */}
-                        <Box sx={{ minWidth: 0 }} ref={setHeaderContainer} />
+                        <Box
+                            sx={{ gridArea: "header", minWidth: 0 }}
+                            ref={setHeaderContainer}
+                        />
 
-                        {/* Connection status + User menu */}
+                        {/* Quick switcher, connection status, bell, user menu */}
                         <Box
                             sx={{
+                                gridArea: "actions",
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 1.5,
+                                gap: { xs: 1, sm: 1.5 },
                                 justifySelf: "end",
-                                pt: hasHeader ? 0.5 : 0,
+                                minWidth: 0,
+                                pt: { xs: 0, md: hasHeader ? 0.5 : 0 },
                             }}
                         >
+                            <QuickSwitcher />
                             <ConnectionStatus />
                             <NotificationBell />
                             <IconButton
                                 onClick={handleMenuOpen}
                                 size="small"
+                                aria-label="Account menu"
                                 aria-controls={
                                     menuOpen ? "user-menu" : undefined
                                 }
@@ -339,7 +364,7 @@ function AuthenticatedLayoutInner({
                             >
                                 <Avatar
                                     src={user.avatar_url}
-                                    alt={user.name}
+                                    alt=""
                                     sx={{
                                         width: 30,
                                         height: 30,
@@ -350,12 +375,7 @@ function AuthenticatedLayoutInner({
                                         boxShadow: `0 0 0 2px ${harborHex.canvas}`,
                                     }}
                                 >
-                                    {user.name
-                                        .split(/\s+/)
-                                        .slice(0, 2)
-                                        .map((part) => part.charAt(0))
-                                        .join("")
-                                        .toUpperCase()}
+                                    {nameInitials(user.name)}
                                 </Avatar>
                             </IconButton>
                         </Box>
@@ -380,7 +400,11 @@ function AuthenticatedLayoutInner({
                                 },
                             }}
                         >
-                            <MenuItem onClick={handleProfile}>
+                            <MenuItem
+                                component={Link}
+                                href={route("profile.edit")}
+                                onClick={handleMenuClose}
+                            >
                                 <ListItemIcon>
                                     <PersonIcon fontSize="small" />
                                 </ListItemIcon>
@@ -408,7 +432,10 @@ function AuthenticatedLayoutInner({
                         px: { xs: 2, lg: 4 },
                         pt: hasHeader ? 1.5 : 3,
                         pb: 3,
-                        overflow: "hidden",
+                        minWidth: 0,
+                        // Clip horizontally without creating a scroll
+                        // container, so position: sticky still works inside.
+                        overflowX: "clip",
                     }}
                 >
                     <LayoutHeaderSlotProvider value={headerSlot}>

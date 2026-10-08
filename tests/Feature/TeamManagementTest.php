@@ -133,8 +133,10 @@ class TeamManagementTest extends TestCase
             ->has('team')
             ->has('labels')
             ->has('members')
-            ->has('canManageMembers')
-            ->has('canManageAdmins')
+            ->has('deactivatedMembers')
+            ->has('can')
+            ->where('can.manageMembers', true)
+            ->where('can.manageAdmins', true)
         );
     }
 
@@ -154,7 +156,7 @@ class TeamManagementTest extends TestCase
             'role' => 'member',
         ]);
 
-        $response->assertRedirect(route('teams.settings', $this->team));
+        $response->assertRedirect(route('teams.settings', ['team' => $this->team, 'tab' => 'members']));
         $this->assertDatabaseHas('team_members', [
             'team_id' => $this->team->id,
             'user_id' => $newUser->id,
@@ -199,7 +201,7 @@ class TeamManagementTest extends TestCase
             ['role' => 'admin']
         );
 
-        $response->assertRedirect(route('teams.settings', $this->team));
+        $response->assertRedirect(route('teams.settings', ['team' => $this->team, 'tab' => 'members']));
         $this->assertDatabaseHas('team_members', [
             'team_id' => $this->team->id,
             'user_id' => $member->id,
@@ -216,7 +218,7 @@ class TeamManagementTest extends TestCase
             route('teams.members.destroy', [$this->team, $member])
         );
 
-        $response->assertRedirect(route('teams.settings', $this->team));
+        $response->assertRedirect(route('teams.settings', ['team' => $this->team, 'tab' => 'members']));
         $this->assertDatabaseMissing('team_members', [
             'team_id' => $this->team->id,
             'user_id' => $member->id,

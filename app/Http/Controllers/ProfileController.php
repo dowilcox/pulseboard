@@ -92,10 +92,19 @@ class ProfileController extends Controller
             'board_order' => ['sometimes', 'array'],
             'board_order.*' => ['array'],
             'board_order.*.*' => ['string', 'uuid'],
+            'starred_boards' => ['sometimes', 'nullable', 'array', 'max:100'],
+            'starred_boards.*' => ['string', 'uuid'],
         ]);
 
         $user = $request->user();
         $prefs = $user->ui_preferences ?? [];
+
+        // Starred boards replace the whole list (the client sends the full,
+        // ordered set); null clears it.
+        if (array_key_exists('starred_boards', $validated)) {
+            $prefs['starred_boards'] = array_values(array_unique($validated['starred_boards'] ?? []));
+            unset($validated['starred_boards']);
+        }
 
         // Deep-merge board_order so we don't overwrite other teams' orders
         if (isset($validated['board_order'])) {

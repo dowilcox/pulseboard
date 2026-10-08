@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Tasks\CreateTaskFromTemplate;
 use App\Actions\Tasks\CreateTaskTemplate;
 use App\Actions\Tasks\DeleteTaskTemplate;
+use App\Actions\Tasks\UpdateTaskTemplate;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
@@ -46,9 +47,29 @@ class TaskTemplateController extends Controller
 
         $validated['created_by'] = $request->user()->id;
 
-        CreateTaskTemplate::run($team, $validated);
+        $template = CreateTaskTemplate::run($team, $validated);
 
-        return Redirect::back();
+        return Redirect::back()->with('success', "Task template \"{$template->name}\" created.");
+    }
+
+    public function update(Request $request, Team $team, TaskTemplate $taskTemplate): RedirectResponse
+    {
+        $this->authorize('update', $team);
+        abort_unless($taskTemplate->team_id === $team->id, 404);
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'description_template' => ['sometimes', 'nullable', 'string'],
+            'priority' => ['sometimes', Rule::in(['urgent', 'high', 'medium', 'low', 'none'])],
+            'effort_estimate' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            'checklists' => ['sometimes', 'nullable', 'array'],
+            'label_ids' => ['sometimes', 'nullable', 'array'],
+            'label_ids.*' => ['uuid', Rule::exists('labels', 'id')->where('team_id', $team->id)],
+        ]);
+
+        $template = UpdateTaskTemplate::run($taskTemplate, $validated);
+
+        return Redirect::back()->with('success', "Task template \"{$template->name}\" saved.");
     }
 
     public function destroy(Team $team, TaskTemplate $taskTemplate): RedirectResponse
@@ -58,7 +79,7 @@ class TaskTemplateController extends Controller
 
         DeleteTaskTemplate::run($taskTemplate);
 
-        return Redirect::back();
+        return Redirect::back()->with('success', "Task template \"{$taskTemplate->name}\" deleted.");
     }
 
     public function createFromTask(Request $request, Team $team, Board $board, Task $task): RedirectResponse

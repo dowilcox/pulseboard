@@ -30,7 +30,7 @@ class GitlabConnectionController extends Controller
 
         CreateGitlabConnection::run($team, $validated);
 
-        return Redirect::route('teams.gitlab-projects.index', $team)
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'integrations'])
             ->with('success', 'GitLab connection created successfully.');
     }
 
@@ -47,7 +47,7 @@ class GitlabConnectionController extends Controller
 
         UpdateGitlabConnection::run($gitlabConnection, $validated);
 
-        return Redirect::route('teams.gitlab-projects.index', $team)
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'integrations'])
             ->with('success', 'GitLab connection updated successfully.');
     }
 
@@ -57,7 +57,7 @@ class GitlabConnectionController extends Controller
 
         DeleteGitlabConnection::run($gitlabConnection);
 
-        return Redirect::route('teams.gitlab-projects.index', $team)
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'integrations'])
             ->with('success', 'GitLab connection deleted successfully.');
     }
 

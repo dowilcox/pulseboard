@@ -25,6 +25,9 @@ Route::put('/{team}/{board}', [BoardController::class, 'update'])->name(
 Route::post('/{team}/{board}/archive', [BoardController::class, 'archive'])->name(
     'teams.boards.archive',
 );
+Route::post('/{team}/{board}/unarchive', [BoardController::class, 'unarchive'])->name(
+    'teams.boards.unarchive',
+);
 Route::delete('/{team}/{board}', [BoardController::class, 'destroy'])->name(
     'teams.boards.destroy',
 );

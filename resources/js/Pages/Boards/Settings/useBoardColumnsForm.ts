@@ -1,29 +1,49 @@
+import type { Board, Column } from "@/types";
 import { router } from "@inertiajs/react";
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import {
+    affectedTaskCount,
+    buildColumnsPayload,
+    columnsAreDirty,
+    removeColumn,
+    restoreColumn,
+    toColumnFormData,
+} from "./columnForm";
 import type { ColumnFormData } from "./types";
 
 interface UseBoardColumnsFormOptions {
-    initialColumns: ColumnFormData[];
+    /** Columns as last saved on the server (the page's `board.columns`). */
+    serverColumns: Column[];
     teamSlug: string;
     boardSlug: string;
 }
 
 export function useBoardColumnsForm({
-    initialColumns,
+    serverColumns,
     teamSlug,
     boardSlug,
 }: UseBoardColumnsFormOptions) {
-    const [columns, setColumns] = useState<ColumnFormData[]>(initialColumns);
+    const savedColumns = useMemo(
+        () => toColumnFormData(serverColumns),
+        [serverColumns],
+    );
+    const [columns, setColumns] = useState<ColumnFormData[]>(savedColumns);
     const [columnErrors, setColumnErrors] = useState<Record<string, string>>(
         {},
     );
     const [savingColumns, setSavingColumns] = useState(false);
     const [expandedColumn, setExpandedColumn] = useState<number | null>(null);
+    /** Index of an existing column with tasks awaiting a move/delete choice. */
+    const [pendingRemoval, setPendingRemoval] = useState<number | null>(null);
+    const savingRef = useRef(false);
+    const newKeyRef = useRef(0);
 
     const handleAddColumn = () => {
+        newKeyRef.current += 1;
         setColumns((prev) => [
             ...prev,
             {
+                _key: `new-${newKeyRef.current}`,
                 name: "",
                 color: "#64748b",
                 wip_limit: "",
@@ -50,20 +70,34 @@ export function useBoardColumnsForm({
         );
     };
 
+    /**
+     * Remove a column. Existing columns that hold (or will receive) tasks
+     * ask where those tasks go first; everything else is removed directly.
+     * Nothing is persisted until "Save columns".
+     */
     const handleRemoveColumn = (index: number) => {
-        setColumns((prev) => {
-            const column = prev[index];
+        const column = columns[index];
+        if (!column) return;
 
-            if (column.id) {
-                return prev.map((currentColumn, currentIndex) =>
-                    currentIndex === index
-                        ? { ...currentColumn, _destroy: true }
-                        : currentColumn,
-                );
-            }
+        if (column.id && affectedTaskCount(columns, index) > 0) {
+            setPendingRemoval(index);
+            return;
+        }
 
-            return prev.filter((_, currentIndex) => currentIndex !== index);
-        });
+        setExpandedColumn(null);
+        setColumns((prev) => removeColumn(prev, index, null));
+    };
+
+    const confirmRemoval = (moveTo: string | null) => {
+        if (pendingRemoval === null) return;
+        const index = pendingRemoval;
+        setPendingRemoval(null);
+        setExpandedColumn(null);
+        setColumns((prev) => removeColumn(prev, index, moveTo));
+    };
+
+    const handleRestoreColumn = (index: number) => {
+        setColumns((prev) => restoreColumn(prev, index));
     };
 
     const handleMoveColumn = (index: number, direction: "up" | "down") => {
@@ -95,30 +129,33 @@ export function useBoardColumnsForm({
 
             return next;
         });
+        setExpandedColumn(null);
     };
 
     const handleSaveColumns = () => {
+        if (savingRef.current) return;
+        savingRef.current = true;
         setSavingColumns(true);
         setColumnErrors({});
 
-        const payload = columns.map((column, index) => ({
-            id: column.id,
-            name: column.name,
-            color: column.color,
-            wip_limit:
-                column.wip_limit === "" ? null : Number(column.wip_limit),
-            is_done_column: column.is_done_column,
-            sort_order: index,
-            _destroy: column._destroy ?? false,
-        }));
-
         router.put(
             route("teams.boards.columns.reorder", [teamSlug, boardSlug]),
-            { columns: payload },
+            { columns: buildColumnsPayload(columns) },
             {
-                onSuccess: () => setSavingColumns(false),
+                preserveScroll: true,
+                onSuccess: (page) => {
+                    // The page keeps its state across the redirect, so adopt
+                    // the saved columns (with their new ids and task counts)
+                    // or a second save would create new columns again.
+                    const board = (page.props as { board?: Board }).board;
+                    setColumns(toColumnFormData(board?.columns ?? []));
+                    setExpandedColumn(null);
+                },
                 onError: (errors) => {
                     setColumnErrors(errors as Record<string, string>);
+                },
+                onFinish: () => {
+                    savingRef.current = false;
                     setSavingColumns(false);
                 },
             },
@@ -136,11 +173,16 @@ export function useBoardColumnsForm({
         columnErrors,
         expandedColumn,
         savingColumns,
+        pendingRemoval,
+        isDirty: columnsAreDirty(columns, savedColumns),
         visibleColumns: columns.filter((column) => !column._destroy),
         handleAddColumn,
         handleColumnChange,
         handleMoveColumn,
         handleRemoveColumn,
+        handleRestoreColumn,
+        confirmRemoval,
+        cancelRemoval: () => setPendingRemoval(null),
         handleSaveColumns,
         toggleExpandedColumn,
     };

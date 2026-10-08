@@ -65,6 +65,9 @@ export const harborTheme = createTheme({
         text: {
             primary: harborHex.ink,
             secondary: harborHex.sub,
+            // MUI's default disabled grey is ~2.7:1 on cards; completed
+            // subtasks and other de-emphasised content still need to be read.
+            disabled: harborHex.disabledText,
         },
         divider: harborHex.cardBorder,
         action: {
@@ -184,8 +187,10 @@ export const harborTheme = createTheme({
                 root: {
                     backgroundColor: harbor.countBg,
                     borderRadius: harbor.radius.control,
+                    // Filled fields are only ~1.2:1 against cards, so the
+                    // outline carries the 3:1 boundary contrast.
                     "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "transparent",
+                        borderColor: harborHex.inputBorder,
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
                         borderColor: harbor.faint,

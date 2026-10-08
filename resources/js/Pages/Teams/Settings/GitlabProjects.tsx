@@ -1,25 +1,19 @@
-import { Head, router, useForm } from "@inertiajs/react";
-import axios from "axios";
-import { type ReactElement, useEffect, useState } from "react";
-import LayoutHeader from "@/Components/Layout/LayoutHeader";
-import PageHeader from "@/Components/Layout/PageHeader";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import GitlabProjectSearch from "@/Components/Gitlab/GitlabProjectSearch";
-import type { GitlabConnection, GitlabProject, PageProps, Team } from "@/types";
+import type { GitlabConnection, GitlabProject, Team } from "@/types";
+import { router, useForm } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import ErrorIcon from "@mui/icons-material/Error";
+import InfoIcon from "@mui/icons-material/Info";
 import LinkIcon from "@mui/icons-material/Link";
 import SyncIcon from "@mui/icons-material/Sync";
-import InfoIcon from "@mui/icons-material/Info";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
@@ -27,26 +21,28 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import InputLabel from "@mui/material/InputLabel";
-import Link from "@mui/material/Link";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
+import MuiLink from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
-import Paper from "@mui/material/Paper";
 import Select from "@mui/material/Select";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import SectionCard from "./SectionCard";
 
-interface Props extends PageProps {
-    team: Team;
-    sidebarBoards?: Team["boards"];
-    gitlabProjects: (GitlabProject & { connection: GitlabConnection })[];
+export interface GitlabSettings {
+    projects: (GitlabProject & { connection: GitlabConnection })[];
     connections: GitlabConnection[];
     activeConnections: Pick<GitlabConnection, "id" | "name" | "base_url">[];
+}
+
+interface Props extends GitlabSettings {
+    team: Team;
 }
 
 interface TestResult {
@@ -54,10 +50,48 @@ interface TestResult {
     message: string;
 }
 
+const ROW_SX = {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    columnGap: 2,
+    rowGap: 1,
+    py: 1.25,
+    borderTop: 1,
+    borderColor: "divider",
+    "&:first-of-type": { borderTop: 0 },
+} as const;
+
+function SubsectionHeader({
+    title,
+    action,
+}: {
+    title: string;
+    action?: React.ReactNode;
+}) {
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1,
+                mb: 1,
+            }}
+        >
+            <Typography component="h3" variant="subtitle2" fontWeight={700}>
+                {title}
+            </Typography>
+            {action}
+        </Box>
+    );
+}
+
+/** GitLab connections and linked projects (Integrations tab of team settings). */
 export default function GitlabProjects({
     team,
-    sidebarBoards = [],
-    gitlabProjects,
+    projects,
     connections,
     activeConnections,
 }: Props) {
@@ -65,7 +99,8 @@ export default function GitlabProjects({
     const [connDialogOpen, setConnDialogOpen] = useState(false);
     const [editingConnection, setEditingConnection] =
         useState<GitlabConnection | null>(null);
-    const [deleteConnId, setDeleteConnId] = useState<string | null>(null);
+    const [deleteConnection, setDeleteConnection] =
+        useState<GitlabConnection | null>(null);
     const [testResults, setTestResults] = useState<Record<string, TestResult>>(
         {},
     );
@@ -76,10 +111,15 @@ export default function GitlabProjects({
     const [selectedConnectionId, setSelectedConnectionId] = useState<string>(
         activeConnections[0]?.id ?? "",
     );
-    const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+    const [unlinkProject, setUnlinkProject] = useState<GitlabProject | null>(
+        null,
+    );
 
     useEffect(() => {
-        if (!selectedConnectionId && activeConnections.length > 0) {
+        if (
+            !activeConnections.some((c) => c.id === selectedConnectionId) &&
+            activeConnections.length > 0
+        ) {
             setSelectedConnectionId(activeConnections[0].id);
         }
     }, [activeConnections, selectedConnectionId]);
@@ -91,7 +131,6 @@ export default function GitlabProjects({
         is_active: true,
     });
 
-    // Connection handlers
     const openCreateConnection = () => {
         setEditingConnection(null);
         connForm.reset();
@@ -111,29 +150,38 @@ export default function GitlabProjects({
         setConnDialogOpen(true);
     };
 
-    const handleConnSubmit = () => {
+    const handleConnSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => setConnDialogOpen(false),
+        };
         if (editingConnection) {
             connForm.put(
                 route("teams.gitlab-connections.update", [
                     team.slug,
                     editingConnection.id,
                 ]),
-                {
-                    onSuccess: () => setConnDialogOpen(false),
-                },
+                options,
             );
         } else {
-            connForm.post(route("teams.gitlab-connections.store", team.slug), {
-                onSuccess: () => setConnDialogOpen(false),
-            });
+            connForm.post(
+                route("teams.gitlab-connections.store", team.slug),
+                options,
+            );
         }
     };
 
-    const handleDeleteConnection = (id: string) => {
+    const handleDeleteConnection = () => {
+        if (!deleteConnection) return;
         router.delete(
-            route("teams.gitlab-connections.destroy", [team.slug, id]),
+            route("teams.gitlab-connections.destroy", [
+                team.slug,
+                deleteConnection.id,
+            ]),
             {
-                onSuccess: () => setDeleteConnId(null),
+                preserveScroll: true,
+                onSuccess: () => setDeleteConnection(null),
             },
         );
     };
@@ -154,10 +202,14 @@ export default function GitlabProjects({
                 ]),
             );
             setTestResults((prev) => ({ ...prev, [connection.id]: data }));
-        } catch {
+        } catch (err) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : "Network error";
             setTestResults((prev) => ({
                 ...prev,
-                [connection.id]: { success: false, message: "Network error" },
+                [connection.id]: { success: false, message },
             }));
         } finally {
             setTestingIds((prev) => {
@@ -168,7 +220,6 @@ export default function GitlabProjects({
         }
     };
 
-    // Project handlers
     const handleLinkProject = (project: { id: number }) => {
         router.post(
             route("teams.gitlab-projects.store", team.slug),
@@ -177,488 +228,432 @@ export default function GitlabProjects({
                 gitlab_project_id: project.id,
             },
             {
+                preserveScroll: true,
                 onSuccess: () => setLinkDialogOpen(false),
             },
         );
     };
 
-    const handleUnlink = (id: string) => {
-        router.delete(route("teams.gitlab-projects.destroy", [team.slug, id]), {
-            onSuccess: () => setDeleteProjectId(null),
-        });
+    const handleUnlink = () => {
+        if (!unlinkProject) return;
+        router.delete(
+            route("teams.gitlab-projects.destroy", [
+                team.slug,
+                unlinkProject.id,
+            ]),
+            {
+                preserveScroll: true,
+                onSuccess: () => setUnlinkProject(null),
+            },
+        );
     };
 
     return (
         <>
-            <Head title={`${team.name} — GitLab`} />
-            <LayoutHeader>
-                <PageHeader
-                    title="GitLab Integration"
-                    breadcrumbs={[
-                        { label: "Teams", href: route("teams.index") },
-                        {
-                            label: team.name,
-                            href: route("teams.show", team.slug),
-                        },
-                    ]}
-                />
-            </LayoutHeader>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                {/* Connections */}
-                <Card variant="outlined">
-                    <CardContent>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2,
-                            }}
-                        >
-                            <Typography variant="subtitle1" fontWeight={600}>
-                                Connections ({connections.length})
-                            </Typography>
+            <SectionCard
+                title="GitLab"
+                description="Connect a GitLab instance and link projects so tasks can create branches and merge requests and show their status."
+            >
+                <Box sx={{ mb: 3 }}>
+                    <SubsectionHeader
+                        title={`Connections (${connections.length})`}
+                        action={
                             <Button
                                 size="small"
                                 startIcon={<AddIcon />}
                                 onClick={openCreateConnection}
                             >
-                                Add Connection
+                                Add connection
                             </Button>
-                        </Box>
-
-                        {connections.length === 0 ? (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ py: 2 }}
-                            >
-                                No GitLab connections yet. Add a connection to
-                                start linking projects.
-                            </Typography>
-                        ) : (
-                            <List dense disablePadding>
-                                {connections.map((connection) => (
-                                    <ListItem
+                        }
+                    />
+                    {connections.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            No GitLab connections yet. Add a connection to start
+                            linking projects.
+                        </Typography>
+                    ) : (
+                        <Box
+                            component="ul"
+                            sx={{ listStyle: "none", m: 0, p: 0 }}
+                        >
+                            {connections.map((connection) => {
+                                const result = testResults[connection.id];
+                                const testing = testingIds.has(connection.id);
+                                return (
+                                    <Box
+                                        component="li"
                                         key={connection.id}
-                                        disableGutters
-                                        sx={{
-                                            py: 0.75,
-                                            px: 1,
-                                            borderRadius: 1,
-                                            "&:hover": {
-                                                bgcolor: "action.hover",
-                                            },
-                                        }}
-                                        secondaryAction={
+                                        sx={ROW_SX}
+                                    >
+                                        <Box
+                                            sx={{
+                                                minWidth: 0,
+                                                flex: "1 1 220px",
+                                            }}
+                                        >
                                             <Box
                                                 sx={{
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: 0.5,
+                                                    gap: 1,
+                                                    flexWrap: "wrap",
                                                 }}
                                             >
-                                                <Tooltip title="Test connection">
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() =>
-                                                                handleTestConnection(
-                                                                    connection,
-                                                                )
-                                                            }
-                                                            disabled={testingIds.has(
-                                                                connection.id,
-                                                            )}
-                                                        >
-                                                            {testingIds.has(
-                                                                connection.id,
-                                                            ) ? (
-                                                                <CircularProgress
-                                                                    size={18}
-                                                                />
-                                                            ) : (
-                                                                <SyncIcon fontSize="small" />
-                                                            )}
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                                <Tooltip title="Edit">
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight={600}
+                                                >
+                                                    {connection.name}
+                                                </Typography>
+                                                <Chip
+                                                    label={
+                                                        connection.is_active
+                                                            ? "Active"
+                                                            : "Inactive"
+                                                    }
+                                                    color={
+                                                        connection.is_active
+                                                            ? "success"
+                                                            : "default"
+                                                    }
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            </Box>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                component="div"
+                                                sx={{ wordBreak: "break-all" }}
+                                            >
+                                                {connection.base_url}
+                                            </Typography>
+                                            {result && (
+                                                <Chip
+                                                    icon={
+                                                        result.success ? (
+                                                            <CheckCircleIcon />
+                                                        ) : (
+                                                            <ErrorIcon />
+                                                        )
+                                                    }
+                                                    label={result.message}
+                                                    color={
+                                                        result.success
+                                                            ? "success"
+                                                            : "error"
+                                                    }
+                                                    size="small"
+                                                    variant="outlined"
+                                                    sx={{
+                                                        mt: 0.75,
+                                                        maxWidth: "100%",
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                gap: 0.5,
+                                                ml: "auto",
+                                            }}
+                                        >
+                                            <Tooltip title="Test connection">
+                                                <span>
                                                     <IconButton
                                                         size="small"
+                                                        aria-label={`Test connection ${connection.name}`}
                                                         onClick={() =>
-                                                            openEditConnection(
+                                                            handleTestConnection(
                                                                 connection,
                                                             )
                                                         }
+                                                        disabled={testing}
                                                     >
-                                                        <EditIcon fontSize="small" />
+                                                        {testing ? (
+                                                            <CircularProgress
+                                                                size={18}
+                                                            />
+                                                        ) : (
+                                                            <SyncIcon fontSize="small" />
+                                                        )}
                                                     </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() =>
-                                                            setDeleteConnId(
-                                                                connection.id,
-                                                            )
-                                                        }
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        }
-                                    >
-                                        <ListItemText
-                                            primary={
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 1,
-                                                    }}
+                                                </span>
+                                            </Tooltip>
+                                            <Tooltip title="Edit connection">
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`Edit connection ${connection.name}`}
+                                                    onClick={() =>
+                                                        openEditConnection(
+                                                            connection,
+                                                        )
+                                                    }
                                                 >
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={500}
-                                                    >
-                                                        {connection.name}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={
-                                                            connection.is_active
-                                                                ? "Active"
-                                                                : "Inactive"
-                                                        }
-                                                        color={
-                                                            connection.is_active
-                                                                ? "success"
-                                                                : "default"
-                                                        }
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                    {testResults[
-                                                        connection.id
-                                                    ] && (
-                                                        <Chip
-                                                            icon={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].success ? (
-                                                                    <CheckCircleIcon />
-                                                                ) : (
-                                                                    <ErrorIcon />
-                                                                )
-                                                            }
-                                                            label={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].message
-                                                            }
-                                                            color={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].success
-                                                                    ? "success"
-                                                                    : "error"
-                                                            }
-                                                            size="small"
-                                                            variant="outlined"
-                                                        />
-                                                    )}
-                                                </Box>
-                                            }
-                                            secondary={connection.base_url}
-                                            secondaryTypographyProps={{
-                                                variant: "caption",
-                                            }}
-                                        />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        )}
-                    </CardContent>
-                </Card>
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Delete connection">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    aria-label={`Delete connection ${connection.name}`}
+                                                    onClick={() =>
+                                                        setDeleteConnection(
+                                                            connection,
+                                                        )
+                                                    }
+                                                >
+                                                    <DeleteOutlineIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    )}
+                </Box>
 
-                {/* Linked Projects */}
-                <Card variant="outlined">
-                    <CardContent>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2,
-                            }}
-                        >
-                            <Typography variant="subtitle1" fontWeight={600}>
-                                Linked Projects ({gitlabProjects.length})
-                            </Typography>
+                <Box>
+                    <SubsectionHeader
+                        title={`Linked projects (${projects.length})`}
+                        action={
                             <Button
                                 size="small"
                                 startIcon={<AddIcon />}
                                 onClick={() => setLinkDialogOpen(true)}
                                 disabled={activeConnections.length === 0}
                             >
-                                Link Project
+                                Link project
                             </Button>
-                        </Box>
-
-                        {activeConnections.length === 0 &&
-                            connections.length > 0 && (
-                                <Alert severity="info" sx={{ mb: 2 }}>
-                                    No active connections. Enable a connection
-                                    above to link projects.
-                                </Alert>
-                            )}
-
-                        {gitlabProjects.length === 0 ? (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ py: 2 }}
-                            >
-                                No GitLab projects linked to this team yet.
-                            </Typography>
-                        ) : (
-                            <List dense disablePadding>
-                                {gitlabProjects.map((project) => (
-                                    <ListItem
-                                        key={project.id}
-                                        disableGutters
-                                        sx={{
-                                            py: 0.75,
-                                            px: 1,
-                                            borderRadius: 1,
-                                            "&:hover": {
-                                                bgcolor: "action.hover",
-                                            },
-                                        }}
-                                        secondaryAction={
-                                            <Tooltip title="Unlink project">
-                                                <IconButton
-                                                    edge="end"
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() =>
-                                                        setDeleteProjectId(
-                                                            project.id,
-                                                        )
-                                                    }
-                                                >
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        }
-                                    >
-                                        <ListItemText
-                                            primary={
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 1,
-                                                    }}
-                                                >
-                                                    <LinkIcon
-                                                        fontSize="small"
-                                                        color="action"
-                                                    />
-                                                    <Link
-                                                        href={project.web_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        underline="hover"
-                                                        variant="body2"
-                                                        fontWeight={500}
-                                                    >
-                                                        {
-                                                            project.path_with_namespace
-                                                        }
-                                                    </Link>
-                                                    <Chip
-                                                        label={
-                                                            project.connection
-                                                                .name
-                                                        }
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                </Box>
-                                            }
-                                            secondary={
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                >
-                                                    Default branch:{" "}
-                                                    {project.default_branch}
-                                                    {project.last_synced_at && (
-                                                        <>
-                                                            {" "}
-                                                            · Last synced:{" "}
-                                                            {new Date(
-                                                                project.last_synced_at,
-                                                            ).toLocaleString()}
-                                                        </>
-                                                    )}
-                                                </Typography>
-                                            }
-                                        />
-                                    </ListItem>
-                                ))}
-                            </List>
+                        }
+                    />
+                    {activeConnections.length === 0 &&
+                        connections.length > 0 && (
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                                No active connections. Enable a connection above
+                                to link projects.
+                            </Alert>
                         )}
-                    </CardContent>
-                </Card>
-            </Box>
+                    {projects.length === 0 ? (
+                        <Typography variant="body2" color="text.secondary">
+                            No GitLab projects linked to this team yet.
+                        </Typography>
+                    ) : (
+                        <Box
+                            component="ul"
+                            sx={{ listStyle: "none", m: 0, p: 0 }}
+                        >
+                            {projects.map((project) => (
+                                <Box
+                                    component="li"
+                                    key={project.id}
+                                    sx={ROW_SX}
+                                >
+                                    <Box
+                                        sx={{
+                                            minWidth: 0,
+                                            flex: "1 1 220px",
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            <LinkIcon
+                                                fontSize="small"
+                                                color="action"
+                                            />
+                                            <MuiLink
+                                                href={project.web_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                underline="hover"
+                                                variant="body2"
+                                                fontWeight={600}
+                                                sx={{ wordBreak: "break-word" }}
+                                            >
+                                                {project.path_with_namespace}
+                                            </MuiLink>
+                                            <Chip
+                                                label={project.connection.name}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            component="div"
+                                        >
+                                            Default branch:{" "}
+                                            {project.default_branch}
+                                            {project.last_synced_at && (
+                                                <>
+                                                    {" "}
+                                                    · Last synced{" "}
+                                                    {new Date(
+                                                        project.last_synced_at,
+                                                    ).toLocaleString()}
+                                                </>
+                                            )}
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip title="Unlink project">
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            aria-label={`Unlink project ${project.path_with_namespace}`}
+                                            onClick={() =>
+                                                setUnlinkProject(project)
+                                            }
+                                            sx={{ ml: "auto" }}
+                                        >
+                                            <DeleteOutlineIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                </Box>
+            </SectionCard>
 
             {/* Create/Edit Connection Dialog */}
             <Dialog
                 open={connDialogOpen}
-                onClose={() => setConnDialogOpen(false)}
+                onClose={
+                    connForm.processing
+                        ? undefined
+                        : () => setConnDialogOpen(false)
+                }
                 maxWidth="sm"
                 fullWidth
                 aria-labelledby="gitlab-connection-dialog-title"
             >
-                <DialogTitle id="gitlab-connection-dialog-title">
-                    {editingConnection
-                        ? "Edit Connection"
-                        : "Add GitLab Connection"}
-                </DialogTitle>
-                <DialogContent>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            mt: 1,
-                        }}
-                    >
-                        <TextField
-                            label="Name"
-                            value={connForm.data.name}
-                            onChange={(e) =>
-                                connForm.setData("name", e.target.value)
-                            }
-                            error={!!connForm.errors.name}
-                            helperText={connForm.errors.name}
-                            fullWidth
-                            required
-                        />
-                        <TextField
-                            label="Base URL"
-                            value={connForm.data.base_url}
-                            onChange={(e) =>
-                                connForm.setData("base_url", e.target.value)
-                            }
-                            error={!!connForm.errors.base_url}
-                            helperText={
-                                connForm.errors.base_url ||
-                                "e.g. https://gitlab.example.com"
-                            }
-                            fullWidth
-                            required
-                        />
-                        <TextField
-                            label={
-                                editingConnection
-                                    ? "API Token (leave blank to keep current)"
-                                    : "API Token"
-                            }
-                            value={connForm.data.api_token}
-                            onChange={(e) =>
-                                connForm.setData("api_token", e.target.value)
-                            }
-                            error={!!connForm.errors.api_token}
-                            helperText={connForm.errors.api_token}
-                            type="password"
-                            fullWidth
-                            required={!editingConnection}
-                        />
-                        <Alert severity="info" icon={<InfoIcon />}>
-                            <AlertTitle>Required token permissions</AlertTitle>
-                            Create a <strong>
-                                Personal Access Token
-                            </strong> or <strong>Project Access Token</strong>{" "}
-                            with the <strong>api</strong> scope. This is
-                            required for managing webhooks, creating branches,
-                            and creating merge requests. The token owner must
-                            have <strong>Maintainer</strong> or{" "}
-                            <strong>Owner</strong> role on projects you want to
-                            link.
-                        </Alert>
+                <form onSubmit={handleConnSubmit}>
+                    <DialogTitle id="gitlab-connection-dialog-title">
+                        {editingConnection
+                            ? "Edit GitLab connection"
+                            : "Add GitLab connection"}
+                    </DialogTitle>
+                    <DialogContent>
                         <Box
                             sx={{
                                 display: "flex",
-                                alignItems: "center",
-                                gap: 1,
+                                flexDirection: "column",
+                                gap: 2,
+                                mt: 1,
                             }}
                         >
-                            <Switch
-                                checked={connForm.data.is_active}
+                            <TextField
+                                label="Name"
+                                value={connForm.data.name}
+                                onChange={(e) =>
+                                    connForm.setData("name", e.target.value)
+                                }
+                                error={!!connForm.errors.name}
+                                helperText={connForm.errors.name}
+                                fullWidth
+                                required
+                            />
+                            <TextField
+                                label="Base URL"
+                                value={connForm.data.base_url}
+                                onChange={(e) =>
+                                    connForm.setData("base_url", e.target.value)
+                                }
+                                error={!!connForm.errors.base_url}
+                                helperText={
+                                    connForm.errors.base_url ||
+                                    "e.g. https://gitlab.example.com"
+                                }
+                                fullWidth
+                                required
+                            />
+                            <TextField
+                                label={
+                                    editingConnection
+                                        ? "API token (leave blank to keep current)"
+                                        : "API token"
+                                }
+                                value={connForm.data.api_token}
                                 onChange={(e) =>
                                     connForm.setData(
-                                        "is_active",
-                                        e.target.checked,
+                                        "api_token",
+                                        e.target.value,
                                     )
                                 }
+                                error={!!connForm.errors.api_token}
+                                helperText={connForm.errors.api_token}
+                                type="password"
+                                autoComplete="off"
+                                fullWidth
+                                required={!editingConnection}
                             />
-                            <Typography>Active</Typography>
+                            <Alert severity="info" icon={<InfoIcon />}>
+                                <AlertTitle>
+                                    Required token permissions
+                                </AlertTitle>
+                                Create a <strong>Personal Access Token</strong>{" "}
+                                or <strong>Project Access Token</strong> with
+                                the <strong>api</strong> scope. This is required
+                                for managing webhooks, creating branches, and
+                                creating merge requests. The token owner must
+                                have <strong>Maintainer</strong> or{" "}
+                                <strong>Owner</strong> role on projects you want
+                                to link.
+                            </Alert>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={connForm.data.is_active}
+                                        onChange={(e) =>
+                                            connForm.setData(
+                                                "is_active",
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                }
+                                label="Active"
+                            />
                         </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setConnDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleConnSubmit}
-                        disabled={connForm.processing}
-                    >
-                        {editingConnection ? "Update" : "Create"}
-                    </Button>
-                </DialogActions>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, py: 2 }}>
+                        <Button
+                            onClick={() => setConnDialogOpen(false)}
+                            disabled={connForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={connForm.processing}
+                        >
+                            {editingConnection ? "Save" : "Add connection"}
+                        </Button>
+                    </DialogActions>
+                </form>
             </Dialog>
 
-            {/* Delete Connection Confirmation */}
-            <Dialog
-                open={!!deleteConnId}
-                onClose={() => setDeleteConnId(null)}
-                aria-labelledby="delete-connection-dialog-title"
-            >
-                <DialogTitle id="delete-connection-dialog-title">
-                    Delete Connection
-                </DialogTitle>
-                <DialogContent>
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                        This will remove the connection and all linked projects.
-                        Webhooks will be cleaned up from GitLab.
-                    </Alert>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setDeleteConnId(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() =>
-                            deleteConnId && handleDeleteConnection(deleteConnId)
-                        }
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <ConfirmDialog
+                open={!!deleteConnection}
+                onClose={() => setDeleteConnection(null)}
+                onConfirm={handleDeleteConnection}
+                title={`Delete connection “${deleteConnection?.name ?? ""}”?`}
+                message="This removes the connection and every project linked through it. Webhooks are cleaned up in GitLab."
+                confirmLabel="Delete connection"
+                confirmColor="error"
+            />
 
             {/* Link Project Dialog */}
             <Dialog
@@ -669,7 +664,7 @@ export default function GitlabProjects({
                 aria-labelledby="link-project-dialog-title"
             >
                 <DialogTitle id="link-project-dialog-title">
-                    Link GitLab Project
+                    Link GitLab project
                 </DialogTitle>
                 <DialogContent>
                     <Box
@@ -682,8 +677,11 @@ export default function GitlabProjects({
                     >
                         {activeConnections.length > 1 && (
                             <FormControl fullWidth>
-                                <InputLabel>Connection</InputLabel>
+                                <InputLabel id="link-project-connection-label">
+                                    Connection
+                                </InputLabel>
                                 <Select
+                                    labelId="link-project-connection-label"
                                     value={selectedConnectionId}
                                     label="Connection"
                                     onChange={(e) =>
@@ -714,46 +712,15 @@ export default function GitlabProjects({
                 </DialogActions>
             </Dialog>
 
-            {/* Unlink Project Confirmation */}
-            <Dialog
-                open={!!deleteProjectId}
-                onClose={() => setDeleteProjectId(null)}
-                aria-labelledby="unlink-project-dialog-title"
-            >
-                <DialogTitle id="unlink-project-dialog-title">
-                    Unlink Project
-                </DialogTitle>
-                <DialogContent>
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                        This will remove the project link and all associated
-                        task GitLab links. The webhook will be removed from
-                        GitLab.
-                    </Alert>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setDeleteProjectId(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() =>
-                            deleteProjectId && handleUnlink(deleteProjectId)
-                        }
-                    >
-                        Unlink
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <ConfirmDialog
+                open={!!unlinkProject}
+                onClose={() => setUnlinkProject(null)}
+                onConfirm={handleUnlink}
+                title={`Unlink “${unlinkProject?.path_with_namespace ?? ""}”?`}
+                message="This removes the project link and every task's GitLab references to it. The webhook is removed from GitLab."
+                confirmLabel="Unlink project"
+                confirmColor="error"
+            />
         </>
     );
 }
-
-GitlabProjects.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);

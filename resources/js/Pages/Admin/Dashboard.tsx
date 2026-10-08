@@ -47,8 +47,7 @@ export default function Dashboard({ stats }: Props) {
             <Head title="Admin Dashboard" />
             <LayoutHeader>
                 <PageHeader
-                    title="Dashboard"
-                    breadcrumbs={[{ label: "Admin" }]}
+                    title="Admin"
                 />
             </LayoutHeader>
 

@@ -317,4 +317,102 @@ class TaskTemplateTest extends TestCase
         $this->assertSame('low', $task->priority);
         $this->assertSame(5, $task->effort_estimate);
     }
+
+    public function test_can_update_template(): void
+    {
+        $template = TaskTemplate::factory()->create([
+            'team_id' => $this->team->id,
+            'created_by' => $this->user->id,
+            'name' => 'Bug',
+            'priority' => 'low',
+            'effort_estimate' => 1,
+        ]);
+
+        $response = $this->actingAs($this->user)->put(
+            route('teams.task-templates.update', [$this->team, $template]),
+            [
+                'name' => 'Bug report',
+                'description_template' => '## Steps',
+                'priority' => 'high',
+                'effort_estimate' => 3,
+            ]
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Task template "Bug report" saved.');
+
+        $template->refresh();
+        $this->assertSame('Bug report', $template->name);
+        $this->assertSame('## Steps', $template->description_template);
+        $this->assertSame('high', $template->priority);
+        $this->assertSame(3, $template->effort_estimate);
+        $this->assertSame($this->user->id, $template->created_by);
+    }
+
+    public function test_update_can_clear_effort_and_rejects_fractional_points(): void
+    {
+        $template = TaskTemplate::factory()->create([
+            'team_id' => $this->team->id,
+            'created_by' => $this->user->id,
+            'effort_estimate' => 5,
+        ]);
+
+        $this->actingAs($this->user)
+            ->put(route('teams.task-templates.update', [$this->team, $template]), ['effort_estimate' => 1.5])
+            ->assertSessionHasErrors('effort_estimate');
+        $this->assertSame(5, $template->fresh()->effort_estimate);
+
+        $this->actingAs($this->user)
+            ->put(route('teams.task-templates.update', [$this->team, $template]), ['effort_estimate' => null])
+            ->assertSessionHasNoErrors();
+        $this->assertNull($template->fresh()->effort_estimate);
+    }
+
+    public function test_member_cannot_update_template(): void
+    {
+        $member = User::factory()->create();
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $member->id,
+            'role' => 'member',
+        ]);
+        $template = TaskTemplate::factory()->create([
+            'team_id' => $this->team->id,
+            'created_by' => $this->user->id,
+            'name' => 'Original',
+        ]);
+
+        $this->actingAs($member)
+            ->put(route('teams.task-templates.update', [$this->team, $template]), ['name' => 'Nope'])
+            ->assertForbidden();
+
+        $this->assertSame('Original', $template->fresh()->name);
+    }
+
+    public function test_cannot_update_another_teams_template(): void
+    {
+        $foreignTemplate = TaskTemplate::factory()->create([
+            'team_id' => Team::factory()->create()->id,
+            'name' => 'Foreign',
+        ]);
+
+        $this->actingAs($this->user)
+            ->put(route('teams.task-templates.update', [$this->team, $foreignTemplate]), ['name' => 'Mine now'])
+            ->assertNotFound();
+
+        $this->assertSame('Foreign', $foreignTemplate->fresh()->name);
+    }
+
+    public function test_create_and_delete_flash_a_success_message(): void
+    {
+        $this->actingAs($this->user)
+            ->post(route('teams.task-templates.store', [$this->team]), ['name' => 'Spike'])
+            ->assertSessionHas('success', 'Task template "Spike" created.');
+
+        $template = TaskTemplate::where('name', 'Spike')->sole();
+
+        $this->actingAs($this->user)
+            ->delete(route('teams.task-templates.destroy', [$this->team, $template]))
+            ->assertSessionHas('success', 'Task template "Spike" deleted.');
+    }
 }

@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                             ->orderBy('sort_order'),
                     ])
                     ->withPivot('role')
+                    ->orderBy('teams.name')
                     ->get()
                 : [],
             'unreadNotificationsCount' => fn () => $request->user()

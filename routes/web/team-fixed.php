@@ -60,6 +60,10 @@ Route::post('/{team}/task-templates', [
     TaskTemplateController::class,
     'store',
 ])->name('teams.task-templates.store');
+Route::put('/{team}/task-templates/{taskTemplate}', [
+    TaskTemplateController::class,
+    'update',
+])->name('teams.task-templates.update');
 Route::delete('/{team}/task-templates/{taskTemplate}', [
     TaskTemplateController::class,
     'destroy',

@@ -1,13 +1,9 @@
-import { Head, router, useForm } from "@inertiajs/react";
-import axios from "axios";
-import { type ReactElement, useState } from "react";
-import LayoutHeader from "@/Components/Layout/LayoutHeader";
-import PageHeader from "@/Components/Layout/PageHeader";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import type { FigmaConnection, PageProps, Team } from "@/types";
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import type { FigmaConnection, Team } from "@/types";
+import { router, useForm } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
 import ErrorIcon from "@mui/icons-material/Error";
 import InfoIcon from "@mui/icons-material/Info";
@@ -16,26 +12,24 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import axios from "axios";
+import { useState } from "react";
+import SectionCard from "./SectionCard";
 
-interface Props extends PageProps {
+interface Props {
     team: Team;
-    sidebarBoards?: Team["boards"];
     connections: FigmaConnection[];
 }
 
@@ -44,15 +38,13 @@ interface TestResult {
     message: string;
 }
 
-export default function FigmaIntegration({
-    team,
-    sidebarBoards = [],
-    connections,
-}: Props) {
+/** Figma connections (Integrations tab of team settings). */
+export default function FigmaIntegration({ team, connections }: Props) {
     const [connDialogOpen, setConnDialogOpen] = useState(false);
     const [editingConnection, setEditingConnection] =
         useState<FigmaConnection | null>(null);
-    const [deleteConnId, setDeleteConnId] = useState<string | null>(null);
+    const [deleteConnection, setDeleteConnection] =
+        useState<FigmaConnection | null>(null);
     const [testResults, setTestResults] = useState<Record<string, TestResult>>(
         {},
     );
@@ -82,29 +74,38 @@ export default function FigmaIntegration({
         setConnDialogOpen(true);
     };
 
-    const handleConnSubmit = () => {
+    const handleConnSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const options = {
+            preserveScroll: true,
+            onSuccess: () => setConnDialogOpen(false),
+        };
         if (editingConnection) {
             connForm.put(
                 route("teams.figma-connections.update", [
                     team.slug,
                     editingConnection.id,
                 ]),
-                {
-                    onSuccess: () => setConnDialogOpen(false),
-                },
+                options,
             );
         } else {
-            connForm.post(route("teams.figma-connections.store", team.slug), {
-                onSuccess: () => setConnDialogOpen(false),
-            });
+            connForm.post(
+                route("teams.figma-connections.store", team.slug),
+                options,
+            );
         }
     };
 
-    const handleDeleteConnection = (id: string) => {
+    const handleDeleteConnection = () => {
+        if (!deleteConnection) return;
         router.delete(
-            route("teams.figma-connections.destroy", [team.slug, id]),
+            route("teams.figma-connections.destroy", [
+                team.slug,
+                deleteConnection.id,
+            ]),
             {
-                onSuccess: () => setDeleteConnId(null),
+                preserveScroll: true,
+                onSuccess: () => setDeleteConnection(null),
             },
         );
     };
@@ -125,10 +126,14 @@ export default function FigmaIntegration({
                 ]),
             );
             setTestResults((prev) => ({ ...prev, [connection.id]: data }));
-        } catch {
+        } catch (err) {
+            const message =
+                axios.isAxiosError(err) && err.response?.data?.message
+                    ? String(err.response.data.message)
+                    : "Network error";
             setTestResults((prev) => ({
                 ...prev,
-                [connection.id]: { success: false, message: "Network error" },
+                [connection.id]: { success: false, message },
             }));
         } finally {
             setTestingIds((prev) => {
@@ -141,353 +146,302 @@ export default function FigmaIntegration({
 
     return (
         <>
-            <Head title={`${team.name} — Figma`} />
-            <LayoutHeader>
-                <PageHeader
-                    title="Figma Integration"
-                    breadcrumbs={[
-                        { label: "Teams", href: route("teams.index") },
-                        {
-                            label: team.name,
-                            href: route("teams.show", team.slug),
-                        },
-                    ]}
-                />
-            </LayoutHeader>
-
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                <Card variant="outlined">
-                    <CardContent>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                mb: 2,
-                            }}
-                        >
-                            <Typography variant="subtitle1" fontWeight={600}>
-                                Connections ({connections.length})
-                            </Typography>
-                            <Button
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={openCreateConnection}
-                            >
-                                Add Connection
-                            </Button>
-                        </Box>
-
-                        {connections.length === 0 ? (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ py: 2 }}
-                            >
-                                No Figma connections yet. Add a connection to
-                                start linking designs to tasks.
-                            </Typography>
-                        ) : (
-                            <List dense disablePadding>
-                                {connections.map((connection) => (
-                                    <ListItem
-                                        key={connection.id}
-                                        disableGutters
-                                        sx={{
-                                            py: 0.75,
-                                            px: 1,
-                                            borderRadius: 1,
-                                            "&:hover": {
-                                                bgcolor: "action.hover",
-                                            },
-                                        }}
-                                        secondaryAction={
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 0.5,
-                                                }}
-                                            >
-                                                <Tooltip title="Test connection">
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() =>
-                                                                handleTestConnection(
-                                                                    connection,
-                                                                )
-                                                            }
-                                                            disabled={testingIds.has(
-                                                                connection.id,
-                                                            )}
-                                                        >
-                                                            {testingIds.has(
-                                                                connection.id,
-                                                            ) ? (
-                                                                <CircularProgress
-                                                                    size={18}
-                                                                />
-                                                            ) : (
-                                                                <SyncIcon fontSize="small" />
-                                                            )}
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                                <Tooltip title="Edit">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() =>
-                                                            openEditConnection(
-                                                                connection,
-                                                            )
-                                                        }
-                                                    >
-                                                        <EditIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Delete">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() =>
-                                                            setDeleteConnId(
-                                                                connection.id,
-                                                            )
-                                                        }
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        }
+            <SectionCard
+                title="Figma"
+                description="Connect Figma so tasks can link to designs and show previews."
+                action={
+                    <Button
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={openCreateConnection}
+                    >
+                        Add connection
+                    </Button>
+                }
+            >
+                {connections.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                        No Figma connections yet. Add a connection to start
+                        linking designs to tasks.
+                    </Typography>
+                ) : (
+                    <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+                        {connections.map((connection) => {
+                            const result = testResults[connection.id];
+                            const testing = testingIds.has(connection.id);
+                            return (
+                                <Box
+                                    component="li"
+                                    key={connection.id}
+                                    sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        flexWrap: "wrap",
+                                        columnGap: 2,
+                                        rowGap: 1,
+                                        py: 1.25,
+                                        borderTop: 1,
+                                        borderColor: "divider",
+                                        "&:first-of-type": { borderTop: 0 },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{ minWidth: 0, flex: "1 1 220px" }}
                                     >
-                                        <ListItemText
-                                            primary={
-                                                <Box
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 1,
-                                                    }}
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1,
+                                                flexWrap: "wrap",
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={600}
+                                            >
+                                                {connection.name}
+                                            </Typography>
+                                            <Chip
+                                                label={
+                                                    connection.is_active
+                                                        ? "Active"
+                                                        : "Inactive"
+                                                }
+                                                color={
+                                                    connection.is_active
+                                                        ? "success"
+                                                        : "default"
+                                                }
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        </Box>
+                                        {result && (
+                                            <Chip
+                                                icon={
+                                                    result.success ? (
+                                                        <CheckCircleIcon />
+                                                    ) : (
+                                                        <ErrorIcon />
+                                                    )
+                                                }
+                                                label={result.message}
+                                                color={
+                                                    result.success
+                                                        ? "success"
+                                                        : "error"
+                                                }
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{
+                                                    mt: 0.75,
+                                                    maxWidth: "100%",
+                                                }}
+                                            />
+                                        )}
+                                    </Box>
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            gap: 0.5,
+                                            ml: "auto",
+                                        }}
+                                    >
+                                        <Tooltip title="Test connection">
+                                            <span>
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label={`Test connection ${connection.name}`}
+                                                    onClick={() =>
+                                                        handleTestConnection(
+                                                            connection,
+                                                        )
+                                                    }
+                                                    disabled={testing}
                                                 >
-                                                    <Typography
-                                                        variant="body2"
-                                                        fontWeight={500}
-                                                    >
-                                                        {connection.name}
-                                                    </Typography>
-                                                    <Chip
-                                                        label={
-                                                            connection.is_active
-                                                                ? "Active"
-                                                                : "Inactive"
-                                                        }
-                                                        color={
-                                                            connection.is_active
-                                                                ? "success"
-                                                                : "default"
-                                                        }
-                                                        size="small"
-                                                        variant="outlined"
-                                                    />
-                                                    {testResults[
-                                                        connection.id
-                                                    ] && (
-                                                        <Chip
-                                                            icon={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].success ? (
-                                                                    <CheckCircleIcon />
-                                                                ) : (
-                                                                    <ErrorIcon />
-                                                                )
-                                                            }
-                                                            label={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].message
-                                                            }
-                                                            color={
-                                                                testResults[
-                                                                    connection
-                                                                        .id
-                                                                ].success
-                                                                    ? "success"
-                                                                    : "error"
-                                                            }
-                                                            size="small"
-                                                            variant="outlined"
+                                                    {testing ? (
+                                                        <CircularProgress
+                                                            size={18}
                                                         />
+                                                    ) : (
+                                                        <SyncIcon fontSize="small" />
                                                     )}
-                                                </Box>
-                                            }
-                                        />
-                                    </ListItem>
-                                ))}
-                            </List>
-                        )}
-                    </CardContent>
-                </Card>
-            </Box>
+                                                </IconButton>
+                                            </span>
+                                        </Tooltip>
+                                        <Tooltip title="Edit connection">
+                                            <IconButton
+                                                size="small"
+                                                aria-label={`Edit connection ${connection.name}`}
+                                                onClick={() =>
+                                                    openEditConnection(
+                                                        connection,
+                                                    )
+                                                }
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete connection">
+                                            <IconButton
+                                                size="small"
+                                                color="error"
+                                                aria-label={`Delete connection ${connection.name}`}
+                                                onClick={() =>
+                                                    setDeleteConnection(
+                                                        connection,
+                                                    )
+                                                }
+                                            >
+                                                <DeleteOutlineIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                )}
+            </SectionCard>
 
             {/* Create/Edit Connection Dialog */}
             <Dialog
                 open={connDialogOpen}
-                onClose={() => setConnDialogOpen(false)}
+                onClose={
+                    connForm.processing
+                        ? undefined
+                        : () => setConnDialogOpen(false)
+                }
                 maxWidth="sm"
                 fullWidth
                 aria-labelledby="figma-connection-dialog-title"
             >
-                <DialogTitle id="figma-connection-dialog-title">
-                    {editingConnection
-                        ? "Edit Connection"
-                        : "Add Figma Connection"}
-                </DialogTitle>
-                <DialogContent>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
-                            mt: 1,
-                        }}
-                    >
-                        <TextField
-                            label="Name"
-                            value={connForm.data.name}
-                            onChange={(e) =>
-                                connForm.setData("name", e.target.value)
-                            }
-                            error={!!connForm.errors.name}
-                            helperText={connForm.errors.name}
-                            fullWidth
-                            required
-                        />
-                        <TextField
-                            label={
-                                editingConnection
-                                    ? "Personal Access Token (leave blank to keep current)"
-                                    : "Personal Access Token"
-                            }
-                            value={connForm.data.api_token}
-                            onChange={(e) =>
-                                connForm.setData("api_token", e.target.value)
-                            }
-                            error={!!connForm.errors.api_token}
-                            helperText={connForm.errors.api_token}
-                            type="password"
-                            fullWidth
-                            required={!editingConnection}
-                        />
-                        <Alert severity="info" icon={<InfoIcon />}>
-                            <AlertTitle>How to create a Figma token</AlertTitle>
-                            Go to{" "}
-                            <strong>
-                                Figma Settings &rarr; Security &rarr; Personal
-                                access tokens
-                            </strong>{" "}
-                            and generate a new token with the following scopes:
-                            <Box
-                                component="ul"
-                                sx={{ mt: 0.5, mb: 0, pl: 2.5 }}
-                            >
-                                <li>
-                                    <strong>File metadata (Read)</strong> — file
-                                    names, thumbnails, and last modified dates
-                                </li>
-                                <li>
-                                    <strong>File content (Read)</strong> — node
-                                    previews, frame names, and rendered
-                                    thumbnails
-                                </li>
-                            </Box>
-                            <Typography
-                                variant="caption"
-                                sx={{ display: "block", mt: 0.5 }}
-                            >
-                                Tokens expire after 90 days. Both scopes are
-                                recommended. Without File content, links will
-                                still work but won't show design previews or
-                                node details.
-                            </Typography>
-                        </Alert>
+                <form onSubmit={handleConnSubmit}>
+                    <DialogTitle id="figma-connection-dialog-title">
+                        {editingConnection
+                            ? "Edit Figma connection"
+                            : "Add Figma connection"}
+                    </DialogTitle>
+                    <DialogContent>
                         <Box
                             sx={{
                                 display: "flex",
-                                alignItems: "center",
-                                gap: 1,
+                                flexDirection: "column",
+                                gap: 2,
+                                mt: 1,
                             }}
                         >
-                            <Switch
-                                checked={connForm.data.is_active}
+                            <TextField
+                                label="Name"
+                                value={connForm.data.name}
+                                onChange={(e) =>
+                                    connForm.setData("name", e.target.value)
+                                }
+                                error={!!connForm.errors.name}
+                                helperText={connForm.errors.name}
+                                fullWidth
+                                required
+                            />
+                            <TextField
+                                label={
+                                    editingConnection
+                                        ? "Personal access token (leave blank to keep current)"
+                                        : "Personal access token"
+                                }
+                                value={connForm.data.api_token}
                                 onChange={(e) =>
                                     connForm.setData(
-                                        "is_active",
-                                        e.target.checked,
+                                        "api_token",
+                                        e.target.value,
                                     )
                                 }
+                                error={!!connForm.errors.api_token}
+                                helperText={connForm.errors.api_token}
+                                type="password"
+                                autoComplete="off"
+                                fullWidth
+                                required={!editingConnection}
                             />
-                            <Typography>Active</Typography>
+                            <Alert severity="info" icon={<InfoIcon />}>
+                                <AlertTitle>
+                                    How to create a Figma token
+                                </AlertTitle>
+                                Go to{" "}
+                                <strong>
+                                    Figma Settings &rarr; Security &rarr;
+                                    Personal access tokens
+                                </strong>{" "}
+                                and generate a new token with the following
+                                scopes:
+                                <Box
+                                    component="ul"
+                                    sx={{ mt: 0.5, mb: 0, pl: 2.5 }}
+                                >
+                                    <li>
+                                        <strong>File metadata (Read)</strong> —
+                                        file names, thumbnails, and last
+                                        modified dates
+                                    </li>
+                                    <li>
+                                        <strong>File content (Read)</strong> —
+                                        node previews, frame names, and rendered
+                                        thumbnails
+                                    </li>
+                                </Box>
+                                <Typography
+                                    variant="caption"
+                                    sx={{ display: "block", mt: 0.5 }}
+                                >
+                                    Tokens expire after 90 days. Both scopes are
+                                    recommended. Without File content, links
+                                    will still work but won't show design
+                                    previews or node details.
+                                </Typography>
+                            </Alert>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={connForm.data.is_active}
+                                        onChange={(e) =>
+                                            connForm.setData(
+                                                "is_active",
+                                                e.target.checked,
+                                            )
+                                        }
+                                    />
+                                }
+                                label="Active"
+                            />
                         </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setConnDialogOpen(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleConnSubmit}
-                        disabled={connForm.processing}
-                    >
-                        {editingConnection ? "Update" : "Create"}
-                    </Button>
-                </DialogActions>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, py: 2 }}>
+                        <Button
+                            onClick={() => setConnDialogOpen(false)}
+                            disabled={connForm.processing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={connForm.processing}
+                        >
+                            {editingConnection ? "Save" : "Add connection"}
+                        </Button>
+                    </DialogActions>
+                </form>
             </Dialog>
 
-            {/* Delete Connection Confirmation */}
-            <Dialog
-                open={!!deleteConnId}
-                onClose={() => setDeleteConnId(null)}
-                aria-labelledby="delete-figma-connection-dialog-title"
-            >
-                <DialogTitle id="delete-figma-connection-dialog-title">
-                    Delete Connection
-                </DialogTitle>
-                <DialogContent>
-                    <Alert severity="warning" sx={{ mt: 1 }}>
-                        This will remove the connection and all Figma links on
-                        tasks that use it.
-                    </Alert>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setDeleteConnId(null)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() =>
-                            deleteConnId && handleDeleteConnection(deleteConnId)
-                        }
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <ConfirmDialog
+                open={!!deleteConnection}
+                onClose={() => setDeleteConnection(null)}
+                onConfirm={handleDeleteConnection}
+                title={`Delete connection “${deleteConnection?.name ?? ""}”?`}
+                message="This removes the connection and every Figma link on tasks that uses it."
+                confirmLabel="Delete connection"
+                confirmColor="error"
+            />
         </>
     );
 }
-
-FigmaIntegration.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);

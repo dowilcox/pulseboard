@@ -1,205 +1,110 @@
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
-import axios from "axios";
-import {
-    type ReactElement,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
-import type {
-    Board,
-    BoardTemplate,
-    PageProps,
-    Team,
-    UserWithTeamPivot,
-} from "@/types";
+import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
+import type { Board, Team, UserWithTeamPivot } from "@/types";
+import { formatTimestamp } from "@/utils/formatTimestamp";
+import { Head, Link, router } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import BrushIcon from "@mui/icons-material/Brush";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DownloadIcon from "@mui/icons-material/Download";
-import BrushIcon from "@mui/icons-material/Brush";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import GitlabIcon from "@mui/icons-material/AccountTree";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ViewColumnIcon from "@mui/icons-material/ViewColumn";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import ButtonBase from "@mui/material/ButtonBase";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
-import CardContent from "@mui/material/CardContent";
-import Chip from "@mui/material/Chip";
-import CircularProgress from "@mui/material/CircularProgress";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
+import Collapse from "@mui/material/Collapse";
 import Grid from "@mui/material/Grid2";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
+import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import MuiLink from "@mui/material/Link";
 import Paper from "@mui/material/Paper";
-import Tab from "@mui/material/Tab";
-import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import axios from "axios";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import CreateBoardDialog from "./Show/CreateBoardDialog";
 
-interface ColumnStat {
-    column_name: string;
-    is_done_column: boolean;
-    count: number;
+interface TeamBoard extends Board {
+    open_tasks_count: number;
+    overdue_tasks_count: number;
+    completed_tasks_count: number;
+    last_activity_at: string | null;
 }
 
-interface OverdueTask {
-    id: string;
-    title: string;
-    task_number?: number;
-    due_date: string;
-    board?: { id: string; name: string };
-    column?: { name: string };
-    assignees?: { id: string; name: string }[];
-}
-
-interface Stats {
-    tasks_by_column: ColumnStat[];
-    overdue_tasks: OverdueTask[];
-    cycle_time: number;
+interface TeamPageCan {
+    createBoard: boolean;
+    createFromTemplate: boolean;
+    manageTeam: boolean;
+    manageIntegrations: boolean;
+    restoreBoards: boolean;
+    exportCsv: boolean;
 }
 
 interface Props {
     team: Team;
     members: UserWithTeamPivot[];
-    boards: Board[];
+    boards: TeamBoard[];
+    archivedBoards: Board[];
+    can: TeamPageCan;
 }
 
-export default function TeamsShow({ team, members, boards }: Props) {
-    const { teams: sharedTeams } = usePage<PageProps>().props;
-    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
-    const canCreateBoards = Boolean(userRole);
-    const canManage = userRole === "owner" || userRole === "admin";
+const plural = (count: number, word: string) =>
+    `${count} ${word}${count === 1 ? "" : "s"}`;
 
+export default function TeamsShow({
+    team,
+    members,
+    boards,
+    archivedBoards,
+    can,
+}: Props) {
     const [createOpen, setCreateOpen] = useState(false);
-    const [createTab, setCreateTab] = useState(0);
-    const [templates, setTemplates] = useState<BoardTemplate[]>([]);
-    const [templatesLoading, setTemplatesLoading] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] =
-        useState<BoardTemplate | null>(null);
-    const [stats, setStats] = useState<Stats | null>(null);
-    const [statsLoading, setStatsLoading] = useState(true);
+    const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+    const [cycleTime, setCycleTime] = useState<number | null>(null);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        name: "",
-        description: "",
-    });
-
-    const templatesControllerRef = useRef<AbortController | null>(null);
-
-    const fetchTemplates = useCallback(() => {
-        templatesControllerRef.current?.abort();
-        const controller = new AbortController();
-        templatesControllerRef.current = controller;
-        setTemplatesLoading(true);
-        axios
-            .get(route("templates.index"), { signal: controller.signal })
-            .then(({ data }) => {
-                setTemplates(data as BoardTemplate[]);
-                setTemplatesLoading(false);
-            })
-            .catch((err) => {
-                if (axios.isCancel(err)) return;
-                setTemplatesLoading(false);
-            });
-    }, []);
-
-    // Abort any pending templates fetch on unmount
-    useEffect(() => {
-        return () => {
-            templatesControllerRef.current?.abort();
-        };
-    }, []);
-
+    // Average cycle time needs the (heavier) stats endpoint; everything else
+    // on this page comes with the initial props.
     useEffect(() => {
         const controller = new AbortController();
-        setStatsLoading(true);
         axios
-            .get(route("teams.dashboard.stats", team.slug), {
-                signal: controller.signal,
-            })
-            .then(({ data }) => {
-                setStats(data as Stats);
-                setStatsLoading(false);
-            })
-            .catch((err) => {
-                if (axios.isCancel(err)) return;
-                setStatsLoading(false);
-            });
+            .get<{ cycle_time: number }>(
+                route("teams.dashboard.stats", team.slug),
+                { signal: controller.signal },
+            )
+            .then(({ data }) => setCycleTime(data.cycle_time))
+            .catch(() => {});
         return () => controller.abort();
     }, [team.slug]);
 
-    const columnData = (stats?.tasks_by_column ?? []).map((c) => ({
-        name: c.column_name,
-        count: c.count,
-        isDone: c.is_done_column,
-    }));
+    const totals = boards.reduce(
+        (acc, b) => ({
+            open: acc.open + b.open_tasks_count,
+            overdue: acc.overdue + b.overdue_tasks_count,
+            completed: acc.completed + b.completed_tasks_count,
+        }),
+        { open: 0, overdue: 0, completed: 0 },
+    );
 
-    const totalTasks = columnData.reduce((s, c) => s + c.count, 0);
-    const completedTasks = columnData
-        .filter((c) => c.isDone)
-        .reduce((s, c) => s + c.count, 0);
-    const overdueTasks = stats?.overdue_tasks ?? [];
-
-    const handleCreateBoard = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (selectedTemplate) {
-            router.post(
-                route("teams.templates.create-board", [
-                    team.slug,
-                    selectedTemplate.id,
-                ]),
-                { name: data.name, description: data.description },
-                {
-                    onSuccess: () => {
-                        setCreateOpen(false);
-                        reset();
-                        setSelectedTemplate(null);
-                        setCreateTab(0);
-                    },
-                },
-            );
-        } else {
-            post(route("teams.boards.store", team.slug), {
-                onSuccess: () => {
-                    setCreateOpen(false);
-                    reset();
-                },
-            });
-        }
-    };
-
-    const handleClose = () => {
-        setCreateOpen(false);
-        reset();
-        setSelectedTemplate(null);
-        setCreateTab(0);
-    };
-
-    const handleOpenCreate = () => {
-        setCreateOpen(true);
-        fetchTemplates();
-    };
-
-    const handleSelectTemplate = (template: BoardTemplate) => {
-        setSelectedTemplate(template);
-        setData({
-            name: template.name,
-            description: template.description ?? "",
-        });
-    };
+    const settingsHref = route("teams.settings", team.slug);
+    const integrationsHref = route("teams.settings", {
+        team: team.slug,
+        tab: "integrations",
+    });
+    const menuOpen = Boolean(menuAnchor);
+    const closeMenu = () => setMenuAnchor(null);
 
     return (
         <>
@@ -212,564 +117,691 @@ export default function TeamsShow({ team, members, boards }: Props) {
                     ]}
                     actions={
                         <>
-                            <Button
-                                variant="outlined"
-                                startIcon={<DownloadIcon />}
-                                size="small"
-                                href={route("teams.export.csv", team.slug)}
-                            >
-                                Export CSV
-                            </Button>
-                            {canManage && (
+                            {can.manageTeam && (
                                 <Button
+                                    component={Link}
+                                    href={settingsHref}
                                     variant="outlined"
-                                    startIcon={<GitlabIcon />}
                                     size="small"
-                                    onClick={() =>
-                                        router.get(
-                                            route(
-                                                "teams.gitlab-projects.index",
-                                                team.slug,
-                                            ),
-                                        )
-                                    }
+                                    startIcon={<SettingsOutlinedIcon />}
                                 >
-                                    GitLab
+                                    Team settings
                                 </Button>
                             )}
-                            {canManage && (
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<BrushIcon />}
-                                    size="small"
-                                    onClick={() =>
-                                        router.get(
-                                            route(
-                                                "teams.figma.index",
-                                                team.slug,
-                                            ),
-                                        )
-                                    }
-                                >
-                                    Figma
-                                </Button>
-                            )}
-                            {canManage && (
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<SettingsIcon />}
-                                    size="small"
-                                    onClick={() =>
-                                        router.get(
-                                            route("teams.settings", team.slug),
-                                        )
-                                    }
-                                >
-                                    Settings
-                                </Button>
-                            )}
-                            {canCreateBoards && (
+                            {can.createBoard && (
                                 <Button
                                     variant="contained"
-                                    startIcon={<AddIcon />}
                                     size="small"
-                                    onClick={handleOpenCreate}
+                                    startIcon={<AddIcon />}
+                                    onClick={() => setCreateOpen(true)}
                                 >
-                                    Add Board
+                                    New board
                                 </Button>
                             )}
+                            <Tooltip title="More team actions">
+                                <IconButton
+                                    size="small"
+                                    aria-label="More team actions"
+                                    aria-haspopup="menu"
+                                    aria-controls={
+                                        menuOpen
+                                            ? "team-actions-menu"
+                                            : undefined
+                                    }
+                                    aria-expanded={
+                                        menuOpen ? "true" : undefined
+                                    }
+                                    onClick={(e) =>
+                                        setMenuAnchor(e.currentTarget)
+                                    }
+                                >
+                                    <MoreHorizIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <Menu
+                                id="team-actions-menu"
+                                anchorEl={menuAnchor}
+                                open={menuOpen}
+                                onClose={closeMenu}
+                                anchorOrigin={{
+                                    vertical: "bottom",
+                                    horizontal: "right",
+                                }}
+                                transformOrigin={{
+                                    vertical: "top",
+                                    horizontal: "right",
+                                }}
+                            >
+                                {can.exportCsv && (
+                                    <MenuItem
+                                        component="a"
+                                        href={route(
+                                            "teams.export.csv",
+                                            team.slug,
+                                        )}
+                                        onClick={closeMenu}
+                                    >
+                                        <ListItemIcon>
+                                            <DownloadIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>
+                                            Export tasks (CSV)
+                                        </ListItemText>
+                                    </MenuItem>
+                                )}
+                                {can.manageIntegrations && (
+                                    <MenuItem
+                                        component={Link}
+                                        href={integrationsHref}
+                                        onClick={closeMenu}
+                                    >
+                                        <ListItemIcon>
+                                            <GitlabIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>GitLab</ListItemText>
+                                    </MenuItem>
+                                )}
+                                {can.manageIntegrations && (
+                                    <MenuItem
+                                        component={Link}
+                                        href={integrationsHref}
+                                        onClick={closeMenu}
+                                    >
+                                        <ListItemIcon>
+                                            <BrushIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>Figma</ListItemText>
+                                    </MenuItem>
+                                )}
+                                {!can.manageTeam && (
+                                    <MenuItem
+                                        component={Link}
+                                        href={settingsHref}
+                                        onClick={closeMenu}
+                                    >
+                                        <ListItemIcon>
+                                            <SettingsOutlinedIcon fontSize="small" />
+                                        </ListItemIcon>
+                                        <ListItemText>
+                                            Members &amp; labels
+                                        </ListItemText>
+                                    </MenuItem>
+                                )}
+                            </Menu>
                         </>
                     }
                 />
             </LayoutHeader>
 
-            {/* Team info */}
-            <Paper
-                elevation={0}
-                sx={{ p: 2.5, mb: 3, bgcolor: "action.hover" }}
+            <TeamIntro team={team} members={members} />
+
+            {/* Boards */}
+            <Box
+                component="section"
+                aria-labelledby="boards-heading"
+                sx={{ mb: 4 }}
             >
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        mb: team.description ? 1.5 : 0,
-                    }}
-                >
-                    <Avatar
-                        src={team.image_url ?? undefined}
+                <SectionHeading id="boards-heading">
+                    Boards{" "}
+                    <Box
+                        component="span"
+                        sx={{ color: "text.secondary", fontWeight: 600 }}
+                    >
+                        ({boards.length})
+                    </Box>
+                </SectionHeading>
+
+                {boards.length === 0 ? (
+                    <Paper
+                        variant="outlined"
                         sx={{
-                            width: 40,
-                            height: 40,
-                            fontSize: "1rem",
-                            fontWeight: 600,
-                            mr: 1.5,
-                            bgcolor: "primary.main",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            textAlign: "center",
+                            py: 6,
+                            px: 2,
                         }}
                     >
-                        {team.name.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Typography variant="h6" fontWeight={600}>
-                        {team.name}
-                    </Typography>
-                </Box>
-                {team.description && (
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 1.5 }}
-                    >
-                        {team.description}
-                    </Typography>
+                        <DashboardIcon
+                            sx={{
+                                fontSize: 40,
+                                color: "text.secondary",
+                                mb: 1.5,
+                            }}
+                        />
+                        <Typography
+                            component="p"
+                            variant="subtitle1"
+                            fontWeight={700}
+                        >
+                            No boards yet
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 0.5, mb: can.createBoard ? 2.5 : 0 }}
+                        >
+                            {can.createBoard
+                                ? "Create your first board to start organizing tasks."
+                                : "Boards created by your team will show up here."}
+                        </Typography>
+                        {can.createBoard && (
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={() => setCreateOpen(true)}
+                            >
+                                New board
+                            </Button>
+                        )}
+                    </Paper>
+                ) : (
+                    <Grid container spacing={2}>
+                        {boards.map((board) => (
+                            <Grid
+                                size={{ xs: 12, sm: 6, lg: 4 }}
+                                key={board.id}
+                            >
+                                <BoardCard team={team} board={board} />
+                            </Grid>
+                        ))}
+                    </Grid>
                 )}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <AvatarGroup
-                        max={5}
+            </Box>
+
+            {/* Overview */}
+            {boards.length > 0 && (
+                <Box
+                    component="section"
+                    aria-labelledby="overview-heading"
+                    sx={{ mb: 4 }}
+                >
+                    <SectionHeading id="overview-heading">
+                        Overview
+                    </SectionHeading>
+                    <Paper
+                        variant="outlined"
+                        component="dl"
                         sx={{
-                            "& .MuiAvatar-root": {
-                                width: 28,
-                                height: 28,
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
+                            m: 0,
+                            display: "grid",
+                            gridTemplateColumns: {
+                                xs: "repeat(2, minmax(0, 1fr))",
+                                md: "repeat(4, minmax(0, 1fr))",
                             },
                         }}
                     >
-                        {members.map((member) => (
-                            <Tooltip key={member.id} title={member.name}>
-                                <Avatar
-                                    src={member.avatar_url}
-                                    alt={member.name}
-                                >
-                                    {member.name.charAt(0).toUpperCase()}
-                                </Avatar>
-                            </Tooltip>
-                        ))}
-                    </AvatarGroup>
-                    <Typography variant="body2" color="text.secondary">
-                        {members.length} member{members.length !== 1 ? "s" : ""}
-                    </Typography>
+                        <Stat label="Open tasks" value={totals.open} />
+                        <Stat
+                            label="Overdue"
+                            value={totals.overdue}
+                            tone={totals.overdue > 0 ? "danger" : undefined}
+                        />
+                        <Stat label="Completed" value={totals.completed} />
+                        <Stat
+                            label="Avg cycle time (30 days)"
+                            value={
+                                cycleTime && cycleTime > 0
+                                    ? `${cycleTime} days`
+                                    : "—"
+                            }
+                        />
+                    </Paper>
                 </Box>
-            </Paper>
-
-            {/* Summary stats */}
-            {statsLoading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                    <CircularProgress size={28} />
-                </Box>
-            ) : stats ? (
-                <Grid container spacing={2} sx={{ mb: 4 }}>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                            >
-                                Total Tasks
-                            </Typography>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                fontWeight={700}
-                                sx={{ mt: 0.5 }}
-                            >
-                                {totalTasks}
-                            </Typography>
-                        </Paper>
-                    </Grid>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                            >
-                                Completed
-                            </Typography>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                fontWeight={700}
-                                color="success.main"
-                                sx={{ mt: 0.5 }}
-                            >
-                                {completedTasks}
-                            </Typography>
-                        </Paper>
-                    </Grid>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                            >
-                                Overdue
-                            </Typography>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                fontWeight={700}
-                                color={
-                                    overdueTasks.length > 0
-                                        ? "error.main"
-                                        : "text.primary"
-                                }
-                                sx={{ mt: 0.5 }}
-                            >
-                                {overdueTasks.length}
-                            </Typography>
-                        </Paper>
-                    </Grid>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Paper variant="outlined" sx={{ p: 2.5 }}>
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                fontWeight={600}
-                            >
-                                Avg Cycle Time
-                            </Typography>
-                            <Typography
-                                variant="h4"
-                                component="p"
-                                fontWeight={700}
-                                sx={{ mt: 0.5 }}
-                            >
-                                {stats.cycle_time > 0 ? (
-                                    <>
-                                        {stats.cycle_time}
-                                        <Typography
-                                            component="span"
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            {" "}
-                                            days
-                                        </Typography>
-                                    </>
-                                ) : (
-                                    <Box
-                                        component="span"
-                                        sx={{ color: "text.secondary" }}
-                                    >
-                                        —
-                                    </Box>
-                                )}
-                            </Typography>
-                        </Paper>
-                    </Grid>
-                </Grid>
-            ) : null}
-
-            {/* Boards */}
-            {boards.length > 0 && (
-                <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    fontWeight={600}
-                    sx={{ display: "block", mb: 1.5, letterSpacing: "0.02em" }}
-                >
-                    Boards
-                </Typography>
             )}
 
-            {boards.length === 0 ? (
+            {archivedBoards.length > 0 && (
+                <ArchivedBoards
+                    team={team}
+                    boards={archivedBoards}
+                    canRestore={can.restoreBoards}
+                />
+            )}
+
+            {can.createBoard && (
+                <CreateBoardDialog
+                    open={createOpen}
+                    onClose={() => setCreateOpen(false)}
+                    team={team}
+                    canUseTemplates={can.createFromTemplate}
+                />
+            )}
+        </>
+    );
+}
+
+function SectionHeading({ id, children }: { id: string; children: ReactNode }) {
+    return (
+        <Typography
+            id={id}
+            component="h2"
+            variant="subtitle1"
+            fontWeight={700}
+            sx={{ mb: 1.5, color: harbor.ink }}
+        >
+            {children}
+        </Typography>
+    );
+}
+
+function TeamIntro({
+    team,
+    members,
+}: {
+    team: Team;
+    members: UserWithTeamPivot[];
+}) {
+    const membersHref = route("teams.settings", {
+        team: team.slug,
+        tab: "members",
+    });
+
+    return (
+        <Box
+            sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                columnGap: 3,
+                rowGap: 1.5,
+                mb: 3,
+            }}
+        >
+            {team.description ? (
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{ flex: "1 1 320px", maxWidth: 760, minWidth: 0 }}
+                >
+                    {team.description}
+                </Typography>
+            ) : (
+                <Box sx={{ flex: "1 1 0" }} />
+            )}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.25,
+                    flexShrink: 0,
+                }}
+            >
+                <AvatarGroup
+                    max={6}
+                    slotProps={{
+                        surplus: {
+                            sx: {
+                                bgcolor: harborHex.sub,
+                                color: "#fff",
+                            },
+                        },
+                    }}
+                    sx={{
+                        "& .MuiAvatar-root": {
+                            width: 30,
+                            height: 30,
+                            fontSize: "0.8rem",
+                            fontWeight: 700,
+                            borderColor: harbor.canvas,
+                        },
+                    }}
+                >
+                    {members.map((member) => (
+                        <Tooltip key={member.id} title={member.name}>
+                            <Avatar
+                                src={member.avatar_url}
+                                alt={member.name}
+                                sx={{
+                                    bgcolor: harborAvatarColor(member.name),
+                                    color: "#fff",
+                                }}
+                            >
+                                {member.name.charAt(0).toUpperCase()}
+                            </Avatar>
+                        </Tooltip>
+                    ))}
+                </AvatarGroup>
+                <MuiLink
+                    component={Link}
+                    href={membersHref}
+                    variant="body2"
+                    fontWeight={600}
+                    underline="hover"
+                >
+                    {plural(members.length, "member")}
+                </MuiLink>
+            </Box>
+        </Box>
+    );
+}
+
+function BoardCard({ team, board }: { team: Team; board: TeamBoard }) {
+    const lastActivity = board.last_activity_at;
+
+    return (
+        <Card variant="outlined" sx={{ height: "100%" }}>
+            <CardActionArea
+                component={Link}
+                href={route("teams.boards.show", [team.slug, board.slug])}
+                sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    justifyContent: "flex-start",
+                    p: 2.25,
+                }}
+            >
                 <Box
                     sx={{
                         display: "flex",
-                        flexDirection: "column",
                         alignItems: "center",
-                        justifyContent: "center",
-                        py: 8,
+                        gap: 1.25,
+                        mb: 1,
+                        minWidth: 0,
                     }}
                 >
-                    <DashboardIcon
-                        sx={{ fontSize: 48, color: "text.disabled", mb: 2 }}
-                    />
+                    <Avatar
+                        src={board.image_url ?? undefined}
+                        alt=""
+                        variant="rounded"
+                        sx={{
+                            width: 28,
+                            height: 28,
+                            fontSize: "0.8rem",
+                            fontWeight: 700,
+                            bgcolor: harborAvatarColor(board.name),
+                            color: "#fff",
+                        }}
+                    >
+                        {board.name.charAt(0).toUpperCase()}
+                    </Avatar>
                     <Typography
+                        component="h3"
                         variant="subtitle1"
-                        fontWeight={600}
-                        gutterBottom
+                        fontWeight={700}
+                        noWrap
+                        sx={{ flex: 1, minWidth: 0, color: harbor.ink }}
                     >
-                        No boards yet
+                        {board.name}
                     </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mt: 0.5, mb: 3 }}
-                    >
-                        Create your first board to start organizing tasks.
-                    </Typography>
-                    {canCreateBoards && (
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            onClick={handleOpenCreate}
+                </Box>
+
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                        mb: 1.5,
+                        minHeight: "2.86em",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        fontStyle: board.description ? undefined : "italic",
+                    }}
+                >
+                    {board.description || "No description"}
+                </Typography>
+
+                <Box
+                    sx={{
+                        mt: "auto",
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        columnGap: 1.5,
+                        rowGap: 0.5,
+                        fontSize: "0.8rem",
+                        color: "text.secondary",
+                    }}
+                >
+                    <Box component="span" sx={{ fontWeight: 600 }}>
+                        {plural(board.open_tasks_count, "open task")}
+                    </Box>
+                    {board.overdue_tasks_count > 0 && (
+                        <Box
+                            component="span"
+                            sx={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 0.4,
+                                fontWeight: 700,
+                                color: harbor.dangerText,
+                            }}
                         >
-                            Add Board
-                        </Button>
+                            <WarningAmberIcon
+                                sx={{ fontSize: 15 }}
+                                aria-hidden
+                            />
+                            {board.overdue_tasks_count} overdue
+                        </Box>
+                    )}
+                    {lastActivity && (
+                        <Box
+                            component="time"
+                            dateTime={lastActivity}
+                            title={new Date(lastActivity).toLocaleString()}
+                            sx={{ ml: "auto" }}
+                        >
+                            Updated {formatTimestamp(lastActivity)}
+                        </Box>
                     )}
                 </Box>
-            ) : (
-                <Grid container spacing={2}>
-                    {boards.map((board) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={board.id}>
-                            <Card
-                                variant="outlined"
+            </CardActionArea>
+        </Card>
+    );
+}
+
+function Stat({
+    label,
+    value,
+    tone,
+}: {
+    label: string;
+    value: number | string;
+    tone?: "danger";
+}) {
+    return (
+        <Box
+            sx={{
+                px: 2,
+                py: 1.5,
+                display: "flex",
+                flexDirection: "column-reverse",
+                borderColor: "divider",
+                // Hairlines between cells in both the 2- and 4-column layouts.
+                borderStyle: "solid",
+                borderWidth: 0,
+                "&:nth-of-type(odd)": { borderRightWidth: { xs: 1, md: 0 } },
+                "&:nth-of-type(-n+2)": { borderBottomWidth: { xs: 1, md: 0 } },
+                "&:not(:last-of-type)": { borderRightWidth: { md: 1 } },
+            }}
+        >
+            <Typography
+                component="dt"
+                variant="caption"
+                color="text.secondary"
+                fontWeight={600}
+            >
+                {label}
+            </Typography>
+            <Typography
+                component="dd"
+                variant="h6"
+                fontWeight={800}
+                sx={{
+                    m: 0,
+                    lineHeight: 1.3,
+                    color: tone === "danger" ? harbor.dangerText : harbor.ink,
+                }}
+            >
+                {value}
+            </Typography>
+        </Box>
+    );
+}
+
+function ArchivedBoards({
+    team,
+    boards,
+    canRestore,
+}: {
+    team: Team;
+    boards: Board[];
+    canRestore: boolean;
+}) {
+    const [expanded, setExpanded] = useState(false);
+    const [restoringId, setRestoringId] = useState<string | null>(null);
+
+    const restore = (board: Board) => {
+        router.post(
+            route("teams.boards.unarchive", [team.slug, board.slug]),
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => setRestoringId(board.id),
+                onFinish: () => setRestoringId(null),
+            },
+        );
+    };
+
+    return (
+        <Box component="section" sx={{ mb: 4 }}>
+            <Typography component="h2" variant="subtitle1" sx={{ m: 0 }}>
+                <ButtonBase
+                    onClick={() => setExpanded((v) => !v)}
+                    aria-expanded={expanded}
+                    aria-controls="archived-boards-panel"
+                    sx={{
+                        gap: 0.5,
+                        px: 0.5,
+                        py: 0.25,
+                        ml: -0.5,
+                        borderRadius: 1,
+                        font: "inherit",
+                        fontWeight: 700,
+                        color: harbor.ink,
+                        "&.Mui-focusVisible": {
+                            outline: `2px solid ${harborHex.accent}`,
+                            outlineOffset: 2,
+                        },
+                    }}
+                >
+                    <ExpandMoreIcon
+                        fontSize="small"
+                        aria-hidden
+                        sx={{
+                            transition: "transform 150ms ease",
+                            transform: expanded
+                                ? "rotate(0deg)"
+                                : "rotate(-90deg)",
+                        }}
+                    />
+                    Archived boards ({boards.length})
+                </ButtonBase>
+            </Typography>
+            <Collapse in={expanded} id="archived-boards-panel">
+                <Paper variant="outlined" sx={{ mt: 1.5 }}>
+                    {!canRestore && (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ px: 2, pt: 1.5 }}
+                        >
+                            Archived boards are hidden from the sidebar. Ask a
+                            team owner or admin to restore one.
+                        </Typography>
+                    )}
+                    <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
+                        {boards.map((board) => (
+                            <Box
+                                component="li"
+                                key={board.id}
                                 sx={{
-                                    transition:
-                                        "border-color 150ms ease, background-color 150ms ease",
-                                    "&:hover": {
-                                        borderColor: "action.selected",
-                                    },
+                                    display: "flex",
+                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    columnGap: 1.5,
+                                    rowGap: 1,
+                                    px: 2,
+                                    py: 1.25,
+                                    borderTop: 1,
+                                    borderColor: "divider",
+                                    // Without the hint paragraph above, the
+                                    // first row needs no separator.
+                                    ...(canRestore && {
+                                        "&:first-of-type": { borderTop: 0 },
+                                    }),
                                 }}
                             >
-                                <CardActionArea
-                                    onClick={() =>
-                                        router.get(
-                                            route("teams.boards.show", [
+                                <Avatar
+                                    src={board.image_url ?? undefined}
+                                    alt=""
+                                    variant="rounded"
+                                    sx={{
+                                        width: 28,
+                                        height: 28,
+                                        fontSize: "0.8rem",
+                                        fontWeight: 700,
+                                        bgcolor: harborAvatarColor(board.name),
+                                        color: "#fff",
+                                    }}
+                                >
+                                    {board.name.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
+                                    <Typography
+                                        component="h3"
+                                        variant="body2"
+                                        fontWeight={700}
+                                        noWrap
+                                    >
+                                        <MuiLink
+                                            component={Link}
+                                            href={route("teams.boards.show", [
                                                 team.slug,
                                                 board.slug,
-                                            ]),
-                                        )
-                                    }
-                                >
-                                    <CardContent
-                                        sx={{
-                                            p: 2.5,
-                                            "&:last-child": { pb: 2.5 },
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                mb: 1,
-                                            }}
+                                            ])}
+                                            color="inherit"
+                                            underline="hover"
                                         >
-                                            <Avatar
-                                                src={
-                                                    board.image_url ?? undefined
-                                                }
-                                                variant="rounded"
-                                                sx={{
-                                                    width: 24,
-                                                    height: 24,
-                                                    fontSize: "0.7rem",
-                                                    fontWeight: 600,
-                                                    mr: 1,
-                                                    bgcolor: "primary.main",
-                                                }}
-                                            >
-                                                {board.name
-                                                    .charAt(0)
-                                                    .toUpperCase()}
-                                            </Avatar>
-                                            <Typography
-                                                variant="subtitle1"
-                                                component="h3"
-                                                fontWeight={600}
-                                                noWrap
-                                                sx={{ flex: 1 }}
-                                            >
-                                                {board.name}
-                                            </Typography>
-                                        </Box>
-
-                                        {board.description && (
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                                sx={{
-                                                    mb: 1.5,
-                                                    overflow: "hidden",
-                                                    textOverflow: "ellipsis",
-                                                    display: "-webkit-box",
-                                                    WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: "vertical",
-                                                }}
-                                            >
-                                                {board.description}
-                                            </Typography>
-                                        )}
-
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 0.75,
-                                            }}
-                                        >
-                                            <ViewColumnIcon
-                                                sx={{
-                                                    fontSize: 16,
-                                                    color: "text.disabled",
-                                                }}
-                                            />
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                            >
-                                                {board.columns?.length ?? 0}{" "}
-                                                column
-                                                {(board.columns?.length ??
-                                                    0) !== 1
-                                                    ? "s"
-                                                    : ""}
-                                            </Typography>
-                                        </Box>
-                                    </CardContent>
-                                </CardActionArea>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            )}
-
-            {/* Create Board Dialog */}
-            <Dialog
-                open={createOpen}
-                onClose={handleClose}
-                maxWidth="sm"
-                fullWidth
-                aria-labelledby="create-board-dialog-title"
-            >
-                <form onSubmit={handleCreateBoard}>
-                    <DialogTitle id="create-board-dialog-title" sx={{ pb: 0 }}>
-                        <Typography variant="subtitle1" fontWeight={600}>
-                            Create Board
-                        </Typography>
-                        <Tabs
-                            value={createTab}
-                            onChange={(_, v) => {
-                                setCreateTab(v);
-                                if (v === 0) {
-                                    setSelectedTemplate(null);
-                                    reset();
-                                }
-                            }}
-                            sx={{ mt: 1 }}
-                        >
-                            <Tab label="Blank Board" />
-                            <Tab label="From Template" />
-                        </Tabs>
-                    </DialogTitle>
-                    <DialogContent sx={{ pt: "16px !important" }}>
-                        {createTab === 1 && (
-                            <Box sx={{ mb: 2 }}>
-                                {templatesLoading ? (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            py: 3,
-                                        }}
-                                    >
-                                        <CircularProgress size={24} />
-                                    </Box>
-                                ) : templates.length === 0 ? (
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{ py: 2, textAlign: "center" }}
-                                    >
-                                        No templates available. Save a board as
-                                        a template from its settings page.
+                                            {board.name}
+                                        </MuiLink>
                                     </Typography>
-                                ) : (
-                                    <Paper
-                                        variant="outlined"
-                                        sx={{
-                                            maxHeight: 200,
-                                            overflow: "auto",
-                                        }}
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        component="div"
+                                        noWrap
                                     >
-                                        <List disablePadding>
-                                            {templates.map((template) => (
-                                                <ListItemButton
-                                                    key={template.id}
-                                                    selected={
-                                                        selectedTemplate?.id ===
-                                                        template.id
-                                                    }
-                                                    onClick={() =>
-                                                        handleSelectTemplate(
-                                                            template,
-                                                        )
-                                                    }
-                                                >
-                                                    <ListItemText
-                                                        primary={template.name}
-                                                        secondary={
-                                                            template.description
-                                                        }
-                                                        primaryTypographyProps={{
-                                                            variant: "body2",
-                                                            fontWeight: 500,
-                                                        }}
-                                                        secondaryTypographyProps={{
-                                                            variant: "caption",
-                                                            noWrap: true,
-                                                        }}
-                                                    />
-                                                    {selectedTemplate?.id ===
-                                                        template.id && (
-                                                        <CheckCircleOutlineIcon
-                                                            color="primary"
-                                                            fontSize="small"
-                                                        />
-                                                    )}
-                                                </ListItemButton>
-                                            ))}
-                                        </List>
-                                    </Paper>
+                                        Last updated{" "}
+                                        {formatTimestamp(board.updated_at)}
+                                    </Typography>
+                                </Box>
+                                {canRestore && (
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<UnarchiveOutlinedIcon />}
+                                        onClick={() => restore(board)}
+                                        disabled={restoringId !== null}
+                                        aria-label={`Restore ${board.name}`}
+                                        sx={{ ml: "auto" }}
+                                    >
+                                        {restoringId === board.id
+                                            ? "Restoring…"
+                                            : "Restore"}
+                                    </Button>
                                 )}
                             </Box>
-                        )}
-                        <TextField
-                            autoFocus={createTab === 0}
-                            label="Board Name"
-                            fullWidth
-                            required
-                            value={data.name}
-                            onChange={(e) => setData("name", e.target.value)}
-                            error={!!errors.name}
-                            helperText={errors.name}
-                            sx={{ mb: 2 }}
-                        />
-                        <TextField
-                            label="Description"
-                            fullWidth
-                            multiline
-                            rows={3}
-                            value={data.description}
-                            onChange={(e) =>
-                                setData("description", e.target.value)
-                            }
-                            error={!!errors.description}
-                            helperText={errors.description}
-                        />
-                    </DialogContent>
-                    <DialogActions sx={{ px: 3, py: 2 }}>
-                        <Button variant="text" onClick={handleClose}>
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={
-                                processing ||
-                                (createTab === 1 && !selectedTemplate)
-                            }
-                        >
-                            {selectedTemplate
-                                ? "Create from Template"
-                                : "Create"}
-                        </Button>
-                    </DialogActions>
-                </form>
-            </Dialog>
-        </>
+                        ))}
+                    </Box>
+                </Paper>
+            </Collapse>
+        </Box>
     );
 }
 

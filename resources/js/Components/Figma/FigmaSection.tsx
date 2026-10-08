@@ -59,6 +59,10 @@ interface Props {
     figmaConnections: FigmaConnection[];
     onLinkCreated?: (link: TaskFigmaLink) => void;
     onLinkRemoved?: (linkId: string) => void;
+    /** Open the "link a design" dialog straight away. */
+    autoOpenDialog?: boolean;
+    /** Called when the dialog is cancelled while the task has no links. */
+    onDismiss?: () => void;
 }
 
 export default function FigmaSection({
@@ -68,8 +72,10 @@ export default function FigmaSection({
     figmaConnections,
     onLinkCreated,
     onLinkRemoved,
+    autoOpenDialog = false,
+    onDismiss,
 }: Props) {
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(autoOpenDialog);
     const [selectedConnectionId, setSelectedConnectionId] = useState<string>(
         figmaConnections[0]?.id ?? "",
     );
@@ -79,6 +85,11 @@ export default function FigmaSection({
     const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
 
     const links = task.figma_links ?? [];
+
+    const closeDialog = () => {
+        setDialogOpen(false);
+        if (links.length === 0) onDismiss?.();
+    };
 
     const handleCreate = async () => {
         if (!figmaUrl.trim()) return;
@@ -366,7 +377,7 @@ export default function FigmaSection({
             {/* Link Dialog */}
             <Dialog
                 open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
+                onClose={closeDialog}
                 maxWidth="sm"
                 fullWidth
                 aria-labelledby="link-figma-dialog-title"
@@ -416,7 +427,7 @@ export default function FigmaSection({
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, py: 2 }}>
-                    <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={closeDialog}>Cancel</Button>
                     <Button
                         variant="contained"
                         onClick={handleCreate}

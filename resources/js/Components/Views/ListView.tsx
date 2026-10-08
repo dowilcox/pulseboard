@@ -1,17 +1,23 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import axios from "axios";
-import { PRIORITY_COLORS } from "@/constants/priorities";
-import type { Board, Column, PaginatedResponse, Task, Team } from "@/types";
-import { getContrastText } from "@/utils/colorContrast";
-import { formatDueDate } from "@/utils/formatTimestamp";
-import { getGitlabPrefix } from "@/utils/gitlabPrefix";
-import { harbor } from "@/theme/harbor";
+import { memo, useMemo, useState } from "react";
+import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
+import type { Column, Task } from "@/types";
+import { listFooterText } from "@/utils/boardFilters";
+import { getContrastText } from "@/utils/colorContrast";
+import { formatDueDate, isOverdue } from "@/utils/formatTimestamp";
+import { getGitlabPrefix } from "@/utils/gitlabPrefix";
+import { describeTaskCard } from "@/utils/taskCardLabel";
+import { PRIORITY_RANK } from "@/utils/workload";
+import { harbor, harborAvatarColor } from "@/theme/harbor";
+import { Link as InertiaLink } from "@inertiajs/react";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
+import Link from "@mui/material/Link";
+import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -19,7 +25,6 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import TableSortLabel from "@mui/material/TableSortLabel";
-import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 
 type SortKey =
@@ -31,89 +36,104 @@ type SortKey =
     | "assignees";
 type SortDir = "asc" | "desc";
 
-const PRIORITY_ORDER: Record<string, number> = {
-    urgent: 1,
-    high: 2,
-    medium: 3,
-    low: 4,
-    none: 5,
-};
+const VISUALLY_HIDDEN = {
+    position: "absolute",
+    width: "1px",
+    height: "1px",
+    p: 0,
+    m: -1,
+    overflow: "hidden",
+    clip: "rect(0 0 0 0)",
+    whiteSpace: "nowrap",
+    border: 0,
+} as const;
 
-/** Map client sort keys to API sort fields */
-const SORT_KEY_TO_API: Record<SortKey, string> = {
-    task_number: "task_number",
-    title: "title",
-    priority: "priority",
-    due_date: "due_date",
-    column: "sort_order",
-    assignees: "sort_order",
-};
+/** Missing values (no due date, nobody assigned) sort last either way. */
+function compareMaybe<T>(
+    a: T | null | undefined,
+    b: T | null | undefined,
+    compare: (x: T, y: T) => number,
+    dir: SortDir,
+): number {
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    const cmp = compare(a, b);
+    return dir === "asc" ? cmp : -cmp;
+}
 
 interface TaskRowProps {
     task: Task;
     column?: Column;
-    onTaskClick: (task: Task) => void;
+    href: string;
     showGitlab: boolean;
 }
 
 const TaskRow = memo(function TaskRow({
     task,
     column,
-    onTaskClick,
+    href,
     showGitlab,
 }: TaskRowProps) {
-    const handleClick = useCallback(
-        () => onTaskClick(task),
-        [onTaskClick, task],
-    );
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onTaskClick(task);
-            }
-        },
-        [onTaskClick, task],
+    const prefix = getGitlabPrefix(task);
+    const assignees = task.assignees ?? [];
+    const mergeRequests = (task.gitlab_refs ?? []).filter(
+        (r) => r.ref_type === "merge_request",
     );
 
     return (
         <TableRow
             hover
-            tabIndex={0}
-            aria-label={`Task ${task.task_number ? "#" + task.task_number + " " : ""}${task.title}`}
             sx={{
+                // The title link stretches over the whole row (see ::after)
+                position: "relative",
                 cursor: "pointer",
-                "& .MuiTableCell-root": { py: 1.5 },
-                "&:hover": {
-                    bgcolor: "action.hover",
-                },
+                "& .MuiTableCell-root": { py: 1.25 },
             }}
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
         >
             <TableCell>
                 <Typography
                     variant="body2"
                     color="text.secondary"
-                    sx={{ fontFamily: "monospace" }}
+                    sx={{ fontVariantNumeric: "tabular-nums" }}
                 >
                     #{task.task_number}
                 </Typography>
             </TableCell>
             <TableCell>
-                <Typography variant="body2" fontWeight={500}>
-                    {getGitlabPrefix(task) && (
-                        <Typography
+                <Link
+                    component={InertiaLink}
+                    href={href}
+                    underline="hover"
+                    aria-label={describeTaskCard(task)}
+                    sx={{
+                        color: harbor.ink,
+                        fontWeight: 600,
+                        fontSize: "0.875rem",
+                        overflowWrap: "anywhere",
+                        // The focus ring is drawn around the whole row
+                        "&:focus-visible": { outline: "none" },
+                        "&::after": {
+                            content: '""',
+                            position: "absolute",
+                            inset: 0,
+                        },
+                        "&:focus-visible::after": {
+                            outline: `2px solid ${harbor.accent}`,
+                            outlineOffset: "-2px",
+                        },
+                    }}
+                >
+                    {prefix && (
+                        <Box
                             component="span"
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mr: 0.5 }}
+                            sx={{ color: harbor.sub, fontWeight: 500, mr: 0.5 }}
                         >
-                            {getGitlabPrefix(task)}
-                        </Typography>
+                            {prefix}
+                        </Box>
                     )}
                     {task.title}
-                </Typography>
+                </Link>
             </TableCell>
             <TableCell>
                 {column && (
@@ -121,87 +141,93 @@ const TaskRow = memo(function TaskRow({
                         label={column.name}
                         size="small"
                         sx={{
-                            bgcolor: column.color,
-                            color: getContrastText(column.color),
-                            height: 26,
+                            bgcolor: column.color || harbor.countBg,
+                            color: column.color
+                                ? getContrastText(column.color)
+                                : harbor.ink,
+                            height: 24,
                             fontSize: "0.75rem",
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            maxWidth: 140,
                         }}
                     />
                 )}
             </TableCell>
             <TableCell>
-                <Box
-                    sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                    }}
-                >
-                    <Box
-                        sx={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: "50%",
-                            bgcolor:
-                                PRIORITY_COLORS[task.priority] ?? "transparent",
-                            border:
-                                task.priority === "none" ? "1px solid" : "none",
-                            borderColor: "divider",
-                            flexShrink: 0,
-                        }}
-                    />
-                    <Typography
-                        variant="body2"
-                        sx={{ textTransform: "capitalize" }}
-                    >
-                        {task.priority}
+                {task.priority === "none" ? (
+                    <Typography variant="body2" sx={{ color: harbor.sub }}>
+                        None
                     </Typography>
-                </Box>
+                ) : (
+                    <PriorityIndicator priority={task.priority} fontSize={13} />
+                )}
             </TableCell>
             <TableCell>
                 {task.due_date && (
                     <Typography
                         variant="body2"
                         color={
-                            new Date(task.due_date) < new Date()
+                            isOverdue(task.due_date) && !task.completed_at
                                 ? "error"
                                 : "text.secondary"
                         }
+                        sx={{ whiteSpace: "nowrap" }}
                     >
                         {formatDueDate(task.due_date, { includeYear: true })}
                     </Typography>
                 )}
             </TableCell>
             <TableCell>
-                {task.assignees && task.assignees.length > 0 && (
-                    <AvatarGroup
-                        max={3}
+                {assignees.length > 0 && (
+                    <Box
                         sx={{
-                            justifyContent: "flex-end",
-                            "& .MuiAvatar-root": {
-                                width: 28,
-                                height: 28,
-                                fontSize: "0.75rem",
-                            },
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            minWidth: 0,
                         }}
                     >
-                        {task.assignees.map((u) => (
-                            <Avatar key={u.id} alt={u.name} src={u.avatar_url}>
-                                {u.name.charAt(0)}
-                            </Avatar>
-                        ))}
-                    </AvatarGroup>
+                        <AvatarGroup
+                            max={3}
+                            aria-hidden
+                            sx={{
+                                "& .MuiAvatar-root": {
+                                    width: 24,
+                                    height: 24,
+                                    fontSize: "0.65rem",
+                                },
+                            }}
+                        >
+                            {assignees.map((u) => (
+                                <Avatar
+                                    key={u.id}
+                                    alt=""
+                                    src={u.avatar_url}
+                                    sx={{
+                                        bgcolor: harborAvatarColor(u.name),
+                                        color: "#ffffff",
+                                    }}
+                                >
+                                    {u.name.charAt(0).toUpperCase()}
+                                </Avatar>
+                            ))}
+                        </AvatarGroup>
+                        <Typography
+                            variant="body2"
+                            noWrap
+                            sx={{ color: harbor.sub, minWidth: 0 }}
+                            title={assignees.map((u) => u.name).join(", ")}
+                        >
+                            {assignees[0].name}
+                            {assignees.length > 1
+                                ? ` +${assignees.length - 1}`
+                                : ""}
+                        </Typography>
+                    </Box>
                 )}
             </TableCell>
             <TableCell>
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 0.5,
-                        flexWrap: "wrap",
-                    }}
-                >
+                <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                     {(task.labels ?? []).map((label) => (
                         <Chip
                             key={label.id}
@@ -219,22 +245,20 @@ const TaskRow = memo(function TaskRow({
                 </Box>
             </TableCell>
             {showGitlab && (
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableCell>
+                    {/* Above the stretched row link so the chips stay clickable */}
                     <Box
                         sx={{
                             display: "flex",
                             gap: 0.5,
                             flexWrap: "wrap",
+                            position: "relative",
+                            zIndex: 1,
                         }}
                     >
-                        {(task.gitlab_refs ?? [])
-                            .filter((r) => r.ref_type === "merge_request")
-                            .map((ref) => (
-                                <MergeRequestChip
-                                    key={ref.id}
-                                    gitlabRef={ref}
-                                />
-                            ))}
+                        {mergeRequests.map((ref) => (
+                            <MergeRequestChip key={ref.id} gitlabRef={ref} />
+                        ))}
                     </Box>
                 </TableCell>
             )}
@@ -244,189 +268,106 @@ const TaskRow = memo(function TaskRow({
 
 interface Props {
     columns: Column[];
-    board: Board;
-    team: Team;
+    team: { slug: string };
+    board: { slug: string; name: string };
+    /** Every task on the board once loaded; the first pages until then. */
+    tasks: Task[];
+    /** `tasks` holds every task on the board. */
+    complete: boolean;
+    loading: boolean;
+    truncated?: boolean;
     filterFn: (task: Task) => boolean;
-    onTaskClick: (task: Task) => void;
+    filtersActive: boolean;
+    onClearFilters: () => void;
     showGitlab?: boolean;
 }
 
 export default function ListView({
     columns,
-    board,
     team,
+    board,
+    tasks,
+    complete,
+    loading,
+    truncated = false,
     filterFn,
-    onTaskClick,
+    filtersActive,
+    onClearFilters,
     showGitlab = false,
 }: Props) {
     const [sortKey, setSortKey] = useState<SortKey>("task_number");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
-    const [extraTasks, setExtraTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [currentPage, setCurrentPage] = useState(1);
-    const sentinelRef = useRef<HTMLTableRowElement | null>(null);
-    const abortRef = useRef<AbortController | null>(null);
 
     const columnMap = useMemo(() => {
         const m: Record<string, Column> = {};
-        for (const col of columns) {
-            m[col.id] = col;
-        }
+        for (const col of columns) m[col.id] = col;
         return m;
     }, [columns]);
 
-    // Compute total tasks from column counts (server-provided) vs initial loaded tasks
-    const totalTaskCount = useMemo(() => {
-        return columns.reduce(
-            (sum, col) => sum + (col.tasks_count ?? col.tasks?.length ?? 0),
-            0,
-        );
+    const columnPosition = useMemo(() => {
+        const m: Record<string, number> = {};
+        columns.forEach((col, index) => (m[col.id] = index));
+        return m;
     }, [columns]);
 
-    const initialTasks = useMemo(() => {
-        const tasks: Task[] = [];
-        for (const col of columns) {
-            for (const task of col.tasks ?? []) {
-                tasks.push(task);
-            }
-        }
-        return tasks;
-    }, [columns]);
+    // Server-side totals, correct before every task has loaded
+    const totalTaskCount = useMemo(
+        () =>
+            columns.reduce(
+                (sum, col) => sum + (col.tasks_count ?? col.tasks?.length ?? 0),
+                0,
+            ),
+        [columns],
+    );
 
-    // Merge initial tasks with lazily loaded extra tasks, deduplicating by id
-    const allTasks = useMemo(() => {
-        const seen = new Set<string>();
-        const merged: Task[] = [];
-        for (const task of initialTasks) {
-            if (!seen.has(task.id)) {
-                seen.add(task.id);
-                merged.push(task);
-            }
-        }
-        for (const task of extraTasks) {
-            if (!seen.has(task.id)) {
-                seen.add(task.id);
-                merged.push(task);
-            }
-        }
-        return merged.filter(filterFn);
-    }, [initialTasks, extraTasks, filterFn]);
+    const visibleTasks = useMemo(
+        () => (filtersActive ? tasks.filter(filterFn) : tasks),
+        [tasks, filterFn, filtersActive],
+    );
 
     const sortedTasks = useMemo(() => {
-        return [...allTasks].sort((a, b) => {
+        const byNumber = (a: Task, b: Task) =>
+            (a.task_number ?? 0) - (b.task_number ?? 0);
+        return [...visibleTasks].sort((a, b) => {
             let cmp = 0;
             switch (sortKey) {
                 case "task_number":
-                    cmp = (a.task_number ?? 0) - (b.task_number ?? 0);
-                    break;
+                    cmp = byNumber(a, b);
+                    return sortDir === "asc" ? cmp : -cmp;
                 case "title":
                     cmp = a.title.localeCompare(b.title);
                     break;
                 case "priority":
                     cmp =
-                        (PRIORITY_ORDER[a.priority] ?? 5) -
-                        (PRIORITY_ORDER[b.priority] ?? 5);
+                        (PRIORITY_RANK[a.priority] ?? 4) -
+                        (PRIORITY_RANK[b.priority] ?? 4);
                     break;
                 case "due_date":
-                    cmp = (a.due_date ?? "9999").localeCompare(
-                        b.due_date ?? "9999",
+                    cmp = compareMaybe(
+                        a.due_date?.slice(0, 10),
+                        b.due_date?.slice(0, 10),
+                        (x, y) => x.localeCompare(y),
+                        sortDir,
                     );
-                    break;
-                case "column": {
-                    const colA = columnMap[a.column_id]?.name ?? "";
-                    const colB = columnMap[b.column_id]?.name ?? "";
-                    cmp = colA.localeCompare(colB);
-                    break;
-                }
-                case "assignees":
+                    return cmp || byNumber(a, b);
+                case "column":
                     cmp =
-                        (a.assignees?.length ?? 0) - (b.assignees?.length ?? 0);
+                        (columnPosition[a.column_id] ?? 0) -
+                        (columnPosition[b.column_id] ?? 0);
                     break;
+                case "assignees":
+                    // By the first assignee's name; unassigned last
+                    cmp = compareMaybe(
+                        a.assignees?.[0]?.name,
+                        b.assignees?.[0]?.name,
+                        (x, y) => x.localeCompare(y),
+                        sortDir,
+                    );
+                    return cmp || byNumber(a, b);
             }
-            return sortDir === "asc" ? cmp : -cmp;
+            return (sortDir === "asc" ? cmp : -cmp) || byNumber(a, b);
         });
-    }, [allTasks, sortKey, sortDir, columnMap]);
-
-    // Determine if there are more tasks to load
-    useEffect(() => {
-        const loadedUniqueCount = new Set([
-            ...initialTasks.map((t) => t.id),
-            ...extraTasks.map((t) => t.id),
-        ]).size;
-        setHasMore(loadedUniqueCount < totalTaskCount);
-    }, [initialTasks, extraTasks, totalTaskCount]);
-
-    // Reset extra tasks and pagination when columns change (e.g., Inertia reload)
-    useEffect(() => {
-        setExtraTasks([]);
-        setCurrentPage(1);
-    }, [columns]);
-
-    const fetchMoreTasks = useCallback(async () => {
-        if (loading || !hasMore) return;
-
-        abortRef.current?.abort();
-        const controller = new AbortController();
-        abortRef.current = controller;
-
-        setLoading(true);
-
-        try {
-            const nextPage = currentPage + 1;
-            const apiSort = SORT_KEY_TO_API[sortKey];
-            const params = new URLSearchParams({
-                page: String(nextPage),
-                per_page: "50",
-                sort: apiSort,
-                direction: sortDir,
-            });
-
-            const { data } = await axios.get<PaginatedResponse<Task>>(
-                route("boards.tasks.index", [team.slug, board.slug]),
-                {
-                    params: Object.fromEntries(params),
-                    signal: controller.signal,
-                },
-            );
-
-            setExtraTasks((prev) => [...prev, ...data.data]);
-            setCurrentPage(nextPage);
-            setHasMore(data.current_page < data.last_page);
-        } catch (error) {
-            if (axios.isCancel(error)) {
-                // Ignore aborted requests
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, [
-        loading,
-        hasMore,
-        currentPage,
-        sortKey,
-        sortDir,
-        team.slug,
-        board.slug,
-    ]);
-
-    // IntersectionObserver for infinite scroll
-    useEffect(() => {
-        const sentinel = sentinelRef.current;
-        if (!sentinel) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0]?.isIntersecting) {
-                    fetchMoreTasks();
-                }
-            },
-            { rootMargin: "200px" },
-        );
-
-        observer.observe(sentinel);
-        return () => observer.disconnect();
-    }, [fetchMoreTasks]);
+    }, [visibleTasks, sortKey, sortDir, columnPosition]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -435,9 +376,6 @@ export default function ListView({
             setSortKey(key);
             setSortDir("asc");
         }
-        // Reset lazy-loaded tasks when sort changes since server ordering differs
-        setExtraTasks([]);
-        setCurrentPage(1);
     };
 
     const renderSortLabel = (key: SortKey, label: string) => (
@@ -450,121 +388,167 @@ export default function ListView({
         </TableSortLabel>
     );
 
+    const colSpan = showGitlab ? 8 : 7;
+    const ariaSort = (key: SortKey) =>
+        sortKey === key
+            ? sortDir === "asc"
+                ? "ascending"
+                : "descending"
+            : undefined;
+
     return (
-        <TableContainer
-            component={Paper}
-            variant="outlined"
-            sx={{ borderRadius: 2, overflow: "hidden" }}
-        >
-            <Table>
-                <TableHead>
-                    <TableRow
-                        sx={{
-                            "& .MuiTableCell-head": {
-                                fontWeight: 600,
-                                bgcolor: harbor.countBg,
-                                py: 1.5,
-                            },
-                        }}
-                    >
-                        <TableCell sx={{ width: 70 }}>
-                            {renderSortLabel("task_number", "#")}
-                        </TableCell>
-                        <TableCell>
-                            {renderSortLabel("title", "Title")}
-                        </TableCell>
-                        <TableCell sx={{ width: 130 }}>
-                            {renderSortLabel("column", "Status")}
-                        </TableCell>
-                        <TableCell sx={{ width: 120 }}>
-                            {renderSortLabel("priority", "Priority")}
-                        </TableCell>
-                        <TableCell sx={{ width: 130 }}>
-                            {renderSortLabel("due_date", "Due Date")}
-                        </TableCell>
-                        <TableCell sx={{ width: 150 }}>
-                            {renderSortLabel("assignees", "Assignees")}
-                        </TableCell>
-                        <TableCell sx={{ width: 160 }}>Labels</TableCell>
-                        {showGitlab && (
-                            <TableCell sx={{ width: 110 }}>GitLab</TableCell>
-                        )}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {sortedTasks.length === 0 && !loading ? (
-                        <TableRow>
+        <Box>
+            <TableContainer
+                component={Paper}
+                variant="outlined"
+                scroll-region=""
+                sx={{ borderRadius: 2, overflowX: "auto" }}
+            >
+                <Table sx={{ minWidth: 760 }}>
+                    <Box component="caption" sx={VISUALLY_HIDDEN}>
+                        Tasks on {board.name}
+                    </Box>
+                    <TableHead>
+                        <TableRow
+                            sx={{
+                                "& .MuiTableCell-head": {
+                                    fontWeight: 600,
+                                    bgcolor: harbor.countBg,
+                                    color: harbor.sub,
+                                    py: 1.25,
+                                },
+                            }}
+                        >
                             <TableCell
-                                colSpan={showGitlab ? 8 : 7}
-                                align="center"
-                                sx={{ py: 6 }}
+                                sx={{ width: 70 }}
+                                aria-sort={ariaSort("task_number")}
                             >
-                                <Typography color="text.secondary">
-                                    No tasks found
-                                </Typography>
+                                {renderSortLabel("task_number", "#")}
                             </TableCell>
-                        </TableRow>
-                    ) : (
-                        sortedTasks.map((task) => (
-                            <TaskRow
-                                key={task.id}
-                                task={task}
-                                column={columnMap[task.column_id]}
-                                onTaskClick={onTaskClick}
-                                showGitlab={showGitlab ?? false}
-                            />
-                        ))
-                    )}
-
-                    {/* Sentinel row for IntersectionObserver */}
-                    {hasMore && (
-                        <TableRow ref={sentinelRef}>
-                            <TableCell
-                                colSpan={showGitlab ? 8 : 7}
-                                align="center"
-                                sx={{ py: 3, border: 0 }}
-                            >
-                                {loading && (
-                                    <Box
-                                        sx={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <CircularProgress size={20} />
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            Loading more tasks...
-                                        </Typography>
-                                    </Box>
-                                )}
+                            <TableCell aria-sort={ariaSort("title")}>
+                                {renderSortLabel("title", "Title")}
                             </TableCell>
-                        </TableRow>
-                    )}
-
-                    {/* Task count summary */}
-                    {!hasMore && sortedTasks.length > 0 && (
-                        <TableRow>
                             <TableCell
-                                colSpan={showGitlab ? 8 : 7}
-                                align="center"
-                                sx={{ py: 2, border: 0 }}
+                                sx={{ width: 140 }}
+                                aria-sort={ariaSort("column")}
                             >
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
+                                {renderSortLabel("column", "Status")}
+                            </TableCell>
+                            <TableCell
+                                sx={{ width: 110 }}
+                                aria-sort={ariaSort("priority")}
+                            >
+                                {renderSortLabel("priority", "Priority")}
+                            </TableCell>
+                            <TableCell
+                                sx={{ width: 130 }}
+                                aria-sort={ariaSort("due_date")}
+                            >
+                                {renderSortLabel("due_date", "Due date")}
+                            </TableCell>
+                            <TableCell
+                                sx={{ width: 170 }}
+                                aria-sort={ariaSort("assignees")}
+                            >
+                                {renderSortLabel("assignees", "Assignees")}
+                            </TableCell>
+                            <TableCell sx={{ width: 160 }}>Labels</TableCell>
+                            {showGitlab && (
+                                <TableCell sx={{ width: 110 }}>
+                                    GitLab
+                                </TableCell>
+                            )}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {sortedTasks.length === 0 ? (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={colSpan}
+                                    align="center"
+                                    sx={{ py: 6 }}
                                 >
-                                    Showing all {sortedTasks.length} tasks
-                                </Typography>
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </TableContainer>
+                                    {loading && !complete ? (
+                                        <CircularProgress
+                                            size={24}
+                                            aria-label="Loading tasks"
+                                        />
+                                    ) : filtersActive ? (
+                                        <>
+                                            <Typography
+                                                color="text.secondary"
+                                                sx={{ mb: 1.5 }}
+                                            >
+                                                No tasks match the current
+                                                filters.
+                                            </Typography>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={onClearFilters}
+                                            >
+                                                Clear filters
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <Typography color="text.secondary">
+                                            No tasks on this board yet.
+                                        </Typography>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            sortedTasks.map((task) => (
+                                <TaskRow
+                                    key={task.id}
+                                    task={task}
+                                    column={columnMap[task.column_id]}
+                                    href={route("tasks.show", [
+                                        team.slug,
+                                        board.slug,
+                                        task.slug ?? task.id,
+                                    ])}
+                                    showGitlab={showGitlab}
+                                />
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
+            {/* Count summary */}
+            <Box
+                role="status"
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 1,
+                    py: 1.5,
+                    color: harbor.sub,
+                }}
+            >
+                {!complete && loading ? (
+                    <>
+                        <CircularProgress size={14} aria-hidden />
+                        <Typography
+                            variant="caption"
+                            sx={{ color: harbor.sub }}
+                        >
+                            Loading all {totalTaskCount} tasks…
+                        </Typography>
+                    </>
+                ) : (
+                    <Typography variant="caption" sx={{ color: harbor.sub }}>
+                        {listFooterText(sortedTasks.length, totalTaskCount)}
+                        {!complete
+                            ? " (not every task could be loaded)"
+                            : truncated
+                              ? ` (only the first ${tasks.length} could be loaded)`
+                              : ""}
+                    </Typography>
+                )}
+            </Box>
+        </Box>
     );
 }

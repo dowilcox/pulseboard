@@ -14,28 +14,20 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class FigmaConnectionController extends Controller
 {
-    public function index(Team $team): Response
+    /**
+     * Figma is managed on the Integrations tab of team settings; this URL is
+     * kept so old links and bookmarks still land in the right place.
+     */
+    public function index(Request $request, Team $team): RedirectResponse
     {
         $this->authorize('update', $team);
 
-        $sidebarBoards = $team->boards()
-            ->active()
-            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
-            ->with('media')
-            ->orderBy('sort_order')
-            ->get();
-        $connections = $team->figmaConnections()->orderBy('name')->get();
+        $request->session()->reflash();
 
-        return Inertia::render('Teams/Settings/FigmaIntegration', [
-            'team' => $team,
-            'sidebarBoards' => $sidebarBoards,
-            'connections' => $connections,
-        ]);
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'integrations']);
     }
 
     public function store(Request $request, Team $team): RedirectResponse
@@ -50,10 +42,7 @@ class FigmaConnectionController extends Controller
 
         CreateFigmaConnection::run($team, $validated);
 
-        return Redirect::route('teams.figma.index', $team)->with(
-            'success',
-            'Figma connection created successfully.',
-        );
+        return Redirect::back()->with('success', 'Figma connection created.');
     }
 
     public function update(
@@ -71,10 +60,7 @@ class FigmaConnectionController extends Controller
 
         UpdateFigmaConnection::run($figmaConnection, $validated);
 
-        return Redirect::route('teams.figma.index', $team)->with(
-            'success',
-            'Figma connection updated successfully.',
-        );
+        return Redirect::back()->with('success', 'Figma connection updated.');
     }
 
     public function destroy(
@@ -85,10 +71,7 @@ class FigmaConnectionController extends Controller
 
         DeleteFigmaConnection::run($figmaConnection);
 
-        return Redirect::route('teams.figma.index', $team)->with(
-            'success',
-            'Figma connection deleted successfully.',
-        );
+        return Redirect::back()->with('success', 'Figma connection deleted.');
     }
 
     public function test(

@@ -33,6 +33,7 @@ class AuthenticatedSessionController extends Controller
             'error' => session('error'),
             'ssoEnabled' => $ssoEnabled,
             'localAuthEnabled' => ! AppSetting::isLocalAuthDisabled(),
+            'canRegister' => Route::has('register') && ! AppSetting::isLocalAuthDisabled(),
         ]);
     }
 

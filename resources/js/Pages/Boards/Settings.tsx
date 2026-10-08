@@ -1,39 +1,31 @@
 import AutomationRulesPanel from "@/Components/Automation/AutomationRulesPanel";
 import BoardImageUpload from "@/Components/Boards/BoardImageUpload";
 import ConfirmDeleteDialog from "@/Components/Common/ConfirmDeleteDialog";
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import BoardColumnsSection from "@/Pages/Boards/Settings/BoardColumnsSection";
 import TaskTemplatesSection from "@/Pages/Boards/Settings/TaskTemplatesSection";
-import type { ColumnFormData } from "@/Pages/Boards/Settings/types";
 import { useBoardColumnsForm } from "@/Pages/Boards/Settings/useBoardColumnsForm";
 import { useTaskTemplates } from "@/Pages/Boards/Settings/useTaskTemplates";
-import { Head, useForm, router, usePage } from "@inertiajs/react";
-import type {
-    Board,
-    Column,
-    Label,
-    PageProps,
-    TaskTemplate,
-    Team,
-    User,
-} from "@/types";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import type { Board, Label, Team, User } from "@/types";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SaveIcon from "@mui/icons-material/Save";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
+import Divider from "@mui/material/Divider";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MenuItem from "@mui/material/MenuItem";
-import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useRef, useState } from "react";
 
 interface Props {
     board: Board;
@@ -41,6 +33,11 @@ interface Props {
     sidebarBoards?: Board[];
     members: User[];
     labels: Label[];
+    can: {
+        archive: boolean;
+        delete: boolean;
+        manageTaskTemplates: boolean;
+    };
 }
 
 export default function BoardSettings({
@@ -49,11 +46,8 @@ export default function BoardSettings({
     sidebarBoards = [],
     members,
     labels,
+    can,
 }: Props) {
-    const { teams: sharedTeams } = usePage<PageProps>().props;
-    const userRole = sharedTeams?.find((t) => t.id === team.id)?.pivot?.role;
-    const canManageTemplates = userRole === "owner" || userRole === "admin";
-
     const boardForm = useForm({
         name: board.name,
         description: board.description ?? "",
@@ -63,61 +57,84 @@ export default function BoardSettings({
         },
     });
 
-    const initialColumns: ColumnFormData[] = (board.columns ?? []).map(
-        (col) => ({
-            id: col.id,
-            name: col.name,
-            color: col.color,
-            wip_limit: col.wip_limit ?? "",
-            is_done_column: col.is_done_column,
-        }),
-    );
-
-    const {
-        columns,
-        columnErrors,
-        expandedColumn,
-        savingColumns,
-        visibleColumns,
-        handleAddColumn,
-        handleColumnChange,
-        handleMoveColumn,
-        handleRemoveColumn,
-        handleSaveColumns,
-        toggleExpandedColumn,
-    } = useBoardColumnsForm({
-        initialColumns,
+    const columnsForm = useBoardColumnsForm({
+        serverColumns: board.columns ?? [],
         teamSlug: team.slug,
         boardSlug: board.slug,
     });
-    const [savingTemplate, setSavingTemplate] = useState(false);
-    const [templateSnackbar, setTemplateSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error";
-    }>({
-        open: false,
-        message: "",
-        severity: "success",
-    });
 
+    const taskTemplates = useTaskTemplates(team.slug);
+
+    // A deleted template can't stay selected as the board default (the
+    // database already nulled it via the foreign key).
     const {
         loadingTemplates,
-        savingTaskTemplate,
-        showTemplateForm,
-        taskTemplates,
-        templateFormData,
-        templateFormErrors,
-        handleCreateTaskTemplate,
-        handleDeleteTaskTemplate,
-        handleTemplateFieldChange,
-        openTemplateForm,
-        resetTemplateForm,
-    } = useTaskTemplates(team.slug);
+        loadError: templatesLoadError,
+        taskTemplates: templateList,
+    } = taskTemplates;
+    const selectedDefault = boardForm.data.default_task_template_id;
+    useEffect(() => {
+        if (
+            !loadingTemplates &&
+            !templatesLoadError &&
+            selectedDefault &&
+            !templateList.some((t) => t.id === selectedDefault)
+        ) {
+            boardForm.setData("default_task_template_id", "");
+            boardForm.setDefaults("default_task_template_id", "");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loadingTemplates, templatesLoadError, templateList, selectedDefault]);
 
-    // Delete board state
+    const [savingTemplate, setSavingTemplate] = useState(false);
+    const savingTemplateRef = useRef(false);
+
+    const [archiveOpen, setArchiveOpen] = useState(false);
+    const [archiving, setArchiving] = useState(false);
     const [deleteBoardOpen, setDeleteBoardOpen] = useState(false);
     const [deletingBoard, setDeletingBoard] = useState(false);
+
+    const handleBoardSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        boardForm.put(route("teams.boards.update", [team.slug, board.slug]), {
+            preserveScroll: true,
+            // Renaming changes the slug and URL; the saved values become the
+            // new baseline for "unsaved changes".
+            onSuccess: () => boardForm.setDefaults(),
+        });
+    };
+
+    const handleSaveAsTemplate = () => {
+        // Ref guard: a fast double-click fires before the disabled state renders.
+        if (savingTemplateRef.current) return;
+        savingTemplateRef.current = true;
+        setSavingTemplate(true);
+        router.post(
+            route("boards.create-template", [team.slug, board.slug]),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    savingTemplateRef.current = false;
+                    setSavingTemplate(false);
+                },
+            },
+        );
+    };
+
+    const handleArchive = () => {
+        setArchiving(true);
+        router.post(
+            route("teams.boards.archive", [team.slug, board.slug]),
+            {},
+            {
+                onFinish: () => {
+                    setArchiving(false);
+                    setArchiveOpen(false);
+                },
+            },
+        );
+    };
 
     const handleDeleteBoard = () => {
         setDeletingBoard(true);
@@ -127,74 +144,55 @@ export default function BoardSettings({
         });
     };
 
-    const handleSaveAsTemplate = () => {
-        setSavingTemplate(true);
-        router.post(
-            route("boards.create-template", [team.slug, board.slug]),
-            {},
-            {
-                onSuccess: () => {
-                    setSavingTemplate(false);
-                    setTemplateSnackbar({
-                        open: true,
-                        message: "Board saved as template successfully.",
-                        severity: "success",
-                    });
-                },
-                onError: () => {
-                    setSavingTemplate(false);
-                    setTemplateSnackbar({
-                        open: true,
-                        message: "Failed to save board as template.",
-                        severity: "error",
-                    });
-                },
-            },
-        );
-    };
-
-    const handleBoardSave = (e: React.FormEvent) => {
-        e.preventDefault();
-        boardForm.put(route("teams.boards.update", [team.slug, board.slug]));
-    };
+    const boardUrl = route("teams.boards.show", [team.slug, board.slug]);
 
     return (
         <>
-            <Head title={`Settings - ${board.name}`} />
+            <Head title={`Board settings - ${board.name}`} />
             <LayoutHeader>
                 <PageHeader
-                    title="Settings"
+                    title="Board settings"
                     breadcrumbs={[
-                        { label: "Teams", href: route("teams.index") },
                         {
                             label: team.name,
                             href: route("teams.show", team.slug),
+                            teamSwitcher: true,
                         },
-                        {
-                            label: board.name,
-                            href: route("teams.boards.show", [
-                                team.slug,
-                                board.slug,
-                            ]),
-                        },
+                        { label: board.name, href: boardUrl },
                     ]}
+                    actions={
+                        <Button
+                            component={Link}
+                            href={boardUrl}
+                            variant="outlined"
+                            size="small"
+                        >
+                            Open board
+                        </Button>
+                    }
                 />
             </LayoutHeader>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                 {/* Board details */}
-                <Card variant="outlined">
+                <Card
+                    variant="outlined"
+                    component="section"
+                    aria-labelledby="board-details-heading"
+                >
                     <CardContent>
                         <Typography
+                            id="board-details-heading"
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={600}
                             gutterBottom
                         >
-                            Board Details
+                            Board details
                         </Typography>
-                        <form onSubmit={handleBoardSave}>
+                        <form onSubmit={handleBoardSave} noValidate>
                             <TextField
-                                label="Board Name"
+                                label="Board name"
                                 fullWidth
                                 required
                                 value={boardForm.data.name}
@@ -202,7 +200,10 @@ export default function BoardSettings({
                                     boardForm.setData("name", e.target.value)
                                 }
                                 error={!!boardForm.errors.name}
-                                helperText={boardForm.errors.name}
+                                helperText={
+                                    boardForm.errors.name ??
+                                    "Renaming also changes the board’s URL."
+                                }
                                 sx={{ mb: 2 }}
                             />
                             <TextField
@@ -240,14 +241,14 @@ export default function BoardSettings({
                                 }
                                 label={
                                     <Typography variant="body2">
-                                        Auto-move tasks to Done column when
+                                        Auto-move tasks to the Done column when
                                         completed
                                     </Typography>
                                 }
                                 sx={{ mb: 2 }}
                             />
                             <TextField
-                                label="Default Task Template"
+                                label="Default task template"
                                 select
                                 fullWidth
                                 value={boardForm.data.default_task_template_id}
@@ -257,7 +258,13 @@ export default function BoardSettings({
                                         e.target.value,
                                     )
                                 }
-                                helperText="New tasks created on this board will use this template's defaults"
+                                error={
+                                    !!boardForm.errors.default_task_template_id
+                                }
+                                helperText={
+                                    boardForm.errors.default_task_template_id ??
+                                    "New tasks created on this board start from this template."
+                                }
                                 sx={{ mb: 2 }}
                             >
                                 <MenuItem value="">
@@ -268,7 +275,7 @@ export default function BoardSettings({
                                         None
                                     </Typography>
                                 </MenuItem>
-                                {taskTemplates.map((tmpl) => (
+                                {templateList.map((tmpl) => (
                                     <MenuItem key={tmpl.id} value={tmpl.id}>
                                         {tmpl.name}
                                     </MenuItem>
@@ -277,47 +284,28 @@ export default function BoardSettings({
                             <Button
                                 type="submit"
                                 variant="contained"
-                                disabled={boardForm.processing}
+                                disabled={
+                                    boardForm.processing || !boardForm.isDirty
+                                }
                             >
-                                Save Details
+                                {boardForm.processing
+                                    ? "Saving details…"
+                                    : "Save details"}
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
 
-                {/* Board Image */}
                 <BoardImageUpload board={board} teamSlug={team.slug} />
 
-                <BoardColumnsSection
-                    columns={columns}
-                    visibleColumns={visibleColumns}
-                    columnErrors={columnErrors}
-                    expandedColumn={expandedColumn}
-                    savingColumns={savingColumns}
-                    onAddColumn={handleAddColumn}
-                    onColumnChange={handleColumnChange}
-                    onMoveColumn={handleMoveColumn}
-                    onRemoveColumn={handleRemoveColumn}
-                    onSaveColumns={handleSaveColumns}
-                    onToggleExpandedColumn={toggleExpandedColumn}
-                />
+                <BoardColumnsSection form={columnsForm} />
 
                 <TaskTemplatesSection
-                    canManageTemplates={canManageTemplates}
-                    loadingTemplates={loadingTemplates}
-                    savingTaskTemplate={savingTaskTemplate}
-                    showTemplateForm={showTemplateForm}
-                    taskTemplates={taskTemplates}
-                    templateFormData={templateFormData}
-                    templateFormErrors={templateFormErrors}
-                    onCreateTaskTemplate={handleCreateTaskTemplate}
-                    onDeleteTaskTemplate={handleDeleteTaskTemplate}
-                    onTemplateFieldChange={handleTemplateFieldChange}
-                    onOpenTemplateForm={openTemplateForm}
-                    onResetTemplateForm={resetTemplateForm}
+                    teamName={team.name}
+                    canManageTemplates={can.manageTaskTemplates}
+                    templates={taskTemplates}
                 />
 
-                {/* Automation Rules */}
                 <AutomationRulesPanel
                     teamSlug={team.slug}
                     boardSlug={board.slug}
@@ -326,25 +314,31 @@ export default function BoardSettings({
                     labels={labels}
                 />
 
-                {/* Save as Template */}
-                <Card variant="outlined">
+                {/* Save as board template */}
+                <Card
+                    variant="outlined"
+                    component="section"
+                    aria-labelledby="board-template-heading"
+                >
                     <CardContent>
                         <Typography
+                            id="board-template-heading"
                             variant="subtitle1"
+                            component="h2"
                             fontWeight={600}
                             gutterBottom
                         >
-                            Board Template
+                            Board template
                         </Typography>
                         <Typography
                             variant="body2"
                             color="text.secondary"
                             sx={{ mb: 2 }}
                         >
-                            Save this board's structure (columns, settings, and
-                            automation rules) as a reusable template. You can
-                            use it later to create new boards with the same
-                            setup.
+                            Save this board’s columns (names, colors, WIP
+                            limits, and Done column) as a reusable template you
+                            can pick when creating a new board. Tasks aren’t
+                            included.
                         </Typography>
                         <Button
                             variant="outlined"
@@ -352,85 +346,167 @@ export default function BoardSettings({
                             onClick={handleSaveAsTemplate}
                             disabled={savingTemplate}
                         >
-                            {savingTemplate ? "Saving..." : "Save as Template"}
+                            {savingTemplate
+                                ? "Saving template…"
+                                : "Save as board template"}
                         </Button>
                     </CardContent>
                 </Card>
 
-                {/* Danger Zone */}
-                <Card variant="outlined" sx={{ borderColor: "error.main" }}>
-                    <CardContent>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                                mb: 1,
-                            }}
-                        >
-                            <WarningAmberIcon color="error" fontSize="small" />
-                            <Typography
-                                variant="subtitle1"
-                                fontWeight={600}
-                                color="error"
+                {/* Danger zone */}
+                {(can.archive || can.delete) && (
+                    <Card
+                        variant="outlined"
+                        component="section"
+                        aria-labelledby="danger-zone-heading"
+                        sx={{ borderColor: "error.main" }}
+                    >
+                        <CardContent>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
+                                    mb: 2,
+                                }}
                             >
-                                Danger Zone
-                            </Typography>
-                        </Box>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 2 }}
-                        >
-                            Permanently delete this board and all its columns,
-                            tasks, comments, and attachments. This action cannot
-                            be undone.
-                        </Typography>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<DeleteIcon />}
-                            onClick={() => setDeleteBoardOpen(true)}
-                        >
-                            Delete Board
-                        </Button>
-                    </CardContent>
-                </Card>
+                                <WarningAmberIcon
+                                    color="error"
+                                    fontSize="small"
+                                />
+                                <Typography
+                                    id="danger-zone-heading"
+                                    variant="subtitle1"
+                                    component="h2"
+                                    fontWeight={600}
+                                    color="error"
+                                >
+                                    Danger zone
+                                </Typography>
+                            </Box>
+
+                            {can.archive && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: {
+                                            xs: "column",
+                                            sm: "row",
+                                        },
+                                        alignItems: {
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        },
+                                        justifyContent: "space-between",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography
+                                            variant="body2"
+                                            component="h3"
+                                            fontWeight={600}
+                                        >
+                                            Archive this board
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Hides the board from the sidebar and
+                                            team. Nothing is deleted, and you
+                                            can restore it from the team page.
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="outlined"
+                                        color="warning"
+                                        startIcon={<ArchiveOutlinedIcon />}
+                                        onClick={() => setArchiveOpen(true)}
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        Archive board
+                                    </Button>
+                                </Box>
+                            )}
+
+                            {can.archive && can.delete && (
+                                <Divider sx={{ my: 2 }} />
+                            )}
+
+                            {can.delete && (
+                                <Box
+                                    sx={{
+                                        display: "flex",
+                                        flexDirection: {
+                                            xs: "column",
+                                            sm: "row",
+                                        },
+                                        alignItems: {
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        },
+                                        justifyContent: "space-between",
+                                        gap: 2,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography
+                                            variant="body2"
+                                            component="h3"
+                                            fontWeight={600}
+                                        >
+                                            Delete this board
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                        >
+                                            Permanently deletes the board and
+                                            all its columns, tasks, comments,
+                                            and attachments. This can’t be
+                                            undone.
+                                        </Typography>
+                                    </Box>
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => setDeleteBoardOpen(true)}
+                                        sx={{ flexShrink: 0 }}
+                                    >
+                                        Delete board
+                                    </Button>
+                                </Box>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
             </Box>
 
-            {/* Delete Board Confirmation Dialog */}
+            <ConfirmDialog
+                open={archiveOpen}
+                onClose={() => {
+                    if (!archiving) setArchiveOpen(false);
+                }}
+                onConfirm={() => {
+                    if (!archiving) handleArchive();
+                }}
+                title={`Archive “${board.name}”?`}
+                message="The board will be hidden from the sidebar and the team’s board list. Its tasks and history are kept, and you can restore it any time from the team page."
+                confirmLabel={archiving ? "Archiving…" : "Archive board"}
+                confirmColor="warning"
+            />
+
             <ConfirmDeleteDialog
                 open={deleteBoardOpen}
                 onClose={() => setDeleteBoardOpen(false)}
                 onConfirm={handleDeleteBoard}
-                title="Delete Board"
+                title="Delete board"
                 description="This will permanently delete this board and all its columns, tasks, comments, and attachments."
                 itemName={board.name}
                 processing={deletingBoard}
             />
-
-            <Snackbar
-                open={templateSnackbar.open}
-                autoHideDuration={4000}
-                onClose={() =>
-                    setTemplateSnackbar((prev) => ({ ...prev, open: false }))
-                }
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            >
-                <Alert
-                    onClose={() =>
-                        setTemplateSnackbar((prev) => ({
-                            ...prev,
-                            open: false,
-                        }))
-                    }
-                    severity={templateSnackbar.severity}
-                    variant="filled"
-                    sx={{ width: "100%" }}
-                >
-                    {templateSnackbar.message}
-                </Alert>
-            </Snackbar>
         </>
     );
 }

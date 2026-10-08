@@ -19,9 +19,11 @@ use App\Models\Column;
 use App\Models\Label;
 use App\Models\Task;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -74,8 +76,8 @@ class TaskController extends Controller
             'gitlabProject.connection',
             'gitlabRefs',
             'figmaLinks.figmaConnection',
-            'dependencies',
-            'blockedBy',
+            'dependencies.board:id,team_id,name,slug',
+            'blockedBy.board:id,team_id,name,slug',
             'parentTask',
         ]);
         $task->loadCount([
@@ -88,9 +90,17 @@ class TaskController extends Controller
         $task->load('media');
         $task->append('attachments');
 
+        // Dependency chips only need the related board's name and slug.
+        $task->dependencies
+            ->merge($task->blockedBy)
+            ->each(fn (Task $related) => $related->board?->setAppends([]));
+
         if (request()->wantsJson()) {
             return response()->json($task);
         }
+
+        $user = $request->user();
+        $canUpdate = $user->can('update', $task);
 
         $board->load('columns');
         $members = $team->members()->whereNull('deactivated_at')->get();
@@ -103,13 +113,13 @@ class TaskController extends Controller
             ->where('is_active', true)
             ->get();
 
-        // Deferred: all tasks in this board for the dependency autocomplete.
-        // Can be thousands of rows on big boards, so it loads after first paint.
-        $boardTasks = Inertia::defer(fn () => Task::where('board_id', $board->id)
-            ->select('id', 'task_number', 'title', 'column_id')
-            ->get());
+        // Deferred: dependency autocomplete candidates — every task on this
+        // board plus open tasks on the team's other active boards (with the
+        // board name for cross-board chips). Can be thousands of rows, so it
+        // loads after first paint.
+        $boardTasks = Inertia::defer(fn () => $this->dependencyCandidates($team, $board));
 
-        // Deferred: all boards in this team (with columns) for cross-board move.
+        // Deferred: all boards in this team for the layout sidebar.
         $teamBoards = Inertia::defer(fn () => $team
             ->boards()
             ->active()
@@ -118,6 +128,8 @@ class TaskController extends Controller
             ->with('columns')
             ->orderBy('sort_order')
             ->get());
+
+        $moveTargets = $this->moveTargets($user, $team, $board, $canUpdate);
 
         return Inertia::render('Tasks/Show', [
             'team' => $team,
@@ -130,7 +142,93 @@ class TaskController extends Controller
             'teamBoards' => $teamBoards,
             'boardTasks' => $boardTasks,
             'isWatching' => $isWatching,
+            'moveTargets' => $moveTargets,
+            'can' => [
+                'update' => $canUpdate,
+                'delete' => $user->can('delete', $task),
+                'move' => $moveTargets->isNotEmpty(),
+                'saveAsTemplate' => $user->can('update', $team),
+            ],
         ]);
+    }
+
+    /**
+     * Other active boards in the team the user may move the task to
+     * (BoardPolicy::update on the target), with their columns.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function moveTargets(User $user, Team $team, Board $board, bool $canUpdateTask): Collection
+    {
+        if (! $canUpdateTask) {
+            return collect();
+        }
+
+        return $team->boards()
+            ->active()
+            ->whereKeyNot($board->id)
+            ->orderBy('sort_order')
+            ->with(['columns' => fn ($query) => $query->withCount('tasks')])
+            ->get()
+            ->each(fn (Board $target) => $target->setRelation('team', $team))
+            ->filter(fn (Board $target) => $user->can('update', $target))
+            ->map(fn (Board $target) => [
+                'id' => $target->id,
+                'name' => $target->name,
+                'slug' => $target->slug,
+                'columns' => $target->columns->map(fn (Column $column) => [
+                    'id' => $column->id,
+                    'name' => $column->name,
+                    'color' => $column->color,
+                    'is_done_column' => (bool) $column->is_done_column,
+                    'wip_limit' => $column->wip_limit,
+                    'tasks_count' => $column->tasks_count,
+                ])->values(),
+            ])
+            ->values();
+    }
+
+    /**
+     * Tasks the current task may depend on: everything on its own board, plus
+     * open tasks on the team's other active boards.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function dependencyCandidates(Team $team, Board $board): Collection
+    {
+        $boards = $team->boards()
+            ->active()
+            ->get(['id', 'name', 'slug'])
+            ->keyBy('id');
+
+        return Task::query()
+            ->whereIn('board_id', $boards->keys())
+            ->where(fn ($query) => $query
+                ->where('board_id', $board->id)
+                ->orWhereNull('completed_at'))
+            ->select('id', 'board_id', 'task_number', 'title', 'column_id')
+            ->orderByRaw('CASE WHEN board_id = ? THEN 0 ELSE 1 END', [$board->id])
+            ->orderBy('board_id')
+            ->orderBy('task_number')
+            ->get()
+            ->map(function (Task $candidate) use ($boards) {
+                $candidateBoard = $boards->get($candidate->board_id);
+
+                return [
+                    'id' => $candidate->id,
+                    'slug' => $candidate->slug,
+                    'task_number' => $candidate->task_number,
+                    'title' => $candidate->title,
+                    'column_id' => $candidate->column_id,
+                    'board_id' => $candidate->board_id,
+                    'board' => [
+                        'id' => $candidateBoard->id,
+                        'name' => $candidateBoard->name,
+                        'slug' => $candidateBoard->slug,
+                    ],
+                ];
+            })
+            ->values();
     }
 
     /**
@@ -186,7 +284,7 @@ class TaskController extends Controller
             $this->authorize('update', $targetBoard);
         }
 
-        MoveTask::run(
+        $moved = MoveTask::run(
             $task,
             $column,
             $request->validated('sort_order'),
@@ -194,11 +292,9 @@ class TaskController extends Controller
         );
 
         if ($targetBoard) {
-            return Redirect::route('tasks.show', [
-                $team->id,
-                $targetBoard->id,
-                $task->id,
-            ]);
+            // The task number (and so its URL) changes on a cross-board move.
+            return Redirect::route('tasks.show', [$team, $targetBoard, $moved])
+                ->with('success', "Moved to {$targetBoard->name} › {$column->name}.");
         }
 
         return Redirect::back();

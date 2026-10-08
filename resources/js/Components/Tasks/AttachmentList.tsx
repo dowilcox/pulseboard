@@ -18,7 +18,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import Alert from "@mui/material/Alert";
 import axios, { AxiosError } from "axios";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails";
@@ -30,6 +30,8 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
     taskId: string;
+    /** Open the file picker as soon as the list mounts ("+ Attach file"). */
+    openPickerOnMount?: boolean;
 }
 
 function formatFileSize(bytes: number): string {
@@ -47,8 +49,15 @@ export default function AttachmentList({
     teamSlug,
     boardSlug,
     taskId,
+    openPickerOnMount = false,
 }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Still within the click's user activation, so the picker may open.
+    useEffect(() => {
+        if (openPickerOnMount) fileInputRef.current?.click();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+    }, []);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadError, setUploadError] = useState<string | null>(null);

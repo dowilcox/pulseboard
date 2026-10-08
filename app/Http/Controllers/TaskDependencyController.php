@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class TaskDependencyController extends Controller
 {
@@ -24,8 +25,11 @@ class TaskDependencyController extends Controller
 
         $dependsOn = Task::findOrFail($validated['depends_on_task_id']);
 
+        // Any task in the same team may be linked, across boards.
         if ($dependsOn->board->team_id !== $task->board->team_id) {
-            abort(422, 'The dependency task must belong to the same team.');
+            throw ValidationException::withMessages([
+                'depends_on_task_id' => 'The dependency task must belong to the same team.',
+            ]);
         }
 
         AddTaskDependency::run($task, $dependsOn, $request->user());

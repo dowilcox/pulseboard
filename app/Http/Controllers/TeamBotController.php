@@ -5,27 +5,24 @@ namespace App\Http\Controllers;
 use App\Actions\Teams\CreateBotUser;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\Rule;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class TeamBotController extends Controller
 {
-    public function index(Team $team): Response
+    /**
+     * Bots are managed on the "API & bots" tab of team settings; this URL is
+     * kept so old links and bookmarks still land in the right place.
+     */
+    public function index(Request $request, Team $team): RedirectResponse
     {
         $this->authorize('update', $team);
 
-        $bots = $team->bots()
-            ->whereNull('deactivated_at')
-            ->with(['tokens' => fn ($q) => $q->orderBy('created_at', 'desc')])
-            ->orderBy('name')
-            ->get();
+        $request->session()->reflash();
 
-        return Inertia::render('Teams/Settings/ApiTokens', [
-            'team' => $team,
-            'bots' => $bots,
-        ]);
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'api']);
     }
 
     public function storeBot(Request $request, Team $team)
@@ -38,7 +35,7 @@ class TeamBotController extends Controller
 
         CreateBotUser::run($team, $validated);
 
-        return back()->with('success', 'Bot user created.');
+        return back()->with('success', "Bot “{$validated['name']}” created.");
     }
 
     public function createToken(Request $request, Team $team, User $user)
@@ -79,6 +76,6 @@ class TeamBotController extends Controller
         $team->members()->detach($user->id);
         $user->update(['deactivated_at' => now()]);
 
-        return back()->with('success', 'Bot user removed.');
+        return back()->with('success', "Bot “{$user->name}” removed.");
     }
 }

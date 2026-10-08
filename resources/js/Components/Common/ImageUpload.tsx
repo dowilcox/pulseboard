@@ -10,6 +10,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
+import { useSnackbar } from "@/Contexts/SnackbarContext";
 
 interface Props {
     title: string;
@@ -18,6 +19,8 @@ interface Props {
     altText: string;
     uploadRoute: string;
     deleteRoute: string;
+    /** Heading level for the card title, to fit the surrounding outline. */
+    headingComponent?: "h2" | "h3";
 }
 
 export default function ImageUpload({
@@ -27,7 +30,9 @@ export default function ImageUpload({
     altText,
     uploadRoute,
     deleteRoute,
+    headingComponent = "h2",
 }: Props) {
+    const { showSnackbar } = useSnackbar();
     const [uploading, setUploading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +51,7 @@ export default function ImageUpload({
         try {
             await axios.post(uploadRoute, formData);
             router.reload();
+            showSnackbar("Image uploaded.", "success");
         } catch (e) {
             if (axios.isAxiosError(e) && e.response) {
                 const data = e.response.data;
@@ -72,6 +78,7 @@ export default function ImageUpload({
         try {
             await axios.delete(deleteRoute);
             router.reload();
+            showSnackbar("Image removed.", "success");
         } catch {
             setError("Failed to remove image");
         } finally {
@@ -82,7 +89,12 @@ export default function ImageUpload({
     return (
         <Card variant="outlined">
             <CardContent>
-                <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                <Typography
+                    variant="subtitle1"
+                    component={headingComponent}
+                    fontWeight={600}
+                    gutterBottom
+                >
                     {title}
                 </Typography>
                 <Typography

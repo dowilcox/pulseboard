@@ -35,8 +35,8 @@ class TeamMemberController extends Controller
 
         AddTeamMember::run($team, $user, $role);
 
-        return Redirect::route('teams.settings', $team)
-            ->with('success', 'Team member added successfully.');
+        return $this->backToMembers($team)
+            ->with('success', "{$user->name} was added to the team as ".$this->roleLabel($role).'.');
     }
 
     public function search(Request $request, Team $team): JsonResponse
@@ -82,8 +82,10 @@ class TeamMemberController extends Controller
 
         UpdateMemberRole::run($team, $user, $validated['role']);
 
-        return Redirect::route('teams.settings', $team)
-            ->with('success', 'Member role updated successfully.');
+        $who = $user->is(auth()->user()) ? 'You are' : "{$user->name} is";
+
+        return $this->backToMembers($team)
+            ->with('success', "{$who} now ".$this->roleLabel($validated['role']).'.');
     }
 
     public function destroy(Team $team, User $user): RedirectResponse
@@ -101,7 +103,24 @@ class TeamMemberController extends Controller
 
         RemoveTeamMember::run($team, $user);
 
-        return Redirect::route('teams.settings', $team)
-            ->with('success', 'Team member removed successfully.');
+        return $this->backToMembers($team)
+            ->with('success', "{$user->name} was removed from the team.");
+    }
+
+    /**
+     * Member management lives on the Members tab of team settings.
+     */
+    private function backToMembers(Team $team): RedirectResponse
+    {
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'members']);
+    }
+
+    private function roleLabel(string $role): string
+    {
+        return match ($role) {
+            'owner' => 'an owner',
+            'admin' => 'an admin',
+            default => 'a member',
+        };
     }
 }

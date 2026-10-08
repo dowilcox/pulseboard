@@ -16,6 +16,10 @@ import { useRef, useState } from "react";
 interface Props {
     links: TaskLink[];
     onChange: (links: TaskLink[]) => void;
+    /** Open the "add link" form straight away. */
+    autoStartAdding?: boolean;
+    /** Called when the add form is cancelled while there are no links. */
+    onDismiss?: () => void;
 }
 
 function normalizeUrl(url: string): string {
@@ -35,8 +39,13 @@ function isValidUrl(url: string): boolean {
     }
 }
 
-export default function LinkEditor({ links, onChange }: Props) {
-    const [adding, setAdding] = useState(false);
+export default function LinkEditor({
+    links,
+    onChange,
+    autoStartAdding = false,
+    onDismiss,
+}: Props) {
+    const [adding, setAdding] = useState(autoStartAdding);
     const [newUrl, setNewUrl] = useState("");
     const [newLabel, setNewLabel] = useState("");
     const [urlError, setUrlError] = useState("");
@@ -63,6 +72,14 @@ export default function LinkEditor({ links, onChange }: Props) {
 
     const handleRemove = (id: string) => {
         onChange(links.filter((l) => l.id !== id));
+    };
+
+    const cancelAdding = () => {
+        setAdding(false);
+        setNewUrl("");
+        setNewLabel("");
+        setUrlError("");
+        if (links.length === 0) onDismiss?.();
     };
 
     return (
@@ -141,11 +158,12 @@ export default function LinkEditor({ links, onChange }: Props) {
                             if (urlError) setUrlError("");
                         }}
                         onKeyDown={(e) => {
+                            if (e.key === "Enter" && newUrl.trim()) {
+                                e.preventDefault();
+                                handleAdd();
+                            }
                             if (e.key === "Escape") {
-                                setAdding(false);
-                                setNewUrl("");
-                                setNewLabel("");
-                                setUrlError("");
+                                cancelAdding();
                             }
                         }}
                         slotProps={{ inputLabel: { shrink: true } }}
@@ -163,10 +181,7 @@ export default function LinkEditor({ links, onChange }: Props) {
                                 handleAdd();
                             }
                             if (e.key === "Escape") {
-                                setAdding(false);
-                                setNewUrl("");
-                                setNewLabel("");
-                                setUrlError("");
+                                cancelAdding();
                             }
                         }}
                         slotProps={{ inputLabel: { shrink: true } }}
@@ -178,15 +193,7 @@ export default function LinkEditor({ links, onChange }: Props) {
                             gap: 1,
                         }}
                     >
-                        <Button
-                            size="small"
-                            onClick={() => {
-                                setAdding(false);
-                                setNewUrl("");
-                                setNewLabel("");
-                                setUrlError("");
-                            }}
-                        >
+                        <Button size="small" onClick={cancelAdding}>
                             Cancel
                         </Button>
                         <Button

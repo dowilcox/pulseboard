@@ -39,7 +39,7 @@ export default function NotificationPreferencesForm() {
     const { auth } = usePage<PageProps>().props;
     const currentPrefs = auth.user.email_notification_prefs ?? DEFAULT_PREFS;
 
-    const { data, setData, patch, processing } = useForm<{
+    const { data, setData, patch, processing, recentlySuccessful } = useForm<{
         prefs: NotificationPreferences;
     }>({
         prefs: { ...DEFAULT_PREFS, ...currentPrefs },
@@ -60,7 +60,9 @@ export default function NotificationPreferencesForm() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(route("profile.notifications.update"));
+        patch(route("profile.notifications.update"), {
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -125,7 +127,9 @@ export default function NotificationPreferencesForm() {
                     </Table>
                 </TableContainer>
 
-                <Box sx={{ mt: 2 }}>
+                <Box
+                    sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}
+                >
                     <Button
                         type="submit"
                         variant="contained"
@@ -134,6 +138,15 @@ export default function NotificationPreferencesForm() {
                     >
                         Save Preferences
                     </Button>
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        role="status"
+                        aria-live="polite"
+                    >
+                        {recentlySuccessful ? "Saved." : ""}
+                    </Typography>
                 </Box>
             </form>
         </Box>

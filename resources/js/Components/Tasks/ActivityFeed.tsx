@@ -18,6 +18,8 @@ import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
@@ -26,6 +28,29 @@ import { useMemo, useState } from "react";
 type FeedItem =
     | { type: "comment"; item: Comment; timestamp: string }
     | { type: "activity"; item: Activity; timestamp: string };
+
+/** "comments" hides system events; "all" interleaves them with comments. */
+type FeedFilter = "comments" | "all";
+
+const FEED_FILTER_KEY = "pulseboard.taskFeedFilter";
+
+function readFeedFilter(): FeedFilter {
+    try {
+        return localStorage.getItem(FEED_FILTER_KEY) === "all"
+            ? "all"
+            : "comments";
+    } catch {
+        return "comments";
+    }
+}
+
+function writeFeedFilter(filter: FeedFilter): void {
+    try {
+        localStorage.setItem(FEED_FILTER_KEY, filter);
+    } catch {
+        // Storage unavailable (private mode etc.) — the choice just won't stick.
+    }
+}
 
 interface Props {
     comments: Comment[];
@@ -69,6 +94,16 @@ function LabelChip({ name }: { name: string }) {
     );
 }
 
+/**
+ * MR activities log `mr_title` + `mr_iid` (CreateMergeRequestFromTask);
+ * older rows may carry `title`.
+ */
+function mergeRequestName(changes: Record<string, unknown>): string {
+    const title = changes.mr_title ?? changes.title;
+    if (title) return String(title);
+    return changes.mr_iid ? `!${String(changes.mr_iid)}` : "";
+}
+
 function activityDescription(
     action: string,
     changes: Record<string, unknown>,
@@ -77,6 +112,22 @@ function activityDescription(
         case "created":
             return "created this task";
         case "moved":
+            if (changes.from_board && changes.to_board) {
+                return (
+                    <>
+                        moved from{" "}
+                        <strong>
+                            {String(changes.from_board)} ›{" "}
+                            {String(changes.from_column ?? "?")}
+                        </strong>{" "}
+                        to{" "}
+                        <strong>
+                            {String(changes.to_board)} ›{" "}
+                            {String(changes.to_column ?? "?")}
+                        </strong>
+                    </>
+                );
+            }
             if (changes.auto_moved) {
                 return (
                     <>
@@ -189,21 +240,21 @@ function activityDescription(
             return (
                 <>
                     created merge request{" "}
-                    <strong>{String(changes.title ?? "")}</strong>
+                    <strong>{mergeRequestName(changes)}</strong>
                 </>
             );
         case "gitlab_mr_merged":
             return (
                 <>
                     merged merge request{" "}
-                    <strong>{String(changes.title ?? "")}</strong>
+                    <strong>{mergeRequestName(changes)}</strong>
                 </>
             );
         case "gitlab_mr_closed":
             return (
                 <>
                     closed merge request{" "}
-                    <strong>{String(changes.title ?? "")}</strong>
+                    <strong>{mergeRequestName(changes)}</strong>
                 </>
             );
         default:
@@ -382,9 +433,8 @@ function CommentItem({
                         fontSize: "0.7rem",
                         flexShrink: 0,
                         mt: 0.25,
-                        bgcolor: harborAvatarColor(
-                            comment.user?.id ?? comment.user?.name ?? "?",
-                        ),
+                        bgcolor: harborAvatarColor(comment.user?.name ?? "?"),
+                        color: "#fff",
                     }}
                     src={comment.user?.avatar_url}
                 >
@@ -437,6 +487,7 @@ export default function ActivityFeed({
     const [composerOpen, setComposerOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">(savedSort);
+    const [filter, setFilter] = useState<FeedFilter>(readFeedFilter);
     const [deleteCommentTarget, setDeleteCommentTarget] = useState<
         string | null
     >(null);
@@ -459,7 +510,7 @@ export default function ActivityFeed({
                     timestamp: c.created_at,
                 }),
             ),
-            ...activities
+            ...(filter === "all" ? activities : [])
                 .filter((a) => a.action !== "commented")
                 .map(
                     (a): FeedItem => ({
@@ -475,7 +526,13 @@ export default function ActivityFeed({
                 new Date(b.timestamp).getTime();
             return sortOrder === "asc" ? diff : -diff;
         });
-    }, [comments, activities, sortOrder]);
+    }, [comments, activities, sortOrder, filter]);
+
+    const handleFilterChange = (next: FeedFilter | null) => {
+        if (!next) return;
+        setFilter(next);
+        writeFeedFilter(next);
+    };
 
     const handleToggleSort = () => {
         const newOrder = sortOrder === "asc" ? "desc" : "asc";
@@ -716,8 +773,16 @@ export default function ActivityFeed({
 
     return (
         <Box>
-            {/* Header — title + sort pill */}
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            {/* Header — title, comments/activity filter, sort pill */}
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 1.25,
+                    mb: 2,
+                }}
+            >
                 <Typography
                     component="h2"
                     sx={{
@@ -727,9 +792,42 @@ export default function ActivityFeed({
                         color: harbor.ink,
                     }}
                 >
-                    Activity
+                    Comments
                 </Typography>
                 <Box sx={{ flex: 1 }} />
+                <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={filter}
+                    onChange={(_, next) => handleFilterChange(next)}
+                    aria-label="Show in feed"
+                    sx={{
+                        bgcolor: harbor.countBg,
+                        borderRadius: 999,
+                        p: "3px",
+                        "& .MuiToggleButton-root": {
+                            border: "none",
+                            borderRadius: "999px !important",
+                            px: 1.5,
+                            py: "3px",
+                            fontSize: 12.5,
+                            fontWeight: 700,
+                            textTransform: "none",
+                            color: harbor.sub,
+                            "&.Mui-selected": {
+                                bgcolor: harbor.card,
+                                color: harbor.ink,
+                                boxShadow: harbor.chipShadow,
+                            },
+                            "&.Mui-selected:hover": { bgcolor: harbor.card },
+                        },
+                    }}
+                >
+                    <ToggleButton value="comments">
+                        Comments ({comments.length})
+                    </ToggleButton>
+                    <ToggleButton value="all">All activity</ToggleButton>
+                </ToggleButtonGroup>
                 <Tooltip
                     title={
                         sortOrder === "desc"
@@ -775,7 +873,8 @@ export default function ActivityFeed({
                         height: 30,
                         fontSize: "0.8rem",
                         flexShrink: 0,
-                        bgcolor: harborAvatarColor(auth.user.id),
+                        bgcolor: harborAvatarColor(auth.user.name),
+                        color: "#fff",
                     }}
                 >
                     {auth.user.name?.charAt(0).toUpperCase()}
@@ -862,7 +961,9 @@ export default function ActivityFeed({
                         py: 3,
                     }}
                 >
-                    No activity yet
+                    {filter === "comments"
+                        ? "No comments yet"
+                        : "No activity yet"}
                 </Typography>
             )}
 
@@ -913,10 +1014,9 @@ export default function ActivityFeed({
                                             flexShrink: 0,
                                             zIndex: 1,
                                             bgcolor: harborAvatarColor(
-                                                comment.user?.id ??
-                                                    comment.user?.name ??
-                                                    "?",
+                                                comment.user?.name ?? "?",
                                             ),
+                                            color: "#fff",
                                             boxShadow: `0 0 0 2px ${harbor.card}`,
                                         }}
                                         src={comment.user?.avatar_url}

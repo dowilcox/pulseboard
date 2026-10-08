@@ -1,7 +1,11 @@
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import { PRIORITY_COLORS, PRIORITY_OPTIONS } from "@/constants/priorities";
 import type { TaskTemplate } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -14,64 +18,97 @@ import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import type { TaskTemplateFormData } from "./types";
+import { useEffect, useRef } from "react";
+import type { useTaskTemplates } from "./useTaskTemplates";
 
 interface TaskTemplatesSectionProps {
+    teamName: string;
     canManageTemplates: boolean;
-    loadingTemplates: boolean;
-    savingTaskTemplate: boolean;
-    showTemplateForm: boolean;
-    taskTemplates: TaskTemplate[];
-    templateFormData: TaskTemplateFormData;
-    templateFormErrors: Record<string, string>;
-    onCreateTaskTemplate: () => void;
-    onDeleteTaskTemplate: (templateId: string) => void;
-    onTemplateFieldChange: <Field extends keyof TaskTemplateFormData>(
-        field: Field,
-        value: TaskTemplateFormData[Field],
-    ) => void;
-    onOpenTemplateForm: () => void;
-    onResetTemplateForm: () => void;
+    templates: ReturnType<typeof useTaskTemplates>;
 }
 
 export default function TaskTemplatesSection({
+    teamName,
     canManageTemplates,
-    loadingTemplates,
-    savingTaskTemplate,
-    showTemplateForm,
-    taskTemplates,
-    templateFormData,
-    templateFormErrors,
-    onCreateTaskTemplate,
-    onDeleteTaskTemplate,
-    onTemplateFieldChange,
-    onOpenTemplateForm,
-    onResetTemplateForm,
+    templates,
 }: TaskTemplatesSectionProps) {
+    const {
+        loadingTemplates,
+        loadError,
+        savingTaskTemplate,
+        showTemplateForm,
+        editingTemplate,
+        taskTemplates,
+        templateFormData,
+        templateFormErrors,
+        pendingDelete,
+        deletingTemplate,
+        retryLoad,
+        handleSubmitTemplate,
+        handleTemplateFieldChange,
+        openCreateForm,
+        openEditForm,
+        resetTemplateForm,
+        requestDeleteTemplate,
+        cancelDeleteTemplate,
+        confirmDeleteTemplate,
+    } = templates;
+
+    const nameInputRef = useRef<HTMLInputElement>(null);
+
+    // Move focus into the form when it opens (create or edit).
+    useEffect(() => {
+        if (showTemplateForm) {
+            nameInputRef.current?.focus();
+        }
+    }, [showTemplateForm, editingTemplate]);
+
+    const priorityLabel = (priority: TaskTemplate["priority"]) =>
+        priority.charAt(0).toUpperCase() + priority.slice(1);
+
     return (
-        <Card variant="outlined">
+        <Card
+            variant="outlined"
+            component="section"
+            aria-labelledby="task-templates-heading"
+        >
             <CardContent>
                 <Box
                     sx={{
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        mb: 2,
+                        gap: 2,
+                        mb: 1,
                     }}
                 >
-                    <Typography variant="subtitle1" fontWeight={600}>
-                        Task Templates
+                    <Typography
+                        id="task-templates-heading"
+                        variant="subtitle1"
+                        component="h2"
+                        fontWeight={600}
+                    >
+                        Task templates
                     </Typography>
                     {canManageTemplates && !showTemplateForm && (
                         <Button
                             startIcon={<AddIcon />}
                             size="small"
-                            onClick={onOpenTemplateForm}
+                            onClick={openCreateForm}
                         >
-                            Add Template
+                            Add template
                         </Button>
                     )}
                 </Box>
+
+                <Alert
+                    severity="info"
+                    icon={<InfoOutlinedIcon fontSize="inherit" />}
+                    sx={{ mb: 2 }}
+                >
+                    Task templates are shared by every board in {teamName}.
+                    Changes here apply to all of them.
+                </Alert>
 
                 {loadingTemplates ? (
                     <Typography
@@ -79,8 +116,23 @@ export default function TaskTemplatesSection({
                         color="text.secondary"
                         sx={{ py: 2 }}
                     >
-                        Loading templates...
+                        Loading templates…
                     </Typography>
+                ) : loadError ? (
+                    <Alert
+                        severity="error"
+                        action={
+                            <Button
+                                color="inherit"
+                                size="small"
+                                onClick={retryLoad}
+                            >
+                                Retry
+                            </Button>
+                        }
+                    >
+                        Couldn’t load task templates.
+                    </Alert>
                 ) : taskTemplates.length === 0 && !showTemplateForm ? (
                     <Typography
                         variant="body2"
@@ -93,7 +145,11 @@ export default function TaskTemplatesSection({
                     </Typography>
                 ) : (
                     <Box
+                        component="ul"
                         sx={{
+                            listStyle: "none",
+                            p: 0,
+                            m: 0,
                             display: "flex",
                             flexDirection: "column",
                             gap: 1,
@@ -101,83 +157,122 @@ export default function TaskTemplatesSection({
                     >
                         {taskTemplates.map((template) => (
                             <Paper
+                                component="li"
                                 key={template.id}
                                 variant="outlined"
-                                sx={{ px: 2, py: 1.5 }}
+                                sx={{
+                                    px: 2,
+                                    py: 1.5,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    flexWrap: "wrap",
+                                    columnGap: 1.5,
+                                    rowGap: 0.5,
+                                    borderColor:
+                                        editingTemplate?.id === template.id
+                                            ? "primary.main"
+                                            : undefined,
+                                }}
                             >
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1.5,
-                                    }}
-                                >
+                                <Box sx={{ flex: "1 1 160px", minWidth: 0 }}>
                                     <Typography
                                         variant="body2"
                                         fontWeight={500}
-                                        sx={{ flex: 1 }}
+                                        noWrap
                                     >
                                         {template.name}
                                     </Typography>
-                                    {template.priority &&
-                                        template.priority !== "none" && (
-                                            <Chip
-                                                label={
-                                                    template.priority
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                    template.priority.slice(1)
-                                                }
-                                                size="small"
-                                                sx={{
-                                                    bgcolor:
-                                                        PRIORITY_COLORS[
-                                                            template.priority
-                                                        ],
-                                                    color: "#fff",
-                                                    fontWeight: 500,
-                                                    fontSize: "0.7rem",
-                                                    height: 22,
-                                                }}
-                                            />
-                                        )}
-                                    {template.creator && (
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                        >
-                                            by {template.creator.name}
-                                        </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                    >
+                                        {[
+                                            template.effort_estimate != null
+                                                ? `${template.effort_estimate} ${template.effort_estimate === 1 ? "point" : "points"}`
+                                                : null,
+                                            template.creator
+                                                ? `by ${template.creator.name}`
+                                                : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" · ")}
+                                    </Typography>
+                                </Box>
+                                {template.priority &&
+                                    template.priority !== "none" && (
+                                        <Chip
+                                            label={priorityLabel(
+                                                template.priority,
+                                            )}
+                                            size="small"
+                                            sx={{
+                                                bgcolor:
+                                                    PRIORITY_COLORS[
+                                                        template.priority
+                                                    ],
+                                                color: "#fff",
+                                                fontWeight: 500,
+                                                fontSize: "0.7rem",
+                                                height: 22,
+                                            }}
+                                        />
                                     )}
-                                    {canManageTemplates && (
+                                {canManageTemplates && (
+                                    <Box sx={{ display: "flex" }}>
+                                        <Tooltip title="Edit template">
+                                            <IconButton
+                                                size="small"
+                                                aria-label={`Edit template ${template.name}`}
+                                                onClick={() =>
+                                                    openEditForm(template)
+                                                }
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
                                         <Tooltip title="Delete template">
                                             <IconButton
                                                 size="small"
                                                 color="error"
+                                                aria-label={`Delete template ${template.name}`}
                                                 onClick={() =>
-                                                    onDeleteTaskTemplate(
-                                                        template.id,
+                                                    requestDeleteTemplate(
+                                                        template,
                                                     )
                                                 }
                                             >
                                                 <DeleteIcon fontSize="small" />
                                             </IconButton>
                                         </Tooltip>
-                                    )}
-                                </Box>
+                                    </Box>
+                                )}
                             </Paper>
                         ))}
                     </Box>
                 )}
 
                 <Collapse in={canManageTemplates && showTemplateForm}>
-                    <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
+                    <Paper
+                        variant="outlined"
+                        component="form"
+                        noValidate
+                        onSubmit={(event: React.FormEvent) => {
+                            event.preventDefault();
+                            handleSubmitTemplate();
+                        }}
+                        aria-labelledby="task-template-form-heading"
+                        sx={{ p: 2, mt: 2 }}
+                    >
                         <Typography
+                            id="task-template-form-heading"
                             variant="body2"
+                            component="h3"
                             fontWeight={600}
                             sx={{ mb: 2 }}
                         >
-                            New Task Template
+                            {editingTemplate
+                                ? `Edit “${editingTemplate.name}”`
+                                : "New task template"}
                         </Typography>
                         <Box
                             sx={{
@@ -191,9 +286,10 @@ export default function TaskTemplatesSection({
                                 size="small"
                                 required
                                 fullWidth
+                                inputRef={nameInputRef}
                                 value={templateFormData.name}
                                 onChange={(event) =>
-                                    onTemplateFieldChange(
+                                    handleTemplateFieldChange(
                                         "name",
                                         event.target.value,
                                     )
@@ -209,7 +305,7 @@ export default function TaskTemplatesSection({
                                 rows={3}
                                 value={templateFormData.description_template}
                                 onChange={(event) =>
-                                    onTemplateFieldChange(
+                                    handleTemplateFieldChange(
                                         "description_template",
                                         event.target.value,
                                     )
@@ -218,23 +314,32 @@ export default function TaskTemplatesSection({
                                     !!templateFormErrors.description_template
                                 }
                                 helperText={
-                                    templateFormErrors.description_template
+                                    templateFormErrors.description_template ??
+                                    "Markdown is supported."
                                 }
                             />
-                            <Box sx={{ display: "flex", gap: 2 }}>
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    gap: 2,
+                                    flexWrap: "wrap",
+                                }}
+                            >
                                 <TextField
                                     label="Priority"
                                     size="small"
                                     select
                                     value={templateFormData.priority}
                                     onChange={(event) =>
-                                        onTemplateFieldChange(
+                                        handleTemplateFieldChange(
                                             "priority",
                                             event.target
                                                 .value as TaskTemplate["priority"],
                                         )
                                     }
-                                    sx={{ minWidth: 160 }}
+                                    error={!!templateFormErrors.priority}
+                                    helperText={templateFormErrors.priority}
+                                    sx={{ flex: "1 1 160px" }}
                                 >
                                     {PRIORITY_OPTIONS.map((option) => (
                                         <MenuItem
@@ -266,17 +371,25 @@ export default function TaskTemplatesSection({
                                     ))}
                                 </TextField>
                                 <TextField
-                                    label="Effort Estimate"
+                                    label="Effort (points)"
                                     size="small"
                                     type="number"
-                                    placeholder="Hours"
+                                    placeholder="None"
                                     value={templateFormData.effort_estimate}
                                     onChange={(event) =>
-                                        onTemplateFieldChange(
+                                        handleTemplateFieldChange(
                                             "effort_estimate",
                                             event.target.value === ""
                                                 ? ""
-                                                : Number(event.target.value),
+                                                : Math.max(
+                                                      0,
+                                                      Math.trunc(
+                                                          Number(
+                                                              event.target
+                                                                  .value,
+                                                          ),
+                                                      ),
+                                                  ),
                                         )
                                     }
                                     error={!!templateFormErrors.effort_estimate}
@@ -286,24 +399,29 @@ export default function TaskTemplatesSection({
                                     slotProps={{
                                         htmlInput: {
                                             min: 0,
-                                            step: 0.5,
+                                            step: 1,
+                                            inputMode: "numeric",
                                         },
                                     }}
-                                    sx={{ width: 160 }}
+                                    sx={{ flex: "1 1 140px" }}
                                 />
                             </Box>
                             <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button
+                                    type="submit"
                                     variant="contained"
                                     size="small"
-                                    onClick={onCreateTaskTemplate}
                                     disabled={savingTaskTemplate}
                                 >
-                                    {savingTaskTemplate ? "Saving..." : "Save"}
+                                    {savingTaskTemplate
+                                        ? "Saving…"
+                                        : editingTemplate
+                                          ? "Save template"
+                                          : "Create template"}
                                 </Button>
                                 <Button
                                     size="small"
-                                    onClick={onResetTemplateForm}
+                                    onClick={resetTemplateForm}
                                 >
                                     Cancel
                                 </Button>
@@ -312,6 +430,24 @@ export default function TaskTemplatesSection({
                     </Paper>
                 </Collapse>
             </CardContent>
+
+            <ConfirmDialog
+                open={pendingDelete !== null}
+                onClose={() => {
+                    if (!deletingTemplate) cancelDeleteTemplate();
+                }}
+                onConfirm={confirmDeleteTemplate}
+                title="Delete task template?"
+                message={
+                    pendingDelete
+                        ? `“${pendingDelete.name}” will be removed from every board in ${teamName}. Tasks already created from it aren’t affected.`
+                        : ""
+                }
+                confirmLabel={
+                    deletingTemplate ? "Deleting…" : "Delete template"
+                }
+                confirmColor="error"
+            />
         </Card>
     );
 }

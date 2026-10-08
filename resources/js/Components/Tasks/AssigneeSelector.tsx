@@ -62,7 +62,13 @@ export default function AssigneeSelector({
                 >
                     <Avatar
                         alt=""
-                        sx={{ width: 24, height: 24, fontSize: "0.7rem" }}
+                        sx={{
+                            width: 24,
+                            height: 24,
+                            fontSize: "0.7rem",
+                            bgcolor: harborAvatarColor(option.name),
+                            color: "#fff",
+                        }}
                         src={option.avatar_url}
                     >
                         {option.name.charAt(0).toUpperCase()}
@@ -82,7 +88,7 @@ export default function AssigneeSelector({
                                     alt=""
                                     sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: harborAvatarColor(user.id),
+                                        bgcolor: harborAvatarColor(user.name),
                                         color: "#fff",
                                     }}
                                     src={user.avatar_url}

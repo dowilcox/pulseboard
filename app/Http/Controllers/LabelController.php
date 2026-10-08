@@ -23,9 +23,9 @@ class LabelController extends Controller
     {
         $this->authorize('update', $team);
 
-        $team->labels()->create($request->validated());
+        $label = $team->labels()->create($request->validated());
 
-        return Redirect::back();
+        return Redirect::back()->with('success', "Label “{$label->name}” created.");
     }
 
     public function update(Request $request, Team $team, Label $label): RedirectResponse
@@ -40,7 +40,7 @@ class LabelController extends Controller
 
         $label->update($validated);
 
-        return Redirect::back();
+        return Redirect::back()->with('success', "Label “{$label->name}” updated.");
     }
 
     public function destroy(Team $team, Label $label): RedirectResponse
@@ -48,8 +48,9 @@ class LabelController extends Controller
         $this->authorize('update', $team);
         abort_unless($label->team_id === $team->id, 404);
 
+        $name = $label->name;
         $label->delete();
 
-        return Redirect::back();
+        return Redirect::back()->with('success', "Label “{$name}” deleted.");
     }
 }

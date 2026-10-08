@@ -115,6 +115,9 @@ export const harborHex = {
     dangerText: "#a5292b",
     success: "#267b4c",
     successText: "#095c34",
+    // Not oklch-mirrored: functional greys tuned for WCAG on `card`/`countBg`.
+    disabledText: "#646d78", // 5.0:1 on card, 4.1:1 on countBg
+    inputBorder: "#78818c", // 3.8:1 on card, 3.1:1 on countBg (WCAG 1.4.11)
 } as const;
 
 /** Avatar fallback colors — white initials, contrast-audited (≥4.5:1). */

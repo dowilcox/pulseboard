@@ -17,6 +17,8 @@ export interface NotificationPreferences {
 export interface UiPreferences {
     activity_sort_order?: "asc" | "desc";
     board_order?: Record<string, string[]>;
+    /** Board IDs the user has starred, in the order they were starred. */
+    starred_boards?: string[];
 }
 
 export interface User {
@@ -163,6 +165,27 @@ export interface TaskSummary {
     task_number?: number;
     title: string;
     column_id: string;
+    board_id?: string;
+    board?: Pick<Board, "id" | "name" | "slug">;
+}
+
+/** A board a task may be moved to, as passed by TaskController@show. */
+export interface TaskMoveTarget {
+    id: string;
+    name: string;
+    slug: string;
+    columns: Pick<
+        Column,
+        "id" | "name" | "color" | "is_done_column" | "wip_limit" | "tasks_count"
+    >[];
+}
+
+/** Server-decided permissions for the task detail page. */
+export interface TaskPermissions {
+    update: boolean;
+    delete: boolean;
+    move: boolean;
+    saveAsTemplate: boolean;
 }
 
 export interface TaskTemplate {
@@ -210,6 +233,8 @@ export interface Task {
     parent_task?: Task;
     dependencies?: Task[];
     blocked_by?: Task[];
+    /** Loaded on dependency tasks so cross-board chips can link and label. */
+    board?: Pick<Board, "id" | "name" | "slug">;
     gitlab_project?: GitlabProject;
     gitlab_refs?: TaskGitlabRef[];
     figma_links?: TaskFigmaLink[];
@@ -283,6 +308,13 @@ export interface AppNotification {
     };
     read_at: string | null;
     created_at: string;
+    /**
+     * Server-resolved link (task → board → team) built from current records;
+     * null when nothing the user can still access resolves.
+     */
+    url?: string | null;
+    /** Current team/board names for display; null when unresolvable. */
+    context?: { team_name: string; board_name: string | null } | null;
 }
 
 export interface GitlabConnection {
@@ -406,6 +438,23 @@ export interface SsoConfiguration {
 }
 
 export type BoardViewMode = "kanban" | "list" | "workload";
+
+/** One hit from GET route("search") — the quick switcher task search. */
+export interface TaskSearchResult {
+    id: string;
+    task_number: number | null;
+    title: string;
+    /** Route key for route("tasks.show", …): "{number}-{slug}" or the id. */
+    slug: string;
+    completed_at: string | null;
+    board: { name: string; slug: string };
+    team: { name: string; slug: string };
+    column: { name: string } | null;
+}
+
+export interface TaskSearchResponse {
+    tasks: TaskSearchResult[];
+}
 
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,

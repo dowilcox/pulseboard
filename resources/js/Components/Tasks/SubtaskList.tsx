@@ -1,6 +1,6 @@
-import { harbor, harborHex } from "@/theme/harbor";
+import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import type { Task } from "@/types";
-import { router, useForm } from "@inertiajs/react";
+import { Link as InertiaLink, router, useForm } from "@inertiajs/react";
 import AddIcon from "@mui/icons-material/Add";
 import Avatar from "@mui/material/Avatar";
 import AvatarGroup from "@mui/material/AvatarGroup";
@@ -11,7 +11,6 @@ import LinearProgress from "@mui/material/LinearProgress";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
-import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
@@ -23,7 +22,10 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
     columnId: string;
-    onSubtaskClick?: (subtask: Task) => void;
+    /** Open the "new subtask" input straight away. */
+    autoStartAdding?: boolean;
+    /** Called when the new-subtask input closes while there are no subtasks. */
+    onDismiss?: () => void;
 }
 
 export default function SubtaskList({
@@ -31,7 +33,8 @@ export default function SubtaskList({
     teamSlug,
     boardSlug,
     columnId,
-    onSubtaskClick,
+    autoStartAdding = false,
+    onDismiss,
 }: Props) {
     const subtasks = task.subtasks ?? [];
     const total = subtasks.length;
@@ -40,7 +43,7 @@ export default function SubtaskList({
     ).length;
     const progress = total > 0 ? (completed / total) * 100 : 0;
 
-    const [showForm, setShowForm] = useState(false);
+    const [showForm, setShowForm] = useState(autoStartAdding);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, reset } = useForm({
@@ -61,8 +64,13 @@ export default function SubtaskList({
         });
     };
 
-    const handleToggleComplete = (subtask: Task, e: React.MouseEvent) => {
-        e.stopPropagation();
+    const closeForm = () => {
+        setShowForm(false);
+        reset("title");
+        if (total === 0) onDismiss?.();
+    };
+
+    const handleToggleComplete = (subtask: Task) => {
         router.patch(
             route("tasks.toggle-complete", [teamSlug, boardSlug, subtask.slug]),
             {},
@@ -111,28 +119,43 @@ export default function SubtaskList({
                         subtask.completed_at !== null &&
                         subtask.completed_at !== undefined;
                     const assignees = subtask.assignees ?? [];
+                    const number = subtask.task_number
+                        ? `#${subtask.task_number} `
+                        : "";
                     return (
-                        <ListItem key={subtask.id} disablePadding>
+                        <ListItem
+                            key={subtask.id}
+                            disablePadding
+                            sx={{ alignItems: "center" }}
+                        >
+                            {/* Checkbox sits outside the link so both stay
+                                independently focusable. */}
+                            <Checkbox
+                                size="small"
+                                checked={isCompleted}
+                                onChange={() => handleToggleComplete(subtask)}
+                                slotProps={{
+                                    input: {
+                                        "aria-label": `Mark ${subtask.title} as ${isCompleted ? "incomplete" : "complete"}`,
+                                    },
+                                }}
+                                sx={{ p: "6px", mr: 0.25 }}
+                            />
                             <ListItemButton
-                                onClick={() => onSubtaskClick?.(subtask)}
+                                component={InertiaLink}
+                                href={route("tasks.show", [
+                                    teamSlug,
+                                    boardSlug,
+                                    subtask.slug ?? subtask.id,
+                                ])}
                                 dense
+                                sx={{ borderRadius: "8px", minWidth: 0 }}
                             >
-                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                    <Checkbox
-                                        edge="start"
-                                        size="small"
-                                        checked={isCompleted}
-                                        onClick={(e) =>
-                                            handleToggleComplete(subtask, e)
-                                        }
-                                        tabIndex={-1}
-                                        aria-label={`Mark ${subtask.title} as ${isCompleted ? "incomplete" : "complete"}`}
-                                    />
-                                </ListItemIcon>
                                 <ListItemText
-                                    primary={subtask.title}
+                                    primary={`${number}${subtask.title}`}
                                     primaryTypographyProps={{
                                         variant: "body2",
+                                        noWrap: true,
                                         sx: {
                                             textDecoration: isCompleted
                                                 ? "line-through"
@@ -160,7 +183,17 @@ export default function SubtaskList({
                                                 key={user.id}
                                                 title={user.name}
                                             >
-                                                <Avatar src={user.avatar_url}>
+                                                <Avatar
+                                                    src={user.avatar_url}
+                                                    alt={user.name}
+                                                    sx={{
+                                                        bgcolor:
+                                                            harborAvatarColor(
+                                                                user.name,
+                                                            ),
+                                                        color: "#fff",
+                                                    }}
+                                                >
                                                     {user.name
                                                         ?.charAt(0)
                                                         .toUpperCase()}
@@ -183,19 +216,16 @@ export default function SubtaskList({
                         fullWidth
                         autoFocus
                         placeholder="Subtask title..."
+                        slotProps={{
+                            htmlInput: { "aria-label": "New subtask title" },
+                        }}
                         value={data.title}
                         onChange={(e) => setData("title", e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === "Escape") {
-                                setShowForm(false);
-                                reset("title");
-                            }
+                            if (e.key === "Escape") closeForm();
                         }}
                         onBlur={() => {
-                            if (!data.title.trim()) {
-                                setShowForm(false);
-                                reset("title");
-                            }
+                            if (!data.title.trim()) closeForm();
                         }}
                         disabled={processing}
                     />

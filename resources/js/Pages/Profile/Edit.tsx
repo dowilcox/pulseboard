@@ -7,6 +7,7 @@ import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import type { ReactElement } from "react";
 
+import ApiTokensSection from "./Partials/ApiTokensSection";
 import AuthProviderInfo from "./Partials/AuthProviderInfo";
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import NotificationPreferencesForm from "./Partials/NotificationPreferencesForm";
@@ -50,6 +51,10 @@ export default function Edit({
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
                     <NotificationPreferencesForm />
+                </Paper>
+
+                <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
+                    <ApiTokensSection />
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>

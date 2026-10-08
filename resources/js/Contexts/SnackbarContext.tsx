@@ -62,6 +62,17 @@ export function SnackbarProvider({ children }: PropsWithChildren) {
     const pageProps = usePage<PageProps>().props;
     const flash = pageProps.flash;
 
+    // A new full visit may legitimately flash the same message again (e.g.
+    // saving the same section twice), so forget the last flash whenever one
+    // starts. Partial reloads keep stale shared props, so they don't reset.
+    useEffect(() => {
+        return router.on("start", (event) => {
+            if (event.detail.visit.only.length === 0) {
+                shownFlashRef.current = null;
+            }
+        });
+    }, []);
+
     useEffect(() => {
         const flashKey = `${flash?.success ?? ""}|${flash?.error ?? ""}`;
         if (flashKey === shownFlashRef.current) return;

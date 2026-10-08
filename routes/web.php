@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     require __DIR__.'/web/profile.php';
     require __DIR__.'/web/notifications.php';
     require __DIR__.'/web/admin.php';
+    require __DIR__.'/web/search.php';
 
     // Static board and team routes must be registered before the slug-based
     // /{team}/... and /{team}/{board}/... includes below.

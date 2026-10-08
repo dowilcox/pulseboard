@@ -52,16 +52,18 @@ class BoardTemplateTest extends TestCase
     {
         $template = $this->makeTemplate($this->user);
 
-        $response = $this->actingAs($this->user)->postJson(
+        $response = $this->actingAs($this->user)->post(
             "/{$this->team->slug}/templates/{$template->id}/create-board",
             ['name' => 'Sprint Board'],
         );
 
-        $response->assertCreated();
-
         $board = Board::where('team_id', $this->team->id)
             ->where('name', 'Sprint Board')
             ->firstOrFail();
+
+        // Inertia form submit: redirect straight to the new board.
+        $response->assertRedirect(route('teams.boards.show', [$this->team, $board]))
+            ->assertSessionHas('success');
 
         $this->assertSame('sprint-board', $board->slug);
 
@@ -88,11 +90,11 @@ class BoardTemplateTest extends TestCase
         $template = $this->makeTemplate($this->user);
 
         $this->actingAs($this->user)
-            ->postJson(
+            ->post(
                 "/{$this->team->slug}/templates/{$template->id}/create-board",
                 ['name' => 'Sprint Board'],
             )
-            ->assertCreated();
+            ->assertRedirect();
 
         $board = Board::where('team_id', $this->team->id)
             ->where('name', 'Sprint Board')
@@ -133,11 +135,98 @@ class BoardTemplateTest extends TestCase
         $template = $this->makeTemplate($otherUser);
 
         $this->actingAs($admin)
-            ->postJson(
+            ->post(
                 "/{$this->team->slug}/templates/{$template->id}/create-board",
                 ['name' => 'Admin Board'],
             )
-            ->assertCreated();
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('boards', [
+            'team_id' => $this->team->id,
+            'name' => 'Admin Board',
+        ]);
+    }
+
+    public function test_team_member_cannot_create_board_from_template(): void
+    {
+        $member = User::factory()->create();
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $member->id,
+            'role' => 'member',
+        ]);
+        $template = $this->makeTemplate($member);
+
+        $this->actingAs($member)
+            ->post(
+                "/{$this->team->slug}/templates/{$template->id}/create-board",
+                ['name' => 'Member Board'],
+            )
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('boards', ['name' => 'Member Board']);
+    }
+
+    public function test_create_board_from_template_validation_errors_return_to_form(): void
+    {
+        $template = $this->makeTemplate($this->user);
+
+        $this->actingAs($this->user)
+            ->from("/{$this->team->slug}")
+            ->post(
+                "/{$this->team->slug}/templates/{$template->id}/create-board",
+                ['name' => '', 'description' => str_repeat('a', 1001)],
+            )
+            ->assertRedirect("/{$this->team->slug}")
+            ->assertSessionHasErrors(['name', 'description']);
+
+        $this->assertSame(0, Board::where('team_id', $this->team->id)->count());
+    }
+
+    public function test_user_can_delete_own_board_template(): void
+    {
+        $template = $this->makeTemplate($this->user);
+
+        $this->actingAs($this->user)
+            ->deleteJson(route('templates.destroy', $template))
+            ->assertOk();
+
+        $this->assertDatabaseMissing('board_templates', ['id' => $template->id]);
+    }
+
+    public function test_user_cannot_delete_another_users_board_template(): void
+    {
+        $template = $this->makeTemplate(User::factory()->create());
+
+        $this->actingAs($this->user)
+            ->deleteJson(route('templates.destroy', $template))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('board_templates', ['id' => $template->id]);
+    }
+
+    public function test_app_admin_can_delete_any_board_template(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $template = $this->makeTemplate(User::factory()->create());
+
+        $this->actingAs($admin)
+            ->deleteJson(route('templates.destroy', $template))
+            ->assertOk();
+
+        $this->assertDatabaseMissing('board_templates', ['id' => $template->id]);
+    }
+
+    public function test_template_index_lists_only_own_templates(): void
+    {
+        $mine = $this->makeTemplate($this->user);
+        $this->makeTemplate(User::factory()->create());
+
+        $this->actingAs($this->user)
+            ->getJson(route('templates.index'))
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.id', $mine->id);
     }
 
     public function test_cross_team_default_task_template_is_rejected(): void

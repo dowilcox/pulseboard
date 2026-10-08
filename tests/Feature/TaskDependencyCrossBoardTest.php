@@ -194,4 +194,87 @@ class TaskDependencyCrossBoardTest extends TestCase
             'depends_on_task_id' => $taskB->id,
         ]);
     }
+
+    public function test_can_add_blocked_by_dependency_on_task_from_another_board(): void
+    {
+        $otherBoard = Board::factory()->create(['team_id' => $this->team->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+
+        $task = $this->createTask($this->board, $this->column);
+        $blocker = $this->createTask($otherBoard, $otherColumn);
+
+        $response = $this->actingAs($this->user)->post(
+            route('tasks.dependencies.store', [$this->team, $this->board, $task]),
+            ['depends_on_task_id' => $blocker->id],
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('task_dependencies', [
+            'task_id' => $task->id,
+            'depends_on_task_id' => $blocker->id,
+        ]);
+    }
+
+    public function test_can_add_blocking_dependency_through_the_other_boards_task_route(): void
+    {
+        // "Blocking" from the current task's page posts to the dependent
+        // task's own board/task URL with the current task as the blocker.
+        $otherBoard = Board::factory()->create(['team_id' => $this->team->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+
+        $current = $this->createTask($this->board, $this->column);
+        $dependent = $this->createTask($otherBoard, $otherColumn);
+
+        $response = $this->actingAs($this->user)->post(
+            route('tasks.dependencies.store', [$this->team, $otherBoard, $dependent]),
+            ['depends_on_task_id' => $current->id],
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('task_dependencies', [
+            'task_id' => $dependent->id,
+            'depends_on_task_id' => $current->id,
+        ]);
+    }
+
+    public function test_cannot_add_dependency_on_another_teams_task(): void
+    {
+        $otherTeam = Team::factory()->create();
+        $otherBoard = Board::factory()->create(['team_id' => $otherTeam->id]);
+        $otherColumn = Column::factory()->create(['board_id' => $otherBoard->id]);
+
+        $task = $this->createTask($this->board, $this->column);
+        $foreignTask = Task::factory()->create([
+            'board_id' => $otherBoard->id,
+            'column_id' => $otherColumn->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(
+            route('tasks.dependencies.store', [$this->team, $this->board, $task]),
+            ['depends_on_task_id' => $foreignTask->id],
+        );
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('depends_on_task_id');
+        $this->assertDatabaseMissing('task_dependencies', [
+            'task_id' => $task->id,
+            'depends_on_task_id' => $foreignTask->id,
+        ]);
+    }
+
+    public function test_non_member_cannot_add_dependency(): void
+    {
+        $outsider = User::factory()->create();
+        $task = $this->createTask($this->board, $this->column);
+        $other = $this->createTask($this->board, $this->column);
+
+        $response = $this->actingAs($outsider)->post(
+            route('tasks.dependencies.store', [$this->team, $this->board, $task]),
+            ['depends_on_task_id' => $other->id],
+        );
+
+        $response->assertForbidden();
+        $this->assertDatabaseCount('task_dependencies', 0);
+    }
 }

@@ -40,6 +40,8 @@ class UniqueSlug
         'profile',
         // routes/web/notifications.php
         'notifications',
+        // routes/web/search.php
+        'search',
         // routes/web/admin.php
         'admin',
         // routes/web/templates.php

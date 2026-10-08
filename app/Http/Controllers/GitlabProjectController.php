@@ -13,39 +13,21 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
-use Inertia\Inertia;
-use Inertia\Response;
 
 class GitlabProjectController extends Controller
 {
-    public function index(Team $team): Response
+    /**
+     * GitLab is managed on the Integrations tab of team settings; this URL is
+     * kept so old links (and redirects from other controllers) still work.
+     */
+    public function index(Request $request, Team $team): RedirectResponse
     {
         $this->authorize('update', $team);
 
-        $sidebarBoards = $team->boards()
-            ->active()
-            ->select('id', 'team_id', 'name', 'slug', 'sort_order')
-            ->with('media')
-            ->orderBy('sort_order')
-            ->get();
-        $projects = $team->gitlabProjects()
-            ->with('connection')
-            ->orderBy('name')
-            ->get();
+        // Keep any flash message from a controller that redirected here.
+        $request->session()->reflash();
 
-        $connections = $team->gitlabConnections()
-            ->orderBy('name')
-            ->get();
-
-        $activeConnections = $connections->where('is_active', true)->values();
-
-        return Inertia::render('Teams/Settings/GitlabProjects', [
-            'team' => $team,
-            'sidebarBoards' => $sidebarBoards,
-            'gitlabProjects' => $projects,
-            'connections' => $connections,
-            'activeConnections' => $activeConnections->map->only(['id', 'name', 'base_url']),
-        ]);
+        return Redirect::route('teams.settings', ['team' => $team, 'tab' => 'integrations']);
     }
 
     public function search(Request $request, Team $team): JsonResponse
@@ -103,17 +85,19 @@ class GitlabProjectController extends Controller
 
         $connection = $team->gitlabConnections()->findOrFail($validated['connection_id']);
 
-        LinkGitlabProject::run($team, $connection, $validated['gitlab_project_id']);
+        $project = LinkGitlabProject::run($team, $connection, $validated['gitlab_project_id']);
 
-        return Redirect::route('teams.gitlab-projects.index', $team);
+        return Redirect::back()->with('success', "Linked GitLab project “{$project->path_with_namespace}”.");
     }
 
     public function destroy(Team $team, GitlabProject $gitlabProject): RedirectResponse
     {
         $this->authorize('update', $team);
 
+        $name = $gitlabProject->path_with_namespace;
+
         UnlinkGitlabProject::run($gitlabProject);
 
-        return Redirect::route('teams.gitlab-projects.index', $team);
+        return Redirect::back()->with('success', "Unlinked GitLab project “{$name}”.");
     }
 }

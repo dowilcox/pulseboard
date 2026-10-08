@@ -10,6 +10,7 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import MuiLink from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 
 interface LoginProps {
     status?: string;
@@ -17,6 +18,7 @@ interface LoginProps {
     canResetPassword: boolean;
     ssoEnabled?: boolean;
     localAuthEnabled?: boolean;
+    canRegister?: boolean;
 }
 
 export default function Login({
@@ -25,6 +27,7 @@ export default function Login({
     canResetPassword,
     ssoEnabled,
     localAuthEnabled = true,
+    canRegister = false,
 }: LoginProps) {
     const { data, setData, post, processing, errors, reset } = useForm({
         email: "",
@@ -146,6 +149,24 @@ export default function Login({
                         Sign in with SSO
                     </Button>
                 </>
+            )}
+
+            {canRegister && localAuthEnabled && (
+                <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 3, textAlign: "center" }}
+                >
+                    Don&apos;t have an account?{" "}
+                    <MuiLink
+                        component={Link}
+                        href={route("register")}
+                        underline="hover"
+                        fontWeight={600}
+                    >
+                        Register
+                    </MuiLink>
+                </Typography>
             )}
         </>
     );

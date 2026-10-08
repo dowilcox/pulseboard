@@ -1,272 +1,393 @@
-import { useCallback, useMemo } from "react";
-import { PRIORITY_COLORS } from "@/constants/priorities";
-import { harborHex } from "@/theme/harbor";
+import { useMemo, useState } from "react";
+import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
+import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { Column, Task, User } from "@/types";
+import { pluralize } from "@/utils/boardFilters";
 import { getTaskLabel } from "@/utils/gitlabPrefix";
+import { describeTaskCard } from "@/utils/taskCardLabel";
+import {
+    computeWorkload,
+    PRIORITY_RANK,
+    type WorkloadGroup,
+} from "@/utils/workload";
+import { Link } from "@inertiajs/react";
+import Alert from "@mui/material/Alert";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import LinearProgress from "@mui/material/LinearProgress";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
+import PersonOffOutlinedIcon from "@mui/icons-material/PersonOffOutlined";
 
-function TaskChip({
-    task,
-    onTaskClick,
-}: {
-    task: Task;
-    onTaskClick: (task: Task) => void;
-}) {
-    const handleClick = useCallback(
-        () => onTaskClick(task),
-        [onTaskClick, task],
-    );
+/** Tasks shown per person before "+N more". */
+const PREVIEW_COUNT = 8;
+
+function initials(name: string): string {
+    return name
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part.charAt(0))
+        .join("")
+        .toUpperCase();
+}
+
+function TaskChip({ task, href }: { task: Task; href: string }) {
     return (
         <Chip
-            label={getTaskLabel(task)}
+            component={Link}
+            href={href}
+            clickable
             size="small"
-            onClick={handleClick}
+            aria-label={describeTaskCard(task)}
+            icon={
+                task.priority !== "none" ? (
+                    <Box
+                        component="span"
+                        sx={{ display: "inline-flex", ml: "6px !important" }}
+                    >
+                        <PriorityIndicator
+                            priority={task.priority}
+                            showLabel={false}
+                        />
+                    </Box>
+                ) : undefined
+            }
+            label={getTaskLabel(task)}
             sx={{
-                cursor: "pointer",
-                borderLeft: 3,
-                borderColor: PRIORITY_COLORS[task.priority] ?? harborHex.track,
-                maxWidth: 200,
+                maxWidth: { xs: "100%", sm: 280 },
+                height: 28,
+                fontSize: "12.5px",
+                fontWeight: 600,
+                bgcolor: harbor.card,
+                color: harbor.ink,
+                border: `1px solid ${harbor.cardBorder}`,
+                boxShadow: harbor.chipShadow,
+                "&:hover": { bgcolor: harbor.countBg },
             }}
         />
+    );
+}
+
+function GroupCard({
+    group,
+    maxTasks,
+    expanded,
+    onToggle,
+    taskHref,
+}: {
+    group: WorkloadGroup;
+    maxTasks: number;
+    expanded: boolean;
+    onToggle: () => void;
+    taskHref: (task: Task) => string;
+}) {
+    const name = group.user?.name ?? "Unassigned";
+    const visible = expanded
+        ? group.tasks
+        : group.tasks.slice(0, PREVIEW_COUNT);
+    const hidden = group.tasks.length - PREVIEW_COUNT;
+    const listId = `workload-${group.key}`;
+    const priorities = (
+        Object.entries(group.byPriority) as [Task["priority"], number][]
+    ).sort(([a], [b]) => PRIORITY_RANK[a] - PRIORITY_RANK[b]);
+
+    return (
+        <Paper
+            component="section"
+            aria-labelledby={`${listId}-name`}
+            elevation={1}
+            sx={{ p: { xs: 1.75, sm: 2 } }}
+        >
+            <Box
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
+                    mb: 1.25,
+                    flexWrap: "wrap",
+                }}
+            >
+                {group.user ? (
+                    <Avatar
+                        alt=""
+                        src={group.user.avatar_url}
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            fontSize: "0.8rem",
+                            bgcolor: harborAvatarColor(group.user.name),
+                            color: "#ffffff",
+                        }}
+                    >
+                        {initials(group.user.name)}
+                    </Avatar>
+                ) : (
+                    <Avatar
+                        alt=""
+                        sx={{
+                            width: 36,
+                            height: 36,
+                            bgcolor: harbor.countBg,
+                            color: harbor.sub,
+                        }}
+                    >
+                        <PersonOffOutlinedIcon fontSize="small" />
+                    </Avatar>
+                )}
+                <Box sx={{ flex: "1 1 160px", minWidth: 0 }}>
+                    <Typography
+                        id={`${listId}-name`}
+                        variant="subtitle2"
+                        component="h2"
+                        sx={{ fontWeight: 700, color: harbor.ink }}
+                        noWrap
+                    >
+                        {name}
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{ color: harbor.sub, fontSize: "12.5px" }}
+                    >
+                        {pluralize(group.tasks.length, "task")} ·{" "}
+                        {pluralize(group.points, "point")}
+                        {group.unestimated > 0 &&
+                            ` · ${group.unestimated} unestimated`}
+                    </Typography>
+                </Box>
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 1.25,
+                        flexWrap: "wrap",
+                        alignItems: "center",
+                    }}
+                >
+                    {priorities.map(([priority, count]) =>
+                        priority === "none" ? (
+                            <Typography
+                                key={priority}
+                                variant="body2"
+                                sx={{
+                                    color: harbor.sub,
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {count} no priority
+                            </Typography>
+                        ) : (
+                            <Box
+                                key={priority}
+                                sx={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    color: harbor.sub,
+                                }}
+                            >
+                                {count}
+                                <PriorityIndicator
+                                    priority={priority}
+                                    fontSize={12}
+                                />
+                            </Box>
+                        ),
+                    )}
+                </Box>
+            </Box>
+            <LinearProgress
+                variant="determinate"
+                aria-hidden
+                value={(group.tasks.length / maxTasks) * 100}
+                sx={{ height: 6, borderRadius: 3, mb: 1.5 }}
+            />
+            <Box
+                id={listId}
+                component="ul"
+                sx={{
+                    display: "flex",
+                    gap: 1,
+                    flexWrap: "wrap",
+                    listStyle: "none",
+                    m: 0,
+                    p: 0,
+                    "& > li": { maxWidth: "100%" },
+                }}
+            >
+                {visible.map((task) => (
+                    <li key={task.id}>
+                        <TaskChip task={task} href={taskHref(task)} />
+                    </li>
+                ))}
+            </Box>
+            {hidden > 0 && (
+                <Button
+                    size="small"
+                    onClick={onToggle}
+                    aria-expanded={expanded}
+                    aria-controls={listId}
+                    sx={{ mt: 1, color: harbor.accent }}
+                >
+                    {expanded ? "Show fewer" : `Show ${hidden} more`}
+                </Button>
+            )}
+        </Paper>
     );
 }
 
 interface Props {
     columns: Column[];
     members: User[];
-    filterFn: (task: Task) => boolean;
-    onTaskClick: (task: Task) => void;
-}
-
-interface MemberWorkload {
-    user: User;
+    /** Every task on the board once loaded; the first pages until then. */
     tasks: Task[];
-    totalEffort: number;
-    byPriority: Record<string, number>;
+    complete: boolean;
+    loading: boolean;
+    filterFn: (task: Task) => boolean;
+    filtersActive: boolean;
+    /** Active assignee filter (member ids). */
+    assigneeIds: string[];
+    /** Filters other than assignees are active. */
+    otherFiltersActive: boolean;
+    onShowEveryone: () => void;
+    taskHref: (task: Task) => string;
 }
 
 export default function WorkloadView({
     columns,
     members,
+    tasks,
+    complete,
+    loading,
     filterFn,
-    onTaskClick,
+    filtersActive,
+    assigneeIds,
+    otherFiltersActive,
+    onShowEveryone,
+    taskHref,
 }: Props) {
-    const allTasks = useMemo(() => {
-        const tasks: Task[] = [];
-        for (const col of columns) {
-            for (const task of col.tasks ?? []) {
-                tasks.push(task);
-            }
-        }
-        return tasks.filter(filterFn);
-    }, [columns, filterFn]);
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
-    const doneColumnIds = useMemo(() => {
-        const ids = new Set<string>();
-        for (const col of columns) {
-            if (col.is_done_column) ids.add(col.id);
-        }
-        return ids;
-    }, [columns]);
-
-    const workloads = useMemo(() => {
-        const map = new Map<string, MemberWorkload>();
-
-        for (const member of members) {
-            map.set(member.id, {
-                user: member,
-                tasks: [],
-                totalEffort: 0,
-                byPriority: {},
-            });
-        }
-
-        // Also track unassigned
-        const unassigned: Task[] = [];
-
-        for (const task of allTasks) {
-            // Skip done tasks
-            if (doneColumnIds.has(task.column_id)) continue;
-
-            if (!task.assignees || task.assignees.length === 0) {
-                unassigned.push(task);
-                continue;
-            }
-
-            for (const assignee of task.assignees) {
-                let wl = map.get(assignee.id);
-                if (!wl) {
-                    wl = {
-                        user: assignee,
-                        tasks: [],
-                        totalEffort: 0,
-                        byPriority: {},
-                    };
-                    map.set(assignee.id, wl);
-                }
-                wl.tasks.push(task);
-                wl.totalEffort += task.effort_estimate ?? 1;
-                wl.byPriority[task.priority] =
-                    (wl.byPriority[task.priority] ?? 0) + 1;
-            }
-        }
-
-        const result = Array.from(map.values())
-            .filter((w) => w.tasks.length > 0)
-            .sort((a, b) => b.tasks.length - a.tasks.length);
-
-        return { workloads: result, unassigned };
-    }, [allTasks, members, doneColumnIds]);
-
-    const maxTasks = Math.max(
-        ...workloads.workloads.map((w) => w.tasks.length),
-        1,
+    const doneColumnIds = useMemo(
+        () => new Set(columns.filter((c) => c.is_done_column).map((c) => c.id)),
+        [columns],
     );
+
+    const workload = useMemo(
+        () =>
+            computeWorkload({
+                tasks: filtersActive ? tasks.filter(filterFn) : tasks,
+                members,
+                doneColumnIds,
+                onlyAssigneeIds: assigneeIds,
+            }),
+        [tasks, filterFn, filtersActive, members, doneColumnIds, assigneeIds],
+    );
+
+    const filteredNames = useMemo(() => {
+        const byId = new Map(members.map((m) => [m.id, m.name]));
+        return assigneeIds
+            .map((id) => byId.get(id))
+            .filter((n): n is string => Boolean(n));
+    }, [assigneeIds, members]);
+
+    const allGroups = [
+        ...workload.groups,
+        ...(workload.unassigned && workload.unassigned.tasks.length > 0
+            ? [workload.unassigned]
+            : []),
+    ];
+    const maxTasks = Math.max(...allGroups.map((g) => g.tasks.length), 1);
+
+    const toggle = (key: string) =>
+        setExpanded((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {workloads.workloads.length === 0 &&
-            workloads.unassigned.length === 0 ? (
+            {assigneeIds.length > 0 && (
+                <Alert
+                    severity="info"
+                    action={
+                        <Button
+                            color="inherit"
+                            size="small"
+                            onClick={onShowEveryone}
+                        >
+                            Show everyone
+                        </Button>
+                    }
+                >
+                    Showing only{" "}
+                    {filteredNames.length > 0
+                        ? filteredNames.join(", ")
+                        : "the selected people"}
+                    .
+                </Alert>
+            )}
+            {otherFiltersActive && (
+                <Typography variant="body2" sx={{ color: harbor.sub }}>
+                    Totals count only tasks that match the current filters.
+                </Typography>
+            )}
+
+            {!complete && (
+                <Box
+                    role="status"
+                    sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        color: harbor.sub,
+                    }}
+                >
+                    {loading && <CircularProgress size={14} aria-hidden />}
+                    <Typography variant="body2" sx={{ color: harbor.sub }}>
+                        {loading
+                            ? "Loading every task on the board…"
+                            : "Showing loaded tasks only."}
+                    </Typography>
+                </Box>
+            )}
+
+            {allGroups.length === 0 ? (
                 <Box sx={{ py: 6, textAlign: "center" }}>
                     <Typography color="text.secondary">
-                        No active tasks
+                        {filtersActive
+                            ? "No active tasks match the current filters."
+                            : "No active tasks."}
                     </Typography>
                 </Box>
             ) : (
-                <>
-                    {workloads.workloads.map((wl) => (
-                        <Paper
-                            key={wl.user.id}
-                            variant="outlined"
-                            sx={{ p: 2 }}
-                        >
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 2,
-                                    mb: 1.5,
-                                }}
-                            >
-                                <Avatar
-                                    alt={wl.user.name}
-                                    src={wl.user.avatar_url}
-                                    sx={{ width: 36, height: 36 }}
-                                >
-                                    {wl.user.name.charAt(0)}
-                                </Avatar>
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography
-                                        variant="subtitle2"
-                                        fontWeight={600}
-                                    >
-                                        {wl.user.name}
-                                    </Typography>
-                                    <Typography
-                                        variant="caption"
-                                        color="text.secondary"
-                                    >
-                                        {wl.tasks.length} task
-                                        {wl.tasks.length !== 1 ? "s" : ""}{" "}
-                                        &middot; {wl.totalEffort} effort points
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ display: "flex", gap: 0.5 }}>
-                                    {Object.entries(wl.byPriority).map(
-                                        ([priority, count]) => (
-                                            <Chip
-                                                key={priority}
-                                                label={`${count} ${priority}`}
-                                                size="small"
-                                                sx={{
-                                                    height: 20,
-                                                    fontSize: "0.6rem",
-                                                    borderLeft: 3,
-                                                    borderColor:
-                                                        PRIORITY_COLORS[
-                                                            priority
-                                                        ] ?? harborHex.track,
-                                                }}
-                                            />
-                                        ),
-                                    )}
-                                </Box>
-                            </Box>
-                            <LinearProgress
-                                variant="determinate"
-                                value={(wl.tasks.length / maxTasks) * 100}
-                                sx={{ height: 6, borderRadius: 3, mb: 1.5 }}
-                            />
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                {wl.tasks.slice(0, 10).map((task) => (
-                                    <TaskChip
-                                        key={task.id}
-                                        task={task}
-                                        onTaskClick={onTaskClick}
-                                    />
-                                ))}
-                                {wl.tasks.length > 10 && (
-                                    <Chip
-                                        label={`+${wl.tasks.length - 10} more`}
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                )}
-                            </Box>
-                        </Paper>
-                    ))}
+                allGroups.map((group) => (
+                    <GroupCard
+                        key={group.key}
+                        group={group}
+                        maxTasks={maxTasks}
+                        expanded={expanded.has(group.key)}
+                        onToggle={() => toggle(group.key)}
+                        taskHref={taskHref}
+                    />
+                ))
+            )}
 
-                    {/* Unassigned tasks */}
-                    {workloads.unassigned.length > 0 && (
-                        <Paper
-                            variant="outlined"
-                            sx={{ p: 2, bgcolor: "action.hover" }}
-                        >
-                            <Typography
-                                variant="subtitle2"
-                                fontWeight={600}
-                                sx={{ mb: 1 }}
-                            >
-                                Unassigned ({workloads.unassigned.length})
-                            </Typography>
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    gap: 1,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                {workloads.unassigned
-                                    .slice(0, 10)
-                                    .map((task) => (
-                                        <TaskChip
-                                            key={task.id}
-                                            task={task}
-                                            onTaskClick={onTaskClick}
-                                        />
-                                    ))}
-                                {workloads.unassigned.length > 10 && (
-                                    <Chip
-                                        label={`+${workloads.unassigned.length - 10} more`}
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                )}
-                            </Box>
-                        </Paper>
-                    )}
-                </>
+            {workload.idleMembers.length > 0 && (
+                <Typography variant="body2" sx={{ color: harbor.sub }}>
+                    <Box component="span" sx={{ fontWeight: 700 }}>
+                        {filtersActive
+                            ? "No matching active tasks:"
+                            : "No active tasks:"}
+                    </Box>{" "}
+                    {workload.idleMembers.map((m) => m.name).join(", ")}
+                </Typography>
             )}
         </Box>
     );

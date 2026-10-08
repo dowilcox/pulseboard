@@ -2,13 +2,19 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { usePage } from "@inertiajs/react";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
+import { appendPage, mergeFirstPage } from "@/utils/notificationList";
 import type {
     AppNotification,
     NotificationIndexResponse,
     PageProps,
 } from "@/types";
 
-type NotificationError = "fetch" | "mark_read" | "mark_all_read" | "clear_all";
+type NotificationError =
+    | "fetch"
+    | "load_more"
+    | "mark_read"
+    | "mark_all_read"
+    | "clear_all";
 
 interface NotificationEvent {
     id: string;
@@ -25,6 +31,10 @@ export function useNotifications() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState<NotificationError | null>(null);
+    /** Pages fetched so far; "Load more" asks for the next one. */
+    const [pagesLoaded, setPagesLoaded] = useState(0);
+    const [lastPage, setLastPage] = useState(1);
+    const [loadingMore, setLoadingMore] = useState(false);
     const fetchControllerRef = useRef<AbortController | null>(null);
 
     // Abort pending fetches on unmount
@@ -39,6 +49,7 @@ export function useNotifications() {
         setUnreadCount(unreadNotificationsCount ?? 0);
     }, [unreadNotificationsCount]);
 
+    /** Fetch (or refresh) the first page, keeping any later pages loaded. */
     const fetchNotifications = useCallback(async () => {
         fetchControllerRef.current?.abort();
         const controller = new AbortController();
@@ -51,14 +62,36 @@ export function useNotifications() {
                     signal: controller.signal,
                 },
             );
-            setNotifications(data.data ?? []);
+            setNotifications((prev) => mergeFirstPage(data.data ?? [], prev));
             setUnreadCount(data.unread_count ?? 0);
+            setLastPage(data.last_page ?? 1);
+            setPagesLoaded((prev) => Math.max(prev, 1));
             setLoaded(true);
         } catch (err) {
             if (axios.isCancel(err)) return;
             setError("fetch");
         }
     }, []);
+
+    const loadMore = useCallback(async () => {
+        if (loadingMore) return;
+        setLoadingMore(true);
+        try {
+            setError(null);
+            const { data } = await axios.get<NotificationIndexResponse>(
+                route("notifications.index"),
+                { params: { page: pagesLoaded + 1 } },
+            );
+            setNotifications((prev) => appendPage(prev, data.data ?? []));
+            setUnreadCount(data.unread_count ?? 0);
+            setLastPage(data.last_page ?? 1);
+            setPagesLoaded(data.current_page ?? pagesLoaded + 1);
+        } catch {
+            setError("load_more");
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [loadingMore, pagesLoaded]);
 
     // Track loaded state in a ref to avoid re-subscribing the channel
     const loadedRef = useRef(loaded);
@@ -89,7 +122,8 @@ export function useNotifications() {
         fetchNotifications();
     }, [auth.user?.id, reconnectVersion, fetchNotifications]);
 
-    const markRead = useCallback(async (id: string) => {
+    /** Mark one notification read. Resolves false when the request fails. */
+    const markRead = useCallback(async (id: string): Promise<boolean> => {
         try {
             setError(null);
             await axios.patch(route("notifications.read", id));
@@ -101,12 +135,14 @@ export function useNotifications() {
                 ),
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
+            return true;
         } catch {
             setError("mark_read");
+            return false;
         }
     }, []);
 
-    const markAllRead = useCallback(async () => {
+    const markAllRead = useCallback(async (): Promise<boolean> => {
         try {
             setError(null);
             await axios.post(route("notifications.read-all"));
@@ -117,19 +153,25 @@ export function useNotifications() {
                 })),
             );
             setUnreadCount(0);
+            return true;
         } catch {
             setError("mark_all_read");
+            return false;
         }
     }, []);
 
-    const clearAll = useCallback(async () => {
+    const clearAll = useCallback(async (): Promise<boolean> => {
         try {
             setError(null);
             await axios.delete(route("notifications.clear-all"));
             setNotifications([]);
             setUnreadCount(0);
+            setPagesLoaded(1);
+            setLastPage(1);
+            return true;
         } catch {
             setError("clear_all");
+            return false;
         }
     }, []);
 
@@ -137,6 +179,9 @@ export function useNotifications() {
         unreadCount,
         notifications,
         fetchNotifications,
+        loadMore,
+        hasMore: loaded && pagesLoaded < lastPage,
+        loadingMore,
         markRead,
         markAllRead,
         clearAll,

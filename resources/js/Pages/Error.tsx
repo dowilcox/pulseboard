@@ -48,7 +48,7 @@ export default function Error({ status }: Props) {
                     sx={{
                         fontSize: { xs: "4rem", md: "6rem" },
                         fontWeight: 700,
-                        color: "text.disabled",
+                        color: "text.secondary",
                         lineHeight: 1,
                     }}
                 >

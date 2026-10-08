@@ -29,18 +29,30 @@ class TeamBotControllerTest extends TestCase
     {
         [$user, $team] = $this->createTeamWithRole('owner');
 
+        // Bots now live on the "API & bots" tab of team settings.
         $response = $this->actingAs($user)->get(route('teams.bots.index', $team));
 
-        $response->assertOk();
+        $response->assertRedirect(route('teams.settings', ['team' => $team, 'tab' => 'api']));
+
+        $this->actingAs($user)
+            ->get(route('teams.settings', ['team' => $team, 'tab' => 'api']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('bots'));
     }
 
     public function test_team_admin_can_view_bots_page(): void
     {
         [$user, $team] = $this->createTeamWithRole('admin');
 
+        // Bots now live on the "API & bots" tab of team settings.
         $response = $this->actingAs($user)->get(route('teams.bots.index', $team));
 
-        $response->assertOk();
+        $response->assertRedirect(route('teams.settings', ['team' => $team, 'tab' => 'api']));
+
+        $this->actingAs($user)
+            ->get(route('teams.settings', ['team' => $team, 'tab' => 'api']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('bots'));
     }
 
     public function test_team_member_cannot_view_bots_page(): void

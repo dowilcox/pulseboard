@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\Boards\ArchiveBoard;
 use App\Actions\Boards\CreateBoard;
 use App\Actions\Boards\DeleteBoard;
+use App\Actions\Boards\UnarchiveBoard;
 use App\Actions\Boards\UpdateBoard;
 use App\Actions\Media\DeleteModelAvatar;
 use App\Actions\Media\UploadModelAvatar;
@@ -13,6 +14,7 @@ use App\Http\Requests\StoreBoardRequest;
 use App\Http\Requests\UpdateBoardRequest;
 use App\Models\Board;
 use App\Models\Label;
+use App\Models\SavedFilter;
 use App\Models\Task;
 use App\Models\TaskTemplate;
 use App\Models\Team;
@@ -67,6 +69,13 @@ class BoardController extends Controller
 
         $labels = $team->labels()->orderBy('name')->get();
 
+        // The viewer's saved filters ship with the page so a default filter
+        // can be applied on the first render instead of after a fetch.
+        $savedFilters = SavedFilter::where('board_id', $board->id)
+            ->where('user_id', auth()->id())
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Boards/Show', [
             'team' => $team,
             'board' => $board,
@@ -78,6 +87,10 @@ class BoardController extends Controller
             'taskTemplates' => $taskTemplates,
             'labels' => $labels,
             'initialTasksPerColumn' => self::INITIAL_TASKS_PER_COLUMN,
+            'savedFilters' => $savedFilters,
+            'can' => [
+                'update' => auth()->user()->can('update', $board),
+            ],
         ]);
     }
 
@@ -92,7 +105,8 @@ class BoardController extends Controller
 
         $board = CreateBoard::run($team, $request->validated());
 
-        return Redirect::route('teams.boards.show', [$team, $board]);
+        return Redirect::route('teams.boards.show', [$team, $board])
+            ->with('success', "Board “{$board->name}” created.");
     }
 
     /**
@@ -105,9 +119,12 @@ class BoardController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $board);
 
-        UpdateBoard::run($board, $request->validated());
+        // Renaming changes the slug, so redirect to the refreshed board's
+        // settings URL rather than back() to the old one.
+        $board = UpdateBoard::run($board, $request->validated());
 
-        return Redirect::route('teams.boards.show', [$team, $board]);
+        return Redirect::route('teams.boards.settings', [$team, $board])
+            ->with('success', 'Board details saved.');
     }
 
     /**
@@ -131,7 +148,21 @@ class BoardController extends Controller
 
         ArchiveBoard::run($board);
 
-        return Redirect::route('teams.show', $team);
+        return Redirect::route('teams.show', $team)
+            ->with('success', "Board “{$board->name}” archived. Restore it from Archived boards on this page.");
+    }
+
+    /**
+     * Restore an archived board.
+     */
+    public function unarchive(Team $team, Board $board): RedirectResponse
+    {
+        $this->authorize('update', $board);
+
+        UnarchiveBoard::run($board);
+
+        return Redirect::back()
+            ->with('success', "Board “{$board->name}” restored.");
     }
 
     /**
@@ -142,10 +173,12 @@ class BoardController extends Controller
         $this->authorize('update', $board);
 
         $sidebarBoards = $this->sidebarBoards($team);
-        $board->load('columns');
+        // tasks_count lets the settings page ask where a removed column's tasks go.
+        $board->load(['columns' => fn ($query) => $query->withCount('tasks')]);
 
         $members = $team->members()->whereNull('deactivated_at')->get();
         $labels = Label::where('team_id', $team->id)->get();
+        $user = request()->user();
 
         return Inertia::render('Boards/Settings', [
             'team' => $team,
@@ -154,6 +187,11 @@ class BoardController extends Controller
             'columns' => $board->columns,
             'members' => $members,
             'labels' => $labels,
+            'can' => [
+                'archive' => $user->can('delete', $board),
+                'delete' => $user->can('delete', $board),
+                'manageTaskTemplates' => $user->can('update', $team),
+            ],
         ]);
     }
 

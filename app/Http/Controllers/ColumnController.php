@@ -27,7 +27,7 @@ class ColumnController extends Controller
 
         CreateColumn::run($board, $request->validated());
 
-        return Redirect::back();
+        return Redirect::back()->with('success', 'Column added.');
     }
 
     /**
@@ -39,7 +39,7 @@ class ColumnController extends Controller
 
         UpdateColumn::run($column, $request->validated());
 
-        return Redirect::back();
+        return Redirect::back()->with('success', 'Column updated.');
     }
 
     /**
@@ -51,7 +51,7 @@ class ColumnController extends Controller
 
         ReorderColumns::run($board, $request->validated('columns'));
 
-        return Redirect::back();
+        return Redirect::back()->with('success', 'Columns saved.');
     }
 
     /**
@@ -68,6 +68,9 @@ class ColumnController extends Controller
 
         DeleteColumn::run($column, $targetColumn);
 
-        return Redirect::back();
+        return Redirect::back()->with(
+            'success',
+            $targetColumn ? "Column deleted. Its tasks moved to \"{$targetColumn->name}\"." : 'Column deleted.',
+        );
     }
 }

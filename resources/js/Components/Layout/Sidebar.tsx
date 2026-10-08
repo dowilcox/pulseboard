@@ -4,7 +4,9 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import LogoutIcon from "@mui/icons-material/Logout";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -12,37 +14,71 @@ import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
+import MuiLink from "@mui/material/Link";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
+import { useId, useMemo, type ReactNode } from "react";
 import type { PageProps } from "@/types";
 import { useSidebar } from "@/Contexts/SidebarContext";
-import { harbor } from "@/theme/harbor";
+import { harbor, harborAvatarColor } from "@/theme/harbor";
 import Logo from "@/Components/Common/Logo";
-import BoardList from "./BoardList";
-import type { ReactNode } from "react";
-
-// Harbor: the sidebar sits directly on the canvas — active items become
-// cream card tiles with a soft chip shadow instead of accent strips.
-const SIDEBAR_BG = harbor.canvas;
-const SIDEBAR_TEXT = harbor.ink;
-const SIDEBAR_MUTED = harbor.faint;
-const SIDEBAR_SELECTED = harbor.card;
-const SIDEBAR_HOVER = "rgba(34, 41, 53, 0.05)";
-const SIDEBAR_DIVIDER = "rgba(34, 41, 53, 0.08)";
+import {
+    buildBoardIndex,
+    nameInitials,
+    resolveRecentBoards,
+    resolveStarredBoards,
+    type BoardRef,
+} from "@/utils/sidebarNav";
+import SidebarBoardRow from "./SidebarBoardRow";
+import SidebarRail from "./SidebarRail";
+import SidebarTeamSection from "./SidebarTeamSection";
+import {
+    INSET_FOCUS,
+    SIDEBAR_BG,
+    SIDEBAR_DIVIDER,
+    SIDEBAR_HOVER,
+    SIDEBAR_MUTED,
+    SIDEBAR_SELECTED,
+    SIDEBAR_TEXT,
+    SidebarSectionLabel,
+} from "./SidebarShared";
 
 interface SidebarProps {
     activeBoardId?: string;
+    /** Mobile drawer: always expanded, with the account footer. */
     forceExpanded?: boolean;
 }
 
 interface NavItemProps {
-    href?: string;
+    href: string;
     icon: ReactNode;
     label: string;
     selected?: boolean;
     collapsed: boolean;
-    badge?: number;
+}
+
+function navItemSx(selected: boolean, collapsed: boolean) {
+    return {
+        minHeight: 44,
+        mx: 1,
+        mb: 0.5,
+        px: collapsed ? 1 : 1.75,
+        justifyContent: collapsed ? "center" : "flex-start",
+        borderRadius: `${harbor.radius.tile}px`,
+        color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
+        bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
+        boxShadow: selected ? harbor.chipShadow : "none",
+        "&.Mui-selected": {
+            bgcolor: SIDEBAR_SELECTED,
+            color: SIDEBAR_TEXT,
+        },
+        "&.Mui-selected:hover, &:hover": {
+            bgcolor: selected ? SIDEBAR_SELECTED : SIDEBAR_HOVER,
+            color: SIDEBAR_TEXT,
+        },
+        ...INSET_FOCUS,
+    } as const;
 }
 
 function NavItem({
@@ -51,33 +87,15 @@ function NavItem({
     label,
     selected = false,
     collapsed,
-    badge,
 }: NavItemProps) {
-    const content = href ? (
+    const content = (
         <ListItemButton
             component={Link}
             href={href}
             selected={selected}
             aria-current={selected ? "page" : undefined}
-            sx={{
-                minHeight: 46,
-                mx: 1,
-                mb: 0.5,
-                px: collapsed ? 1 : 1.75,
-                justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: `${harbor.radius.tile}px`,
-                color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
-                bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
-                boxShadow: selected ? harbor.chipShadow : "none",
-                "&.Mui-selected": {
-                    bgcolor: SIDEBAR_SELECTED,
-                    color: SIDEBAR_TEXT,
-                },
-                "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? SIDEBAR_SELECTED : SIDEBAR_HOVER,
-                    color: SIDEBAR_TEXT,
-                },
-            }}
+            aria-label={collapsed ? label : undefined}
+            sx={navItemSx(selected, collapsed)}
         >
             <ListItemIcon
                 sx={{
@@ -89,112 +107,57 @@ function NavItem({
                 {icon}
             </ListItemIcon>
             {!collapsed && (
-                <>
-                    <ListItemText
-                        primary={label}
-                        primaryTypographyProps={{
-                            fontWeight: selected ? 800 : 600,
-                            fontSize: "0.95rem",
-                        }}
-                    />
-                    {badge != null && badge > 0 && (
-                        <Box
-                            sx={{
-                                minWidth: 26,
-                                height: 26,
-                                px: 1,
-                                borderRadius: 999,
-                                bgcolor: harbor.countBg,
-                                color: harbor.sub,
-                                display: "grid",
-                                placeItems: "center",
-                                fontSize: "0.8rem",
-                                fontWeight: 800,
-                            }}
-                        >
-                            {badge}
-                        </Box>
-                    )}
-                </>
-            )}
-        </ListItemButton>
-    ) : (
-        <ListItemButton
-            component="button"
-            selected={selected}
-            aria-current={selected ? "page" : undefined}
-            sx={{
-                minHeight: 46,
-                mx: 1,
-                mb: 0.5,
-                px: collapsed ? 1 : 1.75,
-                justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: `${harbor.radius.tile}px`,
-                color: selected ? SIDEBAR_TEXT : SIDEBAR_MUTED,
-                bgcolor: selected ? SIDEBAR_SELECTED : "transparent",
-                boxShadow: selected ? harbor.chipShadow : "none",
-                width: "calc(100% - 16px)",
-                textAlign: "left",
-                "&.Mui-selected": {
-                    bgcolor: SIDEBAR_SELECTED,
-                    color: SIDEBAR_TEXT,
-                },
-                "&.Mui-selected:hover, &:hover": {
-                    bgcolor: selected ? SIDEBAR_SELECTED : SIDEBAR_HOVER,
-                    color: SIDEBAR_TEXT,
-                },
-            }}
-        >
-            <ListItemIcon
-                sx={{
-                    minWidth: collapsed ? 0 : 38,
-                    color: "inherit",
-                    justifyContent: "center",
-                }}
-            >
-                {icon}
-            </ListItemIcon>
-            {!collapsed && (
-                <>
-                    <ListItemText
-                        primary={label}
-                        primaryTypographyProps={{
-                            fontWeight: selected ? 800 : 600,
-                            fontSize: "0.95rem",
-                        }}
-                    />
-                    {badge != null && badge > 0 && (
-                        <Box
-                            sx={{
-                                minWidth: 26,
-                                height: 26,
-                                px: 1,
-                                borderRadius: 999,
-                                bgcolor: harbor.countBg,
-                                color: harbor.sub,
-                                display: "grid",
-                                placeItems: "center",
-                                fontSize: "0.8rem",
-                                fontWeight: 800,
-                            }}
-                        >
-                            {badge}
-                        </Box>
-                    )}
-                </>
+                <ListItemText
+                    primary={label}
+                    primaryTypographyProps={{
+                        fontWeight: selected ? 800 : 600,
+                        fontSize: "0.95rem",
+                    }}
+                />
             )}
         </ListItemButton>
     );
 
-    if (collapsed) {
-        return (
-            <Tooltip title={label} placement="right">
-                {content}
-            </Tooltip>
-        );
-    }
+    return (
+        <Box component="li" sx={{ listStyle: "none" }}>
+            {collapsed ? (
+                <Tooltip title={label} placement="right">
+                    {content}
+                </Tooltip>
+            ) : (
+                content
+            )}
+        </Box>
+    );
+}
 
-    return content;
+function BoardRefList({
+    refs,
+    labelId,
+    activeBoardId,
+    showTeamNames,
+}: {
+    refs: BoardRef[];
+    labelId: string;
+    activeBoardId?: string;
+    showTeamNames: boolean;
+}) {
+    const { starredBoardIds, toggleStarredBoard } = useSidebar();
+    return (
+        <List dense disablePadding aria-labelledby={labelId}>
+            {refs.map(({ board, team }) => (
+                <SidebarBoardRow
+                    key={board.id}
+                    board={board}
+                    team={team}
+                    isActive={board.id === activeBoardId}
+                    starred={starredBoardIds.includes(board.id)}
+                    onToggleStar={toggleStarredBoard}
+                    showTeamName={showTeamNames}
+                />
+            ))}
+        </List>
+    );
 }
 
 export default function Sidebar({
@@ -202,19 +165,41 @@ export default function Sidebar({
     forceExpanded,
 }: SidebarProps) {
     const { auth } = usePage<PageProps>().props;
-    const { collapsed, setCollapsed, currentTeam, boards } = useSidebar();
+    const user = auth.user;
+    const { collapsed, setCollapsed, teams, starredBoardIds, recentBoardIds } =
+        useSidebar();
     const isCollapsed = forceExpanded ? false : collapsed;
+    const idPrefix = useId();
+    const starredLabelId = `${idPrefix}-starred`;
+    const recentLabelId = `${idPrefix}-recent`;
+    const teamsLabelId = `${idPrefix}-teams`;
 
-    const settingsHref = currentTeam
-        ? route("teams.settings", currentTeam.slug)
-        : route("profile.edit");
+    const boardIndex = useMemo(() => buildBoardIndex(teams), [teams]);
+    const starred = useMemo(
+        () => resolveStarredBoards(starredBoardIds, boardIndex),
+        [starredBoardIds, boardIndex],
+    );
+    // The board you're on is already highlighted in its team section, so
+    // Recent only lists the places you might want to jump back to.
+    const recent = useMemo(
+        () =>
+            resolveRecentBoards(
+                recentBoardIds.filter((id) => id !== activeBoardId),
+                starredBoardIds,
+                boardIndex,
+            ),
+        [recentBoardIds, activeBoardId, starredBoardIds, boardIndex],
+    );
+    const showTeamNames = teams.length > 1;
 
     return (
         <Box
+            component="nav"
+            aria-label="Main navigation"
             sx={{
                 display: "flex",
                 flexDirection: "column",
-                height: "100%",
+                flex: "1 0 auto",
                 bgcolor: SIDEBAR_BG,
             }}
         >
@@ -227,12 +212,15 @@ export default function Sidebar({
                     minHeight: 82,
                 }}
             >
-                <Link
+                <Box
+                    component={Link}
                     href={route("dashboard")}
-                    style={{
+                    aria-label="PulseBoard dashboard"
+                    sx={{
                         textDecoration: "none",
                         display: "flex",
                         justifyContent: "center",
+                        borderRadius: `${harbor.radius.tile}px`,
                     }}
                 >
                     <Logo
@@ -240,12 +228,12 @@ export default function Sidebar({
                         showText={!isCollapsed}
                         textColor={SIDEBAR_TEXT}
                     />
-                </Link>
+                </Box>
             </Toolbar>
 
             <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
 
-            <List component="nav" aria-label="Main navigation" sx={{ py: 1.5 }}>
+            <List sx={{ pt: 1.5, pb: isCollapsed ? 1 : 0 }}>
                 <NavItem
                     href={route("dashboard")}
                     icon={<DashboardOutlinedIcon fontSize="small" />}
@@ -255,135 +243,99 @@ export default function Sidebar({
                 />
             </List>
 
-            {!isCollapsed && (
-                <Typography
-                    variant="overline"
-                    sx={{
-                        px: 2.5,
-                        pb: 0.5,
-                        fontSize: "0.7rem",
-                        fontWeight: 800,
-                        letterSpacing: "0.08em",
-                        color: SIDEBAR_MUTED,
-                    }}
-                >
-                    Boards
-                </Typography>
-            )}
+            {isCollapsed ? (
+                <SidebarRail starred={starred} activeBoardId={activeBoardId} />
+            ) : (
+                <>
+                    {starred.length > 0 && (
+                        <>
+                            <SidebarSectionLabel id={starredLabelId}>
+                                Starred
+                            </SidebarSectionLabel>
+                            <BoardRefList
+                                refs={starred}
+                                labelId={starredLabelId}
+                                activeBoardId={activeBoardId}
+                                showTeamNames={showTeamNames}
+                            />
+                        </>
+                    )}
 
-            {currentTeam && !isCollapsed && (
-                <BoardList
-                    boards={boards}
-                    teamId={currentTeam.id}
-                    teamSlug={currentTeam.slug}
-                    activeBoardId={activeBoardId}
-                />
-            )}
+                    {recent.length > 0 && (
+                        <>
+                            <SidebarSectionLabel id={recentLabelId}>
+                                Recent
+                            </SidebarSectionLabel>
+                            <BoardRefList
+                                refs={recent}
+                                labelId={recentLabelId}
+                                activeBoardId={activeBoardId}
+                                showTeamNames={showTeamNames}
+                            />
+                        </>
+                    )}
 
-            {currentTeam && isCollapsed && boards.length > 0 && (
-                <Box
-                    sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        gap: 1.25,
-                        mt: 1,
-                    }}
-                >
-                    {boards.map((board) => {
-                        const isActive = board.id === activeBoardId;
-                        const initials = board.name
-                            .trim()
-                            .split(/\s+/)
-                            .slice(0, 2)
-                            .map((word) => word.charAt(0))
-                            .join("")
-                            .toUpperCase();
-                        return (
-                            <Tooltip
-                                key={board.id}
-                                title={board.name}
-                                placement="right"
+                    <SidebarSectionLabel id={teamsLabelId}>
+                        Teams
+                    </SidebarSectionLabel>
+                    {teams.length === 0 ? (
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                px: 2.5,
+                                py: 0.75,
+                                fontSize: "0.8125rem",
+                                color: SIDEBAR_MUTED,
+                            }}
+                        >
+                            You're not in any teams yet.{" "}
+                            <MuiLink
+                                component={Link}
+                                href={route("teams.index")}
+                                underline="hover"
+                                sx={{ fontWeight: 700 }}
                             >
-                                <Box
-                                    onClick={() =>
-                                        router.get(
-                                            route("teams.boards.show", [
-                                                currentTeam.slug,
-                                                board.slug,
-                                            ]),
-                                        )
-                                    }
-                                    sx={{
-                                        width: 34,
-                                        height: 34,
-                                        borderRadius: `${harbor.radius.tile}px`,
-                                        display: "grid",
-                                        placeItems: "center",
-                                        cursor: "pointer",
-                                        fontSize: "0.72rem",
-                                        fontWeight: 800,
-                                        overflow: "hidden",
-                                        bgcolor: isActive
-                                            ? SIDEBAR_SELECTED
-                                            : SIDEBAR_HOVER,
-                                        color: isActive
-                                            ? SIDEBAR_TEXT
-                                            : SIDEBAR_MUTED,
-                                        boxShadow: isActive
-                                            ? harbor.chipShadow
-                                            : "none",
-                                    }}
-                                >
-                                    {board.image_url ? (
-                                        <Box
-                                            component="img"
-                                            src={board.image_url}
-                                            alt={board.name}
-                                            sx={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                            }}
-                                        />
-                                    ) : (
-                                        initials
-                                    )}
-                                </Box>
-                            </Tooltip>
-                        );
-                    })}
-                </Box>
+                                Create or join a team
+                            </MuiLink>
+                        </Typography>
+                    ) : (
+                        <Box
+                            component="ul"
+                            aria-labelledby={teamsLabelId}
+                            sx={{ m: 0, p: 0 }}
+                        >
+                            {teams.map((team) => (
+                                <SidebarTeamSection
+                                    key={team.id}
+                                    team={team}
+                                    activeBoardId={activeBoardId}
+                                />
+                            ))}
+                        </Box>
+                    )}
+                </>
             )}
 
             <Divider sx={{ my: 1.5, borderColor: SIDEBAR_DIVIDER }} />
 
-            <List
-                component="nav"
-                aria-label="Secondary navigation"
-                sx={{ py: 0 }}
-            >
+            <List aria-label="Account and administration" sx={{ py: 0 }}>
                 <NavItem
                     href={route("teams.index")}
                     icon={<GroupsIcon fontSize="small" />}
-                    label="Teams"
+                    label="All teams"
                     selected={route().current("teams.index")}
                     collapsed={isCollapsed}
                 />
-                <NavItem
-                    href={settingsHref}
-                    icon={<SettingsOutlinedIcon fontSize="small" />}
-                    label="Settings"
-                    selected={
-                        route().current("teams.settings") ||
-                        route().current("teams.bots.*") ||
-                        route().current("teams.figma.*") ||
-                        route().current("teams.gitlab-projects.*") ||
-                        route().current("profile.*")
-                    }
-                    collapsed={isCollapsed}
-                />
-                {auth.user.is_admin && (
+                {!forceExpanded && (
+                    <NavItem
+                        href={route("profile.edit")}
+                        icon={<PersonOutlineIcon fontSize="small" />}
+                        label="Profile"
+                        selected={route().current("profile.*")}
+                        collapsed={isCollapsed}
+                    />
+                )}
+                {user.is_admin && (
                     <NavItem
                         href={route("admin.dashboard")}
                         icon={<AdminPanelSettingsIcon fontSize="small" />}
@@ -394,9 +346,98 @@ export default function Sidebar({
                 )}
             </List>
 
-            <Box sx={{ flex: 1 }} />
+            <Box sx={{ flex: 1, minHeight: 16 }} />
 
-            {!forceExpanded && (
+            {forceExpanded ? (
+                <>
+                    <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
+                    <Box sx={{ p: 1.5, pb: 2 }}>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1.25,
+                                px: 1,
+                                pb: 1,
+                                minWidth: 0,
+                            }}
+                        >
+                            <Avatar
+                                src={user.avatar_url}
+                                alt=""
+                                sx={{
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: "0.75rem",
+                                    fontWeight: 800,
+                                    bgcolor: harborAvatarColor(user.name),
+                                    color: "#ffffff",
+                                }}
+                            >
+                                {nameInitials(user.name)}
+                            </Avatar>
+                            <Box sx={{ minWidth: 0 }}>
+                                <Typography
+                                    noWrap
+                                    sx={{
+                                        fontWeight: 800,
+                                        fontSize: "0.9rem",
+                                        color: SIDEBAR_TEXT,
+                                    }}
+                                >
+                                    {user.name}
+                                </Typography>
+                                <Typography
+                                    noWrap
+                                    sx={{
+                                        fontSize: "0.75rem",
+                                        color: SIDEBAR_MUTED,
+                                    }}
+                                >
+                                    {user.email}
+                                </Typography>
+                            </Box>
+                        </Box>
+                        <List disablePadding aria-label="Account">
+                            <NavItem
+                                href={route("profile.edit")}
+                                icon={<PersonOutlineIcon fontSize="small" />}
+                                label="Profile"
+                                selected={route().current("profile.*")}
+                                collapsed={false}
+                            />
+                            <li>
+                                <ListItemButton
+                                    component="button"
+                                    onClick={() => router.post(route("logout"))}
+                                    sx={{
+                                        ...navItemSx(false, false),
+                                        width: "calc(100% - 16px)",
+                                        textAlign: "left",
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{
+                                            minWidth: 38,
+                                            color: "inherit",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <LogoutIcon fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary="Log out"
+                                        primaryTypographyProps={{
+                                            fontWeight: 600,
+                                            fontSize: "0.95rem",
+                                        }}
+                                    />
+                                </ListItemButton>
+                            </li>
+                        </List>
+                    </Box>
+                </>
+            ) : (
                 <>
                     <Divider sx={{ borderColor: SIDEBAR_DIVIDER }} />
                     <Box
@@ -436,7 +477,11 @@ export default function Sidebar({
                             </IconButton>
                         </Tooltip>
                         {!isCollapsed && (
-                            <Typography color={SIDEBAR_MUTED} fontWeight={600}>
+                            <Typography
+                                color={SIDEBAR_MUTED}
+                                fontWeight={600}
+                                aria-hidden
+                            >
                                 Collapse
                             </Typography>
                         )}

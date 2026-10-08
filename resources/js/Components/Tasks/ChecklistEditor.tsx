@@ -1,3 +1,4 @@
+import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import { harbor, harborHex } from "@/theme/harbor";
 import type { Checklist, ChecklistItem } from "@/types";
 import AddIcon from "@mui/icons-material/Add";
@@ -15,6 +16,10 @@ import { useRef, useState } from "react";
 interface Props {
     checklists: Checklist[];
     onChange: (checklists: Checklist[]) => void;
+    /** Open the "new checklist" input straight away. */
+    autoStartAdding?: boolean;
+    /** Called when the new-checklist input is cancelled with no checklists. */
+    onDismiss?: () => void;
 }
 
 /** Indigo text action — "+ Add item" / "+ Add checklist". */
@@ -55,9 +60,15 @@ const checkedIcon = (
     </Box>
 );
 
-export default function ChecklistEditor({ checklists, onChange }: Props) {
+export default function ChecklistEditor({
+    checklists,
+    onChange,
+    autoStartAdding = false,
+    onDismiss,
+}: Props) {
     const [newChecklistTitle, setNewChecklistTitle] = useState("");
-    const [addingChecklist, setAddingChecklist] = useState(false);
+    const [addingChecklist, setAddingChecklist] = useState(autoStartAdding);
+    const [removeTarget, setRemoveTarget] = useState<Checklist | null>(null);
     const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
     const [newItemText, setNewItemText] = useState("");
     const newItemRef = useRef<HTMLInputElement>(null);
@@ -77,6 +88,21 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
 
     const handleRemoveChecklist = (checklistId: string) => {
         onChange(checklists.filter((c) => c.id !== checklistId));
+    };
+
+    // Removing a checklist with items loses work, so confirm first.
+    const requestRemoveChecklist = (checklist: Checklist) => {
+        if (checklist.items.length > 0) {
+            setRemoveTarget(checklist);
+        } else {
+            handleRemoveChecklist(checklist.id);
+        }
+    };
+
+    const cancelAddChecklist = () => {
+        setAddingChecklist(false);
+        setNewChecklistTitle("");
+        if (checklists.length === 0) onDismiss?.();
     };
 
     const handleToggleItem = (checklistId: string, itemId: string) => {
@@ -165,6 +191,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                             }}
                         >
                             <Typography
+                                component="h3"
                                 sx={{
                                     fontSize: 14.5,
                                     fontWeight: 700,
@@ -191,7 +218,7 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                 <IconButton
                                     size="small"
                                     onClick={() =>
-                                        handleRemoveChecklist(checklist.id)
+                                        requestRemoveChecklist(checklist)
                                     }
                                     aria-label={`Remove checklist ${checklist.title}`}
                                     sx={{ color: harbor.faint }}
@@ -424,18 +451,11 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                                     handleAddChecklist();
                                 }
                                 if (e.key === "Escape") {
-                                    setAddingChecklist(false);
-                                    setNewChecklistTitle("");
+                                    cancelAddChecklist();
                                 }
                             }}
                         />
-                        <Button
-                            size="small"
-                            onClick={() => {
-                                setAddingChecklist(false);
-                                setNewChecklistTitle("");
-                            }}
-                        >
+                        <Button size="small" onClick={cancelAddChecklist}>
                             Cancel
                         </Button>
                         <Button
@@ -472,6 +492,23 @@ export default function ChecklistEditor({ checklists, onChange }: Props) {
                     No checklists yet.
                 </Typography>
             )}
+
+            <ConfirmDialog
+                open={removeTarget !== null}
+                onClose={() => setRemoveTarget(null)}
+                onConfirm={() => {
+                    if (removeTarget) handleRemoveChecklist(removeTarget.id);
+                    setRemoveTarget(null);
+                }}
+                title="Remove checklist?"
+                message={
+                    removeTarget
+                        ? `“${removeTarget.title}” and its ${removeTarget.items.length} ${removeTarget.items.length === 1 ? "item" : "items"} will be removed.`
+                        : ""
+                }
+                confirmLabel="Remove checklist"
+                confirmColor="error"
+            />
         </Box>
     );
 }
