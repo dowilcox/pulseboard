@@ -12,8 +12,8 @@
 
 - **Backend:** Laravel 12, PHP 8.2+
 - **Frontend:** React 19, TypeScript, Inertia.js v3, MUI v6
-- **Database:** MySQL 8.0
-- **Cache/Queue:** Redis 7
+- **Database:** MySQL 8.4
+- **Cache/Queue:** Redis 8
 - **Real-time:** Laravel Reverb (WebSocket), Laravel Echo
 - **Server:** FrankenPHP via Laravel Octane
 - **Auth:** Laravel Breeze + SAML2 SSO (onelogin/php-saml)
@@ -412,8 +412,8 @@ labels:
 | Service | Internal Port | Default Host Port | Description                                         |
 | ------- | ------------- | ----------------- | --------------------------------------------------- |
 | `app`   | 8000, 8080    | 8000, 9080        | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
-| `mysql` | 3306          | — (prod)          | MySQL 8.0 (not exposed to host in production)       |
-| `redis` | 6379          | — (prod)          | Redis 7 (not exposed to host in production)         |
+| `mysql` | 3306          | — (prod)          | MySQL 8.4 (not exposed to host in production)       |
+| `redis` | 6379          | — (prod)          | Redis 8 (not exposed to host in production)         |
 
 The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, the queue worker, the scheduler, and the Reverb server as a single unit.
 
