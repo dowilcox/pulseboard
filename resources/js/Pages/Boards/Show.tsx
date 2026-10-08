@@ -27,7 +27,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { type ReactElement, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 
 interface Props {
@@ -213,12 +213,11 @@ export default function BoardsShow({
     );
 }
 
-BoardsShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+BoardsShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team,
+        sidebarBoards: props.sidebarBoards ?? [],
+        activeBoardId: props.board.id,
+    },
+];

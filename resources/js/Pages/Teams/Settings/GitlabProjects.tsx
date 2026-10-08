@@ -1,6 +1,6 @@
 import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { type ReactElement, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -749,11 +749,7 @@ export default function GitlabProjects({
     );
 }
 
-GitlabProjects.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+GitlabProjects.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.sidebarBoards ?? [] },
+];

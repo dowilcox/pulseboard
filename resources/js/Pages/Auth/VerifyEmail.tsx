@@ -1,5 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import { type FormEvent, type ReactElement } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -60,7 +61,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
                     </Button>
 
                     <MuiLink
-                        component={Link}
+                        component={RouterLink}
                         href={route("logout")}
                         method="post"
                         as="button"

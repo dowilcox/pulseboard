@@ -9,8 +9,9 @@ import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { Label, PageProps, Team, User, UserWithTeamPivot } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { type ReactElement, useCallback, useState } from "react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
+import { useCallback, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -589,7 +590,7 @@ export default function TeamSettings({
                                     </Typography>
                                 </Box>
                                 <Button
-                                    component={Link}
+                                    component={RouterLink}
                                     href={route("teams.bots.index", team.slug)}
                                     startIcon={<KeyIcon />}
                                     size="small"
@@ -893,11 +894,7 @@ export default function TeamSettings({
     );
 }
 
-TeamSettings.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TeamSettings.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.sidebarBoards ?? [] },
+];

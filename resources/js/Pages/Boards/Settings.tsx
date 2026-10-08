@@ -33,7 +33,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Snackbar from "@mui/material/Snackbar";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { type ReactElement, useState } from "react";
+import { useState } from "react";
 
 interface Props {
     board: Board;
@@ -435,12 +435,11 @@ export default function BoardSettings({
     );
 }
 
-BoardSettings.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+BoardSettings.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team,
+        sidebarBoards: props.sidebarBoards ?? [],
+        activeBoardId: props.board.id,
+    },
+];

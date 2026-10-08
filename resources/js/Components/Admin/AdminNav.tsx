@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import GroupsIcon from "@mui/icons-material/Groups";
@@ -122,7 +122,7 @@ export default function AdminNav() {
                         {section.items.map((item) => (
                             <ListItemButton
                                 key={item.route}
-                                component={Link}
+                                component={RouterLink}
                                 href={route(item.route)}
                                 selected={route().current(item.route)}
                                 sx={{ borderRadius: 1, mb: 0.5 }}

@@ -1,5 +1,5 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import { type ReactElement, useState } from "react";
+import { useState } from "react";
 import CreateTokenDialog from "@/Components/ApiTokens/CreateTokenDialog";
 import RevokeTokenDialog from "@/Components/ApiTokens/RevokeTokenDialog";
 import TokenCreatedDialog from "@/Components/ApiTokens/TokenCreatedDialog";
@@ -340,8 +340,7 @@ export default function ApiTokens({ team, bots }: Props) {
     );
 }
 
-ApiTokens.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout currentTeam={page.props.team}>
-        {page}
-    </AuthenticatedLayout>
-);
+ApiTokens.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team },
+];

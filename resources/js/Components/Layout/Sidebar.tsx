@@ -1,4 +1,5 @@
 import { Link, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -55,7 +56,7 @@ function NavItem({
 }: NavItemProps) {
     const content = href ? (
         <ListItemButton
-            component={Link}
+            component={RouterLink}
             href={href}
             selected={selected}
             aria-current={selected ? "page" : undefined}
