@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PulseBoard is a self-hosted Kanban project management app with GitLab and Figma integrations, real-time collaboration (Laravel Reverb WebSockets), SAML2 SSO, and a token-authenticated REST API.
 
-**Stack:** Laravel 12 (Octane/FrankenPHP) + Inertia.js v3 + React 19 + TypeScript + MUI v6 (no Tailwind). MySQL 8.4, Redis 8.
+**Stack:** Laravel 13 (Octane/FrankenPHP) + Inertia.js v3 + React 19 + TypeScript + MUI v6 (no Tailwind). MySQL 8.4, Redis 8.
 
 ## Commands
 

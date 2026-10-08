@@ -19,7 +19,7 @@ class TeamMemberController extends Controller
     {
         $this->authorize('manageMember', $team);
 
-        $query = $request->get('q', '');
+        $query = $request->input('q', '');
 
         if (strlen($query) < 2) {
             return response()->json(['data' => []]);

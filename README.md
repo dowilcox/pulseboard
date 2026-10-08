@@ -10,7 +10,7 @@
 
 ## Tech Stack
 
-- **Backend:** Laravel 12, PHP 8.2+
+- **Backend:** Laravel 13, PHP 8.4+
 - **Frontend:** React 19, TypeScript, Inertia.js v3, MUI v6
 - **Database:** MySQL 8.4
 - **Cache/Queue:** Redis 8
@@ -96,7 +96,7 @@ composer setup       # Install deps, generate .env + app key, run migrations, bu
 composer dev         # Start Laravel, Vite HMR, queue worker, Reverb, and log tail
 ```
 
-Requires PHP 8.2+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running locally.
+Requires PHP 8.4+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running locally.
 
 ## Environment Variables
 

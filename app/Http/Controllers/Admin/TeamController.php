@@ -44,7 +44,7 @@ class TeamController extends Controller
 
     public function searchUsers(Request $request, Team $team): JsonResponse
     {
-        $query = $request->get('q', '');
+        $query = $request->input('q', '');
 
         if (strlen($query) < 2) {
             return response()->json([]);
