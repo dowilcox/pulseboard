@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\Board;
+use App\Models\Column;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
@@ -51,8 +53,8 @@ class ApiAuthTest extends TestCase
         TeamMember::create(['team_id' => $team->id, 'user_id' => $user->id, 'role' => 'member']);
         $token = $user->createToken('read-only', ['read'])->plainTextToken;
 
-        $board = \App\Models\Board::factory()->create(['team_id' => $team->id]);
-        $column = \App\Models\Column::factory()->create(['board_id' => $board->id]);
+        $board = Board::factory()->create(['team_id' => $team->id]);
+        $column = Column::factory()->create(['board_id' => $board->id]);
 
         $response = $this->withHeader('Authorization', "Bearer $token")
             ->postJson("/api/v1/teams/{$team->id}/boards/{$board->id}/columns/{$column->id}/tasks", [
@@ -69,8 +71,8 @@ class ApiAuthTest extends TestCase
         TeamMember::create(['team_id' => $team->id, 'user_id' => $user->id, 'role' => 'member']);
         $token = $user->createToken('full', ['read', 'write'])->plainTextToken;
 
-        $board = \App\Models\Board::factory()->create(['team_id' => $team->id]);
-        $column = \App\Models\Column::factory()->create(['board_id' => $board->id]);
+        $board = Board::factory()->create(['team_id' => $team->id]);
+        $column = Column::factory()->create(['board_id' => $board->id]);
 
         $response = $this->withHeader('Authorization', "Bearer $token")
             ->postJson("/api/v1/teams/{$team->id}/boards/{$board->id}/columns/{$column->id}/tasks", [
