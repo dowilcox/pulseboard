@@ -41,6 +41,10 @@ jobs:
 
       - name: Frontend tests
         run: npm run test:run
+        env:
+          # Vitest boots a Vite dev server, which laravel-vite-plugin refuses
+          # to do when CI is set.
+          LARAVEL_BYPASS_ENV_CHECK: 1
 
       - name: PHP lint
         run: ./vendor/bin/pint --test
