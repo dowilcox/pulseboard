@@ -6,7 +6,7 @@
         <meta name="description" content="PulseBoard — self-hosted Kanban project management with real-time collaboration, GitLab and Figma integrations.">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title data-inertia>{{ config('app.name', 'Laravel') }}</title>
 
         <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 

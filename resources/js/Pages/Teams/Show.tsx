@@ -3,13 +3,7 @@ import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm, router, usePage } from "@inertiajs/react";
 import axios from "axios";
-import {
-    type ReactElement,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type {
     Board,
     BoardTemplate,
@@ -773,11 +767,7 @@ export default function TeamsShow({ team, members, boards }: Props) {
     );
 }
 
-TeamsShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.boards}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TeamsShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.boards },
+];

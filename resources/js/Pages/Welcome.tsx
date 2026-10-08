@@ -1,4 +1,5 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
@@ -47,7 +48,7 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
                 <Box sx={{ display: "flex", gap: 2 }}>
                     {canLogin && (
                         <Button
-                            component={Link}
+                            component={RouterLink}
                             href={route("login")}
                             variant="contained"
                             size="large"
@@ -58,7 +59,7 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
 
                     {canRegister && (
                         <Button
-                            component={Link}
+                            component={RouterLink}
                             href={route("register")}
                             variant="outlined"
                             size="large"

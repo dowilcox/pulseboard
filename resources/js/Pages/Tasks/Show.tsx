@@ -29,7 +29,8 @@ import type {
     User,
 } from "@/types";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
-import { Head, Link as InertiaLink, router, usePage } from "@inertiajs/react";
+import { Head, router, usePage } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import EditIcon from "@mui/icons-material/Edit";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import Box from "@mui/material/Box";
@@ -37,13 +38,7 @@ import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import {
-    type ReactElement,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Harbor section card — cream surface, soft shadow, no border. */
 const cardSx = {
@@ -388,7 +383,7 @@ export default function TasksShow({
                                 >
                                     Subtask of{" "}
                                     <Link
-                                        component={InertiaLink}
+                                        component={RouterLink}
                                         href={route("tasks.show", [
                                             team.slug,
                                             board.slug,
@@ -663,12 +658,11 @@ export default function TasksShow({
     );
 }
 
-TasksShow.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team as Team}
-        sidebarBoards={page.props.teamBoards}
-        activeBoardId={page.props.board.id}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+TasksShow.layout = (props: Props) => [
+    AuthenticatedLayout,
+    {
+        currentTeam: props.team as Team,
+        sidebarBoards: props.teamBoards,
+        activeBoardId: props.board.id,
+    },
+];

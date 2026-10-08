@@ -1,5 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import { type FormEvent, type ReactElement } from "react";
 import LockIcon from "@mui/icons-material/Lock";
 import Alert from "@mui/material/Alert";
@@ -111,7 +112,7 @@ export default function Login({
                     >
                         {canResetPassword && (
                             <MuiLink
-                                component={Link}
+                                component={RouterLink}
                                 href={route("password.request")}
                                 variant="body2"
                                 underline="hover"

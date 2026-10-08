@@ -35,7 +35,7 @@ services:
       - pulseboard
 
   mysql:
-    image: docker.io/library/mysql:8.0
+    image: docker.io/library/mysql:8.4
     container_name: pulseboard-mysql
     restart: unless-stopped
     # No host port binding in production — only accessible within Docker network
@@ -56,7 +56,7 @@ services:
       - pulseboard
 
   redis:
-    image: docker.io/library/redis:7-alpine
+    image: docker.io/library/redis:8-alpine
     container_name: pulseboard-redis
     restart: unless-stopped
     # No host port binding in production — only accessible within Docker network

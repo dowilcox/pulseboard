@@ -68,7 +68,7 @@ class WipLimitRaceTest extends TestCase
         DB::disableQueryLog();
 
         $this->assertMatchesRegularExpression(
-            '/select \* from "?columns"? where "?id"? = \?.*for update/is',
+            '/select \* from [`"]?columns[`"]? where ([`"]?columns[`"]?\.)?[`"]?id[`"]? = \?.*for update/i',
             $queries,
             'Expected a SELECT ... FOR UPDATE on the columns row to serialize WIP-bound writes.'
         );
@@ -139,7 +139,7 @@ class WipLimitRaceTest extends TestCase
         DB::disableQueryLog();
 
         $this->assertMatchesRegularExpression(
-            '/select \* from "?columns"? where "?id"? = \?.*for update/is',
+            '/select \* from [`"]?columns[`"]? where ([`"]?columns[`"]?\.)?[`"]?id[`"]? = \?.*for update/i',
             $queries,
             'Expected a SELECT ... FOR UPDATE on the columns row to serialize WIP-bound writes.'
         );

@@ -45,13 +45,17 @@ interface AuthenticatedLayoutProps {
  * Persistent layout for all authenticated pages.
  *
  * Pages must NOT render this inline; instead they assign it via Inertia's
- * persistent layout pattern:
+ * persistent layout pattern, using the callback form when the layout needs
+ * page props:
  *
- *     Page.layout = (page) => (
- *         <AuthenticatedLayout currentTeam={page.props.team}>
- *             {page}
- *         </AuthenticatedLayout>
- *     );
+ *     Page.layout = (props: Props) => [
+ *         AuthenticatedLayout,
+ *         { currentTeam: props.team },
+ *     ];
+ *
+ * Don't read `page.props` inside a `(page) => <AuthenticatedLayout>...`
+ * render function: Inertia v3 first calls it with the raw page props to
+ * detect its form, so `page.props` is undefined on that call and throws.
  *
  * Because the layout element type stays identical across navigations, React
  * preserves this subtree — keeping WebSocketProvider (Echo connection),
@@ -127,7 +131,7 @@ function AuthenticatedLayoutInner({
     // Fallback: any page mounted in this layout gets a refresh on reconnect
     // so it picks up events missed during the disconnect. Pages that subscribe
     // to reconnectVersion themselves (e.g. Boards/Show, Tasks/Show) may do
-    // narrower partial reloads in addition; both are idempotent. Inertia v2
+    // narrower partial reloads in addition; both are idempotent. Inertia's
     // router.reload always preserves state and scroll.
     useEffect(() => {
         if (reconnectVersion === 0) return;

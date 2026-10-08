@@ -1,4 +1,4 @@
-import { Link as InertiaLink } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
@@ -87,7 +87,7 @@ export default function PageHeader({
                     aria-label="breadcrumb"
                 >
                     <Link
-                        component={InertiaLink}
+                        component={RouterLink}
                         href={route("dashboard")}
                         underline="hover"
                         sx={{
@@ -107,7 +107,7 @@ export default function PageHeader({
                         return crumb.href ? (
                             <Link
                                 key={crumb.label}
-                                component={InertiaLink}
+                                component={RouterLink}
                                 href={crumb.href}
                                 underline="hover"
                                 sx={{ ...CRUMB_SX, color }}

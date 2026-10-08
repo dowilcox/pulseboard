@@ -1,5 +1,6 @@
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import { type FormEvent, type ReactElement } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -98,7 +99,7 @@ export default function Register() {
                     }}
                 >
                     <MuiLink
-                        component={Link}
+                        component={RouterLink}
                         href={route("login")}
                         variant="body2"
                         underline="hover"

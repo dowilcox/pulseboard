@@ -1,6 +1,6 @@
 import { Head, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { type ReactElement, useState } from "react";
+import { useState } from "react";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -483,11 +483,7 @@ export default function FigmaIntegration({
     );
 }
 
-FigmaIntegration.layout = (page: ReactElement<Props>) => (
-    <AuthenticatedLayout
-        currentTeam={page.props.team}
-        sidebarBoards={page.props.sidebarBoards ?? []}
-    >
-        {page}
-    </AuthenticatedLayout>
-);
+FigmaIntegration.layout = (props: Props) => [
+    AuthenticatedLayout,
+    { currentTeam: props.team, sidebarBoards: props.sidebarBoards ?? [] },
+];

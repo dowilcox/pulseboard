@@ -1,4 +1,5 @@
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
+import RouterLink from "@/Components/Common/RouterLink";
 import type { ReactElement } from "react";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
@@ -100,7 +101,7 @@ export default function Dashboard({ stats }: Props) {
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Card
-                                component={Link}
+                                component={RouterLink}
                                 href={route("admin.users.index")}
                                 variant="outlined"
                                 sx={{
@@ -133,7 +134,7 @@ export default function Dashboard({ stats }: Props) {
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                             <Card
-                                component={Link}
+                                component={RouterLink}
                                 href={route("admin.teams.index")}
                                 variant="outlined"
                                 sx={{
