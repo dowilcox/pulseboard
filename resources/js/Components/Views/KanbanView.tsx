@@ -46,8 +46,13 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-/** Column width: narrow enough for 3 full columns at 1280px and 4 at 1440px. */
+/**
+ * Columns share the strip's free width. The minimum keeps 3 full columns at
+ * 1280px and 4 at 1440px before the strip scrolls; the maximum stops one or
+ * two columns on a wide screen from stretching cards past a readable width.
+ */
 const COLUMN_WIDTH = 264;
+const COLUMN_MAX_WIDTH = 560;
 const COLUMN_GAP = 12;
 
 function buildColumnTasksMap(columns: Column[]): Record<string, Task[]> {
@@ -889,8 +894,9 @@ export default function KanbanView({
                                 role="region"
                                 aria-label={summary.ariaLabel}
                                 sx={{
-                                    width: COLUMN_WIDTH,
-                                    flex: `0 0 ${COLUMN_WIDTH}px`,
+                                    flex: `1 1 ${COLUMN_WIDTH}px`,
+                                    minWidth: COLUMN_WIDTH,
+                                    maxWidth: COLUMN_MAX_WIDTH,
                                     bgcolor: harbor.well,
                                     borderRadius: "18px",
                                     p: "12px",

@@ -865,24 +865,6 @@ export default function TasksShow({
                         )}
                     </Box>
 
-                    {/* Comments (+ optional system activity) */}
-                    <Box sx={{ ...cardSx, p: "20px 24px" }}>
-                        <ActivityFeed
-                            comments={task.comments ?? []}
-                            activities={task.activities ?? []}
-                            teamSlug={team.slug}
-                            boardSlug={board.slug}
-                            taskId={task.id}
-                            currentUserId={auth.user.id}
-                            uploadImageUrl={route("tasks.images.store", [
-                                team.slug,
-                                board.slug,
-                                task.slug ?? task.id,
-                            ])}
-                            mentionableUsers={members}
-                        />
-                    </Box>
-
                     {/* Optional sections — shown when they have content or
                         were opened from the "+ Add" row below. */}
                     {isShown("checklists") && (
@@ -982,6 +964,25 @@ export default function TasksShow({
                             ))}
                         </Box>
                     )}
+
+                    {/* Comments (+ optional system activity) stay at the bottom,
+                        after the task's own content. */}
+                    <Box sx={{ ...cardSx, p: "20px 24px" }}>
+                        <ActivityFeed
+                            comments={task.comments ?? []}
+                            activities={task.activities ?? []}
+                            teamSlug={team.slug}
+                            boardSlug={board.slug}
+                            taskId={task.id}
+                            currentUserId={auth.user.id}
+                            uploadImageUrl={route("tasks.images.store", [
+                                team.slug,
+                                board.slug,
+                                task.slug ?? task.id,
+                            ])}
+                            mentionableUsers={members}
+                        />
+                    </Box>
                 </Box>
 
                 {/* Right — sidebar; sticks below the app bar on desktop and
