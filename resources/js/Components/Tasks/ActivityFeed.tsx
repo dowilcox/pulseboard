@@ -2,6 +2,8 @@ import ConfirmDialog from "@/Components/Common/ConfirmDialog";
 import CopyMarkdownButton from "@/Components/Common/CopyMarkdownButton";
 import RichTextDisplay from "@/Components/Common/RichTextDisplay";
 import RichTextEditor from "@/Components/Common/RichTextEditor";
+import { useSnackbar } from "@/Contexts/SnackbarContext";
+import { useAutosave } from "@/hooks/useAutosave";
 import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import type { Activity, Comment, PageProps, User } from "@/types";
 import { formatTimestamp } from "@/utils/formatTimestamp";
@@ -23,7 +25,7 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type FeedItem =
     | { type: "comment"; item: Comment; timestamp: string }
@@ -33,6 +35,9 @@ type FeedItem =
 type FeedFilter = "comments" | "all";
 
 const FEED_FILTER_KEY = "pulseboard.taskFeedFilter";
+
+/** Rapid checkbox clicks in a comment collapse into one save. */
+const CHECKBOX_SAVE_DELAY = 500;
 
 function readFeedFilter(): FeedFilter {
     try {
@@ -266,10 +271,13 @@ interface CommentItemProps {
     comment: Comment;
     variant: "comment" | "reply";
     isOwn: boolean;
+    /** Endpoint the comment body is PUT to (checkbox toggles). */
+    updateUrl: string;
     isEditing: boolean;
     editBody: string;
     onEditBodyChange: (body: string) => void;
-    onStartEdit: () => void;
+    /** Called with the body as currently shown, including unsaved toggles. */
+    onStartEdit: (body: string) => void;
     onCancelEdit: () => void;
     onSaveEdit: () => void;
     onDelete: () => void;
@@ -282,6 +290,7 @@ function CommentItem({
     comment,
     variant,
     isOwn,
+    updateUrl,
     isEditing,
     editBody,
     onEditBodyChange,
@@ -296,6 +305,30 @@ function CommentItem({
     const isReply = variant === "reply";
     const wasEdited = comment.updated_at !== comment.created_at;
     const actionIconSize = isReply ? 13 : 14;
+
+    const { showSnackbar } = useSnackbar();
+    const autosave = useAutosave({
+        url: updateUrl,
+        // Refresh the task (comment updated_at, activity, …) once saved.
+        onSaved: () => router.reload({ only: ["task"] }),
+        onError: (message) => showSnackbar(message, "error"),
+    });
+
+    // Local copy so task list toggles show immediately and survive a reload
+    // that was already in flight when the box was clicked.
+    const [localBody, setLocalBody] = useState(comment.body);
+    useEffect(() => {
+        if (!autosave.isBusy("body")) {
+            setLocalBody(comment.body);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- sync on prop change only
+    }, [comment.body]);
+
+    // Checkbox toggled in the read-only view of the user's own comment.
+    const handleCheckboxToggle = (next: string) => {
+        setLocalBody(next);
+        autosave.schedule("body", next, CHECKBOX_SAVE_DELAY);
+    };
 
     const meta = (
         <>
@@ -346,7 +379,7 @@ function CommentItem({
             >
                 {!isEditing && (
                     <CopyMarkdownButton
-                        content={comment.body}
+                        content={localBody}
                         aria-label={`Copy ${variant} as Markdown`}
                     />
                 )}
@@ -360,7 +393,10 @@ function CommentItem({
                 {isOwn && !isEditing && (
                     <>
                         <Tooltip title="Edit">
-                            <IconButton size="small" onClick={onStartEdit}>
+                            <IconButton
+                                size="small"
+                                onClick={() => onStartEdit(localBody)}
+                            >
                                 <EditIcon sx={{ fontSize: actionIconSize }} />
                             </IconButton>
                         </Tooltip>
@@ -409,7 +445,10 @@ function CommentItem({
                 "& .tiptap p": { fontSize: 13.5, lineHeight: 1.55 },
             }}
         >
-            <RichTextDisplay content={comment.body} />
+            <RichTextDisplay
+                content={localBody}
+                onChange={isOwn ? handleCheckboxToggle : undefined}
+            />
         </Box>
     );
 
@@ -620,12 +659,18 @@ export default function ActivityFeed({
             comment={comment}
             variant={variant}
             isOwn={comment.user_id === currentUserId}
+            updateUrl={route("comments.update", [
+                teamSlug,
+                boardSlug,
+                taskId,
+                comment.id,
+            ])}
             isEditing={editingId === comment.id}
             editBody={editBody}
             onEditBodyChange={setEditBody}
-            onStartEdit={() => {
+            onStartEdit={(body) => {
                 setEditingId(comment.id);
-                setEditBody(comment.body);
+                setEditBody(body);
             }}
             onCancelEdit={() => setEditingId(null)}
             onSaveEdit={() => handleEditComment(comment.id)}
