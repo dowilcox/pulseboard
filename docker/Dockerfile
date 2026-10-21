@@ -64,6 +64,14 @@ LABEL maintainer="PulseBoard" \
       org.opencontainers.image.source="https://github.com/dowilcox/pulseboard" \
       org.opencontainers.image.licenses="GPL-3.0"
 
+# ---- PHP version floor -----------------------------------------------------
+# The oldest PHP release this image may ship: the latest security release for
+# the PHP branch in FROM. The build fails if the base image is older, so a
+# stale or not-yet-updated base image can't ship unpatched PHP. Raise it with
+# each PHP security release.
+ARG PHP_MIN_VERSION=8.4.27
+RUN php -r 'if (version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), "<")) { fwrite(STDERR, "PHP " . PHP_VERSION . " is older than PHP_MIN_VERSION " . getenv("PHP_MIN_VERSION") . "\n"); exit(1); }'
+
 # ---- System dependencies ---------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
