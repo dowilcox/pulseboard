@@ -56,7 +56,7 @@ RUN npx tsc --noEmit && npx vite build
 # ---------------------------------------------------------------------------
 # Stage 3: Production runtime
 # ---------------------------------------------------------------------------
-FROM docker.io/dunglas/frankenphp:1.13-php8.4 AS production
+FROM docker.io/dunglas/frankenphp:1.13-php8.5 AS production
 
 LABEL maintainer="PulseBoard" \
       org.opencontainers.image.title="PulseBoard" \
@@ -69,7 +69,7 @@ LABEL maintainer="PulseBoard" \
 # the PHP branch in FROM. The build fails if the base image is older, so a
 # stale or not-yet-updated base image can't ship unpatched PHP. Raise it with
 # each PHP security release.
-ARG PHP_MIN_VERSION=8.4.27
+ARG PHP_MIN_VERSION=8.5.12
 RUN php -r 'if (version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), "<")) { fwrite(STDERR, "PHP " . PHP_VERSION . " is older than PHP_MIN_VERSION " . getenv("PHP_MIN_VERSION") . "\n"); exit(1); }'
 
 # ---- System dependencies ---------------------------------------------------
@@ -159,7 +159,7 @@ ENTRYPOINT ["entrypoint.sh"]
 # ---------------------------------------------------------------------------
 # Stage 4: Development (optional target for local dev)
 # ---------------------------------------------------------------------------
-FROM docker.io/dunglas/frankenphp:1.13-php8.4 AS development
+FROM docker.io/dunglas/frankenphp:1.13-php8.5 AS development
 
 LABEL maintainer="PulseBoard Development"
 
