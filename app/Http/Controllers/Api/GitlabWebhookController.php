@@ -51,7 +51,8 @@ class GitlabWebhookController extends Controller
         $ref = $payload['ref'] ?? '';
         $branchName = str_replace('refs/heads/', '', $ref);
 
-        if (! $branchName) {
+        // Branch deletions arrive as pushes whose "after" SHA is all zeros
+        if (! $branchName || preg_match('/^0+$/', $payload['after'] ?? '')) {
             return;
         }
 

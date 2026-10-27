@@ -18,10 +18,11 @@ return [
     |
     | The regex pattern used to auto-link GitLab MRs/branches to tasks.
     | Captures the task number from merge request titles, descriptions,
-    | and branch names.
+    | and branch names. Matches "#12" and the "pb-12-..." prefix used for
+    | branches created from tasks.
     |
     */
-    'auto_link_pattern' => '/#(\d+)\b/',
+    'auto_link_pattern' => '/(?:#|\bpb-)(\d+)\b/',
 
     /*
     |--------------------------------------------------------------------------
