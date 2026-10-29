@@ -40,6 +40,14 @@ Deactivation is reversible and keeps the user's history:
 - They are hidden from assignee pickers, mention suggestions and member search, and they no longer receive email.
 - Existing assignments, comments and activity keep their name.
 
+### Deleted accounts
+
+There's no admin action to delete a user; deactivate them instead. Users can delete their own account from **Profile → Delete Account**, and deleting a team deletes the bot users it created. When a user is deleted:
+
+- Tasks, task templates and dependencies they created stay, and show their creator as "a deleted user". The record of who assigned someone to a task is cleared too.
+- Their comments (including any replies to them), their team memberships, their own assignments and watches, and their saved filters and board templates are deleted.
+- Activity entries stay; the task activity feed shows them as "System".
+
 ## Disabling local authentication
 
 ```bash

@@ -706,7 +706,9 @@ export default function TaskSidebar({
                     </Box>
                     <Box component="span">
                         {formatTimestamp(task.created_at)}
-                        {task.creator && ` by ${task.creator.name}`}
+                        {task.creator
+                            ? ` by ${task.creator.name}`
+                            : task.created_by === null && " by a deleted user"}
                     </Box>
                 </Box>
                 <Box sx={{ display: "flex", fontSize: 12, color: harbor.sub }}>
