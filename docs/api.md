@@ -20,12 +20,12 @@ Always send `Accept: application/json`. Without it, some errors (for example an 
 
 ### Getting a token
 
-| Where                          | Who                                                                              | Abilities you can choose                              |
-| ------------------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **Profile → API tokens**       | Any user, for themselves                                                         | `read`, optionally `write`                            |
-| **Team settings → API & bots** | Team admins and owners, for the team's [bot users](getting-started.md#bot-users) | `read`, optionally `write`                            |
-| **Admin → API Tokens**         | App administrators, for any listed user or bot                                   | `read`, optionally `write`                            |
-| `POST /api/v1/tokens`          | The authenticated user, for themselves                                           | Any of `read`, `write`, `manage` (default `["read"]`) |
+| Where                          | Who                                                                              | Abilities you can choose                                                                            |
+| ------------------------------ | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Profile → API tokens**       | Any user, for themselves                                                         | `read`, optionally `write`                                                                          |
+| **Team settings → API & bots** | Team admins and owners, for the team's [bot users](getting-started.md#bot-users) | `read`, optionally `write`                                                                          |
+| **Admin → API Tokens**         | App administrators, for any listed user or bot                                   | `read`, optionally `write`                                                                          |
+| `POST /api/v1/tokens`          | The authenticated user, for themselves                                           | Any of `read`, `write`, `manage` (default `["read"]`), limited to the calling token's own abilities |
 
 The plain-text token is shown only once. Tokens don't expire; revoke them when they're no longer needed. Deactivating a user (or removing a bot) revokes all of their tokens, and requests from deactivated accounts are rejected with `403 {"message": "Your account has been deactivated."}`.
 
@@ -45,7 +45,9 @@ In practice:
 - `GET` endpoints don't check abilities, so any valid token can read. The one exception is `GET /teams/{team}/members/search`, which requires `manage`.
 - `write` and `manage` are independent. A token with only `manage` can create boards but not tasks. Give a token both if it needs both.
 - The ability check comes **in addition** to the user's role. For example, deleting a board needs the `manage` ability **and** the admin or owner role in that team.
-- The web UI only creates `read`/`write` tokens. A `manage` token can only be created through `POST /api/v1/tokens`.
+- The web UI only creates `read`/`write` tokens. A `manage` token can only be created through `POST /api/v1/tokens`, from a browser session or with an existing token that already has `manage`.
+- A token can't hand out more than it has. When `POST /api/v1/tokens` is called with a token, every requested ability must be one the calling token holds, or the request fails with `403`. A `read` token can only create `read` tokens, and a `read`+`write` token can't create a `manage` token. Requests made with a browser session (Sanctum's stateful cookie auth) aren't limited. A token with the wildcard ability `["*"]` (Sanctum's default when a token is created in code, for example in `php artisan tinker`, without abilities) counts as holding every ability.
+- The same rule applies to `DELETE /api/v1/tokens/{id}`: a token can always revoke itself, but revoking one of your other tokens requires the calling token to hold every ability of the token being revoked.
 
 ## Rate limits
 
@@ -103,8 +105,8 @@ Timestamps are ISO 8601 in UTC. `due_date` is `YYYY-MM-DD`. Models serialize wit
 | GET    | `/me`                      | —       | Returns `id, name, email, avatar_url, theme_preference, is_bot, created_at`.                                                                              |
 | GET    | `/me/tasks`                | —       | Tasks assigned to you. Query: `status` = `open` (default), `completed`, `all`; `per_page` 1–100 (default 50). Sorted by due date, then newest. Paginated. |
 | GET    | `/tokens`                  | —       | Your tokens: `id, name, abilities, last_used_at, created_at`.                                                                                             |
-| POST   | `/tokens`                  | —       | Body: `name` (required), `abilities` (array of `read`, `write`, `manage`). Returns `plain_text_token` once.                                               |
-| DELETE | `/tokens/{id}`             | —       | Revoke one of your tokens.                                                                                                                                |
+| POST   | `/tokens`                  | —       | Body: `name` (required), `abilities` (array of `read`, `write`, `manage`; at most the calling token's abilities). Returns `plain_text_token` once.        |
+| DELETE | `/tokens/{id}`             | —       | Revoke one of your tokens: the calling token itself, or one whose abilities the calling token also has.                                                   |
 | GET    | `/notifications`           | —       | 20 per page, newest first.                                                                                                                                |
 | PATCH  | `/notifications/{id}/read` | write   | Mark one as read.                                                                                                                                         |
 | POST   | `/notifications/read-all`  | write   | Mark all as read.                                                                                                                                         |

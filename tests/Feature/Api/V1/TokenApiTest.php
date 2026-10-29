@@ -52,4 +52,102 @@ class TokenApiTest extends TestCase
         $response->assertNoContent();
         $this->assertDatabaseMissing('personal_access_tokens', ['id' => $toRevoke->accessToken->id]);
     }
+
+    public function test_read_token_cannot_create_write_or_manage_token(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('reader', ['read'])->plainTextToken;
+
+        foreach ([['write'], ['read', 'write'], ['manage'], ['read', 'manage']] as $abilities) {
+            $this->withHeader('Authorization', "Bearer $token")
+                ->postJson('/api/v1/tokens', ['name' => 'escalated', 'abilities' => $abilities])
+                ->assertForbidden();
+        }
+
+        $this->assertDatabaseMissing('personal_access_tokens', ['name' => 'escalated']);
+    }
+
+    public function test_read_token_can_create_read_token(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('reader', ['read'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer $token")
+            ->postJson('/api/v1/tokens', ['name' => 'another-reader'])
+            ->assertCreated()
+            ->assertJsonPath('data.abilities', ['read']);
+    }
+
+    public function test_write_token_can_create_read_write_but_not_manage_token(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('writer', ['read', 'write'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer $token")
+            ->postJson('/api/v1/tokens', ['name' => 'rw', 'abilities' => ['read', 'write']])
+            ->assertCreated()
+            ->assertJsonPath('data.abilities', ['read', 'write']);
+
+        $this->withHeader('Authorization', "Bearer $token")
+            ->postJson('/api/v1/tokens', ['name' => 'admin', 'abilities' => ['read', 'write', 'manage']])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('personal_access_tokens', ['name' => 'admin']);
+    }
+
+    public function test_wildcard_token_can_create_any_token(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('legacy')->plainTextToken; // abilities ["*"]
+
+        $this->withHeader('Authorization', "Bearer $token")
+            ->postJson('/api/v1/tokens', ['name' => 'full', 'abilities' => ['read', 'write', 'manage']])
+            ->assertCreated();
+    }
+
+    public function test_session_user_can_create_any_token(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/tokens', ['name' => 'full', 'abilities' => ['read', 'write', 'manage']])
+            ->assertCreated()
+            ->assertJsonPath('data.abilities', ['read', 'write', 'manage']);
+    }
+
+    public function test_token_cannot_revoke_a_more_powerful_token(): void
+    {
+        $user = User::factory()->create();
+        $powerful = $user->createToken('powerful', ['read', 'write', 'manage']);
+        $reader = $user->createToken('reader', ['read'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer $reader")
+            ->deleteJson("/api/v1/tokens/{$powerful->accessToken->id}")
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('personal_access_tokens', ['id' => $powerful->accessToken->id]);
+    }
+
+    public function test_token_can_always_revoke_itself(): void
+    {
+        $user = User::factory()->create();
+        $reader = $user->createToken('reader', []);
+
+        $this->withHeader('Authorization', "Bearer {$reader->plainTextToken}")
+            ->deleteJson("/api/v1/tokens/{$reader->accessToken->id}")
+            ->assertNoContent();
+
+        $this->assertDatabaseMissing('personal_access_tokens', ['id' => $reader->accessToken->id]);
+    }
+
+    public function test_cannot_revoke_another_users_token(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create()->createToken('theirs', ['read']);
+        $token = $user->createToken('mine', ['read', 'write', 'manage'])->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer $token")
+            ->deleteJson("/api/v1/tokens/{$other->accessToken->id}")
+            ->assertNotFound();
+    }
 }
