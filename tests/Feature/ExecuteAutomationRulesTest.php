@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Automation\ExecuteAutomationRules;
+use App\Events\NotificationCreated;
 use App\Models\Activity;
 use App\Models\AutomationRule;
 use App\Models\Board;
@@ -13,6 +14,8 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class ExecuteAutomationRulesTest extends TestCase
@@ -309,6 +312,38 @@ class ExecuteAutomationRulesTest extends TestCase
         $this->assertDatabaseMissing('notifications', [
             'notifiable_id' => $outsider->id,
         ]);
+    }
+
+    public function test_send_notification_action_broadcasts_the_stored_notification(): void
+    {
+        Event::fake([NotificationCreated::class]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+        ]);
+
+        AutomationRule::create([
+            'board_id' => $this->board->id,
+            'name' => 'Notify creator',
+            'trigger_type' => 'task_created',
+            'trigger_config' => [],
+            'action_type' => 'send_notification',
+            'action_config' => [
+                'target' => 'creator',
+                'message' => 'New task',
+            ],
+            'is_active' => true,
+        ]);
+
+        ExecuteAutomationRules::run($this->board, 'task_created', ['task_id' => $task->id]);
+
+        $stored = DatabaseNotification::where('notifiable_id', $this->user->id)->sole();
+
+        Event::assertDispatched(
+            NotificationCreated::class,
+            fn ($e) => $e->userId === $this->user->id && $e->notificationId === $stored->id,
+        );
     }
 
     public function test_pipeline_status_trigger_matches_status(): void

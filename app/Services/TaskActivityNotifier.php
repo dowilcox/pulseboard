@@ -12,6 +12,8 @@ use App\Notifications\TaskCommentedNotification;
 use App\Notifications\TaskCommentReplyNotification;
 use App\Notifications\TaskCompletedNotification;
 use App\Notifications\TaskMentionedNotification;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class TaskActivityNotifier
 {
@@ -56,7 +58,7 @@ class TaskActivityNotifier
                 $commenter,
                 $comment,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -94,7 +96,7 @@ class TaskActivityNotifier
                 $reply,
                 $parentComment,
             );
-            $recipient->notify($notification);
+            $this->send($recipient, $notification);
 
             $this->broadcastNotification($recipient, $notification, $task);
             $alreadyNotified[] = $recipient->id;
@@ -106,6 +108,17 @@ class TaskActivityNotifier
             $replier,
             $alreadyNotified,
         );
+    }
+
+    /**
+     * Send with a pre-assigned id. Laravel sends a clone of the notification
+     * and only sets the id on that clone, so without this the id read for
+     * the live NotificationCreated broadcast would always be null.
+     */
+    private function send(User $user, Notification $notification): void
+    {
+        $notification->id = (string) Str::uuid();
+        $user->notify($notification);
     }
 
     public function broadcastDatabaseNotification(
@@ -159,7 +172,7 @@ class TaskActivityNotifier
 
         foreach ($users as $user) {
             $notification = new TaskAssignedNotification($task, $assigner);
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -189,7 +202,7 @@ class TaskActivityNotifier
                 $commenter,
                 $comment,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -205,7 +218,7 @@ class TaskActivityNotifier
                 $commenter,
                 $comment,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -227,7 +240,7 @@ class TaskActivityNotifier
                 $commenter,
                 $comment,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -257,7 +270,7 @@ class TaskActivityNotifier
 
         foreach ($users as $user) {
             $notification = new TaskCompletedNotification($task, $completedBy);
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -281,7 +294,7 @@ class TaskActivityNotifier
                 $uploader,
                 $filename,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }
@@ -297,7 +310,7 @@ class TaskActivityNotifier
                 $uploader,
                 $filename,
             );
-            $user->notify($notification);
+            $this->send($user, $notification);
 
             $this->broadcastNotification($user, $notification, $task);
         }

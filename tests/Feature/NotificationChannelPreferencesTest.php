@@ -184,6 +184,25 @@ class NotificationChannelPreferencesTest extends TestCase
         }
     }
 
+    public function test_live_broadcast_references_the_stored_notification(): void
+    {
+        Event::fake([NotificationCreated::class]);
+
+        app(TaskActivityNotifier::class)->dispatchActivityNotifications(
+            $this->task,
+            'assigned',
+            ['user_ids' => [$this->recipient->id]],
+            $this->actor,
+        );
+
+        $stored = DatabaseNotification::where('notifiable_id', $this->recipient->id)->sole();
+
+        Event::assertDispatched(
+            NotificationCreated::class,
+            fn ($e) => $e->userId === $this->recipient->id && $e->notificationId === $stored->id,
+        );
+    }
+
     public function test_email_only_records_are_pruned_after_a_week_but_in_app_ones_are_kept(): void
     {
         $this->setPrefs('task_due_soon', false, true);

@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Notifications\AutomationNotification;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class ExecuteAutomationRules
@@ -334,6 +335,9 @@ class ExecuteAutomationRules
 
         foreach ($users as $user) {
             $notification = new AutomationNotification($task, $message);
+            // Laravel only sets the id on the clone it sends; pre-assign it
+            // so the live broadcast below can reference the stored row.
+            $notification->id = (string) Str::uuid();
             $user->notify($notification);
 
             if (
