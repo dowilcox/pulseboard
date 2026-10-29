@@ -91,6 +91,17 @@ class TaskAutomationDispatcher
         ];
 
         $baseContext = array_merge($changes, ['task_id' => $task->id]);
+
+        // A cross-board move is a move into this (the destination) board.
+        // The source column belongs to another board, so rules here see no
+        // from column; from_board_id says where the task came from.
+        if (
+            $action === 'moved'
+            && isset($changes['from_board_id'], $changes['to_board_id'])
+            && $changes['from_board_id'] !== $changes['to_board_id']
+        ) {
+            $baseContext['from_column_id'] = null;
+        }
         $triggerContexts = [];
 
         if ($action === 'assigned') {
