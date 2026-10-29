@@ -144,4 +144,4 @@ MySQL 8.4. All tables use UUID PKs. Pivot tables cascade on delete; entity table
 
 ## Docs
 
-SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`.
+SAML2 SSO setup guide: `docs/saml-configuration.md`. MCP server for AI agents (`laravel/mcp`, streamable HTTP at `/mcp`, Sanctum tokens; server/tools in `app/Mcp/`, route in `routes/ai.php`, tools must call existing Actions): `docs/mcp-server.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`.
