@@ -20,7 +20,7 @@ class SamlController extends Controller
 
     public function redirect(): RedirectResponse
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             return redirect()->route('login')->with('error', 'SSO is not configured.');
@@ -33,7 +33,7 @@ class SamlController extends Controller
 
     public function acs(Request $request): RedirectResponse
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             return redirect()->route('login')->with('error', 'SSO is not configured.');
@@ -84,7 +84,7 @@ class SamlController extends Controller
 
     public function metadata(): Response
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             abort(404, 'SSO is not configured.');

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\OidcController;
 use App\Http\Controllers\Auth\SamlController;
 use App\Http\Controllers\AvatarController;
 use App\Http\Controllers\DashboardController;
@@ -32,6 +33,18 @@ Route::post('/auth/saml/acs', [SamlController::class, 'acs'])
 Route::get('/auth/saml/metadata', [SamlController::class, 'metadata'])
     ->middleware('throttle:10,1')
     ->name('saml.metadata');
+
+// OIDC: one redirect/callback pair per configuration. The callback is a GET
+// carrying ?code&state, so CSRF middleware doesn't apply; the controller
+// validates state against the session instead.
+Route::get('/auth/oidc/{ssoConfiguration}/redirect', [OidcController::class, 'redirect'])
+    ->whereUuid('ssoConfiguration')
+    ->middleware('throttle:10,1')
+    ->name('oidc.redirect');
+Route::get('/auth/oidc/{ssoConfiguration}/callback', [OidcController::class, 'callback'])
+    ->whereUuid('ssoConfiguration')
+    ->middleware('throttle:10,1')
+    ->name('oidc.callback');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])

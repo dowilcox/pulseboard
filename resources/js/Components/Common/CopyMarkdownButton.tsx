@@ -14,7 +14,7 @@ interface CopyMarkdownButtonProps extends Omit<
     tooltip?: string;
 }
 
-async function copyText(text: string) {
+export async function copyText(text: string) {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
         return;

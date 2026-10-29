@@ -26,7 +26,7 @@ export interface User {
     name: string;
     email: string;
     avatar_url?: string;
-    auth_provider: "local" | "saml2";
+    auth_provider: "local" | "saml2" | "oidc";
     is_admin: boolean;
     is_bot: boolean;
     created_by_team_id?: string;
@@ -420,21 +420,54 @@ export interface BoardTemplate {
     creator?: User;
 }
 
-export interface SsoConfiguration {
+export type SsoProviderType = "saml2" | "oidc";
+
+interface SsoConfigurationBase {
     id: string;
-    provider: string;
     name: string;
-    entity_id: string;
-    login_url: string;
-    logout_url?: string;
-    metadata_url?: string;
+    /** Login button text ("Sign in with <label>"); falls back to name. */
+    button_label?: string | null;
     attribute_mapping?: {
         email?: string;
         name?: string;
-    };
+    } | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
+}
+
+/** Admin view of a SAML2 provider. The certificate is never sent. */
+export interface SamlSsoConfiguration extends SsoConfigurationBase {
+    provider: "saml2";
+    entity_id: string;
+    login_url: string;
+    logout_url?: string | null;
+    metadata_url?: string | null;
+    has_certificate: boolean;
+}
+
+/** Admin view of an OIDC provider. The client secret is never sent. */
+export interface OidcSsoConfiguration extends SsoConfigurationBase {
+    provider: "oidc";
+    issuer: string;
+    client_id: string;
+    has_client_secret: boolean;
+    scopes: string;
+    allowed_algorithms?: string[] | null;
+    fetch_userinfo: boolean;
+    end_session_enabled: boolean;
+    /** Exact redirect URI to register with the IdP. */
+    redirect_uri: string;
+}
+
+export type SsoConfiguration = SamlSsoConfiguration | OidcSsoConfiguration;
+
+/** An active SSO provider as listed on the login page. */
+export interface SsoLoginProvider {
+    id: string;
+    provider: SsoProviderType;
+    label: string;
+    url: string;
 }
 
 export type BoardViewMode = "kanban" | "list" | "workload";
