@@ -172,6 +172,26 @@ class McpCustomFieldsTest extends TestCase
         $this->assertSame('High', $details['to']['Severity']);
     }
 
+    public function test_update_task_never_wipes_all_values_at_once(): void
+    {
+        $values = [$this->severity->id => 'opt-low', $this->points->id => 3];
+        $task = $this->taskWith('Keep my fields', $values);
+
+        // custom_fields: null alongside another change is ignored.
+        $this->toolJson($this->callTool($this->user, UpdateTask::class, [
+            'task' => $task->id,
+            'title' => 'Renamed',
+            'custom_fields' => null,
+        ]));
+        $this->assertSame('Renamed', $task->fresh()->title);
+        $this->assertEquals($values, $task->fresh()->custom_fields);
+
+        // An empty object on its own is not an update at all.
+        $this->callTool($this->user, UpdateTask::class, ['task' => $task->id, 'custom_fields' => []])
+            ->assertHasErrors(['Nothing to update']);
+        $this->assertEquals($values, $task->fresh()->custom_fields);
+    }
+
     public function test_unknown_fields_and_options_are_clear_errors(): void
     {
         $task = $this->taskWith('Errors', null);

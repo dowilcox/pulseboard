@@ -32,7 +32,7 @@ class UpdateTask extends PulseBoardTool
             'priority' => $schema->string()->enum(['urgent', 'high', 'medium', 'low', 'none'])->description('New priority.'),
             'due_date' => $schema->string()->nullable()->description('New due date (YYYY-MM-DD), or null to clear.'),
             'effort_estimate' => $schema->integer()->min(0)->nullable()->description('New effort estimate, or null to clear.'),
-            'custom_fields' => $schema->object()->description('Custom field values keyed by field name or id (see get_board), e.g. {"Severity": "High", "Story points": 3, "Tags": ["API", "UI"]}. Select options by label or id (case-insensitive); multi-select takes a list; checkbox true/false; date YYYY-MM-DD; null clears a field.'.' Only the fields you name change.'),
+            'custom_fields' => $schema->object()->description('Custom field values keyed by field name or id (see get_board), e.g. {"Severity": "High", "Story points": 3, "Tags": ["API", "UI"]}. Select options by label or id (case-insensitive); multi-select takes a list; checkbox true/false; date YYYY-MM-DD; null clears a field.'.' Only the fields you name change. To clear several fields, set each to null; passing custom_fields: null or {} is ignored and never clears all fields at once.'),
         ];
     }
 
