@@ -5,13 +5,14 @@ namespace App\Notifications;
 use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class TaskMentionedNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(
         public Task $task,
@@ -21,17 +22,9 @@ class TaskMentionedNotification extends Notification
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_mentioned', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        // Email is handled by the digest command (notifications:send-emails)
-
-        return $channels;
+        return 'task_mentioned';
     }
 
     public function toDatabase(object $notifiable): array

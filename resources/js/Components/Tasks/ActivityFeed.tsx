@@ -25,7 +25,9 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useShortcut } from "@/Contexts/KeyboardShortcutsContext";
+import { useModEnterSubmit } from "@/hooks/useModEnterSubmit";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type FeedItem =
     | { type: "comment"; item: Comment; timestamp: string }
@@ -64,6 +66,8 @@ interface Props {
     boardSlug: string;
     taskId: string;
     currentUserId: string;
+    /** Server-computed (CommentPolicy::deleteAny): may delete anyone's comment. */
+    canDeleteAnyComment?: boolean;
     uploadImageUrl?: string;
     mentionableUsers?: User[];
 }
@@ -161,6 +165,21 @@ function activityDescription(
                 <>
                     unassigned{" "}
                     {(changes.users as string[])?.join(", ") ?? "users"}
+                </>
+            );
+        case "watcher_added":
+            return (
+                <>
+                    added {(changes.users as string[])?.join(", ") ?? "a user"}{" "}
+                    as a watcher
+                </>
+            );
+        case "watcher_removed":
+            return (
+                <>
+                    removed{" "}
+                    {(changes.users as string[])?.join(", ") ?? "a user"} as a
+                    watcher
                 </>
             );
         case "labels_changed": {
@@ -271,6 +290,8 @@ interface CommentItemProps {
     comment: Comment;
     variant: "comment" | "reply";
     isOwn: boolean;
+    /** Own comments, or anyone's for team owners/admins. Edit stays author-only. */
+    canDelete: boolean;
     /** Endpoint the comment body is PUT to (checkbox toggles). */
     updateUrl: string;
     isEditing: boolean;
@@ -290,6 +311,7 @@ function CommentItem({
     comment,
     variant,
     isOwn,
+    canDelete,
     updateUrl,
     isEditing,
     editBody,
@@ -391,21 +413,21 @@ function CommentItem({
                     </Tooltip>
                 )}
                 {isOwn && !isEditing && (
-                    <>
-                        <Tooltip title="Edit">
-                            <IconButton
-                                size="small"
-                                onClick={() => onStartEdit(localBody)}
-                            >
-                                <EditIcon sx={{ fontSize: actionIconSize }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                            <IconButton size="small" onClick={onDelete}>
-                                <DeleteIcon sx={{ fontSize: actionIconSize }} />
-                            </IconButton>
-                        </Tooltip>
-                    </>
+                    <Tooltip title="Edit">
+                        <IconButton
+                            size="small"
+                            onClick={() => onStartEdit(localBody)}
+                        >
+                            <EditIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
+                )}
+                {canDelete && !isEditing && (
+                    <Tooltip title="Delete">
+                        <IconButton size="small" onClick={onDelete}>
+                            <DeleteIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
                 )}
             </Box>
         </>
@@ -513,6 +535,7 @@ export default function ActivityFeed({
     boardSlug,
     taskId,
     currentUserId,
+    canDeleteAnyComment = false,
     uploadImageUrl,
     mentionableUsers = [],
 }: Props) {
@@ -610,6 +633,29 @@ export default function ActivityFeed({
         );
     };
 
+    // Keyboard: "c" opens (or returns to) the comment box; ⌘/Ctrl+Enter posts.
+    const composerRef = useRef<HTMLDivElement>(null);
+    useShortcut({
+        id: "task-comment",
+        keys: "c",
+        description: "Write a comment",
+        scope: "task",
+        handler: () => {
+            if (!composerOpen) {
+                setComposerOpen(true);
+            } else {
+                composerRef.current
+                    ?.querySelector<HTMLElement>(".ProseMirror")
+                    ?.focus();
+            }
+            composerRef.current?.scrollIntoView?.({ block: "nearest" });
+        },
+    });
+    const submitCommentOnModEnter = useModEnterSubmit(() => submitComment());
+    const submitReplyOnModEnter = useModEnterSubmit(() => {
+        if (replyingTo) submitComment(replyingTo);
+    });
+
     const handleEditComment = (commentId: string) => {
         router.put(
             route("comments.update", [teamSlug, boardSlug, taskId, commentId]),
@@ -659,6 +705,7 @@ export default function ActivityFeed({
             comment={comment}
             variant={variant}
             isOwn={comment.user_id === currentUserId}
+            canDelete={comment.user_id === currentUserId || canDeleteAnyComment}
             updateUrl={route("comments.update", [
                 teamSlug,
                 boardSlug,
@@ -742,7 +789,7 @@ export default function ActivityFeed({
                     {/* Reply input — compact placeholder or full editor */}
                     <Box sx={{ py: 1 }}>
                         {replyingTo === comment.id ? (
-                            <>
+                            <Box onKeyDownCapture={submitReplyOnModEnter}>
                                 <RichTextEditor
                                     key={replyEditorKey}
                                     content={replyBody}
@@ -783,7 +830,7 @@ export default function ActivityFeed({
                                         Reply
                                     </Button>
                                 </Box>
-                            </>
+                            </Box>
                         ) : (
                             <Box
                                 component="button"
@@ -903,6 +950,7 @@ export default function ActivityFeed({
 
             {/* Composer — pill that expands into the rich text editor */}
             <Box
+                ref={composerRef}
                 sx={{
                     display: "flex",
                     gap: 1.25,
@@ -925,7 +973,10 @@ export default function ActivityFeed({
                     {auth.user.name?.charAt(0).toUpperCase()}
                 </Avatar>
                 {composerOpen ? (
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                        sx={{ flex: 1, minWidth: 0 }}
+                        onKeyDownCapture={submitCommentOnModEnter}
+                    >
                         <RichTextEditor
                             key={commentEditorKey}
                             content={newCommentBody}
@@ -1133,7 +1184,10 @@ export default function ActivityFeed({
                                     }}
                                 >
                                     <strong>
-                                        {activity.user?.name ?? "System"}
+                                        {activity.user?.name ??
+                                            (activity.actor_deleted
+                                                ? "Deleted user"
+                                                : "System")}
                                     </strong>{" "}
                                     {activityDescription(
                                         activity.action,

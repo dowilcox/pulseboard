@@ -4,6 +4,7 @@ namespace App\Actions\Automation;
 
 use App\Actions\Tasks\AssignTask;
 use App\Actions\Tasks\MoveTask;
+use App\Actions\Tasks\SyncTaskLabels;
 use App\Actions\Tasks\ToggleTaskCompletion;
 use App\Actions\Tasks\UpdateTask;
 use App\Events\NotificationCreated;
@@ -14,7 +15,9 @@ use App\Models\Label;
 use App\Models\Task;
 use App\Models\User;
 use App\Notifications\AutomationNotification;
+use App\Services\ActivityLogger;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class ExecuteAutomationRules
@@ -203,9 +206,14 @@ class ExecuteAutomationRules
             return;
         }
 
-        if (! $task->labels()->where('labels.id', $label->id)->exists()) {
-            $task->labels()->attach($label->id);
+        $currentIds = $task->labels()->pluck('labels.id')->all();
+        if (in_array($label->id, $currentIds, true)) {
+            return;
         }
+
+        // Route through SyncTaskLabels so the change logs activity, broadcasts
+        // and fires label_added rules (depth-guarded by TaskAutomationDispatcher).
+        SyncTaskLabels::run($task, array_merge($currentIds, [$label->id]));
     }
 
     private function actionUpdateField(Task $task, array $config): void
@@ -245,7 +253,12 @@ class ExecuteAutomationRules
             return;
         }
 
-        $task->labels()->detach($label->id);
+        $currentIds = $task->labels()->pluck('labels.id')->all();
+        if (! in_array($label->id, $currentIds, true)) {
+            return;
+        }
+
+        SyncTaskLabels::run($task, array_values(array_diff($currentIds, [$label->id])));
     }
 
     private function actionUnassignUser(Task $task, array $config): void
@@ -255,7 +268,18 @@ class ExecuteAutomationRules
             return;
         }
 
-        $task->assignees()->detach($userId);
+        $user = $task->assignees()->where('users.id', $userId)->first();
+        if (! $user) {
+            return;
+        }
+
+        // Detach just this user (AssignTask would also drop any deactivated
+        // assignees) and log it the way AssignTask logs an unassignment.
+        $task->assignees()->detach($user->id);
+        ActivityLogger::log($task, 'unassigned', [
+            'users' => [$user->name],
+            'user_ids' => [$user->id],
+        ]);
     }
 
     private function actionAddWatcher(Task $task, array $config): void
@@ -265,11 +289,17 @@ class ExecuteAutomationRules
             return;
         }
 
-        if (! $task->watchers()->where('users.id', $user->id)->exists()) {
-            $task->watchers()->attach($user->id, [
-                'created_at' => now(),
-            ]);
+        if ($task->watchers()->where('users.id', $user->id)->exists()) {
+            return;
         }
+
+        $task->watchers()->attach($user->id, [
+            'created_at' => now(),
+        ]);
+        ActivityLogger::log($task, 'watcher_added', [
+            'users' => [$user->name],
+            'user_ids' => [$user->id],
+        ]);
     }
 
     private function actionRemoveWatcher(Task $task, array $config): void
@@ -279,7 +309,14 @@ class ExecuteAutomationRules
             return;
         }
 
-        $task->watchers()->detach($user->id);
+        if (! $task->watchers()->detach($user->id)) {
+            return;
+        }
+
+        ActivityLogger::log($task, 'watcher_removed', [
+            'users' => [$user->name],
+            'user_ids' => [$user->id],
+        ]);
     }
 
     private function actionSendNotification(Task $task, array $config, AutomationRule $rule): void
@@ -298,6 +335,9 @@ class ExecuteAutomationRules
 
         foreach ($users as $user) {
             $notification = new AutomationNotification($task, $message);
+            // Laravel only sets the id on the clone it sends; pre-assign it
+            // so the live broadcast below can reference the stored row.
+            $notification->id = (string) Str::uuid();
             $user->notify($notification);
 
             if (

@@ -4,27 +4,22 @@ namespace App\Notifications;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class TaskCompletedNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(public Task $task, public User $completedBy)
     {
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_completed', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        return $channels;
+        return 'task_completed';
     }
 
     public function toDatabase(object $notifiable): array

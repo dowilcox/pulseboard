@@ -9,6 +9,7 @@ use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class ColumnApiTest extends TestCase
@@ -163,6 +164,54 @@ class ColumnApiTest extends TestCase
         $this->assertDatabaseMissing('columns', ['id' => $second->id]);
         $this->assertDatabaseHas('columns', ['name' => 'First Renamed', 'sort_order' => 1]);
         $this->assertDatabaseHas('columns', ['name' => 'Brand New', 'board_id' => $this->board->id, 'sort_order' => 0]);
+    }
+
+    private function reorder(array $columns): TestResponse
+    {
+        return $this->api()->putJson(
+            "/api/v1/teams/{$this->team->id}/boards/{$this->board->id}/columns",
+            ['columns' => $columns],
+        );
+    }
+
+    public function test_reorder_rejects_two_done_columns(): void
+    {
+        $second = Column::factory()->create(['board_id' => $this->board->id, 'sort_order' => 1]);
+
+        $this->reorder([
+            ['id' => $this->column->id, 'name' => 'A', 'color' => '#111111', 'sort_order' => 0, 'is_done_column' => true],
+            ['id' => $second->id, 'name' => 'B', 'color' => '#222222', 'sort_order' => 1, 'is_done_column' => true],
+        ])->assertUnprocessable()->assertJsonValidationErrors('columns');
+
+        $this->assertSame(0, $this->board->columns()->where('is_done_column', true)->count());
+    }
+
+    public function test_reorder_marking_a_new_done_column_clears_the_old_one(): void
+    {
+        $oldDone = Column::factory()->create(['board_id' => $this->board->id, 'sort_order' => 1, 'is_done_column' => true]);
+
+        // The old done column is left out of the payload entirely.
+        $this->reorder([
+            ['id' => $this->column->id, 'name' => 'A', 'color' => '#111111', 'sort_order' => 0, 'is_done_column' => false],
+            ['name' => 'Shipped', 'color' => '#333333', 'sort_order' => 2, 'is_done_column' => true],
+        ])->assertOk();
+
+        $this->assertFalse((bool) $oldDone->fresh()->is_done_column);
+        $this->assertSame(
+            ['Shipped'],
+            $this->board->columns()->where('is_done_column', true)->pluck('name')->all(),
+        );
+    }
+
+    public function test_reorder_rejects_a_zero_wip_limit(): void
+    {
+        $this->reorder([
+            ['id' => $this->column->id, 'name' => 'A', 'color' => '#111111', 'sort_order' => 0, 'wip_limit' => 0],
+        ])->assertUnprocessable()->assertJsonValidationErrors('columns.0.wip_limit');
+
+        $this->reorder([
+            ['id' => $this->column->id, 'name' => 'A', 'color' => '#111111', 'sort_order' => 0, 'wip_limit' => null],
+        ])->assertOk();
     }
 
     public function test_reorder_cannot_destroy_all_columns(): void

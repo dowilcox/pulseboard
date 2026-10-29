@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BoardController;
 use App\Http\Controllers\Api\V1\BoardTemplateController;
 use App\Http\Controllers\Api\V1\ColumnController;
 use App\Http\Controllers\Api\V1\CommentController;
+use App\Http\Controllers\Api\V1\CustomFieldController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\LabelController;
 use App\Http\Controllers\Api\V1\MeController;
@@ -30,7 +31,7 @@ Route::post('/webhooks/gitlab/{connection}', [GitlabWebhookController::class, 'h
  * Token abilities:
  *   read   — implicit for all GET endpoints (every token can read what its user can see)
  *   write  — content mutations (tasks, comments, attachments, templates, integrations, notifications)
- *   manage — structural/administrative mutations (teams, members, boards, columns, labels)
+ *   manage — structural/administrative mutations (teams, members, boards, columns, custom fields, labels)
  */
 Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'])->name('api.v1.')->group(function () {
     // Me
@@ -50,7 +51,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'
         Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
     });
 
-    // Board templates (global gallery)
+    // Board templates (personal: you list and use only templates you created;
+    // app admins may also use or delete anyone's)
     Route::get('/templates', [BoardTemplateController::class, 'index'])->name('templates.index');
     Route::middleware('abilities:write')->group(function () {
         Route::post('/templates', [BoardTemplateController::class, 'store'])->name('templates.store');
@@ -77,6 +79,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'
         Route::get('/teams/{team}/boards', [BoardController::class, 'index'])->name('teams.boards.index');
         Route::get('/teams/{team}/boards/{board}', [BoardController::class, 'show'])->name('teams.boards.show');
         Route::get('/teams/{team}/boards/{board}/labels', [BoardController::class, 'labels'])->name('teams.boards.labels');
+        Route::get('/teams/{team}/boards/{board}/custom-fields', [CustomFieldController::class, 'index'])->name('teams.boards.custom-fields.index');
 
         // Tasks (read)
         Route::get('/teams/{team}/boards/{board}/tasks', [TaskController::class, 'index'])->name('teams.boards.tasks.index');
@@ -162,6 +165,12 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'
             Route::put('/teams/{team}/boards/{board}/columns', [ColumnController::class, 'reorder'])->name('teams.boards.columns.reorder');
             Route::put('/teams/{team}/boards/{board}/columns/{column}', [ColumnController::class, 'update'])->name('teams.boards.columns.update');
             Route::delete('/teams/{team}/boards/{board}/columns/{column}', [ColumnController::class, 'destroy'])->name('teams.boards.columns.destroy');
+
+            // Custom fields
+            Route::post('/teams/{team}/boards/{board}/custom-fields', [CustomFieldController::class, 'store'])->name('teams.boards.custom-fields.store');
+            Route::put('/teams/{team}/boards/{board}/custom-fields', [CustomFieldController::class, 'reorder'])->name('teams.boards.custom-fields.reorder');
+            Route::put('/teams/{team}/boards/{board}/custom-fields/{customField}', [CustomFieldController::class, 'update'])->name('teams.boards.custom-fields.update');
+            Route::delete('/teams/{team}/boards/{board}/custom-fields/{customField}', [CustomFieldController::class, 'destroy'])->name('teams.boards.custom-fields.destroy');
 
             // Labels
             Route::post('/teams/{team}/labels', [LabelController::class, 'store'])->name('teams.labels.store');

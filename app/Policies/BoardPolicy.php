@@ -55,4 +55,13 @@ class BoardPolicy
     {
         return $this->isOwnerOrAdmin($user, $board->team);
     }
+
+    /**
+     * Determine whether the user can manage custom field definitions.
+     * Same rule as columns: both are board structure set in board settings.
+     */
+    public function manageCustomFields(User $user, Board $board): bool
+    {
+        return $this->manageColumns($user, $board);
+    }
 }

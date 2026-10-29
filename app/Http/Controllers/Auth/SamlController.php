@@ -20,7 +20,7 @@ class SamlController extends Controller
 
     public function redirect(): RedirectResponse
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             return redirect()->route('login')->with('error', 'SSO is not configured.');
@@ -33,7 +33,7 @@ class SamlController extends Controller
 
     public function acs(Request $request): RedirectResponse
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             return redirect()->route('login')->with('error', 'SSO is not configured.');
@@ -65,16 +65,37 @@ class SamlController extends Controller
             }
         }
 
-        $user->forceFill([
-            'name' => $samlName,
-            'email' => $samlUser['email'],
-            'auth_provider' => 'saml2',
-            'auth_provider_id' => $samlUser['name_id'],
-        ])->save();
-
+        // Refuse before saving so a deactivated or bot account is never
+        // modified or converted to SAML by an assertion.
         if ($user->deactivated_at) {
             return redirect()->route('login')->with('error', 'Your account has been deactivated.');
         }
+
+        if ($user->is_bot) {
+            Log::warning('SAML login refused: identity matches a bot account', [
+                'config_id' => $config->id,
+                'user_id' => $user->id,
+            ]);
+
+            return redirect()->route('login')->with('error', 'This account cannot sign in with SSO.');
+        }
+
+        $emailTaken = User::where('email', $samlUser['email'])
+            ->when($user->exists, fn ($query) => $query->whereKeyNot($user->id))
+            ->exists();
+
+        $user->forceFill([
+            'name' => $samlName,
+            'auth_provider' => 'saml2',
+            'auth_provider_id' => $samlUser['name_id'],
+        ]);
+
+        // Keep the current email if the asserted one belongs to another account.
+        if (! $emailTaken) {
+            $user->email = $samlUser['email'];
+        }
+
+        $user->save();
 
         Auth::login($user, true);
         $request->session()->regenerate();
@@ -84,7 +105,7 @@ class SamlController extends Controller
 
     public function metadata(): Response
     {
-        $config = SsoConfiguration::where('is_active', true)->first();
+        $config = SsoConfiguration::saml()->active()->first();
 
         if (! $config) {
             abort(404, 'SSO is not configured.');

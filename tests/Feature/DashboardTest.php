@@ -47,6 +47,31 @@ class DashboardTest extends TestCase
         $response->assertInertia(fn ($page) => $page->component('Dashboard'));
     }
 
+    public function test_dashboard_counts_a_reopened_task_in_a_done_column_as_open(): void
+    {
+        $doneColumn = Column::factory()->create([
+            'board_id' => $this->board->id,
+            'is_done_column' => true,
+        ]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $doneColumn->id,
+            'created_by' => $this->user->id,
+            'completed_at' => null,
+            'due_date' => now()->subDays(2)->toDateString(),
+        ]);
+        $task->assignees()->attach($this->user->id, ['assigned_at' => now()]);
+
+        $this->actingAs($this->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.open', 1)
+                ->where('stats.overdue', 1)
+                ->where('boards.0.done_tasks', 0)
+                ->where('boards.0.open_tasks', 1));
+    }
+
     public function test_dashboard_shares_reverb_client_config(): void
     {
         config()->set('reverb.client', [
@@ -68,12 +93,19 @@ class DashboardTest extends TestCase
             ->where('reverb.scheme', 'http'));
     }
 
-    /**
-     * Skipped: the stats endpoint uses MySQL-only YEARWEEK() which doesn't work in SQLite.
-     */
     public function test_can_view_team_stats(): void
     {
-        $this->markTestSkipped('Stats endpoint uses MySQL-only YEARWEEK() function.');
+        $this->actingAs($this->user)
+            ->getJson(route('teams.dashboard.stats', $this->team))
+            ->assertOk()
+            ->assertJsonStructure([
+                'tasks_by_column',
+                'tasks_by_priority',
+                'overdue_tasks',
+                'workload',
+                'velocity',
+                'cycle_time',
+            ]);
     }
 
     public function test_can_export_csv(): void

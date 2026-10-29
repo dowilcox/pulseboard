@@ -650,7 +650,7 @@ export default function GitlabProjects({
                 onClose={() => setDeleteConnection(null)}
                 onConfirm={handleDeleteConnection}
                 title={`Delete connection “${deleteConnection?.name ?? ""}”?`}
-                message="This removes the connection and every project linked through it. Webhooks are cleaned up in GitLab."
+                message="This removes the connection, every project linked through it, and the branch and merge request references on tasks that use those projects. Webhooks are cleaned up in GitLab."
                 confirmLabel="Delete connection"
                 confirmColor="error"
             />
@@ -717,7 +717,7 @@ export default function GitlabProjects({
                 onClose={() => setUnlinkProject(null)}
                 onConfirm={handleUnlink}
                 title={`Unlink “${unlinkProject?.path_with_namespace ?? ""}”?`}
-                message="This removes the project link and every task's GitLab references to it. The webhook is removed from GitLab."
+                message="This removes the project link and the branch and merge request references on every task that uses it. The webhook is removed from GitLab. Branches and merge requests in GitLab are not affected."
                 confirmLabel="Unlink project"
                 confirmColor="error"
             />

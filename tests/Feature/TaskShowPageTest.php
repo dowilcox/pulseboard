@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Comment;
 use App\Models\Task;
 use App\Models\TaskDependency;
 use App\Models\Team;
@@ -11,6 +12,7 @@ use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class TaskShowPageTest extends TestCase
@@ -250,5 +252,44 @@ class TaskShowPageTest extends TestCase
             ->where('task.dependencies.0.id', $dependent->id)
             ->where('task.dependencies.0.board.slug', $this->board->slug)
         );
+    }
+
+    public static function commentModerationRoles(): array
+    {
+        return [
+            'owner' => ['owner', true],
+            'admin' => ['admin', true],
+            'member' => ['member', false],
+        ];
+    }
+
+    /**
+     * The page tells the comment feed whether the viewer may delete other
+     * people's comments, matching what CommentPolicy allows on delete.
+     */
+    #[DataProvider('commentModerationRoles')]
+    public function test_page_shows_whether_the_viewer_can_delete_others_comments(string $role, bool $allowed): void
+    {
+        $viewer = User::factory()->create();
+        $this->addMember($viewer, $role);
+        $author = User::factory()->create();
+        $this->addMember($author);
+        $task = $this->createTask($this->board, $this->column);
+        $comment = Comment::factory()->create(['task_id' => $task->id, 'user_id' => $author->id]);
+
+        $this->actingAs($viewer)
+            ->get(route('tasks.show', [$this->team, $this->board, $task]))
+            ->assertInertia(fn ($page) => $page->where('can.deleteAnyComment', $allowed));
+
+        $response = $this->actingAs($viewer)
+            ->delete(route('comments.destroy', [$this->team, $this->board, $task, $comment]));
+
+        if ($allowed) {
+            $response->assertRedirect();
+            $this->assertModelMissing($comment);
+        } else {
+            $response->assertForbidden();
+            $this->assertModelExists($comment);
+        }
     }
 }

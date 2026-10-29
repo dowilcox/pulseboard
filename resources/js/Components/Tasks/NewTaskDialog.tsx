@@ -18,6 +18,8 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
     columns: Column[];
+    /** Preselect this column (e.g. the keyboard-focused one) if it has room. */
+    defaultColumnId?: string | null;
 }
 
 function isFull(column: Column): boolean {
@@ -35,6 +37,7 @@ export default function NewTaskDialog({
     teamSlug,
     boardSlug,
     columns,
+    defaultColumnId = null,
 }: Props) {
     const titleId = useId();
     const { showSnackbar } = useSnackbar();
@@ -53,14 +56,22 @@ export default function NewTaskDialog({
     useEffect(() => {
         if (!open) return;
         clearErrors();
-        setData((prev) => ({
-            ...prev,
-            column_id:
+        const preferred = columns.find(
+            (c) => c.id === defaultColumnId && !isFull(c),
+        );
+        setData((prev) => {
+            const keepPrevious =
                 prev.column_id &&
-                columns.some((c) => c.id === prev.column_id && !isFull(c))
-                    ? prev.column_id
-                    : (firstOpenColumn?.id ?? ""),
-        }));
+                columns.some((c) => c.id === prev.column_id && !isFull(c));
+            return {
+                ...prev,
+                column_id:
+                    preferred?.id ??
+                    (keepPrevious
+                        ? prev.column_id
+                        : (firstOpenColumn?.id ?? "")),
+            };
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 

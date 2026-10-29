@@ -42,7 +42,7 @@ class TaskTemplateController extends Controller
             'effort_estimate' => ['nullable', 'integer', 'min:0'],
             'checklists' => ['nullable', 'array'],
             'label_ids' => ['nullable', 'array'],
-            'label_ids.*' => ['uuid'],
+            'label_ids.*' => ['uuid', Rule::exists('labels', 'id')->where('team_id', $team->id)],
         ]);
 
         $validated['created_by'] = $request->user()->id;

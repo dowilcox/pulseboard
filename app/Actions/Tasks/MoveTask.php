@@ -91,6 +91,8 @@ class MoveTask
         if ($crossBoard) {
             $updateData['board_id'] = $targetBoard->id;
             $updateData['task_number'] = $this->nextTaskNumber($targetBoard);
+            // Custom field values are keyed by the old board's field ids.
+            $updateData['custom_fields'] = null;
         }
 
         // Keep completed_at in sync with done columns, mirroring
@@ -109,6 +111,14 @@ class MoveTask
         }
 
         $task->update($updateData);
+
+        // Keep the loaded relations in step with the new foreign keys, so
+        // listeners (activity broadcast, automation) see the destination
+        // board and column rather than the ones the task just left.
+        $task->setRelation('column', $column);
+        if ($crossBoard) {
+            $task->setRelation('board', $targetBoard);
+        }
 
         return [
             'task' => $task,

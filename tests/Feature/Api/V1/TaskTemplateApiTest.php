@@ -80,6 +80,18 @@ class TaskTemplateApiTest extends TestCase
         $this->assertDatabaseHas('task_templates', ['name' => 'Bug Report', 'team_id' => $this->team->id]);
     }
 
+    public function test_create_template_rejects_labels_from_another_team(): void
+    {
+        $foreignLabel = Label::factory()->create(['team_id' => Team::factory()->create()->id]);
+
+        $this->api()->postJson("/api/v1/teams/{$this->team->id}/task-templates", [
+            'name' => 'Bug Report',
+            'label_ids' => [$foreignLabel->id],
+        ])->assertUnprocessable()->assertJsonValidationErrors('label_ids.0');
+
+        $this->assertDatabaseMissing('task_templates', ['name' => 'Bug Report']);
+    }
+
     public function test_create_template_requires_write_ability(): void
     {
         $token = $this->user->createToken('read-only', ['read'])->plainTextToken;

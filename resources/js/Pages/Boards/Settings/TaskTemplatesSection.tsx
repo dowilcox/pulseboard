@@ -192,7 +192,9 @@ export default function TaskTemplatesSection({
                                                 : null,
                                             template.creator
                                                 ? `by ${template.creator.name}`
-                                                : null,
+                                                : template.created_by === null
+                                                  ? "by a deleted user"
+                                                  : null,
                                         ]
                                             .filter(Boolean)
                                             .join(" · ")}

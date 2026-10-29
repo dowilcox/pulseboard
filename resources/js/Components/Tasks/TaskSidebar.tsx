@@ -1,4 +1,5 @@
 import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import TaskCustomFieldsSection from "@/Components/CustomFields/TaskCustomFieldsSection";
 import GitlabSidebarControls from "@/Components/Gitlab/GitlabSidebarControls";
 import AssigneeSelector from "@/Components/Tasks/AssigneeSelector";
 import DependencySection from "@/Components/Tasks/DependencySection";
@@ -9,6 +10,11 @@ import { useSnackbar } from "@/Contexts/SnackbarContext";
 import type { Autosave } from "@/hooks/useAutosave";
 import { harbor, harborHex } from "@/theme/harbor";
 import { formatTimestamp } from "@/utils/formatTimestamp";
+import {
+    moveTask,
+    toggleTaskComplete,
+    toggleTaskWatch,
+} from "@/utils/taskActions";
 import {
     dueDateHint,
     parseEffortInput,
@@ -297,23 +303,25 @@ export default function TaskSidebar({
 
     const handleColumnChange = (columnId: string) => {
         if (columnId === task.column_id) return;
-        router.patch(
-            route("tasks.move", [team.slug, board.slug, task.slug]),
-            // null lets the server append after the column's last task
-            { column_id: columnId, sort_order: null },
-            { preserveScroll: true },
-        );
+        // null lets the server append after the column's last task
+        moveTask(team.slug, board.slug, task, {
+            column_id: columnId,
+            sort_order: null,
+        });
     };
 
     const handleMoveConfirm = (boardId: string, columnId: string) => {
         setMoving(true);
         const move = () =>
-            router.patch(
-                route("tasks.move", [team.slug, board.slug, task.slug]),
+            moveTask(
+                team.slug,
+                board.slug,
+                task,
                 { board_id: boardId, column_id: columnId, sort_order: null },
                 {
                     // The server redirects to the task's new URL and flashes
                     // a success message.
+                    preserveScroll: false,
                     onSuccess: () => setMoveBoardId(null),
                     onFinish: () => setMoving(false),
                 },
@@ -322,21 +330,11 @@ export default function TaskSidebar({
         autosave.flush().then(move, move);
     };
 
-    const handleToggleComplete = () => {
-        router.patch(
-            route("tasks.toggle-complete", [team.slug, board.slug, task.slug]),
-            {},
-            { preserveScroll: true },
-        );
-    };
+    const handleToggleComplete = () =>
+        toggleTaskComplete(team.slug, board.slug, task);
 
-    const handleToggleWatch = () => {
-        router.patch(
-            route("tasks.toggle-watch", [team.slug, board.slug, task.slug]),
-            {},
-            { preserveScroll: true },
-        );
-    };
+    const handleToggleWatch = () =>
+        toggleTaskWatch(team.slug, board.slug, task);
 
     const handleDueDateChange = (newDate: string) => {
         setDueDate(newDate);
@@ -662,6 +660,14 @@ export default function TaskSidebar({
                 )}
             </Box>
 
+            {/* Board custom fields */}
+            <TaskCustomFieldsSection
+                task={task}
+                fields={board.custom_fields ?? []}
+                autosave={autosave}
+                canEdit={can.update}
+            />
+
             {/* Planning — dependencies + recurrence */}
             <Box sx={{ ...groupCardSx, gap: 1.375 }}>
                 <DependencySection
@@ -697,7 +703,9 @@ export default function TaskSidebar({
                     </Box>
                     <Box component="span">
                         {formatTimestamp(task.created_at)}
-                        {task.creator && ` by ${task.creator.name}`}
+                        {task.creator
+                            ? ` by ${task.creator.name}`
+                            : task.created_by === null && " by a deleted user"}
                     </Box>
                 </Box>
                 <Box sx={{ display: "flex", fontSize: 12, color: harbor.sub }}>

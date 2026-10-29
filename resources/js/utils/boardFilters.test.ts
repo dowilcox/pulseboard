@@ -9,6 +9,7 @@ import {
     filtersEqual,
     filtersToConfig,
     getStoredBoardView,
+    hasActiveFilters,
     listFooterText,
     normalizeFilterConfig,
     parseBoardSearch,
@@ -17,6 +18,7 @@ import {
     withFilters,
     type BoardFilters,
     type BoardState,
+    pruneCustomFieldFilters,
 } from "./boardFilters";
 
 const ALICE = "6f1c2a9e-0000-4000-8000-000000000001";
@@ -321,6 +323,34 @@ describe("saved filter config", () => {
                 }),
             ),
         ).toBe(4);
+    });
+});
+
+describe("pruneCustomFieldFilters", () => {
+    it("returns the same object when every field still exists", () => {
+        const filters = { ...EMPTY_FILTERS, customFields: { a: ["x"] } };
+        expect(pruneCustomFieldFilters(filters, ["a", "b"])).toBe(filters);
+        expect(pruneCustomFieldFilters(EMPTY_FILTERS, [])).toBe(EMPTY_FILTERS);
+    });
+
+    it("drops deleted fields and keeps the rest", () => {
+        const filters = {
+            ...EMPTY_FILTERS,
+            search: "bug",
+            customFields: { a: ["x"], gone: ["y"] },
+        };
+        expect(pruneCustomFieldFilters(filters, ["a"])).toEqual({
+            ...EMPTY_FILTERS,
+            search: "bug",
+            customFields: { a: ["x"] },
+        });
+    });
+
+    it("leaves no active filter when only deleted fields were filtered", () => {
+        const filters = { ...EMPTY_FILTERS, customFields: { gone: ["y"] } };
+        const pruned = pruneCustomFieldFilters(filters, []);
+        expect(pruned.customFields).toBeUndefined();
+        expect(hasActiveFilters(pruned)).toBe(false);
     });
 });
 

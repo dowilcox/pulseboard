@@ -22,7 +22,9 @@ function ActivityItem({
         ? activity.user.id === currentUserId
             ? "You"
             : activity.user.name
-        : "Someone";
+        : activity.actor_deleted
+          ? "A deleted user"
+          : "Someone";
     const avatarName = activity.user?.name ?? "?";
     const { before, after } = describeActivity(
         activity.action,

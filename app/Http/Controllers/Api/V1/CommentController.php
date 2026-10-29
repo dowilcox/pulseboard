@@ -10,6 +10,7 @@ use App\Models\Board;
 use App\Models\Comment;
 use App\Models\Task;
 use App\Models\Team;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -29,7 +30,7 @@ class CommentController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate($validated['per_page'] ?? 50);
 
-        return response()->json($comments);
+        return response()->json(PublicUser::scrub($comments));
     }
 
     public function store(Request $request, Team $team, Board $board, Task $task): JsonResponse
@@ -50,7 +51,7 @@ class CommentController extends Controller
             $validated['parent_id'] ?? null,
         );
 
-        return response()->json(['data' => $comment], 201);
+        return response()->json(['data' => PublicUser::scrub($comment)], 201);
     }
 
     public function update(Request $request, Team $team, Board $board, Task $task, Comment $comment): JsonResponse
@@ -63,7 +64,7 @@ class CommentController extends Controller
 
         $comment = UpdateComment::run($comment, $validated['body']);
 
-        return response()->json(['data' => $comment]);
+        return response()->json(['data' => PublicUser::scrub($comment)]);
     }
 
     public function destroy(Team $team, Board $board, Task $task, Comment $comment): JsonResponse

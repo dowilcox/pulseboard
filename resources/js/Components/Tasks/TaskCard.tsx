@@ -1,10 +1,13 @@
 import RouterLink from "@/Components/Common/RouterLink";
+import TaskCardCustomFields from "@/Components/CustomFields/TaskCardCustomFields";
+import { useBoardCustomFields } from "@/Contexts/BoardCustomFieldsContext";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import type { Task, TaskGitlabRef } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { describeCardFields } from "@/utils/customFields";
 import { daysUntil, formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
-import { describeTaskCard } from "@/utils/taskCardLabel";
+import { describeTaskCard, isTaskBlocked } from "@/utils/taskCardLabel";
 import { harbor, harborAvatarColor } from "@/theme/harbor";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -23,7 +26,11 @@ import { forwardRef, memo, type HTMLAttributes, type ReactNode } from "react";
 /** Event + ARIA props the sortable wrapper forwards to the card root. */
 type ForwardedProps = Pick<
     HTMLAttributes<HTMLElement>,
-    "onPointerDown" | "onKeyDown" | "onClickCapture" | "aria-describedby"
+    | "onPointerDown"
+    | "onKeyDown"
+    | "onClickCapture"
+    | "aria-describedby"
+    | "tabIndex"
 >;
 
 interface Props extends ForwardedProps {
@@ -34,6 +41,10 @@ interface Props extends ForwardedProps {
      * drag overlay).
      */
     href?: string;
+    /** Keyboard navigation: the board's cursor is on this card. */
+    keyboardFocused?: boolean;
+    /** Lets keyboard navigation find the card's element. */
+    "data-task-id"?: string;
 }
 
 // Neutral track pill used for comment/due/subtask/effort chips in the footer
@@ -138,6 +149,12 @@ const CARD_SX = {
     "& img": { WebkitUserDrag: "none", pointerEvents: "none" },
 } as const;
 
+const KEYBOARD_CURSOR_SX = {
+    outline: `2px solid ${harbor.accent}`,
+    outlineOffset: 2,
+    boxShadow: harbor.cardShadowHover,
+} as const;
+
 const CONTENT_SX = {
     display: "flex",
     flexDirection: "column",
@@ -146,11 +163,11 @@ const CONTENT_SX = {
 
 const TaskCard = memo(
     forwardRef<HTMLElement, Props>(function TaskCard(
-        { task, href, ...rest },
+        { task, href, keyboardFocused = false, ...rest },
         ref,
     ) {
         const isCompleted = task.completed_at != null;
-        const isBlocked = (task.blocked_by ?? []).length > 0;
+        const isBlocked = isTaskBlocked(task);
         const checklistProgress = task.checklist_progress;
         const dueSoon =
             task.due_date != null && !isCompleted && isDueSoon(task.due_date);
@@ -159,6 +176,8 @@ const TaskCard = memo(
             (r) => r.ref_type === "merge_request",
         );
         const assignees = task.assignees ?? [];
+        const customFields = useBoardCustomFields();
+        const cardFieldsLabel = describeCardFields(customFields, task);
 
         // Everything inside is summarised by the link's aria-label, so the
         // visual content is hidden from assistive tech to avoid repeats.
@@ -290,6 +309,8 @@ const TaskCard = memo(
                         ))}
                     </Box>
                 )}
+
+                <TaskCardCustomFields fields={customFields} task={task} />
 
                 {/* Checklist progress — segmented bar */}
                 {checklistProgress && checklistProgress.total > 0 && (
@@ -428,7 +449,12 @@ const TaskCard = memo(
                     component={RouterLink}
                     href={href}
                     draggable={false}
-                    aria-label={describeTaskCard(task)}
+                    aria-label={
+                        cardFieldsLabel
+                            ? `${describeTaskCard(task)}, ${cardFieldsLabel}`
+                            : describeTaskCard(task)
+                    }
+                    aria-current={keyboardFocused || undefined}
                     {...rest}
                     sx={{
                         ...CARD_SX,
@@ -439,6 +465,9 @@ const TaskCard = memo(
                             outlineColor: "primary.main",
                             outlineOffset: 2,
                         },
+                        // Keyboard cursor: stays visible while a picker or
+                        // the page holds DOM focus.
+                        ...(keyboardFocused && KEYBOARD_CURSOR_SX),
                     }}
                 >
                     <Box aria-hidden sx={CONTENT_SX}>

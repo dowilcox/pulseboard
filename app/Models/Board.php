@@ -72,6 +72,14 @@ class Board extends Model implements HasMedia
         return $this->hasMany(Task::class);
     }
 
+    /**
+     * Custom field definitions on this board, ordered by sort_order.
+     */
+    public function customFields(): HasMany
+    {
+        return $this->hasMany(BoardCustomField::class)->orderBy('sort_order');
+    }
+
     public function automationRules(): HasMany
     {
         return $this->hasMany(AutomationRule::class);

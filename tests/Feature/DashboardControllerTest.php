@@ -97,7 +97,7 @@ class DashboardControllerTest extends TestCase
         $this->task(['due_date' => '2026-10-08'], $me); // due today: not overdue
         $this->task(['due_date' => '2026-10-15'], $me); // 7 days out
         $this->task(['due_date' => '2026-10-16'], $me); // 8 days out
-        $this->task(['column_id' => $this->done->id, 'due_date' => '2026-10-01'], $me); // in done column
+        $this->task(['column_id' => $this->done->id, 'due_date' => '2026-10-01'], $me); // reopened in done column: open and overdue
         $this->task(['completed_at' => now()->subDays(2), 'due_date' => '2026-10-01'], $me);
         $this->task(['completed_at' => now()->subDays(10)], $me);
         $this->task(['due_date' => '2026-10-01']); // not assigned to me
@@ -107,12 +107,12 @@ class DashboardControllerTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
                 ->component('Dashboard')
-                ->where('stats.open', 5)
-                ->where('stats.overdue', 1)
+                ->where('stats.open', 6)
+                ->where('stats.overdue', 2)
                 ->where('stats.due_next_7_days', 2)
                 ->where('stats.completed_last_7_days', 1)
                 ->where('stats.completed_previous_7_days', 1)
-                ->has('myTasks', 5));
+                ->has('myTasks', 6));
     }
 
     public function test_completed_window_is_based_on_completed_at(): void
@@ -180,7 +180,7 @@ class DashboardControllerTest extends TestCase
         $teammate = User::factory()->create();
 
         $this->task(['completed_at' => now()->subDay(), 'column_id' => $this->done->id], $me);
-        $this->task(['column_id' => $this->done->id]); // done by column
+        $this->task(['column_id' => $this->done->id]); // in done column but reopened: open
         $this->task([], $me); // my open
         $this->task([], $teammate); // someone else's open
 
@@ -195,8 +195,8 @@ class DashboardControllerTest extends TestCase
 
         $main = $boards[$this->board->id];
         $this->assertSame(4, $main['total_tasks']);
-        $this->assertSame(2, $main['done_tasks']);
-        $this->assertSame(2, $main['open_tasks']);
+        $this->assertSame(1, $main['done_tasks']);
+        $this->assertSame(3, $main['open_tasks']);
         $this->assertSame(1, $main['my_open_tasks']);
         $this->assertSame($this->team->slug, $main['team']['slug']);
 

@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Notifications\Channels\DatabaseChannel;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -25,8 +27,16 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        // Stores the in_app flag so email-only notifications stay out of the bell.
+        Notification::extend('database', fn ($app) => $app->make(DatabaseChannel::class));
+
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('mcp', function (Request $request) {
+            return Limit::perMinute((int) config('mcp_server.rate_limit', 120))
+                ->by('mcp:'.($request->user()?->id ?: $request->ip()));
         });
     }
 }

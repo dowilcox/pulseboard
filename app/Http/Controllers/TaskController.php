@@ -16,6 +16,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Comment;
 use App\Models\Label;
 use App\Models\Task;
 use App\Models\Team;
@@ -102,7 +103,7 @@ class TaskController extends Controller
         $user = $request->user();
         $canUpdate = $user->can('update', $task);
 
-        $board->load('columns');
+        $board->load(['columns', 'customFields']);
         $members = $team->members()->whereNull('deactivated_at')->get();
         $labels = Label::where('team_id', $team->id)->get();
 
@@ -148,6 +149,8 @@ class TaskController extends Controller
                 'delete' => $user->can('delete', $task),
                 'move' => $moveTargets->isNotEmpty(),
                 'saveAsTemplate' => $user->can('update', $team),
+                // Authors can always delete their own comments.
+                'deleteAnyComment' => $user->can('deleteAny', [Comment::class, $task]),
             ],
         ]);
     }

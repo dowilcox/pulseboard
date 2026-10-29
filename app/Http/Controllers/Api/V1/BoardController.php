@@ -32,9 +32,12 @@ class BoardController extends Controller
     {
         $this->authorize('view', $board);
 
-        $board->load(['columns' => function ($q) {
-            $q->orderBy('sort_order');
-        }]);
+        $board->load([
+            'columns' => function ($q) {
+                $q->orderBy('sort_order');
+            },
+            'customFields',
+        ]);
 
         return response()->json(['data' => $board]);
     }

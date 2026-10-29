@@ -50,6 +50,8 @@ export interface DashboardActivity {
     changes: Record<string, unknown>;
     created_at: string;
     user: { id: string; name: string; avatar_url?: string } | null;
+    /** The actor was a user who has since been deleted. */
+    actor_deleted?: boolean;
     task: {
         id: string;
         title: string;

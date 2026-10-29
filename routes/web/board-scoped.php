@@ -7,6 +7,7 @@ use App\Http\Controllers\BoardController;
 use App\Http\Controllers\BoardTemplateController;
 use App\Http\Controllers\ColumnController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\SavedFilterController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDependencyController;
@@ -62,6 +63,23 @@ Route::delete('/{team}/{board}/columns/{column}', [
     ColumnController::class,
     'destroy',
 ])->name('teams.boards.columns.destroy');
+
+Route::post('/{team}/{board}/custom-fields', [
+    CustomFieldController::class,
+    'store',
+])->name('teams.boards.custom-fields.store');
+Route::put('/{team}/{board}/custom-fields', [
+    CustomFieldController::class,
+    'reorder',
+])->name('teams.boards.custom-fields.reorder');
+Route::put('/{team}/{board}/custom-fields/{customField}', [
+    CustomFieldController::class,
+    'update',
+])->name('teams.boards.custom-fields.update');
+Route::delete('/{team}/{board}/custom-fields/{customField}', [
+    CustomFieldController::class,
+    'destroy',
+])->name('teams.boards.custom-fields.destroy');
 
 Route::post('/{team}/{board}/columns/{column}/tasks', [
     TaskController::class,

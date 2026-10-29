@@ -1,4 +1,5 @@
 import type { BoardViewMode, SavedFilter, Task } from "@/types";
+import { matchesFieldFilter } from "@/utils/customFields";
 
 /**
  * Board view + filter state, and its URL serialization.
@@ -8,6 +9,7 @@ import type { BoardViewMode, SavedFilter, Task } from "@/types";
  *
  *   ?view=list&saved=<id>&q=login&assignees=<id>,<id>&labels=<id>
  *    &priority=high,urgent&columns=<id>&due_from=2026-03-01&due_to=2026-03-31
+ *    &cf.<field id>=<option id>,__set
  *
  * `filter=none` records that the user cleared filters, so the board's default
  * saved filter is not re-applied when they come back to this history entry.
@@ -23,6 +25,12 @@ export interface BoardFilters {
     /** Inclusive calendar-date bounds, "YYYY-MM-DD" or "". */
     dueDateFrom: string;
     dueDateTo: string;
+    /**
+     * Custom field filters: field id → tokens (option ids, or
+     * CF_HAS_VALUE / CF_NO_VALUE). Tokens for one field are ORed; fields
+     * are ANDed. Absent or `{}` means no custom field filter.
+     */
+    customFields?: Record<string, string[]>;
 }
 
 export const EMPTY_FILTERS: BoardFilters = Object.freeze({
@@ -91,6 +99,9 @@ const OWN_PARAMS = new Set<string>([
     ...FILTER_PARAMS,
 ]);
 
+/** URL param prefix for custom field filters: `cf.<field id>=a,b`. */
+const CUSTOM_FIELD_PARAM = "cf.";
+
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
 function uniqueList(values: Iterable<string>): string[] {
@@ -117,6 +128,22 @@ function parsePriorities(values: string[]): string[] {
     );
 }
 
+function isOwnParam(key: string): boolean {
+    return OWN_PARAMS.has(key) || key.startsWith(CUSTOM_FIELD_PARAM);
+}
+
+/** Drop empty entries; undefined when nothing is left. */
+function compactCustomFields(
+    map: Record<string, string[]> | undefined,
+): Record<string, string[]> | undefined {
+    if (!map) return undefined;
+    const out: Record<string, string[]> = {};
+    for (const [id, tokens] of Object.entries(map)) {
+        if (id && tokens.length > 0) out[id] = tokens;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function parseBoardView(value: string | null): BoardViewMode | null {
     if (!value) return null;
     return PARAM_VIEW[value.toLowerCase()] ?? null;
@@ -125,6 +152,14 @@ export function parseBoardView(value: string | null): BoardViewMode | null {
 /** Parse a `location.search` string ("?a=b" or "a=b"). */
 export function parseBoardSearch(search: string): ParsedBoardSearch {
     const params = new URLSearchParams(search);
+
+    const customFields: Record<string, string[]> = {};
+    for (const [key, value] of params) {
+        if (key.startsWith(CUSTOM_FIELD_PARAM)) {
+            customFields[key.slice(CUSTOM_FIELD_PARAM.length)] =
+                parseList(value);
+        }
+    }
 
     const filters: BoardFilters = {
         search: (params.get("q") ?? "").trim(),
@@ -135,6 +170,8 @@ export function parseBoardSearch(search: string): ParsedBoardSearch {
         dueDateFrom: parseDate(params.get("due_from")),
         dueDateTo: parseDate(params.get("due_to")),
     };
+    const compact = compactCustomFields(customFields);
+    if (compact) filters.customFields = compact;
 
     return {
         view: parseBoardView(params.get("view")),
@@ -178,11 +215,18 @@ export function buildBoardSearch(
     add("columns", encodeList(filters.columns));
     add("due_from", filters.dueDateFrom);
     add("due_to", filters.dueDateTo);
+    const customFields = compactCustomFields(filters.customFields) ?? {};
+    for (const id of Object.keys(customFields).sort()) {
+        add(
+            `${CUSTOM_FIELD_PARAM}${encodeURIComponent(id)}`,
+            encodeList(customFields[id]),
+        );
+    }
     if (!active && state.cleared) add("filter", "none");
 
     const existing = new URLSearchParams(currentSearch);
     for (const [key, value] of existing) {
-        if (!OWN_PARAMS.has(key)) {
+        if (!isOwnParam(key)) {
             parts.push(
                 `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
             );
@@ -200,7 +244,8 @@ export function hasActiveFilters(filters: BoardFilters): boolean {
         filters.priorities.length > 0 ||
         filters.columns.length > 0 ||
         filters.dueDateFrom !== "" ||
-        filters.dueDateTo !== ""
+        filters.dueDateTo !== "" ||
+        compactCustomFields(filters.customFields) !== undefined
     );
 }
 
@@ -213,7 +258,8 @@ export function countPopoverFilters(filters: BoardFilters): number {
         filters.labels.length +
         filters.priorities.length +
         filters.columns.length +
-        (filters.dueDateFrom || filters.dueDateTo ? 1 : 0)
+        (filters.dueDateFrom || filters.dueDateTo ? 1 : 0) +
+        Object.keys(compactCustomFields(filters.customFields) ?? {}).length
     );
 }
 
@@ -223,8 +269,17 @@ function sameSet(a: string[], b: string[]): boolean {
     return b.every((value) => set.has(value));
 }
 
+function sameCustomFields(a: BoardFilters, b: BoardFilters): boolean {
+    const x = compactCustomFields(a.customFields) ?? {};
+    const y = compactCustomFields(b.customFields) ?? {};
+    const keys = Object.keys(x);
+    if (keys.length !== Object.keys(y).length) return false;
+    return keys.every((id) => y[id] !== undefined && sameSet(x[id], y[id]));
+}
+
 export function filtersEqual(a: BoardFilters, b: BoardFilters): boolean {
     return (
+        sameCustomFields(a, b) &&
         a.search.trim() === b.search.trim() &&
         sameSet(a.assignees, b.assignees) &&
         sameSet(a.labels, b.labels) &&
@@ -247,7 +302,18 @@ export function normalizeFilterConfig(config: unknown): BoardFilters {
         config && typeof config === "object"
             ? (config as Record<string, unknown>)
             : {};
+    const customFields: Record<string, string[]> = {};
+    if (c.customFields && typeof c.customFields === "object") {
+        for (const [id, tokens] of Object.entries(
+            c.customFields as Record<string, unknown>,
+        )) {
+            customFields[id] = stringList(tokens);
+        }
+    }
+    const compact = compactCustomFields(customFields);
+
     return {
+        ...(compact ? { customFields: compact } : {}),
         search: typeof c.search === "string" ? c.search.trim() : "",
         assignees: stringList(c.assignees ?? c.assignee),
         labels: stringList(c.labels ?? c.label),
@@ -261,8 +327,12 @@ export function normalizeFilterConfig(config: unknown): BoardFilters {
 /** The `filter_config` payload stored for a saved filter (non-empty keys only). */
 export function filtersToConfig(
     filters: BoardFilters,
-): Partial<Record<keyof BoardFilters, string | string[]>> {
-    const config: Partial<Record<keyof BoardFilters, string | string[]>> = {};
+): Partial<
+    Record<keyof BoardFilters, string | string[] | Record<string, string[]>>
+> {
+    const config: Partial<
+        Record<keyof BoardFilters, string | string[] | Record<string, string[]>>
+    > = {};
     if (filters.search.trim()) config.search = filters.search.trim();
     if (filters.assignees.length) config.assignees = filters.assignees;
     if (filters.labels.length) config.labels = filters.labels;
@@ -270,6 +340,8 @@ export function filtersToConfig(
     if (filters.columns.length) config.columns = filters.columns;
     if (filters.dueDateFrom) config.dueDateFrom = filters.dueDateFrom;
     if (filters.dueDateTo) config.dueDateTo = filters.dueDateTo;
+    const customFields = compactCustomFields(filters.customFields);
+    if (customFields) config.customFields = customFields;
     return config;
 }
 
@@ -391,9 +463,39 @@ export function withFilters(
     };
 }
 
-/** Predicate for the board's client-side task filtering. */
+/**
+ * Drop filters on custom fields that are no longer on the board (deleted
+ * since a saved filter or URL was made). Returns the same object when
+ * nothing changes so callers can bail out of state updates.
+ */
+export function pruneCustomFieldFilters(
+    filters: BoardFilters,
+    customFieldIds: Iterable<string>,
+): BoardFilters {
+    const current = compactCustomFields(filters.customFields);
+    if (!current) return filters;
+    const known = new Set(customFieldIds);
+    const ids = Object.keys(current);
+    if (ids.every((id) => known.has(id))) return filters;
+
+    const kept: Record<string, string[]> = {};
+    for (const id of ids) {
+        if (known.has(id)) kept[id] = current[id];
+    }
+    const { customFields: _dropped, ...rest } = filters;
+    return Object.keys(kept).length > 0
+        ? { ...rest, customFields: kept }
+        : rest;
+}
+
+/**
+ * Predicate for the board's client-side task filtering. When
+ * `customFieldIds` is given, filters on fields not in it (deleted since the
+ * filter was saved) are ignored.
+ */
 export function createTaskFilter(
     filters: BoardFilters,
+    customFieldIds?: Iterable<string>,
 ): (task: Task) => boolean {
     if (!hasActiveFilters(filters)) return () => true;
 
@@ -403,6 +505,10 @@ export function createTaskFilter(
     const labels = new Set(filters.labels);
     const priorities = new Set(filters.priorities);
     const columns = new Set(filters.columns);
+    const knownFields = customFieldIds ? new Set(customFieldIds) : null;
+    const customFields = Object.entries(
+        compactCustomFields(filters.customFields) ?? {},
+    ).filter(([id]) => !knownFields || knownFields.has(id));
 
     return (task: Task) => {
         if (search) {
@@ -435,6 +541,15 @@ export function createTaskFilter(
             if (!due) return false;
             if (filters.dueDateFrom && due < filters.dueDateFrom) return false;
             if (filters.dueDateTo && due > filters.dueDateTo) return false;
+        }
+        if (customFields.length > 0) {
+            const values = (task.custom_fields ?? {}) as Record<
+                string,
+                unknown
+            >;
+            for (const [id, tokens] of customFields) {
+                if (!matchesFieldFilter(values[id], tokens)) return false;
+            }
         }
         return true;
     };

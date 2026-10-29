@@ -29,10 +29,17 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
+import KeyboardIcon from "@mui/icons-material/KeyboardOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import ConnectionStatus from "@/Components/Layout/ConnectionStatus";
 import NotificationBell from "@/Components/Layout/NotificationBell";
 import QuickSwitcher from "@/Components/Layout/QuickSwitcher";
+import GlobalShortcuts from "@/Components/Layout/GlobalShortcuts";
+import KeyboardShortcutsButton from "@/Components/Layout/KeyboardShortcutsButton";
+import {
+    KeyboardShortcutsProvider,
+    useKeyboardShortcuts,
+} from "@/Contexts/KeyboardShortcutsContext";
 import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
 import { SnackbarProvider } from "@/Contexts/SnackbarContext";
 import { WebSocketProvider, useWebSocket } from "@/Contexts/WebSocketContext";
@@ -80,7 +87,10 @@ export default function AuthenticatedLayout(
                     currentTeamOverride={props.currentTeam}
                     sidebarBoardsOverride={props.sidebarBoards}
                 >
-                    <AuthenticatedLayoutInner {...props} />
+                    <KeyboardShortcutsProvider>
+                        <GlobalShortcuts />
+                        <AuthenticatedLayoutInner {...props} />
+                    </KeyboardShortcutsProvider>
                 </SidebarProvider>
             </SnackbarProvider>
         </WebSocketProvider>
@@ -96,6 +106,7 @@ function AuthenticatedLayoutInner({
     const user = auth.user;
     const { collapsed, refreshRecentBoards } = useSidebar();
     const { reconnectVersion } = useWebSocket();
+    const { openHelp } = useKeyboardShortcuts();
 
     const drawerWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
@@ -378,6 +389,7 @@ function AuthenticatedLayoutInner({
                             }}
                         >
                             <QuickSwitcher />
+                            <KeyboardShortcutsButton />
                             <ConnectionStatus />
                             <NotificationBell />
                             <IconButton
@@ -437,6 +449,17 @@ function AuthenticatedLayoutInner({
                                     <PersonIcon fontSize="small" />
                                 </ListItemIcon>
                                 <ListItemText>Profile</ListItemText>
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    handleMenuClose();
+                                    openHelp();
+                                }}
+                            >
+                                <ListItemIcon>
+                                    <KeyboardIcon fontSize="small" />
+                                </ListItemIcon>
+                                <ListItemText>Keyboard shortcuts</ListItemText>
                             </MenuItem>
                             <Divider />
                             <MenuItem onClick={handleLogout}>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Task;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -44,6 +45,6 @@ class MeController extends Controller
 
         $query->orderBy('due_date', 'asc')->orderBy('created_at', 'desc');
 
-        return response()->json($query->paginate($perPage));
+        return response()->json(PublicUser::scrub($query->paginate($perPage)));
     }
 }

@@ -4,29 +4,22 @@ namespace App\Notifications;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class TaskAssignedNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(public Task $task, public User $assigner)
     {
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_assigned', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        // Email is handled by the digest command (notifications:send-emails)
-
-        return $channels;
+        return 'task_assigned';
     }
 
     public function toDatabase(object $notifiable): array

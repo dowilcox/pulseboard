@@ -1,5 +1,5 @@
-import { useForm, usePage } from "@inertiajs/react";
-import type { NotificationPreferences, PageProps } from "@/types";
+import { useForm } from "@inertiajs/react";
+import type { NotificationPreferences } from "@/types";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Switch from "@mui/material/Switch";
@@ -24,25 +24,16 @@ const NOTIFICATION_TYPES = [
 
 type NotificationType = (typeof NOTIFICATION_TYPES)[number]["key"];
 
-const DEFAULT_PREFS: NotificationPreferences = {
-    task_assigned: { in_app: true, email: true },
-    task_commented: { in_app: true, email: false },
-    task_comment_replied: { in_app: true, email: true },
-    task_mentioned: { in_app: true, email: true },
-    task_completed: { in_app: true, email: false },
-    task_attachment_added: { in_app: true, email: false },
-    task_due_soon: { in_app: true, email: true },
-    task_overdue: { in_app: true, email: true },
-};
+interface Props {
+    /** Resolved server-side: saved choices merged over the server defaults. */
+    preferences: Required<NotificationPreferences>;
+}
 
-export default function NotificationPreferencesForm() {
-    const { auth } = usePage<PageProps>().props;
-    const currentPrefs = auth.user.email_notification_prefs ?? DEFAULT_PREFS;
-
+export default function NotificationPreferencesForm({ preferences }: Props) {
     const { data, setData, patch, processing, recentlySuccessful } = useForm<{
-        prefs: NotificationPreferences;
+        prefs: Required<NotificationPreferences>;
     }>({
-        prefs: { ...DEFAULT_PREFS, ...currentPrefs },
+        prefs: preferences,
     });
 
     const handleToggle = (
@@ -53,7 +44,7 @@ export default function NotificationPreferencesForm() {
             ...data.prefs,
             [type]: {
                 ...data.prefs[type],
-                [channel]: !data.prefs[type]?.[channel],
+                [channel]: !data.prefs[type][channel],
             },
         });
     };
@@ -95,9 +86,7 @@ export default function NotificationPreferencesForm() {
                                     <TableCell>{label}</TableCell>
                                     <TableCell align="center">
                                         <Switch
-                                            checked={
-                                                data.prefs[key]?.in_app ?? true
-                                            }
+                                            checked={data.prefs[key].in_app}
                                             onChange={() =>
                                                 handleToggle(key, "in_app")
                                             }
@@ -109,9 +98,7 @@ export default function NotificationPreferencesForm() {
                                     </TableCell>
                                     <TableCell align="center">
                                         <Switch
-                                            checked={
-                                                data.prefs[key]?.email ?? false
-                                            }
+                                            checked={data.prefs[key].email}
                                             onChange={() =>
                                                 handleToggle(key, "email")
                                             }
@@ -128,7 +115,12 @@ export default function NotificationPreferencesForm() {
                 </TableContainer>
 
                 <Box
-                    sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}
+                    sx={{
+                        mt: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                    }}
                 >
                     <Button
                         type="submit"

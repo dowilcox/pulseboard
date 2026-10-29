@@ -27,7 +27,7 @@ class ReorderColumnsRequest extends FormRequest
             'columns.*.id' => ['nullable', 'uuid'],
             'columns.*.name' => ['required', 'string', 'max:255'],
             'columns.*.color' => ['required', 'string', 'max:7'],
-            'columns.*.wip_limit' => ['nullable', 'integer', 'min:0'],
+            'columns.*.wip_limit' => ['nullable', 'integer', 'min:1'],
             'columns.*.is_done_column' => ['boolean'],
             'columns.*.sort_order' => ['required', 'integer', 'min:0'],
             'columns.*._destroy' => ['boolean'],

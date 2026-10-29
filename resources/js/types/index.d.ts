@@ -26,7 +26,7 @@ export interface User {
     name: string;
     email: string;
     avatar_url?: string;
-    auth_provider: "local" | "saml2";
+    auth_provider: "local" | "saml2" | "oidc";
     is_admin: boolean;
     is_bot: boolean;
     created_by_team_id?: string;
@@ -102,7 +102,36 @@ export interface Board {
     created_at: string;
     updated_at: string;
     columns?: Column[];
+    custom_fields?: BoardCustomField[];
     team?: Team;
+}
+
+export type CustomFieldType =
+    | "text"
+    | "number"
+    | "date"
+    | "checkbox"
+    | "url"
+    | "select"
+    | "multi_select";
+
+export interface CustomFieldOption {
+    id: string;
+    label: string;
+    color: string;
+}
+
+/** A board-level custom field; task values live in `task.custom_fields[id]`. */
+export interface BoardCustomField {
+    id: string;
+    board_id: string;
+    name: string;
+    type: CustomFieldType;
+    options: CustomFieldOption[] | null;
+    sort_order: number;
+    show_on_card: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Column {
@@ -157,6 +186,8 @@ export interface RecurrenceConfig {
     days_of_week?: number[];
     day_of_month?: number;
     end_date?: string;
+    /** Server-managed schedule start, set when the task has no due date. */
+    anchor_date?: string;
 }
 
 export interface TaskSummary {
@@ -186,6 +217,8 @@ export interface TaskPermissions {
     delete: boolean;
     move: boolean;
     saveAsTemplate: boolean;
+    /** Delete other people's comments (team owners/admins). */
+    deleteAnyComment?: boolean;
 }
 
 export interface TaskTemplate {
@@ -197,7 +230,8 @@ export interface TaskTemplate {
     effort_estimate?: number;
     checklists?: Checklist[];
     label_ids?: string[];
-    created_by: string;
+    /** Null once the creating user has been deleted. */
+    created_by: string | null;
     created_at: string;
     updated_at: string;
     creator?: User;
@@ -217,13 +251,15 @@ export interface Task {
     sort_order: number;
     due_date?: string;
     effort_estimate?: number;
-    custom_fields: Record<string, unknown>;
+    /** Custom field values keyed by BoardCustomField id; null when none. */
+    custom_fields: Record<string, unknown> | null;
     completed_at?: string;
     checklists?: Checklist[];
     links?: TaskLink[];
     recurrence_config?: RecurrenceConfig;
     recurrence_next_at?: string;
-    created_by: string;
+    /** Null once the creating user has been deleted. */
+    created_by: string | null;
     created_at: string;
     updated_at: string;
     assignees?: User[];
@@ -233,6 +269,8 @@ export interface Task {
     parent_task?: Task;
     dependencies?: Task[];
     blocked_by?: Task[];
+    /** Board/list payloads: true while any `blocked_by` task is still open. */
+    is_blocked?: boolean;
     /** Loaded on dependency tasks so cross-board chips can link and label. */
     board?: Pick<Board, "id" | "name" | "slug">;
     gitlab_project?: GitlabProject;
@@ -273,6 +311,8 @@ export interface Activity {
     id: string;
     task_id: string;
     user_id?: string;
+    /** The actor was a user who has since been deleted (user is then null). */
+    actor_deleted?: boolean;
     action: string;
     changes: Record<string, unknown>;
     created_at: string;
@@ -420,21 +460,54 @@ export interface BoardTemplate {
     creator?: User;
 }
 
-export interface SsoConfiguration {
+export type SsoProviderType = "saml2" | "oidc";
+
+interface SsoConfigurationBase {
     id: string;
-    provider: string;
     name: string;
-    entity_id: string;
-    login_url: string;
-    logout_url?: string;
-    metadata_url?: string;
+    /** Login button text ("Sign in with <label>"); falls back to name. */
+    button_label?: string | null;
     attribute_mapping?: {
         email?: string;
         name?: string;
-    };
+    } | null;
     is_active: boolean;
     created_at: string;
     updated_at: string;
+}
+
+/** Admin view of a SAML2 provider. The certificate is never sent. */
+export interface SamlSsoConfiguration extends SsoConfigurationBase {
+    provider: "saml2";
+    entity_id: string;
+    login_url: string;
+    logout_url?: string | null;
+    metadata_url?: string | null;
+    has_certificate: boolean;
+}
+
+/** Admin view of an OIDC provider. The client secret is never sent. */
+export interface OidcSsoConfiguration extends SsoConfigurationBase {
+    provider: "oidc";
+    issuer: string;
+    client_id: string;
+    has_client_secret: boolean;
+    scopes: string;
+    allowed_algorithms?: string[] | null;
+    fetch_userinfo: boolean;
+    end_session_enabled: boolean;
+    /** Exact redirect URI to register with the IdP. */
+    redirect_uri: string;
+}
+
+export type SsoConfiguration = SamlSsoConfiguration | OidcSsoConfiguration;
+
+/** An active SSO provider as listed on the login page. */
+export interface SsoLoginProvider {
+    id: string;
+    provider: SsoProviderType;
+    label: string;
+    url: string;
 }
 
 export type BoardViewMode = "kanban" | "list" | "workload";

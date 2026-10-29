@@ -204,6 +204,16 @@ describe("describeActivity", () => {
         ).toBe("updated the due date, priority and title of");
     });
 
+    it("names watchers added or removed by automations", () => {
+        expect(describeActivity("watcher_added", { users: ["Bo"] })).toEqual({
+            before: "added Bo as a watcher of",
+            after: "",
+        });
+        expect(
+            describeActivity("watcher_removed", { users: ["Bo"] }).before,
+        ).toBe("removed Bo as a watcher of");
+    });
+
     it("falls back to a generic verb for unknown actions", () => {
         expect(describeActivity("something_new")).toEqual({
             before: "updated",

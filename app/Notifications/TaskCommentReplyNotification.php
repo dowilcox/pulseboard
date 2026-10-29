@@ -5,13 +5,14 @@ namespace App\Notifications;
 use App\Models\Comment;
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use App\Support\NotificationText;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class TaskCommentReplyNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(
         public Task $task,
@@ -22,15 +23,9 @@ class TaskCommentReplyNotification extends Notification
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_comment_replied', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        return $channels;
+        return 'task_comment_replied';
     }
 
     public function toDatabase(object $notifiable): array

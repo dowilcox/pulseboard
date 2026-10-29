@@ -44,12 +44,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+        // API and MCP clients (and any JSON request) get the framework's JSON
+        // error responses, even without an Accept header (e.g. a 401 instead
+        // of a redirect to the login page).
+        $wantsJson = fn (Request $request): bool => $request->is('api/*', 'mcp', 'mcp/*') || $request->expectsJson();
+
+        $exceptions->shouldRenderJsonWhen(fn (Request $request) => $wantsJson($request));
+
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request) use ($wantsJson) {
             $status = $exception instanceof HttpExceptionInterface
                 ? $exception->getStatusCode()
                 : $response->getStatusCode();
 
-            if (! app()->environment('local') && in_array($status, [403, 404, 500, 503])) {
+            // Only browser page requests get the Inertia error page.
+            if (! $wantsJson($request) && ! app()->environment('local') && in_array($status, [403, 404, 500, 503])) {
                 return Inertia::render('Error', ['status' => $status])
                     ->toResponse($request)
                     ->setStatusCode($status);

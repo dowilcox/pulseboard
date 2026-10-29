@@ -106,7 +106,8 @@ class BoardTaskController extends Controller
                 'subtasks as completed_subtasks_count' => function ($q) {
                     $q->whereNotNull('completed_at');
                 },
-            ]);
+            ])
+            ->withBlockedState();
     }
 
     private function applySort(Builder $query, string $sort, string $direction): void
