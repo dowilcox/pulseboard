@@ -1,10 +1,17 @@
 import RouterLink from "@/Components/Common/RouterLink";
+import CustomFieldValue from "@/Components/CustomFields/CustomFieldValue";
+import { useBoardCustomFields } from "@/Contexts/BoardCustomFieldsContext";
 import { memo, useMemo, useState } from "react";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
-import type { Column, Task } from "@/types";
+import type { BoardCustomField, Column, Task } from "@/types";
 import { listFooterText } from "@/utils/boardFilters";
 import { getContrastText } from "@/utils/colorContrast";
+import {
+    compareSortValues,
+    getFieldValue,
+    sortValue,
+} from "@/utils/customFields";
 import { formatDueDate, isOverdue } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { describeTaskCard } from "@/utils/taskCardLabel";
@@ -33,7 +40,9 @@ type SortKey =
     | "priority"
     | "due_date"
     | "column"
-    | "assignees";
+    | "assignees"
+    /** A custom field column: `cf:<field id>`. */
+    | `cf:${string}`;
 type SortDir = "asc" | "desc";
 
 const VISUALLY_HIDDEN = {
@@ -67,6 +76,7 @@ interface TaskRowProps {
     column?: Column;
     href: string;
     showGitlab: boolean;
+    customFields: BoardCustomField[];
 }
 
 const TaskRow = memo(function TaskRow({
@@ -74,6 +84,7 @@ const TaskRow = memo(function TaskRow({
     column,
     href,
     showGitlab,
+    customFields,
 }: TaskRowProps) {
     const prefix = getGitlabPrefix(task);
     const assignees = task.assignees ?? [];
@@ -244,6 +255,24 @@ const TaskRow = memo(function TaskRow({
                     ))}
                 </Box>
             </TableCell>
+            {customFields.map((field) => (
+                <TableCell key={field.id}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            gap: 0.5,
+                            flexWrap: "wrap",
+                            minWidth: 0,
+                        }}
+                    >
+                        <CustomFieldValue
+                            field={field}
+                            value={getFieldValue(task, field.id)}
+                            variant="cell"
+                        />
+                    </Box>
+                </TableCell>
+            ))}
             {showGitlab && (
                 <TableCell>
                     {/* Above the stretched row link so the chips stay clickable */}
@@ -297,6 +326,10 @@ export default function ListView({
 }: Props) {
     const [sortKey, setSortKey] = useState<SortKey>("task_number");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
+    const customFields = useBoardCustomFields();
+    const sortField = sortKey.startsWith("cf:")
+        ? customFields.find((f) => `cf:${f.id}` === sortKey)
+        : undefined;
 
     const columnMap = useMemo(() => {
         const m: Record<string, Column> = {};
@@ -330,6 +363,15 @@ export default function ListView({
             (a.task_number ?? 0) - (b.task_number ?? 0);
         return [...visibleTasks].sort((a, b) => {
             let cmp = 0;
+            if (sortField) {
+                cmp = compareMaybe(
+                    sortValue(sortField, getFieldValue(a, sortField.id)),
+                    sortValue(sortField, getFieldValue(b, sortField.id)),
+                    compareSortValues,
+                    sortDir,
+                );
+                return cmp || byNumber(a, b);
+            }
             switch (sortKey) {
                 case "task_number":
                     cmp = byNumber(a, b);
@@ -367,7 +409,7 @@ export default function ListView({
             }
             return (sortDir === "asc" ? cmp : -cmp) || byNumber(a, b);
         });
-    }, [visibleTasks, sortKey, sortDir, columnPosition]);
+    }, [visibleTasks, sortKey, sortDir, columnPosition, sortField]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -388,7 +430,7 @@ export default function ListView({
         </TableSortLabel>
     );
 
-    const colSpan = showGitlab ? 8 : 7;
+    const colSpan = (showGitlab ? 8 : 7) + customFields.length;
     const ariaSort = (key: SortKey) =>
         sortKey === key
             ? sortDir === "asc"
@@ -404,7 +446,7 @@ export default function ListView({
                 scroll-region=""
                 sx={{ borderRadius: 2, overflowX: "auto" }}
             >
-                <Table sx={{ minWidth: 760 }}>
+                <Table sx={{ minWidth: 760 + customFields.length * 140 }}>
                     <Box component="caption" sx={VISUALLY_HIDDEN}>
                         Tasks on {board.name}
                     </Box>
@@ -453,6 +495,18 @@ export default function ListView({
                                 {renderSortLabel("assignees", "Assignees")}
                             </TableCell>
                             <TableCell sx={{ width: 160 }}>Labels</TableCell>
+                            {customFields.map((field) => (
+                                <TableCell
+                                    key={field.id}
+                                    sx={{ width: 140, maxWidth: 200 }}
+                                    aria-sort={ariaSort(`cf:${field.id}`)}
+                                >
+                                    {renderSortLabel(
+                                        `cf:${field.id}`,
+                                        field.name,
+                                    )}
+                                </TableCell>
+                            ))}
                             {showGitlab && (
                                 <TableCell sx={{ width: 110 }}>
                                     GitLab
@@ -509,6 +563,7 @@ export default function ListView({
                                         task.slug ?? task.id,
                                     ])}
                                     showGitlab={showGitlab}
+                                    customFields={customFields}
                                 />
                             ))
                         )}
