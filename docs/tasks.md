@@ -96,23 +96,33 @@ Logged activity includes: task created; field changes (title, description, prior
 
 Recurrence is set in the task sidebar. When it is on, PulseBoard periodically creates a **new copy** of the task; the original stays as the "template" for future copies.
 
-**What the backend actually supports**
+**Options**
 
-| Option              | Behaviour                             |
-| ------------------- | ------------------------------------- |
-| Frequency `daily`   | Every _interval_ days.                |
-| Frequency `weekly`  | Every _interval_ weeks.               |
-| Frequency `monthly` | Every _interval_ months.              |
-| Frequency `custom`  | Same as daily: every _interval_ days. |
-| Interval            | Whole number, 1 or more.              |
+| Option              | Behaviour                                                                                                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Frequency `daily`   | Every _interval_ days.                                                                                                                                                                                |
+| Frequency `custom`  | Every _interval_ days (the same as daily; the sidebar shows it as "every N days").                                                                                                                    |
+| Frequency `weekly`  | Every _interval_ weeks, on the **On days** weekdays. With no weekday selected, on the weekday of the anchor (below). Weeks run Sunday to Saturday, counted from the anchor's week.                    |
+| Frequency `monthly` | Every _interval_ months, on the **On day** day of the month (the anchor's day when empty). In shorter months, days 29–31 fall on the month's last day (for example 31 → 30 April, 28 or 29 February). |
+| Interval            | Whole number from 1 to 365.                                                                                                                                                                           |
+| Until (end date)    | Optional. The last date a copy can fall on. After it, the task stops recurring (the rule stays saved but nothing more is scheduled).                                                                  |
 
-The sidebar also shows **On days** (weekly), **On day** (monthly) and **Until** (end date) controls. These values are saved with the task but **ignored by the scheduler**: copies are not limited to the chosen weekdays or day of month, and recurrence does not stop at the end date. To stop a recurring task, turn recurrence off.
+**The anchor**
+
+The schedule is counted from an **anchor** date:
+
+- If the task has a **due date**, the anchor is the due date. The task itself stands for that occurrence, so the first copy is the next occurrence after the due date (or after today, if the due date has passed). Changing the due date of a recurring task reschedules it.
+- If the task has no due date, the anchor is the day recurrence was set up. PulseBoard stores it in the rule as `anchor_date`.
+
+Changing the rule (frequency, interval, days, end date) reschedules from the current due date or today. Saving the same rule again does not.
+
+All dates are whole days in the app timezone (UTC unless changed in `config/app.php`).
 
 **When copies are created**
 
-- Saving a recurrence setting schedules the first copy one interval **from the moment you save it** (not from the due date).
-- The `tasks:process-recurring` command runs once a day (at midnight in the app timezone, UTC by default) via the scheduler. It creates a copy for every task whose next occurrence has passed, then advances the next occurrence by whole intervals until it is in the future, so a missed run creates at most one copy per task.
-- The copy is created in the **same column** as the original, by the original task's creator, with the same title, description, priority, effort, assignees, labels and checklists (including ticked items). It does **not** copy the due date, custom fields, links, attachments, subtasks or dependencies, and the copy itself is not recurring.
+- The `tasks:process-recurring` command runs once a day (at midnight in the app timezone) via the scheduler. On an occurrence's date it creates a copy. If runs were missed, it creates **one** copy for the most recent occurrence that has arrived and schedules the next one after today.
+- If the task has a due date, each copy is **due on its occurrence date** (for a task due Friday that repeats weekly, the next copy is created and due the following Friday). If the task has no due date, copies have none.
+- The copy is created in the **same column** as the original, by the original task's creator, with the same title, description, priority, effort, assignees, labels and checklists (including ticked items). It does **not** copy custom fields, links, attachments, subtasks or dependencies, and the copy itself is not recurring. The original keeps its own due date and stays as the template for future copies.
 - The board's WIP limit still applies. If the column is full, that run logs an error for the task and skips it.
 
 ## Task templates

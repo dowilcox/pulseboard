@@ -186,6 +186,8 @@ export interface RecurrenceConfig {
     days_of_week?: number[];
     day_of_month?: number;
     end_date?: string;
+    /** Server-managed schedule start, set when the task has no due date. */
+    anchor_date?: string;
 }
 
 export interface TaskSummary {

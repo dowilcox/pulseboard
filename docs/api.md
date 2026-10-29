@@ -223,7 +223,7 @@ Task body formats:
 }
 ```
 
-`id` values in checklists and links are client-generated strings. Send `"recurrence_config": null` to turn recurrence off. See [Recurring tasks](tasks.md#recurring-tasks) for what the scheduler honours.
+`id` values in checklists and links are client-generated strings. Send `"recurrence_config": null` to turn recurrence off. `recurrence_config` takes `frequency` (`daily`, `weekly`, `monthly`, `custom`), `interval` (1–365), and optionally `days_of_week` (distinct integers 0–6, Sunday = 0), `day_of_month` (1–31) and `end_date` (`YYYY-MM-DD`). Keys that don't apply to the frequency are dropped; `anchor_date` is set by the server. See [Recurring tasks](tasks.md#recurring-tasks) for how the schedule works.
 
 ### Comments and attachments
 
