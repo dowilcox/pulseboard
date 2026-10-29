@@ -28,5 +28,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        RateLimiter::for('mcp', function (Request $request) {
+            return Limit::perMinute((int) config('mcp_server.rate_limit', 120))
+                ->by('mcp:'.($request->user()?->id ?: $request->ip()));
+        });
     }
 }

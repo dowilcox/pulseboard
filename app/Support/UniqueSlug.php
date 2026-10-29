@@ -23,7 +23,7 @@ class UniqueSlug
      * First URL path segments of every fixed web route. A team slug must not
      * equal any of these.
      *
-     * Derived from routes/web.php, routes/auth.php and routes/web/*.php:
+     * Derived from routes/web.php, routes/auth.php, routes/ai.php and routes/web/*.php:
      * collect the first path segment of each route that is not "{team}".
      * Framework-registered endpoints (health, api prefix, broadcasting auth,
      * storage symlink, sanctum) are reserved as well.
@@ -48,6 +48,8 @@ class UniqueSlug
         'templates',
         // routes/web/teams.php
         'teams',
+        // routes/ai.php (MCP server)
+        'mcp',
         // framework endpoints
         'up', 'api', 'broadcasting', 'storage', 'sanctum',
     ];
