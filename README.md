@@ -431,31 +431,32 @@ The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, 
 
 ## Building & Publishing Docker Images
 
-Images are published to [GitHub Container Registry](https://ghcr.io/dowilcox/pulseboard) automatically when you push a version tag.
+Images are published to [GitHub Container Registry](https://ghcr.io/dowilcox/pulseboard). Pushing a tag does not build anything on its own: either run the release workflow by hand or build and push locally.
 
-### Automated releases (recommended)
+### Release workflow
 
-A GitHub Actions workflow builds and pushes the image on every version tag:
+The `Release` GitHub Actions workflow (`.github/workflows/release.yml`) only runs when started manually. Push the tag, then run the workflow **on that tag**. It reads the version from the ref, so running it on a branch would only push `latest`:
 
 ```bash
-# Tag a release and push — CI handles the rest
 git tag v1.0.0
 git push origin v1.0.0
+gh workflow run release.yml --ref v1.0.0
 ```
 
-This produces image tags: `ghcr.io/dowilcox/pulseboard:1.0.0` and `ghcr.io/dowilcox/pulseboard:latest`.
+It runs the tests, builds `linux/amd64` and `linux/arm64` images tagged `1.0.0`, `1.0`, `1` and `latest`, and creates a draft GitHub release.
 
 ### Manual build and push
 
 ```bash
-# Build the production image
-docker build -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:1.0.0 .
+# Build the production image (the production server is linux/amd64)
+docker build --platform linux/amd64 -f docker/Dockerfile --target production -t ghcr.io/dowilcox/pulseboard:1.0.0 -t ghcr.io/dowilcox/pulseboard:latest .
 
 # Log in to GitHub Container Registry
 echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
 # Push
 docker push ghcr.io/dowilcox/pulseboard:1.0.0
+docker push ghcr.io/dowilcox/pulseboard:latest
 ```
 
 ### Release checklist
@@ -463,8 +464,8 @@ docker push ghcr.io/dowilcox/pulseboard:1.0.0
 1. Ensure all tests pass: `docker compose --profile test run --rm test`
 2. Run linting: `./vendor/bin/pint --test && npx tsc --noEmit`
 3. Tag the release: `git tag v<version> && git push origin v<version>`
-4. GitHub Actions builds, pushes the image, and creates a draft release
-5. Edit the release notes on GitHub and publish
+4. Publish the image: `gh workflow run release.yml --ref v<version>` (or build and push manually, above)
+5. If the workflow ran, edit the draft release notes on GitHub and publish
 
 ### Using a published image
 
