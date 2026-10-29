@@ -62,10 +62,10 @@ For the full list of keyboard shortcuts, see [Keyboard shortcuts](keyboard-short
 
 The dashboard (`/dashboard`) is your personal start page. It covers active (non-archived) boards in all of your teams.
 
-- **Stats**: your open tasks, overdue tasks, tasks due in the next 7 days, and tasks you completed in the last 7 days compared with the 7 days before. "Open" means assigned to you, not completed, and not in a done column.
+- **Stats**: your open tasks, overdue tasks, tasks due in the next 7 days, and tasks you completed in the last 7 days compared with the 7 days before. "Open" means assigned to you and not completed. Completion is what counts: moving a task into the done column completes it, and a task reopened while still in the done column is open again.
 - **My tasks**: up to 200 of your open tasks, ordered by due date (undated last), then priority, then most recently updated.
 - **Deadlines**: your overdue tasks and tasks due in the next 14 days.
-- **Your boards**: boards across your teams with total, done and open counts, your open tasks on each, and last activity. Starred boards come first, then recently visited ones.
+- **Your boards**: boards across your teams with total, done (completed) and open counts, your open tasks on each, and last activity. Starred boards come first, then recently visited ones.
 - **Recent activity**: the latest 8 activity entries across your boards.
 
 ## Team page
