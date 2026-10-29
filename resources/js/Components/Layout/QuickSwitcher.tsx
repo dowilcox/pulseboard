@@ -6,15 +6,9 @@ import ButtonBase from "@mui/material/ButtonBase";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import { harbor, harborHex } from "@/theme/harbor";
-import {
-    isApplePlatform,
-    isEditableTarget,
-    shortcutHint,
-} from "@/utils/quickSwitcher";
+import { useShortcuts } from "@/Contexts/KeyboardShortcutsContext";
+import { isApplePlatform, shortcutHint } from "@/utils/quickSwitcher";
 import QuickSwitcherPanel from "./QuickSwitcherPanel";
-
-/** Focus inside these means another popup owns single-key input. */
-const POPUP_SELECTOR = '[role="dialog"], [role="menu"], [role="listbox"]';
 
 /**
  * Global quick switcher: jump to any board, team, page or task.
@@ -22,7 +16,7 @@ const POPUP_SELECTOR = '[role="dialog"], [role="menu"], [role="listbox"]';
  * Renders its own trigger (a search-field-styled button on md+, an icon
  * button on xs) and owns the shortcuts: Cmd/Ctrl+K toggles it from anywhere,
  * "/" opens it when focus is not in a text field or editor. Mount it once,
- * in the persistent layout's app bar.
+ * in the persistent layout's app bar, inside KeyboardShortcutsProvider.
  */
 export default function QuickSwitcher() {
     const [open, setOpen] = useState(false);
@@ -34,44 +28,26 @@ export default function QuickSwitcher() {
     const openSwitcher = useCallback(() => setOpen(true), []);
     const closeSwitcher = useCallback(() => setOpen(false), []);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            // Chrome autofill dispatches keydown events without a key.
-            if (event.isComposing || typeof event.key !== "string") return;
-
-            const modifier = apple ? event.metaKey : event.ctrlKey;
-            const key = event.key.toLowerCase();
-            // Match the produced "k"; fall back to the physical key only for
-            // non-Latin layouts (so Dvorak's physical K, which types "t",
-            // doesn't hijack Cmd/Ctrl+T).
-            const isK =
-                key === "k" || (!/^[a-z]$/.test(key) && event.code === "KeyK");
-            if (modifier && !event.altKey && !event.shiftKey && isK) {
-                event.preventDefault();
-                setOpen((isOpen) => !isOpen);
-                return;
-            }
-
-            if (
-                event.key === "/" &&
-                !event.metaKey &&
-                !event.ctrlKey &&
-                !event.altKey &&
-                !event.defaultPrevented &&
-                !isEditableTarget(event.target) &&
-                !(
-                    event.target instanceof Element &&
-                    event.target.closest(POPUP_SELECTOR)
-                )
-            ) {
-                event.preventDefault();
-                setOpen(true);
-            }
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [apple]);
+    // Registered with the app-wide shortcut registry, so they show in the
+    // "?" overlay and "/" honours the single-key preference.
+    useShortcuts([
+        {
+            id: "quick-switcher",
+            keys: "mod+k",
+            description: "Open or close the quick switcher",
+            group: "Go to",
+            allowInInputs: true,
+            allowInPopups: true,
+            handler: () => setOpen((isOpen) => !isOpen),
+        },
+        {
+            id: "quick-switcher-slash",
+            keys: "/",
+            description: "Search boards, teams and tasks",
+            group: "Go to",
+            handler: openSwitcher,
+        },
+    ]);
 
     // The layout persists across visits, so close on any navigation
     // (including back/forward) rather than relying on a remount.
