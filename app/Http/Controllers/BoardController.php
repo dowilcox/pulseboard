@@ -43,6 +43,7 @@ class BoardController extends Controller
 
         $board->load([
             'columns' => fn ($query) => $query->withCount('tasks'),
+            'customFields',
         ]);
 
         $initialTasks = $this->initialTasksByColumn($board);
@@ -174,7 +175,10 @@ class BoardController extends Controller
 
         $sidebarBoards = $this->sidebarBoards($team);
         // tasks_count lets the settings page ask where a removed column's tasks go.
-        $board->load(['columns' => fn ($query) => $query->withCount('tasks')]);
+        $board->load([
+            'columns' => fn ($query) => $query->withCount('tasks'),
+            'customFields',
+        ]);
 
         $members = $team->members()->whereNull('deactivated_at')->get();
         $labels = Label::where('team_id', $team->id)->get();

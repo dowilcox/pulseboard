@@ -9,6 +9,7 @@ use App\Models\Label;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\CustomFieldValues;
 use App\Support\RichTextSanitizer;
 use Illuminate\Support\Facades\DB;
 use Lorisleiva\Actions\Concerns\AsAction;
@@ -22,7 +23,13 @@ class CreateTask
     {
         $data = $this->applyDefaultTemplate($board, $data);
 
-        $task = DB::transaction(function () use ($board, $column, $data, $creator) {
+        // Validated against the board's field definitions before anything
+        // is written; unknown field ids are dropped.
+        $customFields = ! empty($data['custom_fields'])
+            ? CustomFieldValues::merge($board, $data['custom_fields'])
+            : null;
+
+        $task = DB::transaction(function () use ($board, $column, $data, $creator, $customFields) {
             $this->assertWipCapacity($column);
 
             $maxSort = Task::where('column_id', $column->id)->max('sort_order') ?? 0;
@@ -37,7 +44,7 @@ class CreateTask
                 'sort_order' => $maxSort + 1,
                 'due_date' => $data['due_date'] ?? null,
                 'effort_estimate' => $data['effort_estimate'] ?? null,
-                'custom_fields' => $data['custom_fields'] ?? null,
+                'custom_fields' => $customFields,
                 'parent_task_id' => $data['parent_task_id'] ?? null,
                 'created_by' => $creator->id,
             ]);

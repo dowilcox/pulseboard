@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Notifications\DescriptionMentionedNotification;
 use App\Services\ActivityLogger;
 use App\Services\MentionParser;
+use App\Support\CustomFieldValues;
 use App\Support\RichTextSanitizer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -30,8 +31,34 @@ class UpdateTask
         ];
         $changes = [];
 
+        // Custom field updates are partial: validate the incoming values
+        // against the board's definitions and merge them over the stored
+        // ones, so saving one field never wipes the others.
+        if (array_key_exists('custom_fields', $data)) {
+            $task->loadMissing('board');
+            $data['custom_fields'] = CustomFieldValues::merge(
+                $task->board,
+                $data['custom_fields'],
+                $task->custom_fields,
+            );
+        }
+
         foreach ($fillable as $field) {
             if (! array_key_exists($field, $data)) {
+                continue;
+            }
+
+            // Log only the custom fields that changed, not the whole map.
+            if ($field === 'custom_fields') {
+                $diff = $this->customFieldChanges(
+                    $task->custom_fields ?? [],
+                    $data['custom_fields'] ?? [],
+                );
+
+                if ($diff !== null) {
+                    $changes[$field] = $diff;
+                }
+
                 continue;
             }
 
@@ -96,6 +123,30 @@ class UpdateTask
         }
 
         return $task->fresh();
+    }
+
+    /**
+     * The custom field values that differ between two value maps, as
+     * `{from: {id: old}, to: {id: new}}`, or null when nothing changed.
+     *
+     * @param  array<string, mixed>  $from
+     * @param  array<string, mixed>  $to
+     */
+    private function customFieldChanges(array $from, array $to): ?array
+    {
+        $diff = ['from' => [], 'to' => []];
+
+        foreach (array_unique([...array_keys($from), ...array_keys($to)]) as $id) {
+            $old = $from[$id] ?? null;
+            $new = $to[$id] ?? null;
+
+            if ($old !== $new) {
+                $diff['from'][$id] = $old;
+                $diff['to'][$id] = $new;
+            }
+        }
+
+        return $diff['to'] === [] ? null : $diff;
     }
 
     private function notifyDescriptionMentions(Task $task, ?string $oldDescription, string $newDescription): void

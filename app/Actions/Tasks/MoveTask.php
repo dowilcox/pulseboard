@@ -91,6 +91,8 @@ class MoveTask
         if ($crossBoard) {
             $updateData['board_id'] = $targetBoard->id;
             $updateData['task_number'] = $this->nextTaskNumber($targetBoard);
+            // Custom field values are keyed by the old board's field ids.
+            $updateData['custom_fields'] = null;
         }
 
         // Keep completed_at in sync with done columns, mirroring

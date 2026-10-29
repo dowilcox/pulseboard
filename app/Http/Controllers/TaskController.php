@@ -102,7 +102,7 @@ class TaskController extends Controller
         $user = $request->user();
         $canUpdate = $user->can('update', $task);
 
-        $board->load('columns');
+        $board->load(['columns', 'customFields']);
         $members = $team->members()->whereNull('deactivated_at')->get();
         $labels = Label::where('team_id', $team->id)->get();
 

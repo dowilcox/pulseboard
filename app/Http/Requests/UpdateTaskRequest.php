@@ -23,6 +23,8 @@ class UpdateTaskRequest extends FormRequest
             ],
             'due_date' => ['nullable', 'date'],
             'effort_estimate' => ['nullable', 'integer', 'min:0'],
+            // Partial update keyed by field definition id; values are
+            // validated per field definition in UpdateTask.
             'custom_fields' => ['nullable', 'array', 'max:100'],
             'links' => ['nullable', 'array', 'max:50'],
             'links.*.id' => ['required', 'string'],
