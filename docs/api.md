@@ -143,16 +143,16 @@ Board templates are personal: the list contains only templates you created. Crea
 
 ### Labels and task templates
 
-| Method | Path                                                      | Ability | Role / notes                                                                                           |
-| ------ | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| GET    | `/teams/{team}/labels`                                    | —       | Member.                                                                                                |
-| POST   | `/teams/{team}/labels`                                    | manage  | Admin. Body: `name` (≤ 50), `color` (`#rrggbb`).                                                       |
-| PUT    | `/teams/{team}/labels/{label}`                            | manage  | Admin.                                                                                                 |
-| DELETE | `/teams/{team}/labels/{label}`                            | manage  | Admin.                                                                                                 |
-| GET    | `/teams/{team}/task-templates`                            | —       | Member.                                                                                                |
-| POST   | `/teams/{team}/task-templates`                            | write   | Admin. Body: `name`, `description_template`, `priority`, `effort_estimate`, `checklists`, `label_ids`. |
-| DELETE | `/teams/{team}/task-templates/{taskTemplate}`             | write   | Admin.                                                                                                 |
-| POST   | `/teams/{team}/boards/{board}/tasks/{task}/save-template` | write   | Admin. Body: `name`.                                                                                   |
+| Method | Path                                                      | Ability | Role / notes                                                                                                                |
+| ------ | --------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/teams/{team}/labels`                                    | —       | Member.                                                                                                                     |
+| POST   | `/teams/{team}/labels`                                    | manage  | Admin. Body: `name` (≤ 50), `color` (`#rrggbb`).                                                                            |
+| PUT    | `/teams/{team}/labels/{label}`                            | manage  | Admin.                                                                                                                      |
+| DELETE | `/teams/{team}/labels/{label}`                            | manage  | Admin.                                                                                                                      |
+| GET    | `/teams/{team}/task-templates`                            | —       | Member.                                                                                                                     |
+| POST   | `/teams/{team}/task-templates`                            | write   | Admin. Body: `name`, `description_template`, `priority`, `effort_estimate`, `checklists`, `label_ids` (this team's labels). |
+| DELETE | `/teams/{team}/task-templates/{taskTemplate}`             | write   | Admin.                                                                                                                      |
+| POST   | `/teams/{team}/boards/{board}/tasks/{task}/save-template` | write   | Admin. Body: `name`.                                                                                                        |
 
 ### Team reports
 

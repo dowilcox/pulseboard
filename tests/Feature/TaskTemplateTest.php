@@ -60,6 +60,20 @@ class TaskTemplateTest extends TestCase
         ]);
     }
 
+    public function test_create_template_rejects_labels_from_another_team(): void
+    {
+        $foreignLabel = Label::factory()->create(['team_id' => Team::factory()->create()->id]);
+
+        $this->actingAs($this->user)
+            ->post(route('teams.task-templates.store', [$this->team]), [
+                'name' => 'Bug Report',
+                'label_ids' => [$foreignLabel->id],
+            ])
+            ->assertSessionHasErrors('label_ids.0');
+
+        $this->assertDatabaseMissing('task_templates', ['name' => 'Bug Report']);
+    }
+
     public function test_can_list_templates(): void
     {
         TaskTemplate::factory()->count(3)->create([
