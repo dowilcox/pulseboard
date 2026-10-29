@@ -73,16 +73,22 @@ Navigate to **Admin > SSO Configuration** and create a new configuration:
 
 1. Click **Test** to validate the configuration
 2. Toggle **Active** to enable SSO
-3. The login page will show a "Sign in with SSO" button
+3. The login page will show a "Sign in with &lt;button label or name&gt;" button
 
 ## User Provisioning Behavior
 
-| Scenario                                          | Behavior                                                         |
-| ------------------------------------------------- | ---------------------------------------------------------------- |
-| New user (email not in system)                    | Account created automatically via JIT provisioning               |
-| Existing local user (same email)                  | User prompted to log in with password and link accounts manually |
-| Existing SAML user (same email, different NameID) | Provider ID updated automatically                                |
-| Deactivated user                                  | Login rejected with deactivation message                         |
+Users are matched by NameID first, then by email.
+
+| Scenario                                          | Behavior                                                                                                                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| New user (email not in system)                    | Account created automatically via JIT provisioning                                                                                           |
+| Existing local user (same email)                  | Linked automatically: the account switches to SAML login, so only connect an IdP you trust to assert email addresses (see the warning below) |
+| Existing SAML user (same email, different NameID) | Provider ID updated automatically                                                                                                            |
+| Existing SAML user whose email changed at the IdP | Email updated, unless another account already uses the new address (the old email is kept)                                                   |
+| Deactivated user                                  | Login rejected with deactivation message; the account is not modified                                                                        |
+| Bot account (same email)                          | Login rejected; bot accounts cannot sign in with SSO                                                                                         |
+
+> **Warning:** because existing local accounts are linked by email, anyone who can get the IdP to assert a given email address can sign in as that PulseBoard user. Only use IdPs where users cannot choose their own email address. OIDC is stricter and links by email only when the IdP marks it verified (see [oidc-configuration.md](oidc-configuration.md)).
 
 ---
 
