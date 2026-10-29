@@ -283,6 +283,45 @@ class TaskGitlabApiTest extends TestCase
         });
     }
 
+    public function test_create_merge_request_description_is_clean_markdown_with_a_task_link(): void
+    {
+        $this->task->update([
+            'gitlab_project_id' => $this->project->id,
+            'description' => 'Ask <span data-type="mention" data-id="'.$this->user->id.'" data-label="Ada Lovelace">@Ada Lovelace</span> about **login**.<br><br>'
+                .str_repeat('Lorem ipsum dolor sit amet, consectetur adipiscing elit. ', 20),
+        ]);
+
+        Http::fake([
+            'gitlab.example.com/api/v4/projects/123/merge_requests' => Http::response([
+                'iid' => 9,
+                'title' => '#42: Fix login bug',
+                'state' => 'opened',
+                'web_url' => 'https://gitlab.example.com/group/demo/-/merge_requests/9',
+                'author' => ['name' => 'Alice'],
+            ], 201),
+        ]);
+
+        $this->api()->postJson("{$this->baseUrl()}/merge-request", ['source_branch' => 'feature'])
+            ->assertCreated();
+
+        $taskUrl = route('tasks.show', [$this->team->slug, $this->board->slug, $this->task->fresh()->getRouteKey()]);
+
+        Http::assertSent(function ($request) use ($taskUrl) {
+            if (! str_contains($request->url(), '/merge_requests')) {
+                return false;
+            }
+
+            $description = $request['description'];
+
+            $this->assertStringStartsWith("Task: [#42 Fix login bug]({$taskUrl})\n\nAsk @Ada Lovelace about **login**.\n\nLorem ipsum", $description);
+            $this->assertStringNotContainsString('<', $description);
+            $this->assertStringEndsWith('elit. Lorem…', $description);
+            $this->assertLessThan(800, mb_strlen($description));
+
+            return true;
+        });
+    }
+
     public function test_create_merge_request_requires_linked_project(): void
     {
         Http::fake();

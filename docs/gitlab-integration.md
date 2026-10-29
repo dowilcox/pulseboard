@@ -66,7 +66,7 @@ The task sidebar's GitLab controls (and the GitLab section on the task page) let
 
 - **Set the task's GitLab project** from the team's linked projects. Cards then show the project path as a prefix, for example `[group/project]`.
 - **Create branch.** Creates `pb-{task number}-{title-slug}` (at most 100 characters) from the project's default branch. A task can have only one branch reference.
-- **Create MR.** Opens a merge request into the default branch, titled `#{number}: {title}`, with a description starting `Task: #{number}` followed by the first 500 characters of the task description. It uses the task's branch, creating one first if needed. A task can have only one open (or locked) MR at a time.
+- **Create MR.** Opens a merge request into the default branch, titled `#{number}: {title}`, with a description that starts with a link back to the task (`Task: [#{number} {title}](task URL)`) followed by up to about 500 characters of the task description as Markdown. Mentions become `@Name` (GitLab may link that to a GitLab user with a matching username), editor HTML is removed, and a longer description is cut at a line or word boundary and ends with `…`. It uses the task's branch, creating one first if needed. A task can have only one open (or locked) MR at a time.
 - **Remove a reference** from the task (this doesn't change anything in GitLab).
 
 Branch and MR creation are logged in the task's activity feed.

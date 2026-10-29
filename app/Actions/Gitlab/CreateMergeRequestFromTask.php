@@ -7,12 +7,16 @@ use App\Models\Task;
 use App\Models\TaskGitlabRef;
 use App\Services\ActivityLogger;
 use App\Services\GitlabApiService;
+use App\Support\RichTextMarkdown;
 use Illuminate\Validation\ValidationException;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateMergeRequestFromTask
 {
     use AsAction;
+
+    /** Characters of the task description copied into the MR. */
+    private const DESCRIPTION_LIMIT = 500;
 
     public function handle(Task $task, GitlabProject $gitlabProject, ?string $sourceBranch = null): TaskGitlabRef
     {
@@ -43,16 +47,11 @@ class CreateMergeRequestFromTask
             }
         }
 
-        $description = "Task: #{$task->task_number}";
-        if ($task->description) {
-            $description .= "\n\n".mb_substr($task->description, 0, 500);
-        }
-
         $mrData = $api->createMergeRequest($gitlabProject->gitlab_project_id, [
             'source_branch' => $sourceBranch,
             'target_branch' => $gitlabProject->default_branch,
             'title' => "#{$task->task_number}: {$task->title}",
-            'description' => $description,
+            'description' => $this->description($task),
         ]);
 
         $ref = TaskGitlabRef::create([
@@ -79,5 +78,27 @@ class CreateMergeRequestFromTask
         ], auth()->user());
 
         return $ref;
+    }
+
+    /**
+     * A link back to the task, followed by the start of its description as
+     * clean Markdown (mentions as @Name, no editor HTML, cut on a word or
+     * line boundary).
+     */
+    private function description(Task $task): string
+    {
+        $task->loadMissing('board.team');
+
+        $url = route('tasks.show', [$task->board->team->slug, $task->board->slug, $task->getRouteKey()]);
+        $title = str_replace(['[', ']'], ['\\[', '\\]'], $task->title);
+        $description = "Task: [#{$task->task_number} {$title}]({$url})";
+
+        $excerpt = RichTextMarkdown::excerpt($task->description, self::DESCRIPTION_LIMIT);
+
+        if ($excerpt !== null) {
+            $description .= "\n\n".$excerpt;
+        }
+
+        return $description;
     }
 }
