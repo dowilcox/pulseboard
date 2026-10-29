@@ -205,12 +205,13 @@ Requires PHP 8.5+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running lo
 
 ### Docker Compose
 
-| Variable               | Description                                    | Default                              |
-| ---------------------- | ---------------------------------------------- | ------------------------------------ |
-| `APP_PORT`             | Host port for web server (prod compose only)   | `8000`                               |
-| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)    | `9080`                               |
-| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)     | `ghcr.io/dowilcox/pulseboard:latest` |
-| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose) |                                      |
+| Variable               | Description                                                      | Default                              |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `APP_PORT`             | Host port for web server (prod compose only)                     | `8000`                               |
+| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)                      | `9080`                               |
+| `VITE_REVERB_PORT`     | Host port for WebSocket, and the port browsers use (dev compose) | `8080`                               |
+| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)                       | `ghcr.io/dowilcox/pulseboard:latest` |
+| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose)                   |                                      |
 
 ## Development Commands
 
@@ -418,11 +419,11 @@ labels:
 
 ### Docker Services
 
-| Service | Internal Port | Default Host Port | Description                                         |
-| ------- | ------------- | ----------------- | --------------------------------------------------- |
-| `app`   | 8000, 8080    | 8000, 9080        | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
-| `mysql` | 3306          | — (prod)          | MySQL 8.4 (not exposed to host in production)       |
-| `redis` | 6379          | — (prod)          | Redis 8 (not exposed to host in production)         |
+| Service | Internal Port | Default Host Port             | Description                                         |
+| ------- | ------------- | ----------------------------- | --------------------------------------------------- |
+| `app`   | 8000, 8080    | 8000; 8080 (dev), 9080 (prod) | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
+| `mysql` | 3306          | — (prod)                      | MySQL 8.4 (not exposed to host in production)       |
+| `redis` | 6379          | — (prod)                      | Redis 8 (not exposed to host in production)         |
 
 The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, the queue worker, the scheduler, and the Reverb server as a single unit.
 
