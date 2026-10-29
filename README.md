@@ -60,6 +60,7 @@
 
 - Admin panel with dashboard, user management, and team oversight
 - SAML2 SSO with JIT (just-in-time) user provisioning
+- OpenID Connect SSO (Authorization Code + PKCE) alongside SAML2, see [docs/oidc-configuration.md](docs/oidc-configuration.md)
 - Bot user creation scoped to teams (for API integrations)
 - CSV export of team tasks
 - Dark theme UI

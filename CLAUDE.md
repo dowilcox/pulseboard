@@ -145,3 +145,5 @@ MySQL 8.4. All tables use UUID PKs. Pivot tables cascade on delete; entity table
 ## Docs
 
 SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`.
+
+OIDC SSO setup guide (generic + Keycloak/Entra ID/Google/Okta/Authentik recipes, account-linking rules, logout, troubleshooting): `docs/oidc-configuration.md`.
