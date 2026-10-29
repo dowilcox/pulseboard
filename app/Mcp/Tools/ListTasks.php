@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\CustomFields;
 use App\Mcp\Support\Presenter;
 use App\Models\Column;
 use App\Models\Task;
@@ -33,6 +34,7 @@ class ListTasks extends PulseBoardTool
             'due_after' => $schema->string()->description('Only tasks due on or after this date (YYYY-MM-DD).'),
             'query' => $schema->string()->description('Case-insensitive text match on title and description, or an exact task number ("12" / "#12").'),
             'parent' => $schema->string()->description('Only subtasks of this task (task UUID or number on this board). Use "none" for top-level tasks only.'),
+            'custom_fields' => $schema->object()->description('Custom field filters keyed by field name or id; all must match. Select/multi-select: an option label or id, or a list (matches any); checkbox: true/false; other types: true = has a value, an exact value, or null = empty.'),
             'sort' => $schema->string()->enum(['board', 'priority', 'due_date', 'updated_at', 'created_at', 'task_number'])->description('Sort order. Default "board" (column order, then card order).'),
             'limit' => $schema->integer()->min(1)->max(200)->description('Max tasks to return (default 50, max 200).'),
             'offset' => $schema->integer()->min(0)->description('Number of tasks to skip, for pagination.'),
@@ -53,6 +55,7 @@ class ListTasks extends PulseBoardTool
             'due_after' => ['nullable', 'date'],
             'query' => ['nullable', 'string', 'max:255'],
             'parent' => ['nullable', 'string', 'max:255'],
+            'custom_fields' => ['nullable', 'array', 'max:50'],
             'sort' => ['nullable', 'in:board,priority,due_date,updated_at,created_at,task_number'],
             'limit' => ['nullable', 'integer', 'min:1'],
             'offset' => ['nullable', 'integer', 'min:0'],
@@ -117,6 +120,10 @@ class ListTasks extends PulseBoardTool
             } else {
                 $query->where('tasks.parent_task_id', $this->resolveTask($user, $parent, $board->id)->id);
             }
+        }
+
+        if (filled($request->get('custom_fields'))) {
+            CustomFields::applyFilters($query, $board, $request->get('custom_fields'));
         }
 
         $total = (clone $query)->count();

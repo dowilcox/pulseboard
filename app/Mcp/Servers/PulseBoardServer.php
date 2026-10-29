@@ -45,7 +45,7 @@ class PulseBoardServer extends Server
 
         Getting started: call `whoami` (your user, token abilities, teams), then `list_boards`, then `get_board` for a board's columns, labels and members before creating or moving tasks.
 
-        Identifiers: teams and boards accept a UUID or slug (a board can also be written "team-slug/board-slug"). Tasks accept a UUID, or their board-scoped number ("12" or "#12") together with `board`, or the combined ref "board-slug#12" that every task result includes. Columns and labels accept a UUID or their name; users accept "me", a UUID or an email.
+        Identifiers: teams and boards accept a UUID or slug (a board can also be written "team-slug/board-slug"). Tasks accept a UUID, or their board-scoped number ("12" or "#12") together with `board`, or the combined ref "board-slug#12" that every task result includes. Columns and labels accept a UUID or their name; users accept "me", a UUID or an email. Custom fields (see `get_board`) are keyed by field name, with select values given as option labels.
 
         Text: descriptions and comments are Markdown in and Markdown out. Mention a team member with <@USER_ID>; they are notified.
 

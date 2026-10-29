@@ -4,6 +4,7 @@ namespace App\Mcp\Support;
 
 use App\Models\Activity;
 use App\Models\Board;
+use App\Models\BoardCustomField;
 use App\Models\Column;
 use App\Models\Comment;
 use App\Models\Label;
@@ -11,6 +12,7 @@ use App\Models\Task;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -26,6 +28,7 @@ class Presenter
     public const TASK_SUMMARY_RELATIONS = [
         'board:id,team_id,name,slug',
         'board.team:id,name,slug',
+        'board.customFields',
         'column:id,board_id,name,is_done_column',
         'assignees:id,name',
         'labels:id,name,color',
@@ -138,6 +141,9 @@ class Presenter
                 'completed' => (int) ($task->completed_subtasks_count ?? 0),
             ] : null,
             'checklist' => $task->checklist_progress,
+            'custom_fields' => $task->board?->relationLoaded('customFields')
+                ? CustomFields::present($task->board->customFields, $task->custom_fields)
+                : null,
             'comments' => isset($task->comments_count) && $task->comments_count > 0 ? (int) $task->comments_count : null,
             'blocked_by_open_tasks' => $openBlockers ?: null,
             'updated_at' => self::timestamp($task->updated_at),
@@ -176,9 +182,17 @@ class Presenter
         ]);
     }
 
-    public static function activity(Activity $activity, array $extra = []): array
+    /**
+     * @param  Collection<int, BoardCustomField>|null  $customFields  Board fields, to name custom field changes.
+     */
+    public static function activity(Activity $activity, array $extra = [], ?Collection $customFields = null): array
     {
         $task = $activity->task;
+        $changes = $activity->changes ?? [];
+
+        if ($customFields && is_array($changes['custom_fields'] ?? null)) {
+            $changes['custom_fields'] = CustomFields::presentChange($customFields, $changes['custom_fields']);
+        }
 
         return self::compact([
             'at' => self::timestamp($activity->created_at),
@@ -189,7 +203,7 @@ class Presenter
                 'ref' => self::taskRef($task),
                 'title' => $task->title,
             ]) : null,
-            'details' => self::activityDetails($activity->changes ?? []),
+            'details' => self::activityDetails($changes),
             ...$extra,
         ]);
     }
