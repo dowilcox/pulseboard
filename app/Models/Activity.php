@@ -22,6 +22,7 @@ class Activity extends Model
     {
         return [
             'changes' => 'array',
+            'actor_deleted' => 'boolean',
             'created_at' => 'datetime',
         ];
     }

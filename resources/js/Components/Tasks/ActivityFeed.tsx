@@ -1184,7 +1184,10 @@ export default function ActivityFeed({
                                     }}
                                 >
                                     <strong>
-                                        {activity.user?.name ?? "System"}
+                                        {activity.user?.name ??
+                                            (activity.actor_deleted
+                                                ? "Deleted user"
+                                                : "System")}
                                     </strong>{" "}
                                     {activityDescription(
                                         activity.action,

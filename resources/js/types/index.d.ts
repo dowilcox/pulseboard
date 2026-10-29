@@ -311,6 +311,8 @@ export interface Activity {
     id: string;
     task_id: string;
     user_id?: string;
+    /** The actor was a user who has since been deleted (user is then null). */
+    actor_deleted?: boolean;
     action: string;
     changes: Record<string, unknown>;
     created_at: string;

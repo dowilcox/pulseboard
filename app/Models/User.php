@@ -92,6 +92,16 @@ class User extends Authenticatable
         );
     }
 
+    protected static function booted(): void
+    {
+        // activities.user_id is nulled by the foreign key when the user row
+        // goes; flag the rows first so the feed can say "Deleted user"
+        // rather than mistaking them for system activity.
+        static::deleting(function (User $user): void {
+            Activity::where('user_id', $user->id)->update(['actor_deleted' => true]);
+        });
+    }
+
     protected function casts(): array
     {
         return [

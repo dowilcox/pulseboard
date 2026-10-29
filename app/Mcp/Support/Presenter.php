@@ -196,7 +196,7 @@ class Presenter
 
         return self::compact([
             'at' => self::timestamp($activity->created_at),
-            'actor' => $activity->user?->name ?? 'System',
+            'actor' => $activity->user?->name ?? ($activity->actor_deleted ? 'Deleted user' : 'System'),
             'action' => $activity->action,
             'task' => $task ? self::compact([
                 'id' => $task->id,

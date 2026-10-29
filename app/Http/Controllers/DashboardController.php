@@ -244,6 +244,7 @@ class DashboardController extends Controller
                         'name' => $activity->user->name,
                         'avatar_url' => $activity->user->avatar_url,
                     ] : null,
+                    'actor_deleted' => $activity->actor_deleted,
                     'task' => [
                         'id' => $task->id,
                         'title' => $task->title,

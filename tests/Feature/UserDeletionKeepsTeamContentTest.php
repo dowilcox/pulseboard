@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\Teams\CreateBotUser;
 use App\Actions\Teams\DeleteTeam;
+use App\Models\Activity;
 use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
@@ -135,5 +136,31 @@ class UserDeletionKeepsTeamContentTest extends TestCase
             ->get(route('tasks.show', [$this->team->slug, $this->board->slug, $task->getRouteKey()]))
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('task.created_by', null)->where('task.creator', null));
+    }
+
+    public function test_deleted_users_activity_is_flagged_and_system_activity_is_not(): void
+    {
+        $user = User::factory()->create();
+        $content = $this->createContentBy($user);
+
+        $byUser = Activity::create([
+            'task_id' => $content['task']->id,
+            'user_id' => $user->id,
+            'action' => 'created',
+            'created_at' => now(),
+        ]);
+        $bySystem = Activity::create([
+            'task_id' => $content['task']->id,
+            'user_id' => null,
+            'action' => 'moved',
+            'created_at' => now(),
+        ]);
+
+        $user->delete();
+
+        $byUser->refresh();
+        $this->assertNull($byUser->user_id);
+        $this->assertTrue($byUser->actor_deleted);
+        $this->assertFalse($bySystem->refresh()->actor_deleted);
     }
 }
