@@ -17,7 +17,7 @@ PulseBoard can be driven almost entirely from the keyboard: jump between pages, 
 | Open or close the quick switcher | `⌘` `K`        | `Ctrl` `K`        |
 | Search boards, teams and tasks   | `/`            | `/`               |
 | Go to dashboard                  | `g` then `d`   | `g` then `d`      |
-| Go to notifications              | `g` then `n`   | `g` then `n`      |
+| Open notifications               | `g` then `n`   | `g` then `n`      |
 | Go to the current team's boards¹ | `g` then `b`   | `g` then `b`      |
 | Show keyboard shortcuts          | `?` or `⌘` `/` | `?` or `Ctrl` `/` |
 

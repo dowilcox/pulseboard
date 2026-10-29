@@ -18,13 +18,6 @@ export default function GlobalShortcuts() {
             handler: () => router.visit(route("dashboard")),
         },
         {
-            id: "go-notifications",
-            keys: "g n",
-            description: "Go to notifications",
-            group: "Go to",
-            handler: () => router.visit(route("notifications.index")),
-        },
-        {
             id: "go-boards",
             keys: "g b",
             description: currentTeam

@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import DoneIcon from "@mui/icons-material/Done";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import { useShortcuts } from "@/Contexts/KeyboardShortcutsContext";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { harbor } from "@/theme/harbor";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -56,20 +57,38 @@ export default function NotificationBell() {
     const { showSnackbar } = useSnackbar();
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const popoverId = useId();
     const headingId = useId();
     const open = Boolean(anchorEl);
 
-    const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
+    const openPanel = (anchor: HTMLElement) => {
+        setAnchorEl(anchor);
         if (!loaded) {
             fetchNotifications();
         }
     };
 
+    const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
+        openPanel(event.currentTarget);
+    };
+
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    // There is no notifications page; the panel is the destination.
+    useShortcuts([
+        {
+            id: "go-notifications",
+            keys: "g n",
+            description: "Open notifications",
+            group: "Go to",
+            handler: () => {
+                if (buttonRef.current) openPanel(buttonRef.current);
+            },
+        },
+    ]);
 
     const handleMarkRead = async (id: string) => {
         if (!(await markRead(id))) {
@@ -108,6 +127,7 @@ export default function NotificationBell() {
     return (
         <>
             <IconButton
+                ref={buttonRef}
                 size="small"
                 onClick={handleOpen}
                 aria-label={`Notifications (${unreadCount} unread)`}
