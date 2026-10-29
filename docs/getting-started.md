@@ -23,7 +23,7 @@ Each team member has one role: `owner`, `admin`, or `member`. The table below is
 | Comment; edit your own comments                                           |   ✓    |   ✓   |   ✓   |
 | Delete a task you created                                                 |   ✓    |   ✓   |   ✓   |
 | Delete any task                                                           |        |   ✓   |   ✓   |
-| Delete another member's comment (API only, see note)                      |        |   ✓   |   ✓   |
+| Delete another member's comment                                           |        |   ✓   |   ✓   |
 | Export the team's tasks as CSV                                            |   ✓    |   ✓   |   ✓   |
 | Rename the team, change its description or image                          |        |   ✓   |   ✓   |
 | Manage labels and task templates                                          |        |   ✓   |   ✓   |
@@ -41,7 +41,6 @@ Notes:
 
 - A team must always have at least one owner. You cannot remove the last owner or change their role until another member is an owner.
 - Cross-board moves check board-update permission on the destination board, which only admins and owners have.
-- Comment deletion by admins and owners is allowed by `CommentPolicy`, but the task page only shows Edit and Delete on your own comments. Admins who need to remove someone else's comment can do it through the [API](api.md).
 - App-wide administrators (`is_admin`) are a separate concept. See [Administration](administration.md).
 
 ## Adding members

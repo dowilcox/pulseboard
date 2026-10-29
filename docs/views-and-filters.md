@@ -10,7 +10,7 @@ Every board has three views. Switch with the **Board / List / Workload** control
 - Each column header shows the task count, or `visible of total` while a filter is active. Columns with a WIP limit show `count/limit WIP`, highlighted when at or over the limit.
 - Columns can be collapsed; collapsed state is remembered per board in your browser.
 - The first 20 tasks of each column load with the page and more load as needed. When a filter is active, the board fetches all of its tasks (up to 1,000) so counts and results cover the whole board.
-- Cards show the task number, title, priority, labels, assignees, due date, checklist and subtask progress, comment count, GitLab project prefix, merge request number and state, and a blocked indicator.
+- Cards show the task number, title, priority, labels, assignees, due date, checklist and subtask progress, comment count, GitLab project prefix, merge request number and state, and a blocked indicator (shown while any task it is blocked by is still open).
 
 ### List view
 
@@ -72,4 +72,4 @@ The dashboard (`/dashboard`) is your personal start page. It covers active (non-
 
 Each team page (`/{team}`) lists its boards with open, overdue and completed counts and last activity, the team's members, archived boards, and team totals. It also offers **Export tasks (CSV)** to every member (see [CSV export](api.md#csv-export)).
 
-The team page also shows an **average cycle time** stat, read from `GET /{team}/dashboard/stats`. In the current code this value is always shown as "—" because the query looks for activity data that is never recorded.
+The team page also shows an **average cycle time** stat, read from `GET /{team}/dashboard/stats`: the average number of days from creation to completion for tasks completed in the last 30 days on the team's active boards. It shows "—" when no task was completed in that window.

@@ -16,6 +16,7 @@ use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Board;
 use App\Models\Column;
+use App\Models\Comment;
 use App\Models\Label;
 use App\Models\Task;
 use App\Models\Team;
@@ -148,6 +149,8 @@ class TaskController extends Controller
                 'delete' => $user->can('delete', $task),
                 'move' => $moveTargets->isNotEmpty(),
                 'saveAsTemplate' => $user->can('update', $team),
+                // Authors can always delete their own comments.
+                'deleteAnyComment' => $user->can('deleteAny', [Comment::class, $task]),
             ],
         ]);
     }

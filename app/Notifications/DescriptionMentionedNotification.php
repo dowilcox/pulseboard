@@ -4,12 +4,13 @@ namespace App\Notifications;
 
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class DescriptionMentionedNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(
         public Task $task,
@@ -18,15 +19,9 @@ class DescriptionMentionedNotification extends Notification
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_mentioned', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        return $channels;
+        return 'task_mentioned';
     }
 
     public function toDatabase(object $notifiable): array

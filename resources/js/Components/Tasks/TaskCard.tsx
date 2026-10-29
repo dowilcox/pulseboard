@@ -7,7 +7,7 @@ import { getContrastText } from "@/utils/colorContrast";
 import { describeCardFields } from "@/utils/customFields";
 import { daysUntil, formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
-import { describeTaskCard } from "@/utils/taskCardLabel";
+import { describeTaskCard, isTaskBlocked } from "@/utils/taskCardLabel";
 import { harbor, harborAvatarColor } from "@/theme/harbor";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
@@ -167,7 +167,7 @@ const TaskCard = memo(
         ref,
     ) {
         const isCompleted = task.completed_at != null;
-        const isBlocked = (task.blocked_by ?? []).length > 0;
+        const isBlocked = isTaskBlocked(task);
         const checklistProgress = task.checklist_progress;
         const dueSoon =
             task.due_date != null && !isCompleted && isDueSoon(task.due_date);

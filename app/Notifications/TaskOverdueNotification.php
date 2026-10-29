@@ -3,30 +3,23 @@
 namespace App\Notifications;
 
 use App\Models\Task;
+use App\Notifications\Concerns\FollowsNotificationPreferences;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
 class TaskOverdueNotification extends Notification
 {
-    use Queueable;
+    use FollowsNotificationPreferences, Queueable;
 
     public function __construct(public Task $task)
     {
         $this->task->loadMissing('board.team');
     }
 
-    public function via(object $notifiable): array
+    protected function preferenceKey(): string
     {
-        $channels = [];
-
-        if ($notifiable->wantsNotification('task_overdue', 'in_app')) {
-            $channels[] = 'database';
-        }
-
-        // Email is handled by the digest command (notifications:send-emails)
-
-        return $channels;
+        return 'task_overdue';
     }
 
     public function toDatabase(object $notifiable): array

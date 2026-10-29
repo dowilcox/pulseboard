@@ -37,12 +37,22 @@ class SendNotificationEmails extends Command
      */
     private const DIGEST_THRESHOLD = 3;
 
+    private const EMAIL_ONLY_RETENTION_DAYS = 7;
+
     public function handle(): int
     {
         Log::info('[notifications:send-emails] Starting notification email run');
 
-        // Find all notifications that haven't been emailed yet,
-        // created in the last hour (don't email very old ones).
+        // Email-only records (hidden from the bell) have no use once they are
+        // past the email window. Keep them a week so the reminder commands'
+        // "already sent" checks still see them.
+        DatabaseNotification::query()
+            ->where('in_app', false)
+            ->where('created_at', '<', now()->subDays(self::EMAIL_ONLY_RETENTION_DAYS))
+            ->delete();
+
+        // Find all notifications that haven't been emailed yet (in-app and
+        // email-only alike), created in the last hour (don't email very old ones).
         $pending = DatabaseNotification::query()
             ->whereNull('emailed_at')
             ->where('created_at', '>=', now()->subHour())

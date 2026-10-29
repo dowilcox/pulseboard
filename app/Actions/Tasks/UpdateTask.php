@@ -7,8 +7,11 @@ use App\Notifications\DescriptionMentionedNotification;
 use App\Services\ActivityLogger;
 use App\Services\MentionParser;
 use App\Support\CustomFieldValues;
+use App\Support\Recurrence;
 use App\Support\RichTextSanitizer;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -30,6 +33,16 @@ class UpdateTask
             'recurrence_config',
         ];
         $changes = [];
+
+        // Recurrence is anchored on the due date, so the rule or a recurring
+        // task's due date changing reschedules it. Re-sending an unchanged
+        // rule (e.g. autosave) leaves the schedule alone.
+        $recurrence = $this->recurrenceSchedule($task, $data);
+        if ($recurrence) {
+            $data['recurrence_config'] = $recurrence[0];
+        } else {
+            unset($data['recurrence_config']);
+        }
 
         // Custom field updates are partial: validate the incoming values
         // against the board's definitions and merge them over the stored
@@ -97,11 +110,8 @@ class UpdateTask
             );
         }
 
-        // Compute recurrence_next_at when recurrence_config is provided
-        if (array_key_exists('recurrence_config', $data)) {
-            $updateData['recurrence_next_at'] = $this->computeNextRecurrence(
-                $data['recurrence_config'],
-            );
+        if ($recurrence) {
+            $updateData['recurrence_next_at'] = $recurrence[1];
         }
 
         $task->update($updateData);
@@ -178,20 +188,27 @@ class UpdateTask
         }
     }
 
-    private function computeNextRecurrence(?array $config): ?Carbon
+    /**
+     * [config, next occurrence] to store, or null when recurrence is
+     * untouched by this update.
+     *
+     * @return array{0: ?array, 1: ?CarbonInterface}|null
+     */
+    private function recurrenceSchedule(Task $task, array $data): ?array
     {
-        if (! $config || empty($config['frequency'])) {
+        $ruleGiven = array_key_exists('recurrence_config', $data);
+        $config = $ruleGiven ? $data['recurrence_config'] : $task->recurrence_config;
+        $dueDate = array_key_exists('due_date', $data) ? $data['due_date'] : $task->due_date;
+
+        $ruleChanged = $ruleGiven && Arr::except(Recurrence::normalize($data['recurrence_config']) ?? [], 'anchor_date')
+            != Arr::except(Recurrence::normalize($task->recurrence_config) ?? [], 'anchor_date');
+        $dueChanged = $task->due_date?->toDateString()
+            !== ($dueDate ? Carbon::parse($dueDate)->toDateString() : null);
+
+        if (! $ruleChanged && ! ($dueChanged && $config)) {
             return null;
         }
 
-        $interval = $config['interval'] ?? 1;
-
-        return match ($config['frequency']) {
-            'daily' => now()->addDays($interval),
-            'weekly' => now()->addWeeks($interval),
-            'monthly' => now()->addMonths($interval),
-            'custom' => now()->addDays($interval),
-            default => null,
-        };
+        return Recurrence::schedule($config, $dueDate);
     }
 }

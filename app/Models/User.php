@@ -10,7 +10,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -18,6 +20,22 @@ class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasUuids, Notifiable;
+
+    /**
+     * Notification types users can switch on or off per channel.
+     */
+    public const NOTIFICATION_TYPES = [
+        'task_assigned',
+        'task_commented',
+        'task_comment_replied',
+        'task_mentioned',
+        'task_completed',
+        'task_attachment_added',
+        'task_due_soon',
+        'task_overdue',
+    ];
+
+    public const NOTIFICATION_CHANNELS = ['in_app', 'email'];
 
     /**
      * The primary key type.
@@ -143,17 +161,57 @@ class User extends Authenticatable
     }
 
     /**
+     * The user's in-app inbox: the bell, the notifications list, the unread
+     * count and the API. Email-only records (in_app = false) are stored so
+     * notifications:send-emails can batch them, but are never shown here.
+     */
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(DatabaseNotification::class, 'notifiable')
+            ->where('in_app', true)
+            ->latest();
+    }
+
+    /**
+     * What applies when a user hasn't saved a type or channel: everything on.
+     *
+     * @return array<string, array{in_app: bool, email: bool}>
+     */
+    public static function defaultNotificationPreferences(): array
+    {
+        return array_fill_keys(
+            self::NOTIFICATION_TYPES,
+            array_fill_keys(self::NOTIFICATION_CHANNELS, true),
+        );
+    }
+
+    /**
+     * Saved preferences merged over the defaults, one entry per type and
+     * channel. This is exactly what wantsNotification() decides from.
+     *
+     * @return array<string, array{in_app: bool, email: bool}>
+     */
+    public function notificationPreferences(): array
+    {
+        $saved = $this->email_notification_prefs ?? [];
+        $resolved = self::defaultNotificationPreferences();
+
+        foreach ($resolved as $type => $channels) {
+            foreach ($channels as $channel => $default) {
+                $resolved[$type][$channel] = (bool) ($saved[$type][$channel] ?? $default);
+            }
+        }
+
+        return $resolved;
+    }
+
+    /**
      * Check if the user wants a specific notification type on a given channel.
+     * Types without a preference (e.g. automation) are always on.
      */
     public function wantsNotification(string $type, string $channel): bool
     {
-        $prefs = $this->email_notification_prefs;
-
-        if (empty($prefs) || ! isset($prefs[$type])) {
-            return true; // Default: all notifications enabled
-        }
-
-        return (bool) ($prefs[$type][$channel] ?? true);
+        return $this->notificationPreferences()[$type][$channel] ?? true;
     }
 
     /**

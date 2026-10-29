@@ -199,10 +199,13 @@ class CommentReplyNotificationTest extends TestCase
 
         $response->assertRedirect();
 
-        $this->assertDatabaseMissing('notifications', [
+        // Stored for the email run, but hidden from the in-app inbox.
+        $this->assertDatabaseHas('notifications', [
             'notifiable_id' => $this->parentAuthor->id,
             'type' => TaskCommentReplyNotification::class,
+            'in_app' => false,
         ]);
+        $this->assertSame(0, $this->parentAuthor->notifications()->count());
     }
 
     private function createParentComment(): Comment

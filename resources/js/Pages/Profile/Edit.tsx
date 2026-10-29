@@ -1,7 +1,7 @@
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { PageProps } from "@/types";
+import { NotificationPreferences, PageProps } from "@/types";
 import { Head } from "@inertiajs/react";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -17,7 +17,12 @@ import UpdateProfileInformationForm from "./Partials/UpdateProfileInformationFor
 export default function Edit({
     mustVerifyEmail,
     status,
-}: PageProps<{ mustVerifyEmail: boolean; status?: string }>) {
+    notificationPreferences,
+}: PageProps<{
+    mustVerifyEmail: boolean;
+    status?: string;
+    notificationPreferences: Required<NotificationPreferences>;
+}>) {
     return (
         <>
             <Head title="Profile" />
@@ -50,7 +55,9 @@ export default function Edit({
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>
-                    <NotificationPreferencesForm />
+                    <NotificationPreferencesForm
+                        preferences={notificationPreferences}
+                    />
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: { xs: 3, sm: 4 } }}>

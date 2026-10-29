@@ -186,6 +186,8 @@ export interface RecurrenceConfig {
     days_of_week?: number[];
     day_of_month?: number;
     end_date?: string;
+    /** Server-managed schedule start, set when the task has no due date. */
+    anchor_date?: string;
 }
 
 export interface TaskSummary {
@@ -215,6 +217,8 @@ export interface TaskPermissions {
     delete: boolean;
     move: boolean;
     saveAsTemplate: boolean;
+    /** Delete other people's comments (team owners/admins). */
+    deleteAnyComment?: boolean;
 }
 
 export interface TaskTemplate {
@@ -265,6 +269,8 @@ export interface Task {
     parent_task?: Task;
     dependencies?: Task[];
     blocked_by?: Task[];
+    /** Board/list payloads: true while any `blocked_by` task is still open. */
+    is_blocked?: boolean;
     /** Loaded on dependency tasks so cross-board chips can link and label. */
     board?: Pick<Board, "id" | "name" | "slug">;
     gitlab_project?: GitlabProject;

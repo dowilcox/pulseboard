@@ -112,6 +112,14 @@ class MoveTask
 
         $task->update($updateData);
 
+        // Keep the loaded relations in step with the new foreign keys, so
+        // listeners (activity broadcast, automation) see the destination
+        // board and column rather than the ones the task just left.
+        $task->setRelation('column', $column);
+        if ($crossBoard) {
+            $task->setRelation('board', $targetBoard);
+        }
+
         return [
             'task' => $task,
             'column' => $column,

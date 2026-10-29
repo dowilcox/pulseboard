@@ -243,6 +243,7 @@ class BoardController extends Controller
                 'subtasks',
                 'subtasks as completed_subtasks_count' => fn ($query) => $query->whereNotNull('completed_at'),
             ])
+            ->withBlockedState()
             ->orderBy('column_id')
             ->orderBy('sort_order')
             ->get()

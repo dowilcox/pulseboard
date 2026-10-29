@@ -267,6 +267,24 @@ export function describeActivity(
                 after: "",
             };
         }
+        case "watcher_added": {
+            const users = stringList(changes.users);
+            return {
+                before: users.length
+                    ? `added ${joinList(users)} as a watcher of`
+                    : "updated watchers on",
+                after: "",
+            };
+        }
+        case "watcher_removed": {
+            const users = stringList(changes.users);
+            return {
+                before: users.length
+                    ? `removed ${joinList(users)} as a watcher of`
+                    : "updated watchers on",
+                after: "",
+            };
+        }
         case "labels_changed": {
             const added = stringList(changes.added);
             const removed = stringList(changes.removed);

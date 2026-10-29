@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class ProfileController extends Controller
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
+            'notificationPreferences' => $request->user()->notificationPreferences(),
         ]);
     }
 
@@ -45,17 +47,8 @@ class ProfileController extends Controller
      */
     public function updateNotifications(Request $request): RedirectResponse
     {
-        $validTypes = [
-            'task_assigned',
-            'task_commented',
-            'task_comment_replied',
-            'task_mentioned',
-            'task_due_soon',
-            'task_overdue',
-            'task_completed',
-            'task_attachment_added',
-        ];
-        $validChannels = ['in_app', 'email'];
+        $validTypes = User::NOTIFICATION_TYPES;
+        $validChannels = User::NOTIFICATION_CHANNELS;
 
         $prefs = $request->validate([
             'prefs' => ['required', 'array'],

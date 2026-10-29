@@ -208,4 +208,206 @@ class RecurringTaskTest extends TestCase
         $this->assertTrue($newTask->labels()->where('labels.id', $label->id)->exists());
         $this->assertEquals($task->checklists, $newTask->checklists);
     }
+
+    private function recurringTask(array $attributes = []): Task
+    {
+        return Task::factory()->create(array_merge([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $this->user->id,
+            'due_date' => null,
+        ], $attributes));
+    }
+
+    private function saveRecurrence(Task $task, array $data)
+    {
+        return $this->actingAs($this->user)->put(
+            route('tasks.update', [$this->team, $this->board, $task]),
+            $data,
+        );
+    }
+
+    public function test_first_occurrence_is_anchored_on_the_due_date(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask(['due_date' => '2026-11-06']);
+
+        $this->saveRecurrence($task, [
+            'recurrence_config' => ['frequency' => 'weekly', 'interval' => 1],
+        ])->assertRedirect();
+
+        $task->refresh();
+        $this->assertSame('2026-11-13 00:00:00', $task->recurrence_next_at->toDateTimeString());
+        $this->assertSame(['frequency' => 'weekly', 'interval' => 1], $task->recurrence_config);
+    }
+
+    public function test_without_a_due_date_the_first_occurrence_counts_from_today(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask();
+
+        $this->saveRecurrence($task, [
+            'recurrence_config' => ['frequency' => 'weekly', 'interval' => 1, 'days_of_week' => [1, 5]],
+        ])->assertRedirect();
+
+        $task->refresh();
+        // Friday 10-30 is the first selected weekday after Wednesday 10-28.
+        $this->assertSame('2026-10-30 00:00:00', $task->recurrence_next_at->toDateTimeString());
+        $this->assertSame('2026-10-28', $task->recurrence_config['anchor_date']);
+    }
+
+    public function test_changing_the_due_date_reschedules_a_recurring_task(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask(['due_date' => '2026-11-06']);
+        $this->saveRecurrence($task, ['recurrence_config' => ['frequency' => 'monthly', 'interval' => 1]]);
+
+        $this->saveRecurrence($task, ['due_date' => '2026-11-20'])->assertRedirect();
+
+        $this->assertSame('2026-12-20', $task->refresh()->recurrence_next_at->toDateString());
+    }
+
+    public function test_resaving_an_unchanged_rule_keeps_the_schedule(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask();
+        $this->saveRecurrence($task, ['recurrence_config' => ['frequency' => 'daily', 'interval' => 3]]);
+
+        $this->travelTo('2026-10-29 09:00:00');
+        $this->saveRecurrence($task, [
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 3, 'anchor_date' => '2026-10-28'],
+        ])->assertRedirect();
+
+        $task->refresh();
+        $this->assertSame('2026-10-31', $task->recurrence_next_at->toDateString());
+        $this->assertSame('2026-10-28', $task->recurrence_config['anchor_date']);
+    }
+
+    public function test_recurrence_config_shape_is_validated(): void
+    {
+        $task = $this->recurringTask();
+
+        $invalid = [
+            ['frequency' => 'yearly', 'interval' => 1],
+            ['frequency' => 'daily', 'interval' => 0],
+            ['frequency' => 'daily', 'interval' => 366],
+            ['frequency' => 'weekly', 'interval' => 1, 'days_of_week' => [7]],
+            ['frequency' => 'weekly', 'interval' => 1, 'days_of_week' => [1, 1]],
+            ['frequency' => 'weekly', 'interval' => 1, 'days_of_week' => 'monday'],
+            ['frequency' => 'monthly', 'interval' => 1, 'day_of_month' => 32],
+            ['frequency' => 'monthly', 'interval' => 1, 'day_of_month' => 0],
+            ['frequency' => 'daily', 'interval' => 1, 'end_date' => 'next week'],
+        ];
+
+        foreach ($invalid as $config) {
+            $this->saveRecurrence($task, ['recurrence_config' => $config])
+                ->assertSessionHasErrors();
+        }
+
+        $this->assertNull($task->refresh()->recurrence_config);
+    }
+
+    public function test_copies_are_due_on_their_occurrence(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask(['title' => 'Weekly report', 'due_date' => '2026-10-30']);
+        $this->saveRecurrence($task, ['recurrence_config' => ['frequency' => 'weekly', 'interval' => 1]]);
+        $this->assertSame('2026-11-06', $task->refresh()->recurrence_next_at->toDateString());
+
+        $this->travelTo('2026-11-06 00:00:30');
+        $this->artisan('tasks:process-recurring')->assertSuccessful();
+
+        $copy = Task::where('id', '!=', $task->id)->sole();
+        $this->assertSame('2026-11-06', $copy->due_date->toDateString());
+        $this->assertNull($copy->recurrence_config);
+
+        $task->refresh();
+        $this->assertSame('2026-10-30', $task->due_date->toDateString());
+        $this->assertSame('2026-11-13', $task->recurrence_next_at->toDateString());
+    }
+
+    public function test_copies_of_a_task_without_a_due_date_have_none(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask();
+        $this->saveRecurrence($task, ['recurrence_config' => ['frequency' => 'daily', 'interval' => 1]]);
+
+        $this->travelTo('2026-10-29 00:00:30');
+        $this->artisan('tasks:process-recurring')->assertSuccessful();
+
+        $this->assertNull(Task::where('id', '!=', $task->id)->sole()->due_date);
+        $this->assertSame('2026-10-30', $task->refresh()->recurrence_next_at->toDateString());
+    }
+
+    public function test_weekday_schedule_is_followed_by_the_command(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask();
+        $this->saveRecurrence($task, [
+            'recurrence_config' => ['frequency' => 'weekly', 'interval' => 1, 'days_of_week' => [1, 5]],
+        ]);
+
+        $created = [];
+        foreach (['2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03'] as $day) {
+            $this->travelTo("{$day} 00:00:30");
+            $before = Task::count();
+            $this->artisan('tasks:process-recurring')->assertSuccessful();
+            if (Task::count() > $before) {
+                $created[] = $day;
+            }
+        }
+
+        // Friday and Monday only.
+        $this->assertSame(['2026-10-30', '2026-11-02'], $created);
+    }
+
+    public function test_missed_runs_create_one_copy_for_the_latest_occurrence(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask(['due_date' => '2026-10-28']);
+        $this->saveRecurrence($task, ['recurrence_config' => ['frequency' => 'daily', 'interval' => 1]]);
+
+        $this->travelTo('2026-11-02 08:00:00');
+        $this->artisan('tasks:process-recurring')->assertSuccessful();
+
+        $copy = Task::where('id', '!=', $task->id)->sole();
+        $this->assertSame('2026-11-02', $copy->due_date->toDateString());
+        $this->assertSame('2026-11-03', $task->refresh()->recurrence_next_at->toDateString());
+    }
+
+    public function test_recurrence_stops_after_the_end_date(): void
+    {
+        $this->travelTo('2026-10-28 15:00:00');
+        $task = $this->recurringTask();
+        $this->saveRecurrence($task, [
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 1, 'end_date' => '2026-10-30'],
+        ]);
+
+        foreach (['2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01'] as $day) {
+            $this->travelTo("{$day} 00:00:30");
+            $this->artisan('tasks:process-recurring')->assertSuccessful();
+        }
+
+        $this->assertSame(3, Task::count());
+        $task->refresh();
+        $this->assertNull($task->recurrence_next_at);
+        $this->assertSame('2026-10-30', $task->recurrence_config['end_date']);
+    }
+
+    public function test_legacy_config_without_anchor_keeps_its_phase(): void
+    {
+        $this->travelTo('2026-10-28 00:00:30');
+        // Saved by the old code: next occurrence at save time + interval, no anchor.
+        $task = $this->recurringTask([
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 2],
+            'recurrence_next_at' => '2026-10-27 14:32:00',
+        ]);
+
+        $this->artisan('tasks:process-recurring')->assertSuccessful();
+
+        $task->refresh();
+        $this->assertSame(2, Task::count());
+        $this->assertSame('2026-10-29', $task->recurrence_next_at->toDateString());
+        $this->assertSame('2026-10-27', $task->recurrence_config['anchor_date']);
+    }
 }
