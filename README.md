@@ -27,7 +27,9 @@
 - Cross-board task moves within a team
 - Subtasks, checklists, and task dependencies (blocked-by / blocking)
 - Task recurrence (daily, weekly, monthly, custom)
-- Priority levels, due dates, effort estimates, and custom fields
+- Priority levels, due dates, and effort estimates
+- Custom fields on tasks
+- Keyboard shortcuts and a Ctrl/⌘+K quick switcher
 - File attachments with drag-and-drop upload (up to 15 MB per file)
 - Rich text descriptions with inline image support (up to 5 MB per image)
 
@@ -55,14 +57,20 @@
 - Auto-linking GitLab MRs to tasks via branch naming convention
 - Background sync of GitLab link states
 - REST API with Sanctum token auth (v1)
+- MCP server for AI agents
 
 ### Administration
 
 - Admin panel with dashboard, user management, and team oversight
 - SAML2 SSO with JIT (just-in-time) user provisioning
+- OIDC (OpenID Connect) SSO
 - Bot user creation scoped to teams (for API integrations)
 - CSV export of team tasks
 - Dark theme UI
+
+## Documentation
+
+User, admin, integration and API guides live in [`docs/`](docs/README.md).
 
 ## Quick Start
 
