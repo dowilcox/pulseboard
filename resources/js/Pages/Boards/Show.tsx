@@ -1,3 +1,7 @@
+import {
+    BOARD_NAV_ATTR,
+    BoardKeyboardProvider,
+} from "@/Components/Boards/BoardKeyboard";
 import FilterBar from "@/Components/Tasks/FilterBar";
 import NewTaskDialog from "@/Components/Tasks/NewTaskDialog";
 import PresenceAvatars from "@/Components/Layout/PresenceAvatars";
@@ -9,6 +13,7 @@ import { useAllBoardTasks } from "@/hooks/useAllBoardTasks";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import { usePresence } from "@/hooks/usePresence";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
+import { useShortcutHint } from "@/Contexts/KeyboardShortcutsContext";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type {
@@ -104,6 +109,13 @@ export default function BoardsShow({
     const canManage = can?.update ?? false;
     const columns = useMemo(() => board.columns ?? [], [board.columns]);
     const [newTaskOpen, setNewTaskOpen] = useState(false);
+    const [newTaskColumnId, setNewTaskColumnId] = useState<string | null>(null);
+    const openNewTask = useCallback((columnId?: string) => {
+        setNewTaskColumnId(columnId ?? null);
+        setNewTaskOpen(true);
+    }, []);
+    const newTaskHint = useShortcutHint("c");
+    const settingsHint = useShortcutHint("g s");
 
     // ── View + filters (the URL is the source of truth) ─────────────────
     const [savedFilters, setSavedFilters] =
@@ -324,7 +336,18 @@ export default function BoardsShow({
     };
 
     return (
-        <>
+        <BoardKeyboardProvider
+            team={team}
+            board={board}
+            columns={columns}
+            members={members}
+            labels={teamLabels}
+            currentUserId={auth.user.id}
+            view={view}
+            onViewChange={setView}
+            canManage={canManage}
+            openNewTask={openNewTask}
+        >
             <Head title={`${board.name} - ${team.name}`} />
             <LayoutHeader>
                 <PageHeader
@@ -345,7 +368,11 @@ export default function BoardsShow({
                             <ViewSwitcher value={view} onChange={setView} />
                             {columns.length > 0 && (
                                 <Tooltip
-                                    title="New task"
+                                    title={
+                                        newTaskHint
+                                            ? `New task (${newTaskHint})`
+                                            : "New task"
+                                    }
                                     // The header row is shared with the title
                                     // and quick switcher, so between md and xl
                                     // the button is icon-only; the tooltip
@@ -364,8 +391,11 @@ export default function BoardsShow({
                                 >
                                     <Button
                                         variant="contained"
-                                        onClick={() => setNewTaskOpen(true)}
+                                        onClick={() => openNewTask()}
                                         aria-label="New task"
+                                        aria-keyshortcuts={
+                                            newTaskHint ? "C" : undefined
+                                        }
                                         startIcon={<AddIcon />}
                                         sx={{
                                             height: 34,
@@ -394,7 +424,13 @@ export default function BoardsShow({
                                 </Tooltip>
                             )}
                             {canManage && (
-                                <Tooltip title="Board settings">
+                                <Tooltip
+                                    title={
+                                        settingsHint
+                                            ? `Board settings (${settingsHint})`
+                                            : "Board settings"
+                                    }
+                                >
                                     <IconButton
                                         component={RouterLink}
                                         href={route("teams.boards.settings", [
@@ -464,7 +500,8 @@ export default function BoardsShow({
                 />
             )}
 
-            {renderView()}
+            {/* Cards in here take part in keyboard navigation */}
+            <Box {...{ [BOARD_NAV_ATTR]: "" }}>{renderView()}</Box>
 
             <NewTaskDialog
                 open={newTaskOpen}
@@ -472,8 +509,9 @@ export default function BoardsShow({
                 teamSlug={team.slug}
                 boardSlug={board.slug}
                 columns={columns}
+                defaultColumnId={newTaskColumnId}
             />
-        </>
+        </BoardKeyboardProvider>
     );
 }
 

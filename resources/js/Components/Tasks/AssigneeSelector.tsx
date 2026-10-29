@@ -1,6 +1,6 @@
 import { harbor, harborAvatarColor } from "@/theme/harbor";
 import type { Task, User } from "@/types";
-import { router } from "@inertiajs/react";
+import { updateTaskAssignees } from "@/utils/taskActions";
 import Autocomplete from "@mui/material/Autocomplete";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -24,10 +24,11 @@ export default function AssigneeSelector({
     const currentAssignees = task.assignees ?? [];
 
     const handleChange = (_: unknown, newValue: User[]) => {
-        router.put(
-            route("tasks.assignees.update", [teamSlug, boardSlug, task.slug]),
-            { user_ids: newValue.map((u) => u.id) },
-            { preserveScroll: true },
+        updateTaskAssignees(
+            teamSlug,
+            boardSlug,
+            task,
+            newValue.map((u) => u.id),
         );
     };
 

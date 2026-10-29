@@ -1,6 +1,6 @@
 import type { Label, Task } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
-import { router } from "@inertiajs/react";
+import { updateTaskLabels } from "@/utils/taskActions";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
@@ -22,10 +22,11 @@ export default function LabelSelector({
     const currentLabels = task.labels ?? [];
 
     const handleChange = (_: unknown, newValue: Label[]) => {
-        router.put(
-            route("tasks.labels.update", [teamSlug, boardSlug, task.slug]),
-            { label_ids: newValue.map((l) => l.id) },
-            { preserveScroll: true },
+        updateTaskLabels(
+            teamSlug,
+            boardSlug,
+            task,
+            newValue.map((l) => l.id),
         );
     };
 

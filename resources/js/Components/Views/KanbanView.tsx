@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useBoardKeyboardNav } from "@/Components/Boards/BoardKeyboard";
 import QuickCreateTask, {
     wipLimitMessage,
 } from "@/Components/Tasks/QuickCreateTask";
@@ -7,7 +8,13 @@ import TaskCard from "@/Components/Tasks/TaskCard";
 import type { Column, PaginatedResponse, Task, TaskTemplate } from "@/types";
 import { columnCountSummary, type WipStatus } from "@/utils/boardFilters";
 import { getTaskLabel } from "@/utils/gitlabPrefix";
+import {
+    applyMove,
+    type FocusLayout,
+    type MoveTarget,
+} from "@/utils/boardFocus";
 import { computeSortOrder } from "@/utils/sortOrder";
+import { moveTask } from "@/utils/taskActions";
 import {
     closestCorners,
     DndContext,
@@ -32,7 +39,6 @@ import {
 } from "@dnd-kit/sortable";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { harbor, harborHex } from "@/theme/harbor";
-import { router } from "@inertiajs/react";
 import RouterLink from "@/Components/Common/RouterLink";
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
@@ -668,10 +674,11 @@ export default function KanbanView({
             const movedTask = finalTasks.find((t) => t.id === activeId);
             const taskSlug = movedTask?.slug ?? activeId;
 
-            router.patch(
-                route("tasks.move", [team.slug, board.slug, taskSlug]),
+            moveTask(
+                team.slug,
+                board.slug,
+                { id: activeId, slug: taskSlug },
                 { column_id: targetCol, sort_order: newSortOrder },
-                { preserveScroll: true },
             );
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -749,6 +756,68 @@ export default function KanbanView({
             route("tasks.show", [team.slug, board.slug, task.slug ?? task.id]),
         [team.slug, board.slug],
     );
+
+    // ── Keyboard navigation (see BoardKeyboard) ─────────────────────────
+    const focusLayout = useMemo<FocusLayout>(
+        () =>
+            columns.map((column) => {
+                const colTasks = collapsedColumns.has(column.id)
+                    ? []
+                    : (columnTasks[column.id] ?? []);
+                return {
+                    id: column.id,
+                    taskIds: (filtersActive
+                        ? colTasks.filter(filterFn)
+                        : colTasks
+                    ).map((t) => t.id),
+                };
+            }),
+        [columns, columnTasks, collapsedColumns, filtersActive, filterFn],
+    );
+
+    const moveTaskByKeyboard = useCallback(
+        (task: Task, target: MoveTarget) => {
+            const applied = applyMove(
+                columnTasks,
+                task.id,
+                target,
+                filtersActive ? filterFn : undefined,
+            );
+            if (!applied) return;
+            setColumnTasks(applied.columns);
+            // Appending to a column with unloaded pages: let the server
+            // place it after its real last task.
+            const appendUnloaded =
+                target.visibleIndex === null &&
+                (columnLoadStates[target.columnId]?.hasMore ?? false);
+            moveTask(team.slug, board.slug, task, {
+                column_id: target.columnId,
+                sort_order: appendUnloaded ? null : applied.sortOrder,
+            });
+        },
+        [
+            columnTasks,
+            columnLoadStates,
+            filtersActive,
+            filterFn,
+            team.slug,
+            board.slug,
+        ],
+    );
+
+    const keyboard = useBoardKeyboardNav({
+        view: "kanban",
+        layout: focusLayout,
+        getTask: (id) => taskMap.get(id),
+        moveTask: moveTaskByKeyboard,
+        isColumnFull: (columnId) => isColumnFull(columnId),
+        canReorder: true,
+        createInColumn: (columnId) => {
+            if (collapsedColumns.has(columnId)) toggleColumnCollapsed(columnId);
+            setTopCreateColumnId(columnId);
+        },
+        suspended: activeTask !== null,
+    });
 
     if (columns.length === 0) {
         return (
@@ -1090,6 +1159,18 @@ export default function KanbanView({
                                                 isClickSuppressed={
                                                     isClickSuppressed
                                                 }
+                                                keyboardFocused={
+                                                    keyboard.focusedTaskId ===
+                                                    task.id
+                                                }
+                                                tabIndex={
+                                                    keyboard.tabStopId === null
+                                                        ? undefined
+                                                        : keyboard.tabStopId ===
+                                                            task.id
+                                                          ? 0
+                                                          : -1
+                                                }
                                             />
                                         ))}
 
@@ -1171,6 +1252,8 @@ export default function KanbanView({
                     <ScrollEdge side="right" onClick={() => scrollStrip(1)} />
                 )}
             </Box>
+
+            {keyboard.overlay}
 
             {/* Drag overlay */}
             <DragOverlay>

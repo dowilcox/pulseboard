@@ -23,7 +23,11 @@ import { forwardRef, memo, type HTMLAttributes, type ReactNode } from "react";
 /** Event + ARIA props the sortable wrapper forwards to the card root. */
 type ForwardedProps = Pick<
     HTMLAttributes<HTMLElement>,
-    "onPointerDown" | "onKeyDown" | "onClickCapture" | "aria-describedby"
+    | "onPointerDown"
+    | "onKeyDown"
+    | "onClickCapture"
+    | "aria-describedby"
+    | "tabIndex"
 >;
 
 interface Props extends ForwardedProps {
@@ -34,6 +38,10 @@ interface Props extends ForwardedProps {
      * drag overlay).
      */
     href?: string;
+    /** Keyboard navigation: the board's cursor is on this card. */
+    keyboardFocused?: boolean;
+    /** Lets keyboard navigation find the card's element. */
+    "data-task-id"?: string;
 }
 
 // Neutral track pill used for comment/due/subtask/effort chips in the footer
@@ -138,6 +146,12 @@ const CARD_SX = {
     "& img": { WebkitUserDrag: "none", pointerEvents: "none" },
 } as const;
 
+const KEYBOARD_CURSOR_SX = {
+    outline: `2px solid ${harbor.accent}`,
+    outlineOffset: 2,
+    boxShadow: harbor.cardShadowHover,
+} as const;
+
 const CONTENT_SX = {
     display: "flex",
     flexDirection: "column",
@@ -146,7 +160,7 @@ const CONTENT_SX = {
 
 const TaskCard = memo(
     forwardRef<HTMLElement, Props>(function TaskCard(
-        { task, href, ...rest },
+        { task, href, keyboardFocused = false, ...rest },
         ref,
     ) {
         const isCompleted = task.completed_at != null;
@@ -429,6 +443,7 @@ const TaskCard = memo(
                     href={href}
                     draggable={false}
                     aria-label={describeTaskCard(task)}
+                    aria-current={keyboardFocused || undefined}
                     {...rest}
                     sx={{
                         ...CARD_SX,
@@ -439,6 +454,9 @@ const TaskCard = memo(
                             outlineColor: "primary.main",
                             outlineOffset: 2,
                         },
+                        // Keyboard cursor: stays visible while a picker or
+                        // the page holds DOM focus.
+                        ...(keyboardFocused && KEYBOARD_CURSOR_SX),
                     }}
                 >
                     <Box aria-hidden sx={CONTENT_SX}>
