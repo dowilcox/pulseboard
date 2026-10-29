@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Tasks\CreateTask;
 use App\Models\Task;
+use App\Models\User;
 use App\Support\Recurrence;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -96,8 +97,12 @@ class ProcessRecurringTasks extends Command
     {
         $task->loadMissing('board', 'column', 'creator', 'assignees', 'labels');
 
-        if (! $task->creator) {
-            throw new \RuntimeException("Recurring task {$task->id} has no creator.");
+        // The original creator may have been deleted (created_by is
+        // nulled); attribute the copy to an active team owner instead.
+        $creator = $task->creator ?? $this->fallbackCreator($task);
+
+        if (! $creator) {
+            throw new \RuntimeException("Recurring task {$task->id} has no creator and its team has no active owner.");
         }
 
         $newTask = CreateTask::run($task->board, $task->column, [
@@ -110,12 +115,22 @@ class ProcessRecurringTasks extends Command
             'due_date' => $task->due_date ? $occurrence->toDateString() : null,
             'assignee_ids' => $task->assignees->pluck('id')->all(),
             'label_ids' => $task->labels->pluck('id')->all(),
-        ], $task->creator);
+        ], $creator);
 
         if ($task->checklists) {
             $newTask->update(['checklists' => $task->checklists]);
         }
 
         return $newTask;
+    }
+
+    private function fallbackCreator(Task $task): ?User
+    {
+        return $task->board->team->members()
+            ->wherePivot('role', 'owner')
+            ->whereNull('users.deactivated_at')
+            ->where('users.is_bot', false)
+            ->orderBy('team_members.created_at')
+            ->first();
     }
 }

@@ -112,6 +112,33 @@ class RecurringTaskTest extends TestCase
         $this->assertTrue($task->recurrence_next_at->isFuture());
     }
 
+    public function test_recurring_task_with_deleted_creator_is_attributed_to_a_team_owner(): void
+    {
+        $formerMember = User::factory()->create();
+        TeamMember::create([
+            'team_id' => $this->team->id,
+            'user_id' => $formerMember->id,
+            'role' => 'member',
+        ]);
+        $task = Task::factory()->create([
+            'board_id' => $this->board->id,
+            'column_id' => $this->column->id,
+            'created_by' => $formerMember->id,
+            'title' => 'Weekly report',
+            'recurrence_config' => ['frequency' => 'daily', 'interval' => 1],
+            'recurrence_next_at' => now()->subHour(),
+        ]);
+
+        $formerMember->delete();
+        $this->assertNull($task->fresh()->created_by);
+
+        $this->artisan('tasks:process-recurring')->assertSuccessful();
+
+        $copy = Task::where('title', 'Weekly report')->whereKeyNot($task->id)->sole();
+        $this->assertSame($this->user->id, $copy->created_by);
+        $this->assertTrue($task->fresh()->recurrence_next_at->isFuture());
+    }
+
     public function test_recurring_command_skips_tasks_not_yet_due(): void
     {
         Task::factory()->create([
