@@ -43,6 +43,50 @@ class ProfilePreferencesTest extends TestCase
         $this->assertTrue($this->user->email_notification_prefs['task_comment_replied']['email']);
     }
 
+    public function test_profile_page_shows_server_defaults_when_nothing_is_saved(): void
+    {
+        $this->assertNull($this->user->email_notification_prefs);
+
+        $this->actingAs($this->user)
+            ->get(route('profile.edit'))
+            ->assertInertia(fn ($page) => $page
+                ->component('Profile/Edit')
+                ->where('notificationPreferences', User::defaultNotificationPreferences()));
+
+        // The defaults the form shows are exactly what delivery uses.
+        foreach (User::defaultNotificationPreferences() as $type => $channels) {
+            $this->assertSame(['in_app' => true, 'email' => true], $channels);
+            foreach ($channels as $channel => $on) {
+                $this->assertSame($on, $this->user->wantsNotification($type, $channel));
+            }
+        }
+    }
+
+    public function test_profile_page_merges_saved_preferences_over_defaults(): void
+    {
+        $this->user->update([
+            'email_notification_prefs' => [
+                'task_commented' => ['email' => false],
+                'task_overdue' => ['in_app' => false, 'email' => false],
+            ],
+        ]);
+
+        $expected = User::defaultNotificationPreferences();
+        $expected['task_commented'] = ['in_app' => true, 'email' => false];
+        $expected['task_overdue'] = ['in_app' => false, 'email' => false];
+
+        $this->actingAs($this->user)
+            ->get(route('profile.edit'))
+            ->assertInertia(fn ($page) => $page
+                ->where('notificationPreferences', $expected));
+
+        foreach ($expected as $type => $channels) {
+            foreach ($channels as $channel => $on) {
+                $this->assertSame($on, $this->user->wantsNotification($type, $channel));
+            }
+        }
+    }
+
     public function test_notification_preferences_filter_invalid_types(): void
     {
         $response = $this->actingAs($this->user)->patch(

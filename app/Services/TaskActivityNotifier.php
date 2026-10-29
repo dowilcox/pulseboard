@@ -121,6 +121,11 @@ class TaskActivityNotifier
             return;
         }
 
+        // Email-only notifications are stored but never shown in-app.
+        if (method_exists($notification, 'showsInApp') && ! $notification->showsInApp($user)) {
+            return;
+        }
+
         $notificationId = $notification->id ?? null;
 
         if (! $notificationId) {
