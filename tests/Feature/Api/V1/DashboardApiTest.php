@@ -66,23 +66,16 @@ class DashboardApiTest extends TestCase
             'priority' => 'low',
             'effort_estimate' => 4,
         ]);
-        $done = Task::factory()->create([
+        Task::factory()->create([
             'board_id' => $this->board->id,
             'column_id' => $this->doneColumn->id,
             'created_by' => $this->user->id,
             'priority' => 'high',
+            'completed_at' => now()->subDay(),
         ]);
 
         // Assign a task for workload stats
         $overdue->assignees()->attach($this->user->id, ['assigned_at' => now(), 'assigned_by' => $this->user->id]);
-
-        // A "moved to done" activity for velocity/cycle time
-        $done->activities()->create([
-            'user_id' => $this->user->id,
-            'action' => 'moved',
-            'changes' => ['to_done' => true],
-            'created_at' => now()->subDay(),
-        ]);
 
         $response = $this->api()->getJson("/api/v1/teams/{$this->team->id}/dashboard/stats");
 

@@ -72,4 +72,4 @@ The dashboard (`/dashboard`) is your personal start page. It covers active (non-
 
 Each team page (`/{team}`) lists its boards with open, overdue and completed counts and last activity, the team's members, archived boards, and team totals. It also offers **Export tasks (CSV)** to every member (see [CSV export](api.md#csv-export)).
 
-The team page also shows an **average cycle time** stat, read from `GET /{team}/dashboard/stats`. In the current code this value is always shown as "—" because the query looks for activity data that is never recorded.
+The team page also shows an **average cycle time** stat, read from `GET /{team}/dashboard/stats`: the average number of days from creation to completion for tasks completed in the last 30 days on the team's active boards. It shows "—" when no task was completed in that window.

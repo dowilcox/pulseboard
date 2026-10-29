@@ -382,33 +382,33 @@ Returns `{"data": {...task...}}`. Moving into a full column fails with `422` and
 
 `GET /api/v1/teams/{team}/dashboard/stats` returns:
 
-| Key                 | Contents                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------- |
-| `tasks_by_column`   | `[{column_name, is_done_column, count}]`, grouped by column name across the team's boards |
-| `tasks_by_priority` | `{priority: count}`                                                                       |
-| `overdue_tasks`     | Up to 20 open tasks with a past due date, with board, column and assignees                |
-| `workload`          | `[{name, task_count, total_effort}]` for tasks not in a done column                       |
-| `velocity`          | Completed tasks per week, last 8 weeks                                                    |
-| `cycle_time`        | Average days from creation to done, last 30 days                                          |
+| Key                 | Contents                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tasks_by_column`   | `[{column_name, is_done_column, count}]`, grouped by column name across the team's boards                                                                                             |
+| `tasks_by_priority` | `{priority: count}`                                                                                                                                                                   |
+| `overdue_tasks`     | Up to 20 open tasks with a past due date, with board, column and assignees                                                                                                            |
+| `workload`          | `[{name, task_count, total_effort}]` for open (not completed) tasks                                                                                                                   |
+| `velocity`          | `[{week, completed}]`: tasks completed per week over the last 8 weeks. `week` is the Monday that starts the week (`YYYY-MM-DD`, app timezone). Weeks with no completions are omitted. |
+| `cycle_time`        | Average days from creation to completion for tasks completed in the last 30 days, one decimal; `0` when there are none                                                                |
 
-The API version counts tasks on **all** boards including archived ones; the web endpoint used by the team page counts active boards only. In the current code `velocity` is always empty and `cycle_time` is always `0`, because both look for an activity flag that is never recorded.
+Stats cover the team's active (non-archived) boards only, the same as the team page. "Completed" always means the task has a completion time (`completed_at`), whichever column it sits in.
 
 ## CSV export
 
-`GET /api/v1/teams/{team}/export/csv` (or `GET /{team}/export/csv` with a browser session) downloads every task in the team as `<Team name>-tasks-YYYY-MM-DD.csv`. Any team member can export.
+`GET /api/v1/teams/{team}/export/csv` (or `GET /{team}/export/csv` with a browser session) downloads every task on the team's active (non-archived) boards as `<Team name>-tasks-YYYY-MM-DD.csv`. Any team member can export.
 
-| Column      | Value                                                           |
-| ----------- | --------------------------------------------------------------- |
-| Board       | Board name                                                      |
-| Column      | Column name                                                     |
-| Task Number | `#42`                                                           |
-| Title       |                                                                 |
-| Priority    | `urgent` … `none`                                               |
-| Status      | `Done` if the task is in a done column, otherwise `In Progress` |
-| Due Date    | `YYYY-MM-DD` or empty                                           |
-| Assignees   | Names, comma-separated                                          |
-| Labels      | Names, comma-separated                                          |
-| Effort      | Number or empty                                                 |
-| Created At  | `YYYY-MM-DD HH:MM` (UTC)                                        |
+| Column      | Value                                                    |
+| ----------- | -------------------------------------------------------- |
+| Board       | Board name                                               |
+| Column      | Column name                                              |
+| Task Number | `#42`                                                    |
+| Title       |                                                          |
+| Priority    | `urgent` … `none`                                        |
+| Status      | `Done` if the task is completed, otherwise `In Progress` |
+| Due Date    | `YYYY-MM-DD` or empty                                    |
+| Assignees   | Names, comma-separated                                   |
+| Labels      | Names, comma-separated                                   |
+| Effort      | Number or empty                                          |
+| Created At  | `YYYY-MM-DD HH:MM` (UTC)                                 |
 
-The export includes tasks on archived boards. Status is derived from the column, so a task marked complete outside a done column is exported as `In Progress`.
+Tasks on archived boards are not exported. Status follows completion, not the column, so a task marked complete outside a done column is exported as `Done`, and a reopened task left in a done column is exported as `In Progress`.

@@ -68,12 +68,19 @@ class DashboardTest extends TestCase
             ->where('reverb.scheme', 'http'));
     }
 
-    /**
-     * Skipped: the stats endpoint uses MySQL-only YEARWEEK() which doesn't work in SQLite.
-     */
     public function test_can_view_team_stats(): void
     {
-        $this->markTestSkipped('Stats endpoint uses MySQL-only YEARWEEK() function.');
+        $this->actingAs($this->user)
+            ->getJson(route('teams.dashboard.stats', $this->team))
+            ->assertOk()
+            ->assertJsonStructure([
+                'tasks_by_column',
+                'tasks_by_priority',
+                'overdue_tasks',
+                'workload',
+                'velocity',
+                'cycle_time',
+            ]);
     }
 
     public function test_can_export_csv(): void
