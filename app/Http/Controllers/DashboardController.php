@@ -65,10 +65,9 @@ class DashboardController extends Controller
             ->whereIn('tasks.board_id', $boardIds)
             ->whereHas('assignees', fn ($q) => $q->where('users.id', $user->id));
 
-        // Open = not completed and not sitting in a done column.
-        $openAssigned = (clone $assigned)
-            ->whereNull('tasks.completed_at')
-            ->whereHas('column', fn ($q) => $q->where('is_done_column', false));
+        // Open = not completed. Moving into a done column sets completed_at,
+        // so this matches team stats, reminders and Task::open().
+        $openAssigned = (clone $assigned)->open();
 
         $stats = [
             'open' => (clone $openAssigned)->count(),
@@ -139,23 +138,20 @@ class DashboardController extends Controller
     {
         $boardIds = $boards->pluck('id');
 
-        // Done = completed or sitting in a done column.
+        // Done = completed, the same definition team stats use.
         $totals = DB::table('tasks')
-            ->join('columns', 'columns.id', '=', 'tasks.column_id')
             ->whereIn('tasks.board_id', $boardIds)
             ->groupBy('tasks.board_id')
             ->selectRaw('tasks.board_id, count(*) as total')
-            ->selectRaw('sum(case when tasks.completed_at is not null or columns.is_done_column = 1 then 1 else 0 end) as done')
+            ->selectRaw('sum(case when tasks.completed_at is not null then 1 else 0 end) as done')
             ->get()
             ->keyBy('board_id');
 
         $myOpen = DB::table('tasks')
-            ->join('columns', 'columns.id', '=', 'tasks.column_id')
             ->join('task_assignees', 'task_assignees.task_id', '=', 'tasks.id')
             ->where('task_assignees.user_id', $userId)
             ->whereIn('tasks.board_id', $boardIds)
             ->whereNull('tasks.completed_at')
-            ->where('columns.is_done_column', false)
             ->groupBy('tasks.board_id')
             ->selectRaw('tasks.board_id, count(*) as aggregate')
             ->pluck('aggregate', 'board_id');
