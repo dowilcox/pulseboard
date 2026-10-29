@@ -52,7 +52,7 @@ $board = CreateBoard::run($team, $request->validated());
 return Inertia::render('Boards/Show', ['board' => $board]);
 ```
 
-Cross-cutting services live in `app/Services/`: `ActivityLogger` (logs activity + dispatches `BoardChanged` broadcasts), `TaskAutomationDispatcher` (triggers automation rules), `TaskActivityNotifier`, `MentionParser`, `GitlabApiService`, `FigmaApiService`, `SamlService`. `app/Support/RichTextSanitizer` sanitizes all user-submitted rich text (task descriptions, comments) server-side.
+Cross-cutting services live in `app/Services/`: `ActivityLogger` (logs activity + dispatches `BoardChanged` broadcasts), `TaskAutomationDispatcher` (triggers automation rules), `TaskActivityNotifier`, `MentionParser`, `GitlabApiService`, `FigmaApiService`, `SamlService`. `app/Support/RichTextSanitizer` sanitizes all user-submitted rich text (task descriptions, comments) server-side. `app/Support/CustomFieldValues` validates/merges board custom field values (`tasks.custom_fields`, keyed by `board_custom_fields.id`) for every task create/update path.
 
 ### Routing
 
@@ -144,4 +144,4 @@ MySQL 8.4. All tables use UUID PKs. Pivot tables cascade on delete; entity table
 
 ## Docs
 
-SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`.
+SAML2 SSO setup guide: `docs/saml-configuration.md`. README covers environment variables and deployment. Planned MUI v6 → v9 upgrade (not started): `docs/mui-upgrade-guide.md`. Board custom fields (user, admin and API docs): `docs/custom-fields.md`.

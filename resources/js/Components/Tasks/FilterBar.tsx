@@ -1,9 +1,16 @@
 import axios from "axios";
 import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import CustomFieldFilters from "@/Components/CustomFields/CustomFieldFilters";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { harbor, harborAvatarColor, harborHex } from "@/theme/harbor";
-import type { Column, Label, SavedFilter, User } from "@/types";
+import type {
+    BoardCustomField,
+    Column,
+    Label,
+    SavedFilter,
+    User,
+} from "@/types";
 import {
     countPopoverFilters,
     filtersToConfig,
@@ -11,6 +18,7 @@ import {
     PRIORITY_VALUES,
     type BoardFilters,
 } from "@/utils/boardFilters";
+import { describeFieldFilter } from "@/utils/customFields";
 import { formatDueDate } from "@/utils/formatTimestamp";
 import { priorityLabel } from "@/utils/taskCardLabel";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
@@ -251,7 +259,11 @@ interface Props {
     teamSlug: string;
     boardSlug: string;
     currentUserId: string;
+    /** The board's custom fields, offered as filters. */
+    customFields?: BoardCustomField[];
 }
+
+const NO_CUSTOM_FIELDS: BoardCustomField[] = [];
 
 export default function FilterBar({
     members,
@@ -267,6 +279,7 @@ export default function FilterBar({
     teamSlug,
     boardSlug,
     currentUserId,
+    customFields = NO_CUSTOM_FIELDS,
 }: Props) {
     const { showSnackbar } = useSnackbar();
     const ids = useId();
@@ -436,6 +449,25 @@ export default function FilterBar({
             label: text,
             removeLabel: `Remove due date filter (${text})`,
             onRemove: () => update({ dueDateFrom: "", dueDateTo: "" }),
+        });
+    }
+    for (const [fieldId, tokens] of Object.entries(
+        filters.customFields ?? {},
+    )) {
+        if (tokens.length === 0) continue;
+        const text = describeFieldFilter(
+            customFields.find((f) => f.id === fieldId),
+            tokens,
+        );
+        chips.push({
+            key: `cf-${fieldId}`,
+            label: text,
+            removeLabel: `Remove filter (${text})`,
+            onRemove: () => {
+                const next = { ...(filters.customFields ?? {}) };
+                delete next[fieldId];
+                update({ customFields: next });
+            },
         });
     }
 
@@ -962,6 +994,16 @@ export default function FilterBar({
                             />
                         </Box>
                     </FormControl>
+
+                    <CustomFieldFilters
+                        fields={customFields}
+                        value={filters.customFields ?? {}}
+                        onChange={(next) => update({ customFields: next })}
+                        legendSx={LEGEND_SX}
+                        renderCheckbox={({ key, ...row }) => (
+                            <CheckboxRow key={key} {...row} />
+                        )}
+                    />
                 </Box>
                 <Box
                     sx={{
@@ -980,6 +1022,7 @@ export default function FilterBar({
                                     columns: [],
                                     dueDateFrom: "",
                                     dueDateTo: "",
+                                    customFields: {},
                                 })
                             }
                         >

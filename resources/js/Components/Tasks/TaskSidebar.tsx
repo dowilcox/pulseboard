@@ -1,4 +1,5 @@
 import ConfirmDialog from "@/Components/Common/ConfirmDialog";
+import TaskCustomFieldsSection from "@/Components/CustomFields/TaskCustomFieldsSection";
 import GitlabSidebarControls from "@/Components/Gitlab/GitlabSidebarControls";
 import AssigneeSelector from "@/Components/Tasks/AssigneeSelector";
 import DependencySection from "@/Components/Tasks/DependencySection";
@@ -661,6 +662,14 @@ export default function TaskSidebar({
                     effortId,
                 )}
             </Box>
+
+            {/* Board custom fields */}
+            <TaskCustomFieldsSection
+                task={task}
+                fields={board.custom_fields ?? []}
+                autosave={autosave}
+                canEdit={can.update}
+            />
 
             {/* Planning — dependencies + recurrence */}
             <Box sx={{ ...groupCardSx, gap: 1.375 }}>

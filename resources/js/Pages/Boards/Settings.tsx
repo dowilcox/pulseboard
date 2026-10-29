@@ -6,6 +6,7 @@ import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import BoardColumnsSection from "@/Pages/Boards/Settings/BoardColumnsSection";
+import CustomFieldsSection from "@/Pages/Boards/Settings/CustomFieldsSection";
 import TaskTemplatesSection from "@/Pages/Boards/Settings/TaskTemplatesSection";
 import { useBoardColumnsForm } from "@/Pages/Boards/Settings/useBoardColumnsForm";
 import { useTaskTemplates } from "@/Pages/Boards/Settings/useTaskTemplates";
@@ -300,6 +301,12 @@ export default function BoardSettings({
                 <BoardImageUpload board={board} teamSlug={team.slug} />
 
                 <BoardColumnsSection form={columnsForm} />
+
+                <CustomFieldsSection
+                    fields={board.custom_fields ?? []}
+                    teamSlug={team.slug}
+                    boardSlug={board.slug}
+                />
 
                 <TaskTemplatesSection
                     teamName={team.name}

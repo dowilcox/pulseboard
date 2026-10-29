@@ -23,6 +23,8 @@ class StoreTaskRequest extends FormRequest
             'priority' => ['sometimes', Rule::in(['urgent', 'high', 'medium', 'low', 'none'])],
             'due_date' => ['nullable', 'date'],
             'effort_estimate' => ['nullable', 'integer', 'min:0'],
+            // Values are validated per field definition in CreateTask.
+            'custom_fields' => ['nullable', 'array', 'max:100'],
             'assignee_ids' => ['nullable', 'array', 'max:50'],
             'assignee_ids.*' => [
                 'uuid',

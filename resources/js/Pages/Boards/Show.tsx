@@ -9,6 +9,7 @@ import { useAllBoardTasks } from "@/hooks/useAllBoardTasks";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import { usePresence } from "@/hooks/usePresence";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
+import { BoardCustomFieldsProvider } from "@/Contexts/BoardCustomFieldsContext";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type {
@@ -201,7 +202,15 @@ export default function BoardsShow({
     );
 
     const filtersActive = hasActiveFilters(filters);
-    const filterFn = useMemo(() => createTaskFilter(filters), [filters]);
+    const customFields = board.custom_fields;
+    const filterFn = useMemo(
+        () =>
+            createTaskFilter(
+                filters,
+                (customFields ?? []).map((field) => field.id),
+            ),
+        [filters, customFields],
+    );
 
     // ── Every task, for List / Workload / filtered Kanban ───────────────
     const allTasks = useAllBoardTasks({
@@ -461,10 +470,13 @@ export default function BoardsShow({
                     teamSlug={team.slug}
                     boardSlug={board.slug}
                     currentUserId={auth.user.id}
+                    customFields={customFields}
                 />
             )}
 
-            {renderView()}
+            <BoardCustomFieldsProvider fields={customFields}>
+                {renderView()}
+            </BoardCustomFieldsProvider>
 
             <NewTaskDialog
                 open={newTaskOpen}

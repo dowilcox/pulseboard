@@ -102,7 +102,36 @@ export interface Board {
     created_at: string;
     updated_at: string;
     columns?: Column[];
+    custom_fields?: BoardCustomField[];
     team?: Team;
+}
+
+export type CustomFieldType =
+    | "text"
+    | "number"
+    | "date"
+    | "checkbox"
+    | "url"
+    | "select"
+    | "multi_select";
+
+export interface CustomFieldOption {
+    id: string;
+    label: string;
+    color: string;
+}
+
+/** A board-level custom field; task values live in `task.custom_fields[id]`. */
+export interface BoardCustomField {
+    id: string;
+    board_id: string;
+    name: string;
+    type: CustomFieldType;
+    options: CustomFieldOption[] | null;
+    sort_order: number;
+    show_on_card: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Column {
@@ -217,7 +246,8 @@ export interface Task {
     sort_order: number;
     due_date?: string;
     effort_estimate?: number;
-    custom_fields: Record<string, unknown>;
+    /** Custom field values keyed by BoardCustomField id; null when none. */
+    custom_fields: Record<string, unknown> | null;
     completed_at?: string;
     checklists?: Checklist[];
     links?: TaskLink[];

@@ -1,7 +1,10 @@
 import RouterLink from "@/Components/Common/RouterLink";
+import TaskCardCustomFields from "@/Components/CustomFields/TaskCardCustomFields";
+import { useBoardCustomFields } from "@/Contexts/BoardCustomFieldsContext";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import type { Task, TaskGitlabRef } from "@/types";
 import { getContrastText } from "@/utils/colorContrast";
+import { describeCardFields } from "@/utils/customFields";
 import { daysUntil, formatDueDate } from "@/utils/formatTimestamp";
 import { getGitlabPrefix } from "@/utils/gitlabPrefix";
 import { describeTaskCard } from "@/utils/taskCardLabel";
@@ -159,6 +162,8 @@ const TaskCard = memo(
             (r) => r.ref_type === "merge_request",
         );
         const assignees = task.assignees ?? [];
+        const customFields = useBoardCustomFields();
+        const cardFieldsLabel = describeCardFields(customFields, task);
 
         // Everything inside is summarised by the link's aria-label, so the
         // visual content is hidden from assistive tech to avoid repeats.
@@ -290,6 +295,8 @@ const TaskCard = memo(
                         ))}
                     </Box>
                 )}
+
+                <TaskCardCustomFields fields={customFields} task={task} />
 
                 {/* Checklist progress — segmented bar */}
                 {checklistProgress && checklistProgress.total > 0 && (
@@ -428,7 +435,11 @@ const TaskCard = memo(
                     component={RouterLink}
                     href={href}
                     draggable={false}
-                    aria-label={describeTaskCard(task)}
+                    aria-label={
+                        cardFieldsLabel
+                            ? `${describeTaskCard(task)}, ${cardFieldsLabel}`
+                            : describeTaskCard(task)
+                    }
                     {...rest}
                     sx={{
                         ...CARD_SX,
