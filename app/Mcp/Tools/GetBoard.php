@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\CustomFields;
 use App\Mcp\Support\Presenter;
 use App\Models\Column;
 use App\Models\Label;
@@ -14,7 +15,7 @@ use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
 
 #[Name('get_board')]
-#[Description('Get a board\'s structure: columns in order (id, name, WIP limit, whether it is a "done" column, open/total task counts), the team\'s labels, and the team\'s active members (ids, names, emails, roles) for assigning and @mentioning. Call this before creating or moving tasks.')]
+#[Description('Get a board\'s structure: columns in order (id, name, WIP limit, whether it is a "done" column, open/total task counts), the board\'s custom field definitions (id, name, type, select options), the team\'s labels, and the team\'s active members (ids, names, emails, roles) for assigning and @mentioning. Call this before creating or moving tasks.')]
 #[IsReadOnly]
 class GetBoard extends PulseBoardTool
 {
@@ -59,6 +60,7 @@ class GetBoard extends PulseBoardTool
                 'open_tasks' => (int) $column->open_tasks_count,
                 'total_tasks' => (int) $column->tasks_count,
             ])->values()->all(),
+            'custom_fields' => CustomFields::definitions($board->customFields()->get()),
             'labels' => $team->labels()->orderBy('name')->get()
                 ->map(fn (Label $label) => Presenter::label($label))->values()->all(),
             'members' => $members->map(fn (User $member) => Presenter::compact([

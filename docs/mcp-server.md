@@ -111,35 +111,46 @@ List tools return at most 50 items by default (up to 200 with `limit`) and pagin
 
 Agents write descriptions and comments in **Markdown**. They are stored as Markdown, just like the web editor stores them, and are sanitized by the same server-side `RichTextSanitizer`, so raw HTML such as `<script>`, `<iframe>` or event handlers is stripped. To @mention a team member, write `<@USER_ID>`; you can get member ids from `get_board`. It becomes a real mention, and the person is notified the same way as in the UI. Tool output returns descriptions and comments as readable Markdown, with mentions shown as `@Name`.
 
+## Custom fields
+
+Boards can define [custom fields](custom-fields.md). Over MCP they are addressed by **name** (case-insensitive) or id, and select options by **label** (case-insensitive) or id. You never need the stored ids:
+
+- `get_board` lists the definitions under `custom_fields`: `id`, `name`, `type` (`text`, `number`, `date`, `checkbox`, `url`, `select`, `multi_select`) and, for select types, `options` (`id`, `label`).
+- Task results (`get_task`, `list_tasks`, `my_tasks`, `search_tasks`, write-tool responses) show values as `"custom_fields": {"Severity": "High", "Story points": 3, "Tags": ["API", "UI"], "Signed off": true}`. Select values are option labels, and fields without a value are left out. You can pass this object back to `create_task` or `update_task` unchanged.
+- `create_task` and `update_task` take the same shape in `custom_fields`. Updates are partial: only the fields you name change, and `null` clears a field. Multi-select takes a list, checkboxes take `true`/`false`, and dates are `YYYY-MM-DD`. Values are validated by the same rules as the web UI and REST API.
+- An unknown field name, an unknown option label, or a value that is one option's id but another option's label returns a tool error that lists the valid fields or options.
+- `list_tasks` filters with `custom_fields` too. Every field you name must match. A select or multi-select field matches an option label or id, or any option from a list (`{"Severity": ["High", "Critical"]}`). A checkbox matches `true` or `false`. Other types match `true` (has a value), `null` (empty), or an exact value.
+- Defining, renaming or deleting fields needs the `manage` ability and isn't available over MCP. Use Board settings or the REST API.
+
 ## Tools
 
 Read tools work with any token. Write tools need a token with the **`write`** ability. With a read-only token they return a tool error ("requires an API token with the "write" ability") and change nothing. No MCP tool needs the `manage` ability: structural changes such as creating boards, columns or labels, managing members, or deleting boards and teams are not exposed over MCP.
 
-| Tool                      | Ability | Description                                                                                                                           |
-| ------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `whoami`                  | read    | Current user, token abilities, teams and roles.                                                                                       |
-| `list_teams`              | read    | Your teams with role, member count and board count.                                                                                   |
-| `list_boards`             | read    | Boards of one team or all your teams (archived boards are optional).                                                                  |
-| `get_board`               | read    | Columns (WIP limits, done flags, counts), labels, members.                                                                            |
-| `list_tasks`              | read    | Tasks on a board. Filters: column, assignee (`me`/`none`/user), label, priority, status, due before/after, text, parent. Sortable.    |
-| `get_task`                | read    | Full task: description, checklists, subtasks, dependencies, recent comments, GitLab MRs/branches/pipelines, Figma links, attachments. |
-| `search_tasks`            | read    | Search titles, descriptions and task numbers across your teams.                                                                       |
-| `my_tasks`                | read    | Tasks assigned to you, soonest due first.                                                                                             |
-| `list_comments`           | read    | A task's comments with replies.                                                                                                       |
-| `get_board_activity`      | read    | Board activity since a timestamp (default: last 24 hours), useful for "catch me up".                                                  |
-| `list_notifications`      | read    | Your notifications and unread count.                                                                                                  |
-| `create_task`             | write   | Create a task, optionally with a Markdown description, column, priority, due date, assignees, labels, parent (subtask) and checklist. |
-| `update_task`             | write   | Change title, description, priority, due date, effort.                                                                                |
-| `move_task`               | write   | Move a task to a column and position, or to another board of the team (admin/owner only).                                             |
-| `complete_task`           | write   | Complete a task or reopen it (idempotent).                                                                                            |
-| `assign_task`             | write   | Add, remove or set assignees.                                                                                                         |
-| `set_task_labels`         | write   | Set, add or remove labels (existing team labels only).                                                                                |
-| `add_comment`             | write   | Comment or reply, in Markdown with mentions.                                                                                          |
-| `add_dependency`          | write   | Mark a task as blocked by another task in the same team.                                                                              |
-| `remove_dependency`       | write   | Remove a dependency.                                                                                                                  |
-| `update_checklist`        | write   | Check, uncheck, add or remove checklist items.                                                                                        |
-| `delete_task`             | write   | Permanently delete a task (destructive, requires `confirm: true`; creator or team admin/owner only).                                  |
-| `mark_notifications_read` | write   | Mark some or all notifications as read.                                                                                               |
+| Tool                      | Ability | Description                                                                                                                                          |
+| ------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `whoami`                  | read    | Current user, token abilities, teams and roles.                                                                                                      |
+| `list_teams`              | read    | Your teams with role, member count and board count.                                                                                                  |
+| `list_boards`             | read    | Boards of one team or all your teams (archived boards are optional).                                                                                 |
+| `get_board`               | read    | Columns (WIP limits, done flags, counts), custom field definitions, labels, members.                                                                 |
+| `list_tasks`              | read    | Tasks on a board. Filters: column, assignee (`me`/`none`/user), label, priority, status, due before/after, text, parent, custom fields. Sortable.    |
+| `get_task`                | read    | Full task: description, checklists, subtasks, dependencies, recent comments, GitLab MRs/branches/pipelines, Figma links, attachments.                |
+| `search_tasks`            | read    | Search titles, descriptions and task numbers across your teams.                                                                                      |
+| `my_tasks`                | read    | Tasks assigned to you, soonest due first.                                                                                                            |
+| `list_comments`           | read    | A task's comments with replies.                                                                                                                      |
+| `get_board_activity`      | read    | Board activity since a timestamp (default: last 24 hours), useful for "catch me up".                                                                 |
+| `list_notifications`      | read    | Your notifications and unread count.                                                                                                                 |
+| `create_task`             | write   | Create a task, optionally with a Markdown description, column, priority, due date, assignees, labels, custom fields, parent (subtask) and checklist. |
+| `update_task`             | write   | Change title, description, priority, due date, effort, custom field values.                                                                          |
+| `move_task`               | write   | Move a task to a column and position, or to another board of the team (admin/owner only).                                                            |
+| `complete_task`           | write   | Complete a task or reopen it (idempotent).                                                                                                           |
+| `assign_task`             | write   | Add, remove or set assignees.                                                                                                                        |
+| `set_task_labels`         | write   | Set, add or remove labels (existing team labels only).                                                                                               |
+| `add_comment`             | write   | Comment or reply, in Markdown with mentions.                                                                                                         |
+| `add_dependency`          | write   | Mark a task as blocked by another task in the same team.                                                                                             |
+| `remove_dependency`       | write   | Remove a dependency.                                                                                                                                 |
+| `update_checklist`        | write   | Check, uncheck, add or remove checklist items.                                                                                                       |
+| `delete_task`             | write   | Permanently delete a task (destructive, requires `confirm: true`; creator or team admin/owner only).                                                 |
+| `mark_notifications_read` | write   | Mark some or all notifications as read.                                                                                                              |
 
 Tools are annotated for clients: read tools are `readOnlyHint`, and `delete_task` is `destructiveHint`, so clients that ask before destructive actions will ask before deleting.
 

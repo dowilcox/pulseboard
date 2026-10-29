@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Actions\Tasks\CreateTask as CreateTaskAction;
 use App\Actions\Tasks\UpdateTask;
 use App\Mcp\Exceptions\ToolException;
+use App\Mcp\Support\CustomFields;
 use App\Mcp\Support\RichText;
 use App\Models\Task;
 use App\Models\User;
@@ -16,7 +17,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Attributes\Name;
 
 #[Name('create_task')]
-#[Description('Create a task on a board, exactly as if created in the web UI (activity log, real-time board update, automations). Defaults: first column, priority "none", the board\'s default task template if one is set. Pass `parent_task` to create a subtask. The description is Markdown; mention a team member with <@USER_ID> (ids from get_board). Requires a token with the "write" ability. Returns the created task.')]
+#[Description('Create a task on a board, exactly as if created in the web UI (activity log, real-time board update, automations). Defaults: first column, priority "none", the board\'s default task template if one is set. Pass `parent_task` to create a subtask and `custom_fields` to fill the board\'s custom fields. The description is Markdown; mention a team member with <@USER_ID> (ids from get_board). Requires a token with the "write" ability. Returns the created task.')]
 class CreateTask extends PulseBoardTool
 {
     protected ?string $ability = 'write';
@@ -35,6 +36,7 @@ class CreateTask extends PulseBoardTool
             'assignees' => $schema->array()->items($schema->string())->description('Users to assign: "me", user UUIDs, or emails of active team members.'),
             'labels' => $schema->array()->items($schema->string())->description('Label names or UUIDs (team labels; see get_board).'),
             'parent_task' => $schema->string()->description('Make this a subtask of the given task on the same board (task UUID or number).'),
+            'custom_fields' => $schema->object()->description('Custom field values keyed by field name or id (see get_board), e.g. {"Severity": "High", "Story points": 3, "Tags": ["API", "UI"]}. Select options by label or id (case-insensitive); multi-select takes a list; checkbox true/false; date YYYY-MM-DD; null clears a field.'),
             'checklist' => $schema->array()->items($schema->string())->description('Checklist item texts to add as a checklist.'),
             'checklist_title' => $schema->string()->description('Title for the checklist (default "Checklist").'),
         ];
@@ -56,6 +58,7 @@ class CreateTask extends PulseBoardTool
             'labels' => ['nullable', 'array', 'max:50'],
             'labels.*' => ['string', 'max:255'],
             'parent_task' => ['nullable', 'string', 'max:255'],
+            'custom_fields' => ['nullable', 'array', 'max:100'],
             'checklist' => ['nullable', 'array', 'max:100'],
             'checklist.*' => ['string', 'max:1000'],
             'checklist_title' => ['nullable', 'string', 'max:255'],
@@ -102,6 +105,10 @@ class CreateTask extends PulseBoardTool
             }
 
             $data['parent_task_id'] = $parent->id;
+        }
+
+        if (filled($request->get('custom_fields'))) {
+            $data['custom_fields'] = CustomFields::resolveInput($board, $request->get('custom_fields'));
         }
 
         $task = CreateTaskAction::run($board, $column, $data, $user);

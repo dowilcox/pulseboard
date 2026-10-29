@@ -75,18 +75,20 @@ class GetBoardActivity extends PulseBoardTool
             ->filter()
             ->values();
 
+        $customFields = $board->customFields()->get();
+
         $comments = $commentIds->isNotEmpty()
             ? Comment::query()->whereIn('id', $commentIds)->get(['id', 'body'])->keyBy('id')
             : collect();
 
         return $this->page(
             'activity',
-            $activities->map(function (Activity $activity) use ($comments) {
+            $activities->map(function (Activity $activity) use ($comments, $customFields) {
                 $comment = $comments->get($activity->changes['comment_id'] ?? '');
 
                 return Presenter::activity($activity, $comment ? [
                     'comment' => ['id' => $comment->id, 'preview' => RichText::preview($comment->body, 300)],
-                ] : []);
+                ] : [], $customFields);
             })->values()->all(),
             $total,
             $offset,

@@ -55,6 +55,7 @@ class GetTask extends PulseBoardTool
         $task->load([
             'board:id,team_id,name,slug',
             'board.team:id,name,slug',
+            'board.customFields',
             'column:id,board_id,name,is_done_column',
             'assignees:id,name',
             'labels:id,name,color',
