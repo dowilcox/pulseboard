@@ -80,8 +80,8 @@ A board is a set of ordered columns that hold tasks.
 Columns are managed from board settings by admins and owners.
 
 - **Name and color.** Colors are hex values such as `#22c55e`.
-- **WIP limit.** An optional positive number. When a column holds that many tasks, creating a task in it or moving a task into it is rejected with "Column … has reached its WIP limit". Every task in the column counts, including completed tasks and subtasks. A limit of 0 or empty means no limit. The Kanban header shows the count as `3/5 WIP`.
-- **Done column.** Moving a task into the done column marks it complete. Moving it out of the done column into a regular column reopens it. A board normally has one done column: marking a column as done in board settings clears the flag on the others.
+- **WIP limit.** An optional positive number. When a column holds that many tasks, creating a task in it or moving a task into it is rejected with "Column … has reached its WIP limit". Every task in the column counts, including completed tasks and subtasks. Leave it empty for no limit; the limit must be at least 1. The Kanban header shows the count as `3/5 WIP`.
+- **Done column.** Moving a task into the done column marks it complete. Moving it out of the done column into a regular column reopens it. A board has at most one done column: marking a column as done clears the flag on the others, and saving board settings with two columns marked as done is rejected.
 - **Order.** Drag columns in board settings to reorder them.
 - **Removing a column.** If the column has tasks you choose a destination column, and the tasks are appended to it (their completion state follows the destination's done flag). Otherwise its tasks are deleted. A board must keep at least one column.
 
