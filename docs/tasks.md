@@ -90,7 +90,7 @@ Descriptions and comments use the same editor. It supports headings, bold/italic
 
 The task page shows comments and, optionally, system activity. Use the toggle to switch between **Comments** only and **All activity**, and the sort button to switch between newest and oldest first (the sort order is saved to your profile; the filter is remembered in your browser).
 
-Logged activity includes: task created; field changes (title, description, priority, due date, effort, checklists, links, recurrence, custom fields); moves between columns and boards (including automatic moves); completed and reopened; assignees added or removed; labels changed; attachments added or removed; dependencies added or removed; GitLab branch and merge request created. Comments are logged too, but only top-level comments, not replies.
+Logged activity includes: task created; field changes (title, description, priority, due date, effort, checklists, links, recurrence, custom fields); moves between columns and boards (including automatic moves); completed and reopened; assignees added or removed; labels changed; attachments added or removed; watchers added or removed by an automation rule; dependencies added or removed; GitLab branch and merge request created. Comments are logged too, but only top-level comments, not replies.
 
 ## Recurring tasks
 

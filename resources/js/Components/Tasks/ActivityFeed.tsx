@@ -163,6 +163,21 @@ function activityDescription(
                     {(changes.users as string[])?.join(", ") ?? "users"}
                 </>
             );
+        case "watcher_added":
+            return (
+                <>
+                    added {(changes.users as string[])?.join(", ") ?? "a user"}{" "}
+                    as a watcher
+                </>
+            );
+        case "watcher_removed":
+            return (
+                <>
+                    removed{" "}
+                    {(changes.users as string[])?.join(", ") ?? "a user"} as a
+                    watcher
+                </>
+            );
         case "labels_changed": {
             const added = changes.added as string[] | undefined;
             const removed = changes.removed as string[] | undefined;
