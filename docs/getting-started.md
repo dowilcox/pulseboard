@@ -96,6 +96,7 @@ A board template is a saved list of columns: names, colors, WIP limits and the d
 - Save one from **Board settings → Board template**. It is named "<Board> Template". Saving the same board twice without changes reuses the existing template.
 - Board templates are **personal**: you see only the templates you created. App administrators can delete anyone's template but still only list their own.
 - To use one, choose **New board → From template** on the team page. This needs the admin or owner role in that team, and the template must be yours (or you must be an app administrator).
+- Why the difference from blank boards: any member can create a blank board, which always starts with the four default columns. A template sets the board's columns, and choosing a board's columns is column management, which is reserved for admins and owners. Saving a template doesn't change any board, so any member can do it (through the API; in the web app the button is in board settings, which members don't see).
 
 ## Bot users
 

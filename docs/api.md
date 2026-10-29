@@ -116,7 +116,7 @@ Timestamps are ISO 8601 in UTC. `due_date` is `YYYY-MM-DD`. Most models serializ
 
 ### Board templates
 
-Board templates are personal: the list contains only templates you created.
+Board templates are personal: the list contains only templates you created. Creating a board from a template needs the admin role (unlike a blank board, which any member can create), because the template sets the board's columns and column management is an admin task.
 
 | Method | Path                                                   | Ability | Role / notes                                                                                                  |
 | ------ | ------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
