@@ -24,11 +24,13 @@ class TeamStatsService
     {
         $boardIds = $this->activeBoardIds($team);
 
-        // Task counts by column (for burndown-like data)
+        // Task counts by column (for burndown-like data). Plain rows, so
+        // Task's appended attributes don't leak into the aggregate.
         $tasksByColumn = Task::whereIn('tasks.board_id', $boardIds)
             ->join('columns', 'tasks.column_id', '=', 'columns.id')
             ->select('columns.name as column_name', 'columns.is_done_column', DB::raw('count(*) as count'))
             ->groupBy('columns.name', 'columns.is_done_column')
+            ->toBase()
             ->get();
 
         // Tasks by priority

@@ -174,6 +174,21 @@ class TeamStatsTest extends TestCase
     }
 
     #[DataProvider('endpoints')]
+    public function test_tasks_by_column_rows_carry_only_the_aggregate_fields(string $via): void
+    {
+        $this->task();
+
+        $rows = $this->getStats($via)
+            ->assertOk()
+            ->assertJsonCount(1, 'tasks_by_column')
+            ->json('tasks_by_column');
+
+        $this->assertEqualsCanonicalizing(['column_name', 'is_done_column', 'count'], array_keys($rows[0]));
+        $this->assertSame('To Do', $rows[0]['column_name']);
+        $this->assertSame(1, (int) $rows[0]['count']);
+    }
+
+    #[DataProvider('endpoints')]
     public function test_workload_counts_open_tasks_only(string $via): void
     {
         $open = $this->task();
