@@ -290,6 +290,8 @@ Deleting a board or team cascades through Eloquent (not DB-level cascades) to en
 
 A REST API is available at `/api/v1/` authenticated via Sanctum personal access tokens. Endpoints cover teams, boards, tasks, and comments. Tokens can be created from the user profile or via the admin panel for bot users.
 
+AI agents (Claude Code, Cursor, etc.) can connect to the MCP server at `/mcp` with the same tokens — see [docs/mcp-server.md](docs/mcp-server.md).
+
 ## Production Deployment
 
 ### Option 1: Docker (recommended)
