@@ -265,7 +265,8 @@ class RecurringTaskTest extends TestCase
 
         $task->refresh();
         $this->assertSame('2026-11-13 00:00:00', $task->recurrence_next_at->toDateTimeString());
-        $this->assertSame(['frequency' => 'weekly', 'interval' => 1], $task->recurrence_config);
+        // assertEquals: MySQL JSON columns don't keep key order.
+        $this->assertEquals(['frequency' => 'weekly', 'interval' => 1], $task->recurrence_config);
     }
 
     public function test_without_a_due_date_the_first_occurrence_counts_from_today(): void

@@ -226,8 +226,12 @@ class DashboardController extends Controller
                 $team = $teams->get($board->team_id);
                 $changes = $activity->changes ?? [];
 
+                // Sorted: JSON key order differs between MySQL and SQLite.
+                $fields = array_keys($changes);
+                sort($fields);
+
                 $summary = $activity->action === 'field_changed'
-                    ? ['fields' => array_keys($changes)]
+                    ? ['fields' => $fields]
                     : Arr::only($changes, self::ACTIVITY_CHANGE_KEYS);
 
                 return [

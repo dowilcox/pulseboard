@@ -562,7 +562,8 @@ class CustomFieldTest extends TestCase
         $this->updateTask($task, [$a->id => 'same', $b->id => 'new'])->assertRedirect();
 
         $activity = Activity::where('task_id', $task->id)->where('action', 'field_changed')->sole();
-        $this->assertSame([
+        // assertEquals: MySQL JSON columns don't keep key order.
+        $this->assertEquals([
             'from' => [$b->id => 'old'],
             'to' => [$b->id => 'new'],
         ], $activity->changes['custom_fields']);
