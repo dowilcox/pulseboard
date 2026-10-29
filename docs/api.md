@@ -118,13 +118,13 @@ Timestamps are ISO 8601 in UTC. `due_date` is `YYYY-MM-DD`. Most models serializ
 
 Board templates are personal: the list contains only templates you created. Creating a board from a template needs the admin role (unlike a blank board, which any member can create), because the template sets the board's columns and column management is an admin task.
 
-| Method | Path                                                   | Ability | Role / notes                                                                                                  |
-| ------ | ------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------- |
-| GET    | `/templates`                                           | —       | Your board templates.                                                                                         |
-| POST   | `/templates`                                           | write   | Body: `name`, `description`, `template_data.columns[]` (each `name`, `color`, `wip_limit`, `is_done_column`). |
-| DELETE | `/templates/{boardTemplate}`                           | write   | Your own template, or any template if you are an app admin.                                                   |
-| POST   | `/teams/{team}/boards/{board}/create-template`         | write   | Member. Saves the board's columns as "<Board> Template".                                                      |
-| POST   | `/teams/{team}/templates/{boardTemplate}/create-board` | manage  | Admin. Template must be yours (or you are an app admin). Body: `name`, `description`.                         |
+| Method | Path                                                   | Ability | Role / notes                                                                                                                                |
+| ------ | ------------------------------------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/templates`                                           | —       | Your board templates.                                                                                                                       |
+| POST   | `/templates`                                           | write   | Body: `name`, `description`, `template_data.columns[]` (each `name`, `color`, `wip_limit`, `is_done_column`).                               |
+| DELETE | `/templates/{boardTemplate}`                           | write   | Your own template, or any template if you are an app admin.                                                                                 |
+| POST   | `/teams/{team}/boards/{board}/create-template`         | write   | Member. Saves the board's columns as "<Board> Template" (`201`). Repeating it with unchanged columns returns the existing template (`200`). |
+| POST   | `/teams/{team}/templates/{boardTemplate}/create-board` | manage  | Admin. Template must be yours (or you are an app admin). Body: `name`, `description`.                                                       |
 
 ### Teams and members
 

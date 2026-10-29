@@ -142,6 +142,26 @@ class BoardTemplateApiTest extends TestCase
         $response->assertJsonPath('data.template_data.columns.1.is_done_column', true);
     }
 
+    public function test_repeated_create_template_from_board_does_not_create_duplicates(): void
+    {
+        $board = Board::factory()->create(['team_id' => $this->team->id, 'name' => 'Release']);
+        $column = Column::factory()->create(['board_id' => $board->id, 'name' => 'Doing', 'sort_order' => 0]);
+        $url = "/api/v1/teams/{$this->team->id}/boards/{$board->id}/create-template";
+
+        $first = $this->api()->postJson($url)->assertCreated();
+        $this->api()->postJson($url)
+            ->assertOk()
+            ->assertJsonPath('data.id', $first->json('data.id'));
+
+        $this->assertSame(1, BoardTemplate::where('created_by', $this->user->id)->count());
+
+        // Changed columns are a new snapshot.
+        $column->update(['name' => 'In progress']);
+        $this->api()->postJson($url)->assertCreated();
+
+        $this->assertSame(2, BoardTemplate::where('created_by', $this->user->id)->count());
+    }
+
     public function test_create_template_from_board_requires_write_ability(): void
     {
         $board = Board::factory()->create(['team_id' => $this->team->id]);

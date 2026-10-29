@@ -76,8 +76,22 @@ class BoardTemplateController extends Controller
             ])->toArray(),
         ];
 
+        $name = $board->name.' Template';
+
+        // Idempotent, like the web endpoint: a repeat submit (double-click,
+        // retry) with unchanged columns returns the existing template (200)
+        // instead of creating a duplicate.
+        $existing = BoardTemplate::where('created_by', auth()->id())
+            ->where('name', $name)
+            ->get()
+            ->first(fn (BoardTemplate $template) => $template->template_data == $templateData);
+
+        if ($existing) {
+            return response()->json(['data' => $existing->load('creator:id,name')]);
+        }
+
         $template = BoardTemplate::create([
-            'name' => $board->name.' Template',
+            'name' => $name,
             'description' => 'Created from board "'.$board->name.'"',
             'created_by' => auth()->id(),
             'template_data' => $templateData,
