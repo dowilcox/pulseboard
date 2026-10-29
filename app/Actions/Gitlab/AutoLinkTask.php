@@ -41,8 +41,9 @@ class AutoLinkTask
 
         $taskNumbers = array_unique(array_map('intval', $matches[1]));
 
-        // Get all boards belonging to this project's team
-        $boardIds = $gitlabProject->team->boards()->pluck('id');
+        // Active boards belonging to this project's team. Archived boards are
+        // read-only history, so new GitLab activity never links to them.
+        $boardIds = $gitlabProject->team->boards()->active()->pluck('id');
 
         // Task numbers are only unique per board, so one number can match a
         // task on several boards. Tasks linked to a different GitLab project

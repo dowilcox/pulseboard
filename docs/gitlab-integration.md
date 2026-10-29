@@ -86,7 +86,7 @@ It matches `#42` anywhere in the text, and `pb-42` (as in the branches PulseBoar
 
 Matching rules (`app/Actions/Gitlab/AutoLinkTask.php`):
 
-1. Candidates are tasks with that number on any board of the team the project is linked to, excluding tasks already associated with a **different** GitLab project.
+1. Candidates are tasks with that number on any **non-archived** board of the team the project is linked to, excluding tasks already associated with a **different** GitLab project. Tasks on archived boards are never auto-linked, and don't make a number ambiguous. (Refs already on an archived board's tasks still receive status updates.)
 2. Task numbers are only unique per board, so one number can match tasks on several boards. If exactly one candidate exists, it is linked. If several exist, PulseBoard links the one already associated with this GitLab project. If none or more than one of them is, the reference is **skipped** (and logged) rather than linked to the wrong board.
 3. A linked task without a GitLab project is assigned this one.
 4. The same branch or MR is not linked to a task twice.
