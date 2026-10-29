@@ -11,6 +11,7 @@ use App\Models\Column;
 use App\Models\Task;
 use App\Models\TaskTemplate;
 use App\Models\Team;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,7 @@ class TaskTemplateController extends Controller
             ->orderBy('name')
             ->get();
 
-        return response()->json(['data' => $templates]);
+        return response()->json(['data' => PublicUser::scrub($templates)]);
     }
 
     public function store(Request $request, Team $team): JsonResponse
@@ -97,6 +98,6 @@ class TaskTemplateController extends Controller
             $validated['title'] ?? null,
         );
 
-        return response()->json(['data' => $task], 201);
+        return response()->json(['data' => PublicUser::scrub($task)], 201);
     }
 }

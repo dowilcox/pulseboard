@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Models\Team;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,7 @@ class DashboardController extends Controller
             ->orderBy('due_date')
             ->limit(20)
             ->get();
+        PublicUser::scrub($overdueTasks);
 
         // Workload distribution (tasks per assignee)
         $workload = DB::table('task_assignees')

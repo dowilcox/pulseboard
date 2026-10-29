@@ -78,7 +78,9 @@ Team-scoped routes (`/teams/{team}/...`) return `403` if you are not a member of
 - **Deletes and notification updates:** `204 No Content`.
 - **Exceptions:** `GET /teams/{team}/dashboard/stats` returns its object without a `data` wrapper, and `GET /notifications` uses its own pagination object (below).
 
-Timestamps are ISO 8601 in UTC. `due_date` is `YYYY-MM-DD`. Models serialize with their database columns, so user objects include fields such as `email`, `is_bot` and `avatar_url`.
+Timestamps are ISO 8601 in UTC. `due_date` is `YYYY-MM-DD`. Most models serialize with their database columns.
+
+**User objects** (members, assignees, comment and activity authors, template creators) are limited to a public shape: `id`, `name`, `email`, `avatar_url` and `is_bot`, plus a `pivot` object where the user was loaded through a relation (for example `pivot.assigned_at` on assignees). Account settings such as notification and UI preferences, `is_admin`, SSO identifiers and deactivation state are never included. `GET /me` returns a few more fields about your own account.
 
 ### Errors
 
@@ -133,7 +135,7 @@ Board templates are personal: the list contains only templates you created.
 | GET    | `/teams/{team}`                   | —       | Member.                                                                                 |
 | PUT    | `/teams/{team}`                   | manage  | Admin. Body: `name`, `description`, `settings`. Renaming changes the slug.              |
 | DELETE | `/teams/{team}`                   | manage  | Owner. Body: `{"confirmation": "DELETE"}`.                                              |
-| GET    | `/teams/{team}/members`           | —       | Member.                                                                                 |
+| GET    | `/teams/{team}/members`           | —       | Member. Each member is `id, name, email, avatar_url, is_bot, role`, sorted by name.     |
 | GET    | `/teams/{team}/members/search?q=` | manage  | Admin. Finds active users who aren't members (at least 2 characters, up to 10 results). |
 | POST   | `/teams/{team}/members`           | manage  | Admin. Body: `user_id`, `role` (`member`, `admin`; `owner` needs the owner role).       |
 | PUT    | `/teams/{team}/members/{user}`    | manage  | Admin; changing an admin/owner or granting owner needs the owner role. Body: `role`.    |
@@ -325,7 +327,14 @@ Abridged response (task objects contain every task column plus the loaded relati
                     "id": "9f6c...",
                     "name": "Alice",
                     "email": "alice@example.com",
-                    "avatar_url": "..."
+                    "avatar_url": "...",
+                    "is_bot": false,
+                    "pivot": {
+                        "task_id": "9f6d0c1e-...",
+                        "user_id": "9f6c...",
+                        "assigned_at": "2026-10-20T14:02:11.000000Z",
+                        "assigned_by": "9f6c..."
+                    }
                 }
             ],
             "labels": [{ "id": "9f6c...", "name": "bug", "color": "#ba3535" }],
@@ -340,6 +349,37 @@ Abridged response (task objects contain every task column plus the loaded relati
     "...": "..."
 }
 ```
+
+### List team members
+
+```http
+GET /api/v1/teams/acme/members
+```
+
+```json
+{
+    "data": [
+        {
+            "id": "9f6c...",
+            "name": "Alice",
+            "email": "alice@example.com",
+            "avatar_url": "https://board.example.com/avatars/9f6c...",
+            "is_bot": false,
+            "role": "owner"
+        },
+        {
+            "id": "9f6d...",
+            "name": "CI Bot",
+            "email": "ci-bot-x7Kq2mPa@pulseboard.local",
+            "avatar_url": "https://board.example.com/avatars/9f6d...",
+            "is_bot": true,
+            "role": "member"
+        }
+    ]
+}
+```
+
+`POST` and `PUT /teams/{team}/members...` return the membership record (`id, team_id, user_id, role, created_at, updated_at`) with the member's public `user` object.
 
 ### Move a task to the end of a column
 

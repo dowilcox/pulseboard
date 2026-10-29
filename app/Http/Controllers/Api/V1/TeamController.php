@@ -10,6 +10,8 @@ use App\Http\Requests\ConfirmDeleteRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Team;
+use App\Models\User;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,7 +28,7 @@ class TeamController extends Controller
     {
         $team = CreateTeam::run($request->user(), $request->validated());
 
-        return response()->json(['data' => $team], 201);
+        return response()->json(['data' => PublicUser::scrub($team)], 201);
     }
 
     public function show(Team $team): JsonResponse
@@ -54,7 +56,10 @@ class TeamController extends Controller
 
     public function members(Team $team): JsonResponse
     {
-        $members = $team->members()->get();
+        $members = $team->members()
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $user) => PublicUser::member($user));
 
         return response()->json(['data' => $members]);
     }
