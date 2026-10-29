@@ -33,7 +33,7 @@ On the same tab, search the connection's projects (at least 2 characters; up to 
 - Stores the project's name, path, web URL and default branch.
 - Registers a webhook on the GitLab project.
 
-Unlinking a project tries to remove the webhook from GitLab and clears the project from tasks that used it. Existing branch and MR references stay on those tasks.
+Unlinking a project tries to remove the webhook from GitLab, clears the project from tasks that used it, and deletes those tasks' branch and MR references (without the project they could never be updated again). Deleting a connection does the same for every project linked through it. Nothing is changed in GitLab itself.
 
 ## Webhooks
 
@@ -66,7 +66,7 @@ The task sidebar's GitLab controls (and the GitLab section on the task page) let
 
 - **Set the task's GitLab project** from the team's linked projects. Cards then show the project path as a prefix, for example `[group/project]`.
 - **Create branch.** Creates `pb-{task number}-{title-slug}` (at most 100 characters) from the project's default branch. A task can have only one branch reference.
-- **Create MR.** Opens a merge request into the default branch, titled `#{number}: {title}`, with a description starting `Task: #{number}` followed by the first 500 characters of the task description. It uses the task's branch, creating one first if needed. A task can have only one open (or locked) MR at a time.
+- **Create MR.** Opens a merge request into the default branch, titled `#{number}: {title}`, with a description that starts with a link back to the task (`Task: [#{number} {title}](task URL)`) followed by up to about 500 characters of the task description as Markdown. Mentions become `@Name` (GitLab may link that to a GitLab user with a matching username), editor HTML is removed, and a longer description is cut at a line or word boundary and ends with `…`. It uses the task's branch, creating one first if needed. A task can have only one open (or locked) MR at a time.
 - **Remove a reference** from the task (this doesn't change anything in GitLab).
 
 Branch and MR creation are logged in the task's activity feed.
@@ -86,7 +86,7 @@ It matches `#42` anywhere in the text, and `pb-42` (as in the branches PulseBoar
 
 Matching rules (`app/Actions/Gitlab/AutoLinkTask.php`):
 
-1. Candidates are tasks with that number on any board of the team the project is linked to, excluding tasks already associated with a **different** GitLab project.
+1. Candidates are tasks with that number on any **non-archived** board of the team the project is linked to, excluding tasks already associated with a **different** GitLab project. Tasks on archived boards are never auto-linked, and don't make a number ambiguous. (Refs already on an archived board's tasks still receive status updates.)
 2. Task numbers are only unique per board, so one number can match tasks on several boards. If exactly one candidate exists, it is linked. If several exist, PulseBoard links the one already associated with this GitLab project. If none or more than one of them is, the reference is **skipped** (and logged) rather than linked to the wrong board.
 3. A linked task without a GitLab project is assigned this one.
 4. The same branch or MR is not linked to a task twice.

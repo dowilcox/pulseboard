@@ -51,7 +51,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'ensure.active', 'throttle:api'
         Route::delete('/notifications', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
     });
 
-    // Board templates (global gallery)
+    // Board templates (personal: you list and use only templates you created;
+    // app admins may also use or delete anyone's)
     Route::get('/templates', [BoardTemplateController::class, 'index'])->name('templates.index');
     Route::middleware('abilities:write')->group(function () {
         Route::post('/templates', [BoardTemplateController::class, 'store'])->name('templates.store');

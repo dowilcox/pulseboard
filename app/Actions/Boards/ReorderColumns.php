@@ -37,6 +37,14 @@ class ReorderColumns
             ]);
         }
 
+        // A board has at most one done column, as CreateColumn/UpdateColumn
+        // enforce. Two in one payload is ambiguous, so reject it.
+        if ($surviving->filter(fn ($c) => ! empty($c['is_done_column']))->count() > 1) {
+            throw ValidationException::withMessages([
+                'columns' => ['Only one column can be the done column.'],
+            ]);
+        }
+
         $existing = $board->columns()->withCount('tasks')->get()->keyBy('id');
         $destroyedIds = collect($columnsData)
             ->filter(fn ($c) => ! empty($c['id']) && ! empty($c['_destroy']))
@@ -48,6 +56,8 @@ class ReorderColumns
         DB::transaction(function () use ($board, $columnsData) {
             // Create and update surviving columns first so a move target's
             // final settings (e.g. is_done_column) apply to moved tasks.
+            $doneColumnId = null;
+
             foreach ($columnsData as $data) {
                 if (! empty($data['_destroy'])) {
                     continue;
@@ -57,15 +67,29 @@ class ReorderColumns
                     'name' => $data['name'],
                     'color' => $data['color'],
                     'wip_limit' => $data['wip_limit'] ?? null,
-                    'is_done_column' => $data['is_done_column'] ?? false,
+                    'is_done_column' => (bool) ($data['is_done_column'] ?? false),
                     'sort_order' => $data['sort_order'],
                 ];
 
                 if (! empty($data['id'])) {
                     $board->columns()->where('id', $data['id'])->update($attributes);
+                    $columnId = $data['id'];
                 } else {
-                    $board->columns()->create($attributes);
+                    $columnId = $board->columns()->create($attributes)->id;
                 }
+
+                if ($attributes['is_done_column']) {
+                    $doneColumnId = $columnId;
+                }
+            }
+
+            // Columns left out of the payload keep their settings, so clear
+            // the flag on any other done column, like UpdateColumn does.
+            if ($doneColumnId) {
+                $board->columns()
+                    ->where('id', '!=', $doneColumnId)
+                    ->where('is_done_column', true)
+                    ->update(['is_done_column' => false]);
             }
 
             foreach ($columnsData as $data) {

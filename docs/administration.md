@@ -40,6 +40,14 @@ Deactivation is reversible and keeps the user's history:
 - They are hidden from assignee pickers, mention suggestions and member search, and they no longer receive email.
 - Existing assignments, comments and activity keep their name.
 
+### Deleted accounts
+
+There's no admin action to delete a user; deactivate them instead. Users can delete their own account from **Profile → Delete Account**, and deleting a team deletes the bot users it created. When a user is deleted:
+
+- Tasks, task templates and dependencies they created stay, and show their creator as "a deleted user". The record of who assigned someone to a task is cleared too.
+- Their comments (including any replies to them), their team memberships, their own assignments and watches, and their saved filters and board templates are deleted.
+- Activity entries stay; the task activity feed shows them as "System".
+
 ## Disabling local authentication
 
 ```bash
@@ -120,7 +128,7 @@ docker compose -f docker-compose.prod.yml exec mysql \
   sh -c 'mysqldump -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --single-transaction "$MYSQL_DATABASE"' > pulseboard.sql
 ```
 
-**Set `APP_KEY` explicitly.** If `.env` has no `APP_KEY`, the container entrypoint generates one inside the container. That key is lost when the container is recreated (for example on an image upgrade), which invalidates sessions and makes stored integration tokens unreadable. Generate a key once (`php artisan key:generate --show`), put it in your `.env`, and keep it with your backups.
+**Set `APP_KEY` explicitly.** In production (`APP_ENV` other than `local` or `development`), the container refuses to start without an `APP_KEY` and prints how to create one. It no longer generates a key inside the container, because that key would be lost when the container is recreated (for example on an image upgrade), which would sign everyone out and make stored GitLab/Figma tokens, webhook secrets and SAML certificates unreadable. Generate a key once (`echo "base64:$(openssl rand -base64 32)"`, or `php artisan key:generate --show` on a machine with the code), put it in your `.env` as `APP_KEY=...`, and keep it with your backups. The development compose file still generates a key on first start; it's written to your bind-mounted `.env`, so it persists.
 
 ## Upgrades
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Team;
 use App\Models\TeamMember;
 use App\Models\User;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -34,7 +35,7 @@ class TeamMemberController extends Controller
             ->whereNotIn('id', $existingMemberIds)
             ->where('deactivated_at', null)
             ->limit(10)
-            ->get(['id', 'name', 'email', 'is_bot']);
+            ->get(PublicUser::FIELDS);
 
         return response()->json(['data' => $users]);
     }
@@ -58,7 +59,7 @@ class TeamMemberController extends Controller
 
         $membership = AddTeamMember::run($team, $user, $role);
 
-        return response()->json(['data' => $membership->load('user')], 201);
+        return response()->json(['data' => PublicUser::scrub($membership->load('user'))], 201);
     }
 
     public function update(Request $request, Team $team, User $user): JsonResponse
@@ -80,7 +81,7 @@ class TeamMemberController extends Controller
 
         $membership = UpdateMemberRole::run($team, $user, $validated['role']);
 
-        return response()->json(['data' => $membership->load('user')]);
+        return response()->json(['data' => PublicUser::scrub($membership->load('user'))]);
     }
 
     public function destroy(Team $team, User $user): JsonResponse

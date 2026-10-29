@@ -38,7 +38,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-- App: `http://localhost:8000`. MySQL on `3306`, Redis on `6379`. Reverb is published on host port `9080` (see [Real-time](real-time.md#ports-in-the-docker-compose-files) for the browser port settings).
+- App: `http://localhost:8000`. MySQL on `3306`, Redis on `6379`. Reverb (WebSockets) on `8080`, or `VITE_REVERB_PORT` if you set it (see [Real-time](real-time.md#ports-in-the-docker-compose-files)).
 - On first start the entrypoint installs Composer and npm dependencies, builds the frontend, generates `APP_KEY`, runs migrations and caches config. It rebuilds assets when frontend sources are newer than the last build.
 - The development image runs Octane with `--watch`, Reverb, a queue worker and `schedule:work` under Supervisor.
 - Demo data: `docker compose exec app php artisan db:seed --class=DemoSeeder` (login `alice@demo.test` / `password`).

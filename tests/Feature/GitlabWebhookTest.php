@@ -241,6 +241,43 @@ class GitlabWebhookTest extends TestCase
         $this->assertDatabaseHas('task_gitlab_refs', ['task_id' => $unlinked->id, 'gitlab_iid' => 5]);
     }
 
+    public function test_mr_never_links_task_on_an_archived_board(): void
+    {
+        $this->otherBoard->update(['is_archived' => true]);
+        $archived = $this->makeTask($this->otherBoard, 12);
+
+        $this->sendWebhook('Merge Request Hook', $this->mergeRequestPayload(5, 'opened', '#12 Fix login'))
+            ->assertOk();
+
+        $this->assertDatabaseCount('task_gitlab_refs', 0);
+        $this->assertNull($archived->fresh()->gitlab_project_id);
+    }
+
+    public function test_mr_ignores_archived_board_when_resolving_a_number_shared_with_an_active_board(): void
+    {
+        // Without the archived board this number is unambiguous.
+        $active = $this->makeTask($this->board, 12);
+        $this->otherBoard->update(['is_archived' => true]);
+        $archived = $this->makeTask($this->otherBoard, 12);
+
+        $this->sendWebhook('Merge Request Hook', $this->mergeRequestPayload(5, 'opened', '#12 Fix login'))
+            ->assertOk();
+
+        $this->assertDatabaseHas('task_gitlab_refs', ['task_id' => $active->id, 'gitlab_iid' => 5]);
+        $this->assertDatabaseMissing('task_gitlab_refs', ['task_id' => $archived->id]);
+    }
+
+    public function test_push_never_links_branch_to_task_on_an_archived_board(): void
+    {
+        $this->board->update(['is_archived' => true]);
+        $archived = $this->makeTask($this->board, 12);
+
+        $this->sendWebhook('Push Hook', $this->pushPayload('pb-12-fix-login'))
+            ->assertOk();
+
+        $this->assertDatabaseMissing('task_gitlab_refs', ['task_id' => $archived->id]);
+    }
+
     public function test_mr_links_task_from_app_generated_branch_name(): void
     {
         $task = $this->makeTask($this->board, 12);

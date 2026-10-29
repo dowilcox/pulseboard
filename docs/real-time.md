@@ -76,10 +76,12 @@ Keep proxy idle timeouts above Reverb's ping interval (60 seconds by default, `R
 
 | File                               | Container port | Host port                             |
 | ---------------------------------- | -------------- | ------------------------------------- |
-| `docker-compose.yml` (development) | 8080           | 9080                                  |
+| `docker-compose.yml` (development) | 8080           | `VITE_REVERB_PORT` (default 8080)     |
 | `docker-compose.prod.yml`          | 8080           | `REVERB_EXTERNAL_PORT` (default 9080) |
 
-In development, the dev compose file sets `REVERB_PORT` (default `8080`) and `REVERB_SCHEME` (default `http`) for the app, but the container's port 8080 is published on host port **9080**. If browsers on the host can't connect, set `VITE_REVERB_PORT=9080` and `VITE_REVERB_SCHEME=http` in `.env` so the browser uses the published port while the in-container broadcaster keeps using 8080. Note that `.env.example` defaults to `REVERB_PORT=443` and `REVERB_SCHEME=https`, which are production values.
+The development compose file works out of the box: it publishes Reverb on host port `VITE_REVERB_PORT` (default `8080`) and tells the browser to connect to `VITE_REVERB_HOST:VITE_REVERB_PORT` over `VITE_REVERB_SCHEME` (defaults `localhost`, `8080`, `http`). Inside the container it sets `REVERB_HOST=localhost`, `REVERB_PORT=8080` and `REVERB_SCHEME=http`, so the app publishes straight to Reverb whatever `REVERB_*` says in `.env` (`.env.example` has production values there: `443` and `https`). To use another host port, for example because 8080 is taken, set `VITE_REVERB_PORT` in `.env` and recreate the container.
+
+In production (`docker-compose.prod.yml`), `REVERB_EXTERNAL_PORT` is only the host port mapping. Browsers use `REVERB_HOST`/`REVERB_PORT` (or the `VITE_REVERB_*` overrides), which usually point at your TLS proxy rather than at this port.
 
 ### Troubleshooting
 

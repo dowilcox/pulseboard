@@ -226,7 +226,8 @@ export interface TaskTemplate {
     effort_estimate?: number;
     checklists?: Checklist[];
     label_ids?: string[];
-    created_by: string;
+    /** Null once the creating user has been deleted. */
+    created_by: string | null;
     created_at: string;
     updated_at: string;
     creator?: User;
@@ -253,7 +254,8 @@ export interface Task {
     links?: TaskLink[];
     recurrence_config?: RecurrenceConfig;
     recurrence_next_at?: string;
-    created_by: string;
+    /** Null once the creating user has been deleted. */
+    created_by: string | null;
     created_at: string;
     updated_at: string;
     assignees?: User[];

@@ -91,10 +91,31 @@ if [ ! -f "/var/www/html/.env" ]; then
         | sort > /var/www/html/.env
 fi
 
-# ---- Generate application key if missing ------------------------------------
-if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
-    echo "[entrypoint] Generating application key..."
-    php artisan key:generate --force
+# ---- Application key ---------------------------------------------------------
+# APP_KEY encrypts sessions, GitLab/Figma tokens, webhook secrets and SAML
+# certificates. A key generated here would live only in this container's .env
+# and be lost when the container is recreated (e.g. on an image upgrade),
+# leaving that data unreadable. So production refuses to start without one;
+# development (where .env is the bind-mounted host file) generates it.
+app_key_is_set() {
+    # A real environment variable wins over .env. In .env, `APP_KEY=` followed
+    # only by spaces or a comment (as in .env.example) counts as unset.
+    [ -n "${APP_KEY:-}" ] || grep -qE "^APP_KEY=[\"']?[^[:space:]#\"']" /var/www/html/.env 2>/dev/null
+}
+
+if ! app_key_is_set; then
+    if [ "${APP_ENV}" = "local" ] || [ "${APP_ENV}" = "development" ]; then
+        echo "[entrypoint] Generating application key..."
+        php artisan key:generate --force
+    else
+        echo "[entrypoint] ERROR: APP_KEY is not set." >&2
+        echo "[entrypoint] Refusing to generate one inside the container: it would be lost when the" >&2
+        echo "[entrypoint] container is recreated, making encrypted GitLab/Figma tokens, webhook" >&2
+        echo "[entrypoint] secrets and SAML certificates unreadable. Generate a key once, add it to" >&2
+        echo "[entrypoint] your .env as APP_KEY=base64:<key>, and keep it with your backups:" >&2
+        echo "[entrypoint]   openssl rand -base64 32" >&2
+        exit 1
+    fi
 fi
 
 # ---- Wait for database and run migrations -----------------------------------
@@ -142,8 +163,8 @@ elif ! command -v frankenphp >/dev/null 2>&1; then
 fi
 
 # ---- Verify APP_KEY is set before caching ------------------------------------
-if ! grep -q "^APP_KEY=base64:" /var/www/html/.env 2>/dev/null; then
-    echo "[entrypoint] ERROR: APP_KEY is still not set after key generation. Aborting."
+if ! app_key_is_set; then
+    echo "[entrypoint] ERROR: APP_KEY is still not set after key generation. Aborting." >&2
     exit 1
 fi
 

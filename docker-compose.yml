@@ -8,7 +8,9 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-      - "9080:8080"
+      # Reverb. The host port is the one browsers are told to use
+      # (VITE_REVERB_PORT below), so the two always match.
+      - "${VITE_REVERB_PORT:-8080}:8080"
     volumes:
       - .:/var/www/html
       - /var/www/html/vendor
@@ -36,9 +38,15 @@ services:
       - REVERB_APP_ID=${REVERB_APP_ID:-pulseboard}
       - REVERB_APP_KEY=${REVERB_APP_KEY:?Set REVERB_APP_KEY in .env}
       - REVERB_APP_SECRET=${REVERB_APP_SECRET:?Set REVERB_APP_SECRET in .env}
-      - REVERB_HOST=${REVERB_HOST:-localhost}
-      - REVERB_PORT=${REVERB_PORT:-8080}
-      - REVERB_SCHEME=${REVERB_SCHEME:-http}
+      # Server-side publishing goes straight to Reverb inside this container,
+      # whatever REVERB_* says in .env (those are often production values).
+      - REVERB_HOST=localhost
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+      # What the browser connects to: the published port above.
+      - VITE_REVERB_HOST=${VITE_REVERB_HOST:-localhost}
+      - VITE_REVERB_PORT=${VITE_REVERB_PORT:-8080}
+      - VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME:-http}
       - REVERB_SERVER_HOST=0.0.0.0
       - REVERB_SERVER_PORT=8080
     networks:

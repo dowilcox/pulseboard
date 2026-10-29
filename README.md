@@ -23,7 +23,7 @@
 ### Boards & Tasks
 
 - Kanban boards with drag-and-drop task management
-- 5 board views: Kanban, List, Calendar, Timeline, Workload
+- 3 board views: Kanban, List, Workload
 - Cross-board task moves within a team
 - Subtasks, checklists, and task dependencies (blocked-by / blocking)
 - Task recurrence (daily, weekly, monthly, custom)
@@ -53,7 +53,7 @@
 ### Integrations
 
 - GitLab integration: branches, merge requests, webhooks, pipeline status
-- Figma integration: link designs to tasks with live previews
+- Figma integration: link designs to tasks with preview images (captured when the link is added)
 - Auto-linking GitLab MRs to tasks via branch naming convention
 - Background sync of GitLab link states
 - REST API with Sanctum token auth (v1)
@@ -66,7 +66,7 @@
 - OpenID Connect SSO (Authorization Code + PKCE) alongside SAML2, see [docs/oidc-configuration.md](docs/oidc-configuration.md)
 - Bot user creation scoped to teams (for API integrations)
 - CSV export of team tasks
-- Dark theme UI
+- Light "Harbor" theme UI
 
 ## Documentation
 
@@ -101,7 +101,7 @@ Default login: `alice@demo.test` / `password`
 git clone <repo-url> pulseboard
 cd pulseboard
 composer setup       # Install deps, generate .env + app key, run migrations, build frontend
-composer dev         # Start Laravel, Vite HMR, queue worker, Reverb, and log tail
+composer dev         # Start php artisan serve, queue:listen, pail (log tail) and Vite HMR
 ```
 
 Requires PHP 8.5+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running locally.
@@ -110,13 +110,13 @@ Requires PHP 8.5+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running lo
 
 ### Application
 
-| Variable    | Description                                           | Default                 |
-| ----------- | ----------------------------------------------------- | ----------------------- |
-| `APP_NAME`  | Application display name                              | `PulseBoard`            |
-| `APP_ENV`   | Environment (`local`, `production`, `staging`)        | `local`                 |
-| `APP_KEY`   | Encryption key (auto-generated)                       |                         |
-| `APP_DEBUG` | Enable debug mode (**must be `false` in production**) | `true`                  |
-| `APP_URL`   | Full public URL (e.g. `https://board.example.com`)    | `http://localhost:8000` |
+| Variable    | Description                                                           | Default                 |
+| ----------- | --------------------------------------------------------------------- | ----------------------- |
+| `APP_NAME`  | Application display name                                              | `PulseBoard`            |
+| `APP_ENV`   | Environment (`local`, `production`, `staging`)                        | `local`                 |
+| `APP_KEY`   | Encryption key (**required in production**; Docker dev generates one) |                         |
+| `APP_DEBUG` | Enable debug mode (**must be `false` in production**)                 | `true`                  |
+| `APP_URL`   | Full public URL (e.g. `https://board.example.com`)                    | `http://localhost:8000` |
 
 ### Server (Octane)
 
@@ -205,17 +205,18 @@ Requires PHP 8.5+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running lo
 
 ### Docker Compose
 
-| Variable               | Description                                    | Default                              |
-| ---------------------- | ---------------------------------------------- | ------------------------------------ |
-| `APP_PORT`             | Host port for web server (prod compose only)   | `8000`                               |
-| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)    | `9080`                               |
-| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)     | `ghcr.io/dowilcox/pulseboard:latest` |
-| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose) |                                      |
+| Variable               | Description                                                      | Default                              |
+| ---------------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `APP_PORT`             | Host port for web server (prod compose only)                     | `8000`                               |
+| `REVERB_EXTERNAL_PORT` | Host port for WebSocket (prod compose only)                      | `9080`                               |
+| `VITE_REVERB_PORT`     | Host port for WebSocket, and the port browsers use (dev compose) | `8080`                               |
+| `PULSEBOARD_IMAGE`     | Docker image reference (prod compose only)                       | `ghcr.io/dowilcox/pulseboard:latest` |
+| `DB_ROOT_PASSWORD`     | MySQL root password (required in prod compose)                   |                                      |
 
 ## Development Commands
 
 ```bash
-composer dev                    # Start all dev services (Octane, Vite, queue, Reverb, logs)
+composer dev                    # Start php artisan serve, queue:listen, pail (logs) and Vite
 ./vendor/bin/pint               # PHP code formatting (PSR-12)
 npx tsc --noEmit                # TypeScript type checking
 npx vite build                  # Production frontend build
@@ -266,7 +267,7 @@ docker compose --profile test run --rm test npm run test:run
 
 - **Inertia.js** bridges Laravel routes to React page components in `resources/js/Pages/`
 - **MUI v6** for all UI — no Tailwind. Components styled via `sx` prop
-- **Theme** context with light/dark/system mode (`resources/js/Contexts/ThemeContext.tsx`)
+- **Theme:** a single light "Harbor" theme (`resources/js/theme/index.ts`, design tokens in `resources/js/theme/harbor.ts`); there is no dark mode
 - **WebSocket** context provides Echo instance and connection status for real-time features
 - **TypeScript** interfaces for all backend models in `resources/js/types/index.d.ts`
 - **Path alias:** `@/*` maps to `resources/js/*`
@@ -308,6 +309,7 @@ Edit `.env` with production values — at minimum:
 
 ```ini
 APP_ENV=production
+APP_KEY=base64:<output of: openssl rand -base64 32>
 APP_DEBUG=false
 APP_URL=https://board.example.com
 DB_PASSWORD=<strong-password>
@@ -338,7 +340,7 @@ LOG_STACK=daily
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-The entrypoint automatically generates `APP_KEY` (if missing), runs migrations, and caches configs.
+The entrypoint runs migrations and caches configs. In production it refuses to start if `APP_KEY` is missing, rather than generating a key that would be lost when the container is recreated (and with it every encrypted GitLab/Figma token, webhook secret and SAML certificate). Keep the key with your backups.
 
 **3. Create your first user:**
 
@@ -376,7 +378,7 @@ docker compose -f docker-compose.prod.yml exec app php artisan tinker
 4. **Run services:**
 
     ```bash
-    # Queue worker (notifications, GitLab sync, automation)
+    # Queue worker (broadcasts real-time events; without it nothing is pushed to browsers)
     php artisan queue:work redis --sleep=3 --tries=3
 
     # WebSocket server (real-time collaboration)
@@ -419,11 +421,11 @@ labels:
 
 ### Docker Services
 
-| Service | Internal Port | Default Host Port | Description                                         |
-| ------- | ------------- | ----------------- | --------------------------------------------------- |
-| `app`   | 8000, 8080    | 8000, 9080        | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
-| `mysql` | 3306          | — (prod)          | MySQL 8.4 (not exposed to host in production)       |
-| `redis` | 6379          | — (prod)          | Redis 8 (not exposed to host in production)         |
+| Service | Internal Port | Default Host Port             | Description                                         |
+| ------- | ------------- | ----------------------------- | --------------------------------------------------- |
+| `app`   | 8000, 8080    | 8000; 8080 (dev), 9080 (prod) | FrankenPHP + Octane (web, queue, scheduler, Reverb) |
+| `mysql` | 3306          | — (prod)                      | MySQL 8.4 (not exposed to host in production)       |
+| `redis` | 6379          | — (prod)                      | Redis 8 (not exposed to host in production)         |
 
 The app container uses Supervisor (`docker/supervisord.conf`) to manage Octane, the queue worker, the scheduler, and the Reverb server as a single unit.
 

@@ -18,6 +18,7 @@ use App\Models\Board;
 use App\Models\Column;
 use App\Models\Task;
 use App\Models\Team;
+use App\Support\PublicUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -104,7 +105,7 @@ class TaskController extends Controller
             $query->orderBy($sort, $direction);
         }
 
-        return response()->json($query->paginate($perPage));
+        return response()->json(PublicUser::scrub($query->paginate($perPage)));
     }
 
     public function show(Team $team, Board $board, Task $task): JsonResponse
@@ -113,7 +114,7 @@ class TaskController extends Controller
 
         $task->load(['assignees', 'labels', 'comments.user', 'column:id,name,board_id', 'subtasks', 'activities.user', 'blockedBy', 'dependencies']);
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 
     public function store(StoreTaskRequest $request, Team $team, Board $board, Column $column): JsonResponse
@@ -122,7 +123,7 @@ class TaskController extends Controller
 
         $task = CreateTask::run($board, $column, $request->validated(), $request->user());
 
-        return response()->json(['data' => $task], 201);
+        return response()->json(['data' => PublicUser::scrub($task)], 201);
     }
 
     public function update(UpdateTaskRequest $request, Team $team, Board $board, Task $task): JsonResponse
@@ -131,7 +132,7 @@ class TaskController extends Controller
 
         $task = UpdateTask::run($task, $request->validated());
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 
     public function move(MoveTaskRequest $request, Team $team, Board $board, Task $task): JsonResponse
@@ -156,7 +157,7 @@ class TaskController extends Controller
             $targetBoard,
         );
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 
     public function destroy(Team $team, Board $board, Task $task): JsonResponse
@@ -180,12 +181,12 @@ class TaskController extends Controller
         // idempotent: a task already in that state is returned unchanged.
         if ($request->has('completed')
             && $request->boolean('completed') === ($task->completed_at !== null)) {
-            return response()->json(['data' => $task]);
+            return response()->json(['data' => PublicUser::scrub($task)]);
         }
 
         $task = ToggleTaskCompletion::run($task, $request->user());
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 
     public function watch(Request $request, Team $team, Board $board, Task $task): JsonResponse
@@ -225,7 +226,7 @@ class TaskController extends Controller
 
         $task = AssignTask::run($task, $validated['user_ids'], $request->user());
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 
     public function labels(Request $request, Team $team, Board $board, Task $task): JsonResponse
@@ -244,6 +245,6 @@ class TaskController extends Controller
 
         $task = SyncTaskLabels::run($task, $validated['label_ids']);
 
-        return response()->json(['data' => $task]);
+        return response()->json(['data' => PublicUser::scrub($task)]);
     }
 }
