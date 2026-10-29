@@ -110,13 +110,13 @@ Requires PHP 8.5+, Composer, Node.js 24 (LTS), MySQL 8.4, and Redis 8 running lo
 
 ### Application
 
-| Variable    | Description                                           | Default                 |
-| ----------- | ----------------------------------------------------- | ----------------------- |
-| `APP_NAME`  | Application display name                              | `PulseBoard`            |
-| `APP_ENV`   | Environment (`local`, `production`, `staging`)        | `local`                 |
-| `APP_KEY`   | Encryption key (auto-generated)                       |                         |
-| `APP_DEBUG` | Enable debug mode (**must be `false` in production**) | `true`                  |
-| `APP_URL`   | Full public URL (e.g. `https://board.example.com`)    | `http://localhost:8000` |
+| Variable    | Description                                                           | Default                 |
+| ----------- | --------------------------------------------------------------------- | ----------------------- |
+| `APP_NAME`  | Application display name                                              | `PulseBoard`            |
+| `APP_ENV`   | Environment (`local`, `production`, `staging`)                        | `local`                 |
+| `APP_KEY`   | Encryption key (**required in production**; Docker dev generates one) |                         |
+| `APP_DEBUG` | Enable debug mode (**must be `false` in production**)                 | `true`                  |
+| `APP_URL`   | Full public URL (e.g. `https://board.example.com`)                    | `http://localhost:8000` |
 
 ### Server (Octane)
 
@@ -306,6 +306,7 @@ Edit `.env` with production values — at minimum:
 
 ```ini
 APP_ENV=production
+APP_KEY=base64:<output of: openssl rand -base64 32>
 APP_DEBUG=false
 APP_URL=https://board.example.com
 DB_PASSWORD=<strong-password>
@@ -336,7 +337,7 @@ LOG_STACK=daily
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-The entrypoint automatically generates `APP_KEY` (if missing), runs migrations, and caches configs.
+The entrypoint runs migrations and caches configs. In production it refuses to start if `APP_KEY` is missing, rather than generating a key that would be lost when the container is recreated (and with it every encrypted GitLab/Figma token, webhook secret and SAML certificate). Keep the key with your backups.
 
 **3. Create your first user:**
 
