@@ -975,6 +975,7 @@ export default function TasksShow({
                             boardSlug={board.slug}
                             taskId={task.id}
                             currentUserId={auth.user.id}
+                            canDeleteAnyComment={can.deleteAnyComment ?? false}
                             uploadImageUrl={route("tasks.images.store", [
                                 team.slug,
                                 board.slug,

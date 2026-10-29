@@ -64,6 +64,8 @@ interface Props {
     boardSlug: string;
     taskId: string;
     currentUserId: string;
+    /** Server-computed (CommentPolicy::deleteAny): may delete anyone's comment. */
+    canDeleteAnyComment?: boolean;
     uploadImageUrl?: string;
     mentionableUsers?: User[];
 }
@@ -286,6 +288,8 @@ interface CommentItemProps {
     comment: Comment;
     variant: "comment" | "reply";
     isOwn: boolean;
+    /** Own comments, or anyone's for team owners/admins. Edit stays author-only. */
+    canDelete: boolean;
     /** Endpoint the comment body is PUT to (checkbox toggles). */
     updateUrl: string;
     isEditing: boolean;
@@ -305,6 +309,7 @@ function CommentItem({
     comment,
     variant,
     isOwn,
+    canDelete,
     updateUrl,
     isEditing,
     editBody,
@@ -406,21 +411,21 @@ function CommentItem({
                     </Tooltip>
                 )}
                 {isOwn && !isEditing && (
-                    <>
-                        <Tooltip title="Edit">
-                            <IconButton
-                                size="small"
-                                onClick={() => onStartEdit(localBody)}
-                            >
-                                <EditIcon sx={{ fontSize: actionIconSize }} />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                            <IconButton size="small" onClick={onDelete}>
-                                <DeleteIcon sx={{ fontSize: actionIconSize }} />
-                            </IconButton>
-                        </Tooltip>
-                    </>
+                    <Tooltip title="Edit">
+                        <IconButton
+                            size="small"
+                            onClick={() => onStartEdit(localBody)}
+                        >
+                            <EditIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
+                )}
+                {canDelete && !isEditing && (
+                    <Tooltip title="Delete">
+                        <IconButton size="small" onClick={onDelete}>
+                            <DeleteIcon sx={{ fontSize: actionIconSize }} />
+                        </IconButton>
+                    </Tooltip>
                 )}
             </Box>
         </>
@@ -528,6 +533,7 @@ export default function ActivityFeed({
     boardSlug,
     taskId,
     currentUserId,
+    canDeleteAnyComment = false,
     uploadImageUrl,
     mentionableUsers = [],
 }: Props) {
@@ -674,6 +680,7 @@ export default function ActivityFeed({
             comment={comment}
             variant={variant}
             isOwn={comment.user_id === currentUserId}
+            canDelete={comment.user_id === currentUserId || canDeleteAnyComment}
             updateUrl={route("comments.update", [
                 teamSlug,
                 boardSlug,

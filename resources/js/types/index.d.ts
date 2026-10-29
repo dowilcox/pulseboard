@@ -217,6 +217,8 @@ export interface TaskPermissions {
     delete: boolean;
     move: boolean;
     saveAsTemplate: boolean;
+    /** Delete other people's comments (team owners/admins). */
+    deleteAnyComment?: boolean;
 }
 
 export interface TaskTemplate {

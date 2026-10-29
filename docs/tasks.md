@@ -82,7 +82,7 @@ Descriptions and comments use the same editor. It supports headings, bold/italic
 
 - Post comments at the bottom of the task page. New top-level comments notify assignees, watchers, and anyone mentioned.
 - **Replies.** Reply to a comment to start a thread. Threads are one level deep: replying to a reply attaches to the original comment. Replies notify the original commenter and everyone else who replied in the thread, plus anyone mentioned.
-- **Editing.** You can edit and delete only your own comments in the UI. Edited comments are marked as edited. Adding a new mention while editing notifies the newly mentioned person.
+- **Editing.** You can edit only your own comments. You can delete your own comments, and team admins and owners can delete anyone's. Edited comments are marked as edited. Adding a new mention while editing notifies the newly mentioned person.
 - **Task-list checkboxes in comments** can be toggled by the comment's author directly in the comment, without opening the editor. Other people see the checkboxes read-only.
 - Comment bodies are limited to 65,535 characters.
 
