@@ -12,12 +12,14 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import MuiLink from "@mui/material/Link";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import type { SsoLoginProvider } from "@/types";
 
 interface LoginProps {
     status?: string;
     error?: string;
     canResetPassword: boolean;
     ssoEnabled?: boolean;
+    ssoProviders?: SsoLoginProvider[];
     localAuthEnabled?: boolean;
     canRegister?: boolean;
 }
@@ -26,7 +28,7 @@ export default function Login({
     status,
     error,
     canResetPassword,
-    ssoEnabled,
+    ssoProviders = [],
     localAuthEnabled = true,
     canRegister = false,
 }: LoginProps) {
@@ -135,20 +137,32 @@ export default function Login({
                 </Box>
             )}
 
-            {ssoEnabled && (
+            {ssoProviders.length > 0 && (
                 <>
                     {localAuthEnabled && <Divider sx={{ my: 3 }}>or</Divider>}
 
-                    <Button
-                        component="a"
-                        href={route("saml.login")}
-                        variant="outlined"
-                        fullWidth
-                        startIcon={<LockIcon />}
-                        sx={!localAuthEnabled ? { mt: 2 } : undefined}
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 1.5,
+                            mt: localAuthEnabled ? 0 : 2,
+                        }}
                     >
-                        Sign in with SSO
-                    </Button>
+                        {ssoProviders.map((provider) => (
+                            // Plain link: the flow leaves the SPA for the IdP.
+                            <Button
+                                key={provider.id}
+                                component="a"
+                                href={provider.url}
+                                variant="outlined"
+                                fullWidth
+                                startIcon={<LockIcon />}
+                            >
+                                Sign in with {provider.label}
+                            </Button>
+                        ))}
+                    </Box>
                 </>
             )}
 

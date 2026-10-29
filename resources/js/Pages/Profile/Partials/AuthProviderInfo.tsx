@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 const providerLabels: Record<string, string> = {
     local: "Local",
     saml2: "SAML2",
+    oidc: "OpenID Connect",
 };
 
 export default function AuthProviderInfo() {
