@@ -124,6 +124,8 @@ export default function DependencySection({
     ) => {
         const depBoard = boardOf(dep);
         const crossBoard = isOtherBoard(dep);
+        // Completed dependencies no longer block, so they're struck through.
+        const done = Boolean(dep.completed_at);
         const text = taskLabel(dep);
         const colors = toneColors[tone];
         const href = depBoard
@@ -150,12 +152,13 @@ export default function DependencySection({
                         component={RouterLink}
                         href={href}
                         underline="hover"
-                        title={
+                        title={`${
                             crossBoard && depBoard
                                 ? `${depBoard.name} · ${text}`
                                 : text
-                        }
+                        }${done ? " (done)" : ""}`}
                         sx={{
+                            textDecoration: done ? "line-through" : undefined,
                             minWidth: 0,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -180,7 +183,12 @@ export default function DependencySection({
                     <Typography
                         component="span"
                         noWrap
-                        sx={{ fontSize: 12, fontWeight: 600, color: colors.fg }}
+                        sx={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: colors.fg,
+                            textDecoration: done ? "line-through" : undefined,
+                        }}
                     >
                         {text}
                     </Typography>

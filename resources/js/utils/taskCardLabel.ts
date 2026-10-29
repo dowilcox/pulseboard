@@ -35,6 +35,18 @@ function plural(count: number, singular: string, pluralForm = `${singular}s`) {
 }
 
 /**
+ * Whether a task is blocked: some task it depends on is still open.
+ * Prefers the server's `is_blocked`; otherwise checks the loaded blockers
+ * (ones loaded without `completed_at` count as open).
+ */
+export function isTaskBlocked(
+    task: Pick<Task, "is_blocked" | "blocked_by">,
+): boolean {
+    if (task.is_blocked !== undefined) return task.is_blocked;
+    return (task.blocked_by ?? []).some((blocker) => !blocker.completed_at);
+}
+
+/**
  * Accessible name for a task card link: everything the card shows, once,
  * in reading order, e.g.
  * "#8 Add search functionality, High priority, due Mar 24, 5 comments,
@@ -45,7 +57,7 @@ export function describeTaskCard(task: Task, now: Date = new Date()): string {
     const parts: string[] = [getTaskLabel(task)];
 
     if (completed) parts.push("completed");
-    if ((task.blocked_by ?? []).length > 0) parts.push("blocked");
+    if (isTaskBlocked(task)) parts.push("blocked");
     if (task.priority && task.priority !== "none") {
         parts.push(`${priorityLabel(task.priority)} priority`);
     }

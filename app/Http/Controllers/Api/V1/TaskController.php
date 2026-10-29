@@ -59,7 +59,8 @@ class TaskController extends Controller
                 'subtasks as completed_subtasks_count' => function ($q) {
                     $q->whereNotNull('completed_at');
                 },
-            ]);
+            ])
+            ->withBlockedState();
 
         if (isset($validated['column_id'])) {
             $query->where('column_id', $validated['column_id']);

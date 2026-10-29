@@ -291,7 +291,7 @@ Content-Type: application/json
 GET /api/v1/teams/acme/boards/website/tasks?status=open&sort=priority&per_page=1
 ```
 
-Abridged response (task objects contain every task column plus the loaded relations and counts):
+Abridged response (task objects contain every task column plus the loaded relations and counts; `blocked_by` lists every blocking task by id, and `is_blocked` is true only while one of them is still open):
 
 ```json
 {
@@ -328,7 +328,8 @@ Abridged response (task objects contain every task column plus the loaded relati
             ],
             "labels": [{ "id": "9f6c...", "name": "bug", "color": "#ba3535" }],
             "gitlab_refs": [],
-            "blocked_by": []
+            "blocked_by": [],
+            "is_blocked": false
         }
     ],
     "per_page": 1,

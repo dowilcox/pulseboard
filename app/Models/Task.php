@@ -198,6 +198,17 @@ class Task extends Model implements HasMedia
     }
 
     /**
+     * Adds a boolean `is_blocked`: true while at least one task this one
+     * depends on is still open. Completed blockers no longer block.
+     */
+    public function scopeWithBlockedState(Builder $query): Builder
+    {
+        return $query->withExists([
+            'blockedBy as is_blocked' => fn (Builder $blockers) => $blockers->whereNull('completed_at'),
+        ]);
+    }
+
+    /**
      * Tasks that this task depends on (i.e. tasks blocking this one).
      */
     public function blockedBy(): BelongsToMany

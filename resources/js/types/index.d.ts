@@ -265,6 +265,8 @@ export interface Task {
     parent_task?: Task;
     dependencies?: Task[];
     blocked_by?: Task[];
+    /** Board/list payloads: true while any `blocked_by` task is still open. */
+    is_blocked?: boolean;
     /** Loaded on dependency tasks so cross-board chips can link and label. */
     board?: Pick<Board, "id" | "name" | "slug">;
     gitlab_project?: GitlabProject;

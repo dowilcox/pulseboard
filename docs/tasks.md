@@ -59,7 +59,7 @@ The **Dependencies** section of a task has two lists:
 
 You can link any task in the same team, including tasks on other boards (other boards offer only open tasks in the picker). PulseBoard rejects duplicates and links that would create a cycle.
 
-Dependencies are informational. They do not stop anyone from moving or completing a task. Cards with at least one "blocked by" link show a blocked indicator; note that the indicator does not check whether the blocking tasks are already done.
+Dependencies are informational. They do not stop anyone from moving or completing a task. Cards show a blocked indicator while at least one "blocked by" task is still open; once every blocking task is completed the indicator disappears. On the task page, completed dependencies are struck through.
 
 ## Attachments
 

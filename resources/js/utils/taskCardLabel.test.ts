@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Task } from "@/types";
 import { formatDueDate } from "./formatTimestamp";
-import { describeDueDate, describeTaskCard } from "./taskCardLabel";
+import {
+    describeDueDate,
+    describeTaskCard,
+    isTaskBlocked,
+} from "./taskCardLabel";
 
 const NOW = new Date(2026, 2, 20, 15, 0); // Mar 20 2026, local afternoon
 
@@ -91,5 +95,38 @@ describe("describeDueDate", () => {
         expect(describeDueDate("2026-03-19", true, NOW)).toBe(
             `due ${formatDueDate("2026-03-19")}`,
         );
+    });
+});
+
+describe("isTaskBlocked", () => {
+    const blocker = (completed_at?: string | null) =>
+        ({ id: "b", completed_at }) as unknown as Task;
+
+    it("uses the server's is_blocked when present", () => {
+        expect(
+            isTaskBlocked({ is_blocked: false, blocked_by: [blocker()] }),
+        ).toBe(false);
+        expect(isTaskBlocked({ is_blocked: true, blocked_by: [] })).toBe(true);
+    });
+
+    it("ignores completed blockers otherwise", () => {
+        expect(isTaskBlocked({ blocked_by: [blocker("2026-03-01")] })).toBe(
+            false,
+        );
+        expect(
+            isTaskBlocked({
+                blocked_by: [blocker("2026-03-01"), blocker(null)],
+            }),
+        ).toBe(true);
+        expect(isTaskBlocked({ blocked_by: [] })).toBe(false);
+        expect(isTaskBlocked({})).toBe(false);
+    });
+
+    it("is not blocked in the card label when every blocker is done", () => {
+        expect(
+            describeTaskCard(
+                task({ is_blocked: false, blocked_by: [blocker()] }),
+            ),
+        ).not.toContain("blocked");
     });
 });
