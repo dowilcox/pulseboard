@@ -11,9 +11,10 @@ class DeleteGitlabConnection
 
     public function handle(GitlabConnection $connection): void
     {
-        // Best-effort webhook cleanup on linked projects
+        // Unlink each project first: best-effort webhook cleanup, and removal
+        // of task refs that could never be updated again.
         foreach ($connection->projects as $project) {
-            RemoveProjectWebhook::run($project->setRelation('connection', $connection));
+            UnlinkGitlabProject::run($project->setRelation('connection', $connection));
         }
 
         $connection->delete();

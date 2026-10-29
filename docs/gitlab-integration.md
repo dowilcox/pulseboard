@@ -33,7 +33,7 @@ On the same tab, search the connection's projects (at least 2 characters; up to 
 - Stores the project's name, path, web URL and default branch.
 - Registers a webhook on the GitLab project.
 
-Unlinking a project tries to remove the webhook from GitLab and clears the project from tasks that used it. Existing branch and MR references stay on those tasks.
+Unlinking a project tries to remove the webhook from GitLab, clears the project from tasks that used it, and deletes those tasks' branch and MR references (without the project they could never be updated again). Deleting a connection does the same for every project linked through it. Nothing is changed in GitLab itself.
 
 ## Webhooks
 
