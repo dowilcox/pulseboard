@@ -38,7 +38,17 @@ vi.mock("axios", () => ({
     },
 }));
 
-import QuickSwitcher from "./QuickSwitcher";
+import { KeyboardShortcutsProvider } from "@/Contexts/KeyboardShortcutsContext";
+import QuickSwitcherBase from "./QuickSwitcher";
+
+/** The switcher's shortcuts live in the app-wide registry. */
+function QuickSwitcher() {
+    return (
+        <KeyboardShortcutsProvider>
+            <QuickSwitcherBase />
+        </KeyboardShortcutsProvider>
+    );
+}
 
 function fakeRoute(name: string, params?: unknown): string {
     if (name === "search") {
@@ -134,9 +144,10 @@ describe("QuickSwitcher", () => {
         // the compact icon button is just "Search".
         const wide = screen.getByRole("button", { name: "Search… Ctrl K" });
         expect(wide).toHaveAttribute("aria-keyshortcuts", "Control+K /");
-        expect(
-            screen.getByRole("button", { name: "Search" }),
-        ).toHaveAttribute("aria-keyshortcuts", "Control+K /");
+        expect(screen.getByRole("button", { name: "Search" })).toHaveAttribute(
+            "aria-keyshortcuts",
+            "Control+K /",
+        );
         expect(screen.getByText("Ctrl K")).toBeInTheDocument();
     });
 

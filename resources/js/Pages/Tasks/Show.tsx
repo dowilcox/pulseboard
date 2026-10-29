@@ -9,11 +9,13 @@ import AutosaveStatus from "@/Components/Tasks/AutosaveStatus";
 import ChecklistEditor from "@/Components/Tasks/ChecklistEditor";
 import LinkEditor from "@/Components/Tasks/LinkEditor";
 import SubtaskList from "@/Components/Tasks/SubtaskList";
+import TaskPageShortcuts from "@/Components/Tasks/TaskPageShortcuts";
 import TaskSidebar from "@/Components/Tasks/TaskSidebar";
 import { useSnackbar } from "@/Contexts/SnackbarContext";
 import { useWebSocket } from "@/Contexts/WebSocketContext";
 import { useBoardChannel, type BoardEvent } from "@/hooks/useBoardChannel";
 import { isLeavingVisit, reissueVisit, useAutosave } from "@/hooks/useAutosave";
+import { useModEnterSubmit } from "@/hooks/useModEnterSubmit";
 import LayoutHeader from "@/Components/Layout/LayoutHeader";
 import PageHeader from "@/Components/Layout/PageHeader";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -393,6 +395,23 @@ export default function TasksShow({
         return autosave.saveNow({ description: normalized });
     };
 
+    const submitDescriptionOnModEnter = useModEnterSubmit(() => {
+        saveDescription().catch(() => {});
+    });
+
+    // "e": open the editor, or jump back into it when already open.
+    const editDescriptionFromKeyboard = () => {
+        if (!editingDescription) {
+            startEditingDescription();
+            return;
+        }
+        document
+            .querySelector<HTMLElement>(
+                "[data-description-editor] .ProseMirror",
+            )
+            ?.focus();
+    };
+
     const discardDescription = () => {
         setDescription(descriptionAtEditRef.current);
         stopEditingDescription();
@@ -499,6 +518,15 @@ export default function TasksShow({
     return (
         <>
             <Head title={`${fullTitle} - ${board.name}`} />
+            <TaskPageShortcuts
+                task={task}
+                team={team}
+                board={board}
+                boardTasks={boardTasks}
+                isWatching={isWatching}
+                can={can}
+                onEditDescription={editDescriptionFromKeyboard}
+            />
             <LayoutHeader>
                 <PageHeader
                     title={fullTitle}
@@ -775,7 +803,13 @@ export default function TasksShow({
                         </Box>
                         {editingDescription ? (
                             <>
-                                <Box sx={{ mt: 1 }}>
+                                <Box
+                                    sx={{ mt: 1 }}
+                                    data-description-editor=""
+                                    onKeyDownCapture={
+                                        submitDescriptionOnModEnter
+                                    }
+                                >
                                     <RichTextEditor
                                         content={description}
                                         onChange={setDescription}

@@ -12,12 +12,18 @@ interface Props {
      * follows a pointer drag must not follow the card's link.
      */
     isClickSuppressed: () => boolean;
+    /** The board's keyboard cursor is on this card. */
+    keyboardFocused?: boolean;
+    /** Roving tab stop from keyboard navigation (0 or -1). */
+    tabIndex?: number;
 }
 
 const SortableTaskCard = memo(function SortableTaskCard({
     task,
     href,
     isClickSuppressed,
+    keyboardFocused = false,
+    tabIndex,
 }: Props) {
     const {
         attributes,
@@ -54,6 +60,9 @@ const SortableTaskCard = memo(function SortableTaskCard({
                 {...listeners}
                 aria-describedby={attributes["aria-describedby"]}
                 onClickCapture={handleClickCapture}
+                data-task-id={task.id}
+                keyboardFocused={keyboardFocused}
+                tabIndex={tabIndex}
             />
         </div>
     );

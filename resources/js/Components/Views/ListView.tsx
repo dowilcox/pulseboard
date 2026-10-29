@@ -1,6 +1,7 @@
 import RouterLink from "@/Components/Common/RouterLink";
 import CustomFieldValue from "@/Components/CustomFields/CustomFieldValue";
 import { useBoardCustomFields } from "@/Contexts/BoardCustomFieldsContext";
+import { useBoardKeyboardNav } from "@/Components/Boards/BoardKeyboard";
 import { memo, useMemo, useState } from "react";
 import PriorityIndicator from "@/Components/Tasks/PriorityIndicator";
 import MergeRequestChip from "@/Components/Gitlab/MergeRequestChip";
@@ -77,6 +78,10 @@ interface TaskRowProps {
     href: string;
     showGitlab: boolean;
     customFields: BoardCustomField[];
+    /** The board's keyboard cursor is on this row. */
+    keyboardFocused?: boolean;
+    /** Roving tab stop from keyboard navigation (0 or -1). */
+    tabIndex?: number;
 }
 
 const TaskRow = memo(function TaskRow({
@@ -85,6 +90,8 @@ const TaskRow = memo(function TaskRow({
     href,
     showGitlab,
     customFields,
+    keyboardFocused = false,
+    tabIndex,
 }: TaskRowProps) {
     const prefix = getGitlabPrefix(task);
     const assignees = task.assignees ?? [];
@@ -100,6 +107,13 @@ const TaskRow = memo(function TaskRow({
                 position: "relative",
                 cursor: "pointer",
                 "& .MuiTableCell-root": { py: 1.25 },
+                ...(keyboardFocused && {
+                    bgcolor: harbor.tints.indigo.bg,
+                    "& .MuiLink-root::after": {
+                        outline: `2px solid ${harbor.accent}`,
+                        outlineOffset: "-2px",
+                    },
+                }),
             }}
         >
             <TableCell>
@@ -117,6 +131,9 @@ const TaskRow = memo(function TaskRow({
                     href={href}
                     underline="hover"
                     aria-label={describeTaskCard(task)}
+                    aria-current={keyboardFocused || undefined}
+                    data-task-id={task.id}
+                    tabIndex={tabIndex}
                     sx={{
                         color: harbor.ink,
                         fontWeight: 600,
@@ -411,6 +428,21 @@ export default function ListView({
         });
     }, [visibleTasks, sortKey, sortDir, columnPosition, sortField]);
 
+    // ── Keyboard navigation (see BoardKeyboard): rows in display order ──
+    const focusLayout = useMemo(
+        () => [{ id: "list", taskIds: sortedTasks.map((t) => t.id) }],
+        [sortedTasks],
+    );
+    const taskById = useMemo(
+        () => new Map(sortedTasks.map((t) => [t.id, t])),
+        [sortedTasks],
+    );
+    const keyboard = useBoardKeyboardNav({
+        view: "list",
+        layout: focusLayout,
+        getTask: (id) => taskById.get(id),
+    });
+
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
             setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -564,12 +596,24 @@ export default function ListView({
                                     ])}
                                     showGitlab={showGitlab}
                                     customFields={customFields}
+                                    keyboardFocused={
+                                        keyboard.focusedTaskId === task.id
+                                    }
+                                    tabIndex={
+                                        keyboard.tabStopId === null
+                                            ? undefined
+                                            : keyboard.tabStopId === task.id
+                                              ? 0
+                                              : -1
+                                    }
                                 />
                             ))
                         )}
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {keyboard.overlay}
 
             {/* Count summary */}
             <Box

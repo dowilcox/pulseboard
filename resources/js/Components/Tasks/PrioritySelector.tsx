@@ -1,7 +1,7 @@
 import { PRIORITY_OPTIONS } from "@/constants/priorities";
 import { harbor } from "@/theme/harbor";
 import type { Task } from "@/types";
-import { router } from "@inertiajs/react";
+import { updateTaskFields } from "@/utils/taskActions";
 import FlagIcon from "@mui/icons-material/Flag";
 import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
@@ -16,11 +16,9 @@ interface Props {
 
 export default function PrioritySelector({ task, teamSlug, boardSlug }: Props) {
     const handleChange = (e: SelectChangeEvent) => {
-        router.put(
-            route("tasks.update", [teamSlug, boardSlug, task.slug]),
-            { priority: e.target.value },
-            { preserveScroll: true },
-        );
+        updateTaskFields(teamSlug, boardSlug, task, {
+            priority: e.target.value as Task["priority"],
+        });
     };
 
     return (
