@@ -37,6 +37,7 @@ import {
     getStoredBoardView,
     hasActiveFilters,
     normalizeFilterConfig,
+    pruneCustomFieldFilters,
     resolveBoardState,
     storeBoardView,
     withFilters,
@@ -185,16 +186,43 @@ export default function BoardsShow({
         [],
     );
 
-    const applySavedFilter = useCallback((savedFilter: SavedFilter) => {
-        const next = normalizeFilterConfig(savedFilter.filter_config);
-        const active = hasActiveFilters(next);
-        setBoardState((s) => ({
-            ...s,
-            filters: next,
-            savedFilterId: active ? savedFilter.id : null,
-            cleared: !active,
-        }));
-    }, []);
+    const customFieldIds = useMemo(
+        () => (board.custom_fields ?? []).map((field) => field.id),
+        [board.custom_fields],
+    );
+
+    // Filters on custom fields deleted since the URL or saved filter was
+    // made would otherwise show as an active (but ignored) filter.
+    useEffect(() => {
+        setBoardState((s) => {
+            const pruned = pruneCustomFieldFilters(s.filters, customFieldIds);
+            if (pruned === s.filters) return s;
+            const active = hasActiveFilters(pruned);
+            return {
+                ...s,
+                filters: pruned,
+                savedFilterId: active ? s.savedFilterId : null,
+                cleared: !active,
+            };
+        });
+    }, [customFieldIds]);
+
+    const applySavedFilter = useCallback(
+        (savedFilter: SavedFilter) => {
+            const next = pruneCustomFieldFilters(
+                normalizeFilterConfig(savedFilter.filter_config),
+                customFieldIds,
+            );
+            const active = hasActiveFilters(next);
+            setBoardState((s) => ({
+                ...s,
+                filters: next,
+                savedFilterId: active ? savedFilter.id : null,
+                cleared: !active,
+            }));
+        },
+        [customFieldIds],
+    );
 
     const handleSavedFiltersChange = useCallback((next: SavedFilter[]) => {
         setSavedFilters(next);
@@ -216,12 +244,8 @@ export default function BoardsShow({
     const filtersActive = hasActiveFilters(filters);
     const customFields = board.custom_fields;
     const filterFn = useMemo(
-        () =>
-            createTaskFilter(
-                filters,
-                (customFields ?? []).map((field) => field.id),
-            ),
-        [filters, customFields],
+        () => createTaskFilter(filters, customFieldIds),
+        [filters, customFieldIds],
     );
 
     // ── Every task, for List / Workload / filtered Kanban ───────────────

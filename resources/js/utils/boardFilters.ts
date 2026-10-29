@@ -464,6 +464,31 @@ export function withFilters(
 }
 
 /**
+ * Drop filters on custom fields that are no longer on the board (deleted
+ * since a saved filter or URL was made). Returns the same object when
+ * nothing changes so callers can bail out of state updates.
+ */
+export function pruneCustomFieldFilters(
+    filters: BoardFilters,
+    customFieldIds: Iterable<string>,
+): BoardFilters {
+    const current = compactCustomFields(filters.customFields);
+    if (!current) return filters;
+    const known = new Set(customFieldIds);
+    const ids = Object.keys(current);
+    if (ids.every((id) => known.has(id))) return filters;
+
+    const kept: Record<string, string[]> = {};
+    for (const id of ids) {
+        if (known.has(id)) kept[id] = current[id];
+    }
+    const { customFields: _dropped, ...rest } = filters;
+    return Object.keys(kept).length > 0
+        ? { ...rest, customFields: kept }
+        : rest;
+}
+
+/**
  * Predicate for the board's client-side task filtering. When
  * `customFieldIds` is given, filters on fields not in it (deleted since the
  * filter was saved) are ignored.
