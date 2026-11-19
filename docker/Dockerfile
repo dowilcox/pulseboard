@@ -69,7 +69,7 @@ LABEL maintainer="PulseBoard" \
 # the PHP branch in FROM. The build fails if the base image is older, so a
 # stale or not-yet-updated base image can't ship unpatched PHP. Raise it with
 # each PHP security release.
-ARG PHP_MIN_VERSION=8.5.12
+ARG PHP_MIN_VERSION=8.5.13
 RUN php -r 'if (version_compare(PHP_VERSION, getenv("PHP_MIN_VERSION"), "<")) { fwrite(STDERR, "PHP " . PHP_VERSION . " is older than PHP_MIN_VERSION " . getenv("PHP_MIN_VERSION") . "\n"); exit(1); }'
 
 # ---- System dependencies ---------------------------------------------------
